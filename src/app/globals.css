@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-lime: #D2F544;
+  --color-brand-lime-hover: #C4F22C;
+  --color-brand-forest: #0C2418;
+  --color-brand-obsidian: #0E1012;
+  --color-brand-mint: #E2F7EB;
+  --color-brand-sage: #EEF5EE;
+  --color-brand-pistachio: #F1FCD6;
+  --color-brand-card-dark: #111315;
+  --color-brand-card-light: #F3F4F6;
+  --color-brand-bg: #F8F9FA;
+  --color-brand-border: #E5E7EB;
+  --color-brand-slate: #64748B;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg-main: #F8F9FA;
+  --text-main: #0E1012;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth Caret Pulse for DET Typing Trainer */
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-caret {
+  animation: caret-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Ambient glow */
+.ambient-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(210, 245, 68, 0.15), transparent 70%);
 }

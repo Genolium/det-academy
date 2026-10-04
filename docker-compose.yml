@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: det-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: det_academy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d det_academy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - det-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: det-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DATABASE_URL: "postgres://postgres:postgres@postgres:5432/det_academy?sslmode=disable"
+      JWT_SECRET: "det-academy-super-secure-jwt-secret-key-2026"
+      ALLOWED_ORIGIN: "http://localhost:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - det-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: det-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8080"
+      PORT: "3000"
+      NODE_ENV: "production"
+    depends_on:
+      - backend
+    networks:
+      - det-network
+
+  directus:
+    image: directus/directus:11.1
+    container_name: det-directus
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    environment:
+      KEY: "det-directus-system-secret-key-2026"
+      SECRET: "det-directus-app-secret-jwt-key-2026"
+      ADMIN_EMAIL: "admin@det-academy.com"
+      ADMIN_PASSWORD: "admin123"
+      DB_CLIENT: "pg"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_DATABASE: "det_academy"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+      DB_SSL: "false"
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000"
+      STORAGE_LOCATIONS: "local"
+      STORAGE_LOCAL_ROOT: "./uploads"
+    volumes:
+      - directus_uploads:/directus/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - det-network
+
+volumes:
+  postgres_data:
+    driver: local
+  directus_uploads:
+    driver: local
+
+networks:
+  det-network:
+    driver: bridge

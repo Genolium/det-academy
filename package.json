@@ -1,6 +1,6 @@
 {
-  "name": "temp_app",
-  "version": "0.1.0",
+  "name": "det-academy",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,9 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/leaflet": "^1.9.22",
+    "canvas-confetti": "^1.9.4",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.50.0",
     "next": "16.3.8",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
