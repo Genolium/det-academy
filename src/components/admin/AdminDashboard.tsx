@@ -212,16 +212,12 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            <button
-              onClick={async () => {
-                await login('admin@det-academy.com', 'admin123');
-                loadData();
-              }}
+            <Link
+              href="/"
               className="w-full bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer"
             >
-              <UserCheck className="w-4 h-4" />
-              Войти как Super Administrator (Демо)
-            </button>
+              Вернуться на главную
+            </Link>
           </div>
         </div>
       </div>

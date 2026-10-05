@@ -4,8 +4,15 @@ import (
 	"context"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -99,6 +106,260 @@ func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*mode
 	return user, token, nil
 }
 
+// exchangeYandexOAuth exchanges an authorization code or token with Yandex API and retrieves the candidate profile
+func (s *AuthService) exchangeYandexOAuth(ctx context.Context, code string) (string, string, string, string, error) {
+	clientID := os.Getenv("YANDEX_CLIENT_ID")
+	if clientID == "" {
+		clientID = os.Getenv("NEXT_PUBLIC_YANDEX_CLIENT_ID")
+	}
+	clientSecret := os.Getenv("YANDEX_CLIENT_SECRET")
+
+	accessToken := code
+	// If client secret is provided and code is an auth code, exchange it for access token
+	if clientSecret != "" && clientID != "" && !strings.HasPrefix(code, "yandex_token_") {
+		data := url.Values{}
+		data.Set("grant_type", "authorization_code")
+		data.Set("code", code)
+		data.Set("client_id", clientID)
+		data.Set("client_secret", clientSecret)
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		req, err := http.NewRequestWithContext(ctx, "POST", "https://oauth.yandex.ru/token", strings.NewReader(data.Encode()))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			resp, err := client.Do(req)
+			if err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					var tokenResp struct {
+						AccessToken string `json:"access_token"`
+					}
+					if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err == nil && tokenResp.AccessToken != "" {
+						accessToken = tokenResp.AccessToken
+					}
+				} else {
+					body, _ := io.ReadAll(resp.Body)
+					log.Printf("[YandexOAuth] Token exchange returned status %d: %s", resp.StatusCode, string(body))
+				}
+			}
+		}
+	}
+
+	// Fetch user profile from Yandex Login API
+	client := &http.Client{Timeout: 10 * time.Second}
+	infoReq, err := http.NewRequestWithContext(ctx, "GET", "https://login.yandex.ru/info?format=json", nil)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	infoReq.Header.Set("Authorization", "OAuth "+accessToken)
+
+	resp, err := client.Do(infoReq)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("failed to fetch yandex user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", "", "", "", fmt.Errorf("yandex api returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var profile struct {
+		ID              string   `json:"id"`
+		Login           string   `json:"login"`
+		DisplayName     string   `json:"display_name"`
+		RealName        string   `json:"real_name"`
+		FirstName       string   `json:"first_name"`
+		LastName        string   `json:"last_name"`
+		DefaultEmail    string   `json:"default_email"`
+		Emails          []string `json:"emails"`
+		DefaultAvatarID string   `json:"default_avatar_id"`
+		IsAvatarEmpty   bool     `json:"is_avatar_empty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		return "", "", "", "", fmt.Errorf("failed to parse yandex profile: %w", err)
+	}
+
+	providerUID := profile.ID
+	if providerUID == "" {
+		providerUID = profile.Login
+	}
+
+	email := profile.DefaultEmail
+	if email == "" && len(profile.Emails) > 0 {
+		email = profile.Emails[0]
+	}
+
+	name := strings.TrimSpace(profile.RealName)
+	if name == "" {
+		name = strings.TrimSpace(profile.DisplayName)
+	}
+	if name == "" {
+		name = strings.TrimSpace(profile.FirstName + " " + profile.LastName)
+	}
+	if name == "" {
+		name = strings.TrimSpace(profile.Login)
+	}
+
+	avatarURL := ""
+	if !profile.IsAvatarEmpty && profile.DefaultAvatarID != "" {
+		avatarURL = fmt.Sprintf("https://avatars.yandex.net/get-yapic/%s/islands-200", profile.DefaultAvatarID)
+	}
+
+	return providerUID, email, name, avatarURL, nil
+}
+
+// exchangeVKID exchanges a VK ID authorization code with PKCE and retrieves candidate profile
+func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVerifier, redirectURI string) (string, string, string, string, error) {
+	clientID := os.Getenv("VK_CLIENT_ID")
+	if clientID == "" {
+		clientID = os.Getenv("NEXT_PUBLIC_VK_CLIENT_ID")
+	}
+	clientSecret := os.Getenv("VK_CLIENT_SECRET")
+	if redirectURI == "" {
+		redirectURI = "https://det-academy.ru/auth/callback"
+	}
+
+	accessToken := code
+	var tokenEmail string
+	var tokenUserID any
+
+	// If clientID is provided, exchange authorization code with VK ID endpoint
+	if clientID != "" {
+		data := url.Values{}
+		data.Set("grant_type", "authorization_code")
+		data.Set("client_id", clientID)
+		data.Set("code", code)
+		if redirectURI != "" {
+			data.Set("redirect_uri", redirectURI)
+		}
+		if deviceID != "" {
+			data.Set("device_id", deviceID)
+		}
+		if codeVerifier != "" {
+			data.Set("code_verifier", codeVerifier)
+		}
+		if clientSecret != "" {
+			data.Set("client_secret", clientSecret)
+		}
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		req, err := http.NewRequestWithContext(ctx, "POST", "https://id.vk.ru/oauth2/auth", strings.NewReader(data.Encode()))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			resp, err := client.Do(req)
+			if err == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					var tokenResp struct {
+						AccessToken string `json:"access_token"`
+						IDToken     string `json:"id_token"`
+						UserID      any    `json:"user_id"`
+						Email       string `json:"email"`
+					}
+					if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err == nil && tokenResp.AccessToken != "" {
+						accessToken = tokenResp.AccessToken
+						tokenEmail = tokenResp.Email
+						tokenUserID = tokenResp.UserID
+					}
+				} else {
+					body, _ := io.ReadAll(resp.Body)
+					log.Printf("[VKID] Token exchange returned status %d: %s", resp.StatusCode, string(body))
+				}
+			}
+		}
+	}
+
+	// Fetch user info from VK ID
+	client := &http.Client{Timeout: 10 * time.Second}
+	data := url.Values{}
+	data.Set("client_id", clientID)
+	data.Set("access_token", accessToken)
+
+	userReq, err := http.NewRequestWithContext(ctx, "POST", "https://id.vk.ru/oauth2/user_info", strings.NewReader(data.Encode()))
+	if err == nil {
+		userReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		userReq.Header.Set("Authorization", "Bearer "+accessToken)
+		resp, err := client.Do(userReq)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				var info struct {
+					User struct {
+						UserID    any    `json:"user_id"`
+						FirstName string `json:"first_name"`
+						LastName  string `json:"last_name"`
+						Email     string `json:"email"`
+						Avatar    string `json:"avatar"`
+						Phone     string `json:"phone"`
+					} `json:"user"`
+					FirstName string `json:"first_name"`
+					LastName  string `json:"last_name"`
+					Email     string `json:"email"`
+					Avatar    string `json:"avatar"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&info); err == nil {
+					firstName := info.User.FirstName
+					if firstName == "" {
+						firstName = info.FirstName
+					}
+					lastName := info.User.LastName
+					if lastName == "" {
+						lastName = info.LastName
+					}
+					email := info.User.Email
+					if email == "" {
+						email = info.Email
+					}
+					if email == "" {
+						email = tokenEmail
+					}
+					avatar := info.User.Avatar
+					if avatar == "" {
+						avatar = info.Avatar
+					}
+					uid := fmt.Sprintf("%v", info.User.UserID)
+					if uid == "" || uid == "<nil>" || uid == "0" {
+						uid = fmt.Sprintf("%v", tokenUserID)
+					}
+
+					name := strings.TrimSpace(firstName + " " + lastName)
+					if name != "" || email != "" {
+						return uid, email, name, avatar, nil
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback to classic VK API users.get
+	apiURL := fmt.Sprintf("https://api.vk.com/method/users.get?v=5.131&fields=photo_200&access_token=%s", url.QueryEscape(accessToken))
+	reqAPI, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err == nil {
+		resp, err := client.Do(reqAPI)
+		if err == nil {
+			defer resp.Body.Close()
+			var classicResp struct {
+				Response []struct {
+					ID        int64  `json:"id"`
+					FirstName string `json:"first_name"`
+					LastName  string `json:"last_name"`
+					Photo200  string `json:"photo_200"`
+				} `json:"response"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&classicResp); err == nil && len(classicResp.Response) > 0 {
+				u := classicResp.Response[0]
+				name := strings.TrimSpace(u.FirstName + " " + u.LastName)
+				uid := fmt.Sprintf("%d", u.ID)
+				return uid, tokenEmail, name, u.Photo200, nil
+			}
+		}
+	}
+
+	return fmt.Sprintf("%v", tokenUserID), tokenEmail, "", "", errors.New("unable to retrieve vk user details")
+}
+
 // OAuthLogin handles login or registration via OAuth providers (Google, Apple, VK, Yandex)
 func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginRequest) (*models.User, string, error) {
 	provider := req.Provider
@@ -114,10 +375,64 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		providerUID = email
 	}
 
-	// 1. Try to find user by linked social account first
+	// 1. Try real provider profile fetch if authorization code or token is supplied
+	if provider == "yandex" && req.Code != "" {
+		if pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, req.Code); err == nil {
+			if pUID != "" {
+				providerUID = pUID
+			}
+			if pEmail != "" {
+				email = pEmail
+			}
+			if pName != "" {
+				name = pName
+			}
+			if pAvatar != "" {
+				avatarURL = pAvatar
+			}
+		}
+	} else if provider == "vk" && req.Code != "" {
+		if pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, req.Code, req.DeviceID, req.CodeVerifier, req.RedirectURI); err == nil {
+			if pUID != "" {
+				providerUID = pUID
+			}
+			if pEmail != "" {
+				email = pEmail
+			}
+			if pName != "" {
+				name = pName
+			}
+			if pAvatar != "" {
+				avatarURL = pAvatar
+			}
+		}
+	}
+
+	// Helper to upgrade placeholder names / emails on login
+	upgradeUserIfPlaceholder := func(u *models.User) {
+		modified := false
+		if name != "" && (u.Name == "" || u.Name == "Яндекс Студент" || u.Name == "VK Пользователь" || u.Name == "VK Студент" || u.Name == "OAuth Student") {
+			u.Name = name
+			modified = true
+		}
+		if email != "" && strings.Contains(u.Email, "@oauth.det-academy.com") && !strings.Contains(email, "@oauth.det-academy.com") {
+			u.Email = email
+			modified = true
+		}
+		if avatarURL != "" && (u.AvatarURL == "" || strings.Contains(u.AvatarURL, "unsplash")) {
+			u.AvatarURL = avatarURL
+			modified = true
+		}
+		if modified {
+			_ = s.userRepo.Update(ctx, u)
+		}
+	}
+
+	// 2. Try to find user by linked social account first
 	if providerUID != "" {
 		if sa, err := s.userRepo.GetSocialAccountByProviderUID(ctx, provider, providerUID); err == nil && sa != nil {
 			if user, err := s.userRepo.GetByID(ctx, sa.UserID); err == nil && user != nil {
+				upgradeUserIfPlaceholder(user)
 				token, err := s.GenerateToken(user)
 				if err != nil {
 					return nil, "", fmt.Errorf("failed to generate token: %w", err)
@@ -127,7 +442,28 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 	}
 
-	// If email is not supplied directly, generate deterministic identity for OAuth code or provider
+	// 3. Check if there is an existing user created with placeholder email for this code
+	if req.Code != "" {
+		legacyPlaceholderEmail := fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, req.Code[:min(8, len(req.Code))])
+		if legacyUser, err := s.userRepo.GetByEmail(ctx, legacyPlaceholderEmail); err == nil && legacyUser != nil {
+			upgradeUserIfPlaceholder(legacyUser)
+			_ = s.userRepo.LinkSocialAccount(ctx, &models.SocialAccount{
+				ID:             uuid.New().String(),
+				UserID:         legacyUser.ID,
+				Provider:       provider,
+				ProviderUserID: providerUID,
+				Email:          legacyUser.Email,
+				CreatedAt:      time.Now().UTC(),
+			})
+			token, err := s.GenerateToken(legacyUser)
+			if err != nil {
+				return nil, "", fmt.Errorf("failed to generate token: %w", err)
+			}
+			return legacyUser, token, nil
+		}
+	}
+
+	// 4. If email is not supplied directly, generate deterministic identity for OAuth code or provider
 	if email == "" {
 		if req.Code != "" {
 			email = fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, req.Code[:min(8, len(req.Code))])
@@ -151,14 +487,10 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 	}
 
-	// 2. Try to find existing user by email
+	// 5. Try to find existing user by email
 	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
-		// Update avatar if provided
-		if avatarURL != "" && existingUser.AvatarURL == "" {
-			existingUser.AvatarURL = avatarURL
-			_ = s.userRepo.Update(ctx, existingUser)
-		}
+		upgradeUserIfPlaceholder(existingUser)
 
 		// Ensure social account link is stored
 		_ = s.userRepo.LinkSocialAccount(ctx, &models.SocialAccount{
@@ -177,7 +509,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		return existingUser, token, nil
 	}
 
-	// 3. User does not exist -> Create new OAuth user
+	// 6. User does not exist -> Create new OAuth user
 	newUser := &models.User{
 		ID:           uuid.New().String(),
 		Email:        email,
@@ -270,6 +602,28 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 	if providerUID == "" {
 		providerUID = req.Email
 	}
+
+	var resolvedEmail, resolvedName, resolvedAvatar string
+	if req.Provider == "yandex" && req.Code != "" {
+		if pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, req.Code); err == nil {
+			if pUID != "" {
+				providerUID = pUID
+			}
+			resolvedEmail = pEmail
+			resolvedName = pName
+			resolvedAvatar = pAvatar
+		}
+	} else if req.Provider == "vk" && req.Code != "" {
+		if pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, req.Code, req.DeviceID, req.CodeVerifier, ""); err == nil {
+			if pUID != "" {
+				providerUID = pUID
+			}
+			resolvedEmail = pEmail
+			resolvedName = pName
+			resolvedAvatar = pAvatar
+		}
+	}
+
 	if providerUID == "" {
 		return errors.New("не удалось определить идентификатор внешнего аккаунта")
 	}
@@ -282,16 +636,58 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		return nil // Already linked to current user
 	}
 
+	// Upgrade user profile if placeholder
+	if user, err := s.userRepo.GetByID(ctx, userID); err == nil && user != nil {
+		modified := false
+		if resolvedName != "" && (user.Name == "" || user.Name == "Яндекс Студент" || user.Name == "VK Пользователь" || user.Name == "VK Студент" || user.Name == "OAuth Student") {
+			user.Name = resolvedName
+			modified = true
+		}
+		if resolvedAvatar != "" && (user.AvatarURL == "" || strings.Contains(user.AvatarURL, "unsplash")) {
+			user.AvatarURL = resolvedAvatar
+			modified = true
+		}
+		if modified {
+			_ = s.userRepo.Update(ctx, user)
+		}
+	}
+
+	linkEmail := req.Email
+	if linkEmail == "" {
+		linkEmail = resolvedEmail
+	}
+
 	sa := &models.SocialAccount{
 		ID:             uuid.New().String(),
 		UserID:         userID,
 		Provider:       req.Provider,
 		ProviderUserID: providerUID,
-		Email:          req.Email,
+		Email:          linkEmail,
 		CreatedAt:      time.Now().UTC(),
 	}
 
 	return s.userRepo.LinkSocialAccount(ctx, sa)
+}
+
+func (s *AuthService) UpdateProfile(ctx context.Context, userID string, req models.UpdateProfileRequest) (*models.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return nil, errors.New("пользователь не найден")
+	}
+
+	if strings.TrimSpace(req.Name) != "" {
+		user.Name = strings.TrimSpace(req.Name)
+	}
+	if strings.TrimSpace(req.AvatarURL) != "" {
+		user.AvatarURL = strings.TrimSpace(req.AvatarURL)
+	}
+	user.UpdatedAt = time.Now().UTC()
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to update user profile: %w", err)
+	}
+
+	return user, nil
 }
 
 func (s *AuthService) UnlinkSocialAccount(ctx context.Context, userID, provider string) error {

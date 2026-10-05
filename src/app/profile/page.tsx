@@ -23,13 +23,17 @@ import {
   ChevronRight,
   Clock,
   Keyboard,
+  Edit2,
+  Save,
+  X,
 } from 'lucide-react';
+import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 
 function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, logout, checkAuth } = useAuthStore();
-  const { completedLessons, bestTypingWpm, testResults, candidateName } = useProgressStore();
+  const { user, isAuthenticated, logout, checkAuth, updateProfile } = useAuthStore();
+  const { completedLessons, bestTypingWpm, testResults, candidateName, setCandidateName } = useProgressStore();
 
   const [providerData, setProviderData] = useState<LinkedProvidersResponse | null>(null);
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
@@ -38,6 +42,32 @@ function ProfileContent() {
   // Status messages
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Name edit state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setIsSavingName(true);
+    setErrorMsg(null);
+    try {
+      const ok = await updateProfile({ name: newName.trim() });
+      if (ok) {
+        setCandidateName(newName.trim());
+        setSuccessMsg('Имя успешно сохранено');
+        setIsEditingName(false);
+      } else {
+        setErrorMsg('Не удалось сохранить имя');
+      }
+    } catch {
+      setErrorMsg('Ошибка при обновлении профиля');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   // Password change state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -165,15 +195,29 @@ function ProfileContent() {
     }
 
     if (provider === 'vk') {
-      const vkClientId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '';
+      const vkClientId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '54805089';
       if (!vkClientId) {
         setErrorMsg('Для привязки VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в файле конфигурации .env на сервере.');
         return;
       }
-      const authUrl = `https://id.vk.com/authorize?client_id=${vkClientId}&app_id=${vkClientId}&response_type=code&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&state=provider%3Dvk%26action%3Dlink`;
-      window.location.href = authUrl;
+      const codeVerifier = generateRandomString(64);
+      generateCodeChallenge(codeVerifier).then((codeChallenge) => {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('vk_code_verifier', codeVerifier);
+          sessionStorage.setItem('vk_state', 'provider=vk&action=link');
+        }
+
+        const vkUrl = new URL('https://id.vk.ru/authorize');
+        vkUrl.searchParams.set('response_type', 'code');
+        vkUrl.searchParams.set('client_id', vkClientId);
+        vkUrl.searchParams.set('redirect_uri', redirectUri);
+        vkUrl.searchParams.set('state', 'provider=vk&action=link');
+        vkUrl.searchParams.set('code_challenge', codeChallenge);
+        vkUrl.searchParams.set('code_challenge_method', 's256');
+        vkUrl.searchParams.set('scope', 'vkid.personal_info email');
+
+        window.location.href = vkUrl.toString();
+      });
       return;
     }
 
@@ -191,15 +235,7 @@ function ProfileContent() {
     }
 
     if (provider === 'apple') {
-      const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || '';
-      if (!appleClientId) {
-        setErrorMsg('Привязка Apple ID находится в процессе верификации или требует NEXT_PUBLIC_APPLE_CLIENT_ID в .env.');
-        return;
-      }
-      const authUrl = `https://appleid.apple.com/auth/authorize?client_id=${appleClientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=provider%3Dapple%26action%3Dlink`;
-      window.location.href = authUrl;
+      setErrorMsg('Авторизация через Apple ID временно отключена.');
       return;
     }
   };
@@ -297,14 +333,61 @@ function ProfileContent() {
 
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 border border-neutral-800 text-[#D2F544] flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shrink-0">
-              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 border border-neutral-800 text-[#D2F544] flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shrink-0 overflow-hidden">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+              ) : user.name ? (
+                user.name.charAt(0).toUpperCase()
+              ) : (
+                'U'
+              )}
             </div>
             <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  {user.name || 'Студент DET'}
-                </h1>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {isEditingName ? (
+                  <form onSubmit={handleSaveName} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Ваше имя"
+                      className="px-3 py-1 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm font-bold focus:outline-none focus:border-[#D2F544]"
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSavingName}
+                      className="p-1.5 bg-[#D2F544] text-[#0C2418] rounded-lg hover:bg-[#c4f22c] cursor-pointer"
+                      title="Сохранить"
+                    >
+                      <Save className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingName(false)}
+                      className="p-1.5 bg-neutral-800 text-neutral-400 rounded-lg hover:text-white cursor-pointer"
+                      title="Отмена"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                      {user.name || 'Студент DET'}
+                    </h1>
+                    <button
+                      onClick={() => {
+                        setNewName(user.name || '');
+                        setIsEditingName(true);
+                      }}
+                      className="p-1 hover:bg-neutral-800 text-neutral-500 hover:text-[#D2F544] rounded-lg transition-colors cursor-pointer"
+                      title="Редактировать имя"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#D2F544]/15 border border-[#D2F544]/40 text-[#D2F544]">
                   {user.role === 'admin' ? 'Администратор' : 'Студент'}
                 </span>

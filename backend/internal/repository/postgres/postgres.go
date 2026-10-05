@@ -111,9 +111,9 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 }
 
 func (r *UserRepo) Update(ctx context.Context, u *models.User) error {
-	query := `UPDATE users SET name = $1, avatar_url = $2, locale = $3, updated_at = $4 WHERE id = $5`
+	query := `UPDATE users SET email = $1, name = $2, avatar_url = $3, locale = $4, updated_at = $5 WHERE id = $6`
 	u.UpdatedAt = time.Now().UTC()
-	_, err := r.db.ExecContext(ctx, query, u.Name, u.AvatarURL, u.Locale, u.UpdatedAt, u.ID)
+	_, err := r.db.ExecContext(ctx, query, u.Email, u.Name, u.AvatarURL, u.Locale, u.UpdatedAt, u.ID)
 	return err
 }
 

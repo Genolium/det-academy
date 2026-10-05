@@ -125,12 +125,19 @@ type LoginRequest struct {
 }
 
 type OAuthLoginRequest struct {
-	Provider    string `json:"provider"`    // "google", "apple", "vk", "yandex"
-	Code        string `json:"code"`        // OAuth authorization code
-	RedirectURI string `json:"redirectUri"` // redirect URI used in auth flow
-	Email       string `json:"email,omitempty"`
-	Name        string `json:"name,omitempty"`
-	AvatarURL   string `json:"avatarUrl,omitempty"`
+	Provider     string `json:"provider"`              // "google", "apple", "vk", "yandex"
+	Code         string `json:"code"`                  // OAuth authorization code or token
+	RedirectURI  string `json:"redirectUri,omitempty"` // redirect URI used in auth flow
+	Email        string `json:"email,omitempty"`
+	Name         string `json:"name,omitempty"`
+	AvatarURL    string `json:"avatarUrl,omitempty"`
+	DeviceID     string `json:"deviceId,omitempty"`     // VK ID device_id
+	CodeVerifier string `json:"codeVerifier,omitempty"` // PKCE code_verifier
+}
+
+type UpdateProfileRequest struct {
+	Name      string `json:"name,omitempty"`
+	AvatarURL string `json:"avatarUrl,omitempty"`
 }
 
 type OAuthURLResponse struct {
@@ -279,4 +286,6 @@ type LinkProviderRequest struct {
 	Token          string `json:"token,omitempty"`
 	Email          string `json:"email,omitempty"`
 	ProviderUserID string `json:"providerUserId,omitempty"`
+	DeviceID       string `json:"deviceId,omitempty"`
+	CodeVerifier   string `json:"codeVerifier,omitempty"`
 }

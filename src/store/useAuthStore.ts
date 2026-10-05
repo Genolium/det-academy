@@ -15,7 +15,10 @@ interface AuthState {
     email?: string;
     name?: string;
     avatarUrl?: string;
+    deviceId?: string;
+    codeVerifier?: string;
   }) => Promise<boolean>;
+  updateProfile: (params: { name?: string; avatarUrl?: string }) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -63,6 +66,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'OAuth authentication failed';
+      set({ error: msg, isLoading: false });
+      return false;
+    }
+  },
+
+  updateProfile: async (params) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedUser = await api.updateProfile(params);
+      set({ user: updatedUser, isLoading: false });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Profile update failed';
       set({ error: msg, isLoading: false });
       return false;
     }

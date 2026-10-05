@@ -28,7 +28,11 @@ function CallbackContent() {
       }
 
       const code = searchParams.get('code');
+      const deviceId = searchParams.get('device_id') || undefined;
       const state = searchParams.get('state') || '';
+      const codeVerifier = typeof window !== 'undefined' ? sessionStorage.getItem('vk_code_verifier') || undefined : undefined;
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
+      const redirectUri = `${origin}/auth/callback`;
 
       // 2. Extract provider (from query param or state)
       let providerParam = searchParams.get('provider') as 'google' | 'apple' | 'vk' | 'yandex' | null;
@@ -65,7 +69,12 @@ function CallbackContent() {
           await api.linkProvider({
             provider: providerParam,
             code: authCodeOrToken,
+            deviceId,
+            codeVerifier,
           });
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('vk_code_verifier');
+          }
           setStatus('success');
           setMessage('Аккаунт успешно привязан! Перенаправление в личный кабинет...');
           setTimeout(() => {
@@ -77,7 +86,13 @@ function CallbackContent() {
           const ok = await oauthLogin({
             provider: providerParam,
             code: authCodeOrToken,
+            deviceId,
+            codeVerifier,
+            redirectUri,
           });
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('vk_code_verifier');
+          }
 
           if (ok) {
             syncWithBackend();

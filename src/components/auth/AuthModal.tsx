@@ -7,6 +7,7 @@ import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { X, Lock, Mail, User, Info } from 'lucide-react';
+import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -166,11 +167,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const callbackUri = `${origin}/auth/callback`;
 
     if (provider === 'vk') {
-      const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID;
+      const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '54805089';
       if (vkAppId) {
-        window.location.href = `https://id.vk.com/authorize?client_id=${vkAppId}&app_id=${vkAppId}&response_type=code&redirect_uri=${encodeURIComponent(
-          callbackUri
-        )}&state=provider%3Dvk%26action%3Dlogin`;
+        const codeVerifier = generateRandomString(64);
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('vk_code_verifier', codeVerifier);
+          sessionStorage.setItem('vk_state', 'provider=vk&action=login');
+        }
+
+        const vkUrl = new URL('https://id.vk.ru/authorize');
+        vkUrl.searchParams.set('response_type', 'code');
+        vkUrl.searchParams.set('client_id', vkAppId);
+        vkUrl.searchParams.set('redirect_uri', callbackUri);
+        vkUrl.searchParams.set('state', 'provider=vk&action=login');
+        vkUrl.searchParams.set('code_challenge', codeChallenge);
+        vkUrl.searchParams.set('code_challenge_method', 's256');
+        vkUrl.searchParams.set('scope', 'vkid.personal_info email');
+
+        window.location.href = vkUrl.toString();
         return;
       }
       setNotice('Для входа через VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в .env на сервере. Войдите через Google или Email.');

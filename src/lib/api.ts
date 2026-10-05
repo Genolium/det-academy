@@ -212,6 +212,8 @@ class ApiClient {
     email?: string;
     name?: string;
     avatarUrl?: string;
+    deviceId?: string;
+    codeVerifier?: string;
   }): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
       method: 'POST',
@@ -228,6 +230,20 @@ class ApiClient {
       localStorage.setItem('det_token', data.token);
     }
     return data;
+  }
+
+  async updateProfile(params: { name?: string; avatarUrl?: string }): Promise<User> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Не удалось обновить профиль');
+    }
+    return res.json();
   }
 
   async getMe(): Promise<User> {
@@ -270,6 +286,8 @@ class ApiClient {
     token?: string;
     email?: string;
     providerUserId?: string;
+    deviceId?: string;
+    codeVerifier?: string;
   }): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
       method: 'POST',
