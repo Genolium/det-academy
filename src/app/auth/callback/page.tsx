@@ -84,7 +84,7 @@ function CallbackContent() {
             setStatus('success');
             setMessage('Вы успешно авторизованы! Перенаправление...');
             setTimeout(() => {
-              router.push('/profile');
+              router.push('/dashboard');
             }, 1000);
           } else {
             setStatus('error');

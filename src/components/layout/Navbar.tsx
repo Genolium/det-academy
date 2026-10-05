@@ -205,12 +205,21 @@ export const Navbar: React.FC = () => {
                     </div>
 
                     <Link
+                      href="/dashboard"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
+                    >
+                      <GraduationCap className="w-3.5 h-3.5 text-[#86ab0d]" />
+                      <span>{locale === 'ru' ? 'Учебный дашборд' : 'Learning Dashboard'}</span>
+                    </Link>
+
+                    <Link
                       href="/profile"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
-                      <span>{locale === 'ru' ? 'Личный кабинет' : 'My Profile'}</span>
+                      <span>{locale === 'ru' ? 'Настройки профиля' : 'Account Settings'}</span>
                     </Link>
 
                     {isAdmin && (
@@ -320,24 +329,35 @@ export const Navbar: React.FC = () => {
             {/* Auth Actions in Mobile Menu */}
             <div className="pt-2 border-t border-neutral-100">
               {isAuthenticated && user ? (
-                <div className="flex items-center justify-between px-1">
+                <div className="space-y-2 px-1">
+                  <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+                    <p className="text-xs font-bold text-neutral-900 truncate">{user.name}</p>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer"
+                    >
+                      {t.logout}
+                    </button>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-xs font-bold text-neutral-800 hover:text-black py-1"
+                  >
+                    <GraduationCap className="w-4 h-4 text-[#86ab0d]" />
+                    <span>{locale === 'ru' ? 'Учебный дашборд' : 'Dashboard'}</span>
+                  </Link>
                   <Link
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 text-xs font-bold text-neutral-800 hover:text-black"
+                    className="flex items-center gap-2 text-xs font-semibold text-neutral-600 hover:text-black py-1"
                   >
                     <UserIcon className="w-4 h-4 text-neutral-500" />
-                    <span>{locale === 'ru' ? 'Личный кабинет' : 'My Profile'}</span>
+                    <span>{locale === 'ru' ? 'Настройки профиля' : 'Account Settings'}</span>
                   </Link>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout();
-                    }}
-                    className="text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer"
-                  >
-                    {t.logout}
-                  </button>
                 </div>
               ) : (
                 <button

@@ -17,22 +17,58 @@ interface ProgressState {
   bestTypingWpm: number;
   testResults: TestResult[];
   candidateName: string;
+  targetScore: number;
   setCandidateName: (name: string) => void;
+  setTargetScore: (score: number) => void;
   toggleLessonCompleted: (slug: string) => Promise<void>;
   syncWithBackend: () => Promise<void>;
   setBestTypingWpm: (wpm: number) => void;
   addTestResult: (result: TestResult) => void;
   isEligibleForCertificate: () => boolean;
   getBestMockScore: () => number;
+  getReadinessPercentage: () => number;
 }
 
-const TOTAL_LESSONS = 16;
+export const TOTAL_LESSONS = 16;
+
+const getInitialState = () => {
+  if (typeof window === 'undefined') {
+    return {
+      completedLessons: [],
+      bestTypingWpm: 0,
+      testResults: [],
+      candidateName: '',
+      targetScore: 125,
+    };
+  }
+
+  let completedLessons: string[] = [];
+  try {
+    const raw = localStorage.getItem('det_completed_lessons');
+    if (raw) completedLessons = JSON.parse(raw);
+  } catch {}
+
+  let testResults: TestResult[] = [];
+  try {
+    const raw = localStorage.getItem('det_test_results');
+    if (raw) testResults = JSON.parse(raw);
+  } catch {}
+
+  const bestTypingWpm = parseInt(localStorage.getItem('det_best_wpm') || '0', 10) || 0;
+  const candidateName = localStorage.getItem('det_candidate_name') || '';
+  const targetScore = parseInt(localStorage.getItem('det_target_score') || '125', 10) || 125;
+
+  return {
+    completedLessons,
+    bestTypingWpm,
+    testResults,
+    candidateName,
+    targetScore,
+  };
+};
 
 export const useProgressStore = create<ProgressState>((set, get) => ({
-  completedLessons: [],
-  bestTypingWpm: 0,
-  testResults: [],
-  candidateName: '',
+  ...getInitialState(),
 
   setCandidateName: (candidateName) => {
     if (typeof window !== 'undefined') {
@@ -41,7 +77,33 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     set({ candidateName });
   },
 
+  setTargetScore: (targetScore) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('det_target_score', targetScore.toString());
+    }
+    set({ targetScore });
+  },
+
   syncWithBackend: async () => {
+    // 1. Sync local storage items
+    if (typeof window !== 'undefined') {
+      try {
+        const storedTests = localStorage.getItem('det_test_results');
+        if (storedTests) set({ testResults: JSON.parse(storedTests) });
+      } catch {}
+
+      const storedWpm = localStorage.getItem('det_best_wpm');
+      if (storedWpm) {
+        set({ bestTypingWpm: parseInt(storedWpm, 10) || 0 });
+      }
+
+      const storedTarget = localStorage.getItem('det_target_score');
+      if (storedTarget) {
+        set({ targetScore: parseInt(storedTarget, 10) || 125 });
+      }
+    }
+
+    // 2. Sync theory progress from backend
     try {
       const resp = await api.getTheoryProgress();
       if (resp && resp.completedLessons) {
@@ -51,7 +113,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         }
       }
     } catch {
-      // Fallback to local storage if offline
+      // Fallback to local storage if offline or not logged in
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('det_completed_lessons');
         if (stored) {
@@ -83,7 +145,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         set({ completedLessons: resp.completedLessons });
       }
     } catch {
-      // If unauthorized or error, keep optimistic local state
+      // If unauthorized or network error, keep optimistic local state
     }
   },
 
@@ -111,6 +173,22 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     const results = get().testResults;
     if (results.length === 0) return 0;
     return Math.max(...results.map((r) => r.overallScore));
+  },
+
+  getReadinessPercentage: () => {
+    const { completedLessons, bestTypingWpm, targetScore } = get();
+    const bestScore = get().getBestMockScore();
+
+    // 45% theory completion
+    const theoryPart = (Math.min(completedLessons.length, TOTAL_LESSONS) / TOTAL_LESSONS) * 45;
+
+    // 45% test score relative to target
+    const testPart = bestScore > 0 ? Math.min(45, (bestScore / Math.max(100, targetScore)) * 45) : 0;
+
+    // 10% typing proficiency (threshold 50 WPM)
+    const typingPart = Math.min(10, (bestTypingWpm / 50) * 10);
+
+    return Math.round(theoryPart + testPart + typingPart);
   },
 
   isEligibleForCertificate: () => {

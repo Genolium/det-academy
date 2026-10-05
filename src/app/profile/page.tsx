@@ -270,8 +270,28 @@ function ProfileContent() {
   const bestScore = testResults.length > 0 ? Math.max(...testResults.map((r) => r.overallScore)) : null;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 animate-in fade-in duration-300">
-      {/* 1. Header Card */}
+    <div className="min-h-screen bg-[#070809] text-white">
+      {/* Sub-header navigation tabs */}
+      <div className="border-b border-neutral-800/80 bg-[#0E1012]/80 backdrop-blur-md sticky top-[61px] z-30 mb-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+          <div className="flex items-center gap-6 text-xs font-bold">
+            <Link
+              href="/dashboard"
+              className="text-neutral-400 hover:text-white flex items-center gap-2 py-4 transition-colors"
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span>Дашборд подготовки</span>
+            </Link>
+            <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-4">
+              <Shield className="w-4 h-4" />
+              <span>Безопасность и профиль</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-8 animate-in fade-in duration-300">
+        {/* 1. Header Card */}
       <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#D2F544]/10 via-emerald-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -614,14 +634,24 @@ function ProfileContent() {
 
       {/* 3. Academic Progress & Quick Launch Section */}
       <div className="space-y-6 pt-4">
-        <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-[#D2F544]" />
-            <span>Учебный прогресс и результаты</span>
-          </h2>
-          <p className="text-xs text-neutral-400 mt-1">
-            Текущие показатели освоения программы Duolingo English Test на платформе.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-[#D2F544]" />
+              <span>Учебный прогресс и результаты</span>
+            </h2>
+            <p className="text-xs text-neutral-400 mt-1">
+              Текущие показатели освоения программы Duolingo English Test на платформе.
+            </p>
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-xs font-black flex items-center gap-2 transition-all shadow-md self-start sm:self-auto"
+          >
+            <span>Открыть полный дашборд</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -679,6 +709,7 @@ function ProfileContent() {
             </p>
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );
