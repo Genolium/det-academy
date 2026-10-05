@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Target, ChevronDown, CheckCircle2, AlertTriangle, Sparkles, Building2 } from 'lucide-react';
 import institutionsData from '@/data/duolingoInstitutions.json';
 
@@ -106,13 +107,15 @@ const POPULAR_UNIVERSITIES: UniversityPreset[] = [
 ];
 
 interface SkillRadarChartProps {
-  currentScores: Subscores;
-  overallScore: number;
+  currentScores?: Subscores | null;
+  overallScore?: number | null;
+  hasTakenTest?: boolean;
 }
 
 export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
   currentScores,
   overallScore,
+  hasTakenTest = true,
 }) => {
   const [selectedUniId, setSelectedUniId] = useState<string>('toronto');
   const [customSearch, setCustomSearch] = useState<string>('');
@@ -161,12 +164,19 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
     };
   };
 
+  const effectiveScores: Subscores = (hasTakenTest && currentScores) ? currentScores : {
+    literacy: 0,
+    comprehension: 0,
+    production: 0,
+    conversation: 0,
+  };
+
   // Student Polygon Points
   const studentPoints = [
-    getCoordinates(currentScores.literacy, 0),
-    getCoordinates(currentScores.comprehension, 90),
-    getCoordinates(currentScores.production, 180),
-    getCoordinates(currentScores.conversation, 270),
+    getCoordinates(effectiveScores.literacy, 0),
+    getCoordinates(effectiveScores.comprehension, 90),
+    getCoordinates(effectiveScores.production, 180),
+    getCoordinates(effectiveScores.conversation, 270),
   ];
   const studentSvgPath = `${studentPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')} Z`;
 
@@ -184,14 +194,14 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
   // Deficit calculations
   const deficits = [
-    { name: 'Literacy', label: 'Чтение + Письмо', current: currentScores.literacy, target: targetUni.minLiteracy },
-    { name: 'Comprehension', label: 'Чтение + Аудирование', current: currentScores.comprehension, target: targetUni.minComprehension },
-    { name: 'Production', label: 'Письмо + Говорение', current: currentScores.production, target: targetUni.minProduction },
-    { name: 'Conversation', label: 'Аудирование + Говорение', current: currentScores.conversation, target: targetUni.minConversation },
+    { name: 'Literacy', label: 'Чтение + Письмо', current: effectiveScores.literacy, target: targetUni.minLiteracy },
+    { name: 'Comprehension', label: 'Чтение + Аудирование', current: effectiveScores.comprehension, target: targetUni.minComprehension },
+    { name: 'Production', label: 'Письмо + Говорение', current: effectiveScores.production, target: targetUni.minProduction },
+    { name: 'Conversation', label: 'Аудирование + Говорение', current: effectiveScores.conversation, target: targetUni.minConversation },
   ].map((item) => ({
     ...item,
     diff: item.target - item.current,
-    passed: item.current >= item.target,
+    passed: hasTakenTest && item.current >= item.target,
   }));
 
   const totalDeficit = deficits.filter((d) => !d.passed).length;
@@ -243,7 +253,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
       {/* Grid: Left Radar SVG, Right Gap Diagnostics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Radar Diagram Graphic */}
-        <div className="lg:col-span-6 flex flex-col items-center justify-center">
+        <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
           <div className="relative w-[320px] h-[320px]">
             <svg width={size} height={size} className="overflow-visible">
               {/* Concentric Grid Circles & Labels */}
@@ -290,53 +300,80 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                 <circle key={`uni-pt-${i}`} cx={p.x} cy={p.y} r={4} fill="#A855F7" />
               ))}
 
-              {/* Student Polygon (Lime Green Glowing) */}
-              <polygon
-                points={studentPoints.map((p) => `${p.x},${p.y}`).join(' ')}
-                fill="rgba(210, 245, 68, 0.22)"
-                stroke="#D2F544"
-                strokeWidth={2.5}
-              />
-              {studentPoints.map((p, i) => (
-                <circle
-                  key={`stu-pt-${i}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r={5}
-                  fill="#D2F544"
-                  stroke="#0C2418"
-                  strokeWidth={2}
-                />
-              ))}
+              {/* Student Polygon (Lime Green Glowing) - only rendered if test taken */}
+              {hasTakenTest && (
+                <>
+                  <polygon
+                    points={studentPoints.map((p) => `${p.x},${p.y}`).join(' ')}
+                    fill="rgba(210, 245, 68, 0.22)"
+                    stroke="#D2F544"
+                    strokeWidth={2.5}
+                  />
+                  {studentPoints.map((p, i) => (
+                    <circle
+                      key={`stu-pt-${i}`}
+                      cx={p.x}
+                      cy={p.y}
+                      r={5}
+                      fill="#D2F544"
+                      stroke="#0C2418"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </>
+              )}
 
               {/* Axis Labels */}
               {/* North: Literacy */}
               <text x={center} y={center - maxRadius - 14} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="800">
-                Literacy ({currentScores.literacy})
+                Literacy ({hasTakenTest ? effectiveScores.literacy : '—'})
               </text>
 
               {/* East: Comprehension */}
               <text x={center + maxRadius + 14} y={center + 4} textAnchor="start" fill="#FFFFFF" fontSize="11" fontWeight="800">
-                Comprehension ({currentScores.comprehension})
+                Comprehension ({hasTakenTest ? effectiveScores.comprehension : '—'})
               </text>
 
               {/* South: Production */}
               <text x={center} y={center + maxRadius + 20} textAnchor="middle" fill="#FFFFFF" fontSize="11" fontWeight="800">
-                Production ({currentScores.production})
+                Production ({hasTakenTest ? effectiveScores.production : '—'})
               </text>
 
               {/* West: Conversation */}
               <text x={center - maxRadius - 14} y={center + 4} textAnchor="end" fill="#FFFFFF" fontSize="11" fontWeight="800">
-                Conversation ({currentScores.conversation})
+                Conversation ({hasTakenTest ? effectiveScores.conversation : '—'})
               </text>
             </svg>
+
+            {/* Overlay if student has never taken a test */}
+            {!hasTakenTest && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                <div className="bg-[#0E1012]/95 border border-neutral-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur-md max-w-[210px] text-center">
+                  <div className="w-8 h-8 rounded-xl bg-[#D2F544]/20 border border-[#D2F544]/40 flex items-center justify-center mx-auto mb-2 text-[#D2F544]">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <p className="text-xs font-black text-white leading-tight">Тест еще не пройден</p>
+                  <p className="text-[10px] text-neutral-400 mt-1 leading-normal">
+                    Сдайте тест, чтобы составить ваш персональный радар
+                  </p>
+                  <Link
+                    href="/test"
+                    className="mt-3 inline-flex items-center justify-center gap-1 w-full py-1.5 px-3 bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-[11px] font-black rounded-xl transition-transform active:scale-95 shadow-sm"
+                  >
+                    Пройти тест
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Legend */}
           <div className="flex items-center gap-6 mt-6 text-xs font-bold">
             <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded-md bg-[#D2F544] shadow-[0_0_8px_rgba(210,245,68,0.5)]" />
-              <span className="text-white">Ваш уровень ({overallScore})</span>
+              <span className={`w-3.5 h-3.5 rounded-md ${hasTakenTest ? 'bg-[#D2F544] shadow-[0_0_8px_rgba(210,245,68,0.5)]' : 'bg-neutral-700'}`} />
+              <span className={hasTakenTest ? 'text-white' : 'text-neutral-400'}>
+                {hasTakenTest ? `Ваш уровень (${overallScore})` : 'Ваш уровень: — (тест не сдан)'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-md bg-purple-500 border border-purple-400 border-dashed" />
@@ -352,7 +389,11 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
               <div>
                 <span className="text-xs font-bold text-neutral-400">Статус соответствия вузу:</span>
                 <h4 className="text-base font-black text-white mt-0.5">
-                  {totalDeficit === 0 ? (
+                  {!hasTakenTest ? (
+                    <span className="text-amber-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4" /> Требуется прохождение теста
+                    </span>
+                  ) : totalDeficit === 0 ? (
                     <span className="text-emerald-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" /> Готов к поступлению в {targetUni.name}!
                     </span>
@@ -362,13 +403,30 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                     </span>
                   )}
                 </h4>
+                {!hasTakenTest && (
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    Сдайте симулятор DET (45 мин), чтобы сопоставить ваши баллы с порогом {targetUni.name}.
+                  </p>
+                )}
               </div>
 
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <span className="text-[10px] uppercase font-bold text-neutral-500">Целевой общий балл</span>
                 <div className="text-xl font-black text-purple-400">{targetUni.minScore}+</div>
               </div>
             </div>
+
+            {!hasTakenTest && (
+              <div className="mt-3 pt-3 border-t border-neutral-800/80">
+                <Link
+                  href="/test"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] font-black text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-md"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Запустить симулятор теста DET</span>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* 4 Subscore Cards */}
@@ -377,7 +435,9 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
               <div
                 key={d.name}
                 className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
-                  d.passed
+                  !hasTakenTest
+                    ? 'bg-neutral-900/30 border-neutral-800/60 text-neutral-400'
+                    : d.passed
                     ? 'bg-neutral-900/40 border-neutral-800/80 text-neutral-300'
                     : 'bg-amber-950/20 border-amber-800/40 text-amber-200'
                 }`}
@@ -388,13 +448,17 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                     <span className="text-[10px] text-neutral-400">({d.label})</span>
                   </div>
                   <div className="text-[11px] text-neutral-400 mt-0.5">
-                    Текущий: <strong className="text-white">{d.current}</strong> • Требуется:{' '}
+                    Текущий: <strong className="text-white">{hasTakenTest ? d.current : '—'}</strong> • Требуется:{' '}
                     <strong className="text-purple-300">{d.target}</strong>
                   </div>
                 </div>
 
                 <div>
-                  {d.passed ? (
+                  {!hasTakenTest ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-xl">
+                      Ожидает сдачи
+                    </span>
+                  ) : d.passed ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-xl">
                       <CheckCircle2 className="w-3.5 h-3.5" /> В норме (+{d.current - d.target})
                     </span>

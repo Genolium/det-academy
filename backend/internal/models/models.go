@@ -288,4 +288,5 @@ type LinkProviderRequest struct {
 	ProviderUserID string `json:"providerUserId,omitempty"`
 	DeviceID       string `json:"deviceId,omitempty"`
 	CodeVerifier   string `json:"codeVerifier,omitempty"`
+	RedirectURI    string `json:"redirectUri,omitempty"`
 }

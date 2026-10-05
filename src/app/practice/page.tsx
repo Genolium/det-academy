@@ -34,6 +34,15 @@ export default function PracticeHubPage() {
       actionText: 'Открыть тренажер печати',
     },
     {
+      id: 'flashcards',
+      title: 'Академический словарь (SRS Flashcards)',
+      description: 'Карточки 1,500 слов Academic Word List с алгоритмом интервального повторения SuperMemo SM-2, озвучкой и коллокациями.',
+      icon: <Sparkles className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'SuperMemo SM-2',
+      href: '/practice/flashcards',
+      actionText: 'Учить слова C1/C2',
+    },
+    {
       id: 'c-test',
       slug: 'read-and-complete',
       title: 'Read and Complete (Академическое чтение)',

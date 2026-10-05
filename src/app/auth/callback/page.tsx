@@ -71,6 +71,7 @@ function CallbackContent() {
             code: authCodeOrToken,
             deviceId,
             codeVerifier,
+            redirectUri,
           });
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('vk_code_verifier');

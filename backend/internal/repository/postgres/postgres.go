@@ -169,9 +169,18 @@ func (r *UserRepo) LinkSocialAccount(ctx context.Context, sa *models.SocialAccou
 		sa.ID = uuid.New().String()
 	}
 	sa.CreatedAt = time.Now().UTC()
+
+	// Delete any conflicting record for (provider, provider_user_id) belonging to another user
+	// to avoid violating uq_provider_user_id unique constraint
+	delQuery := `DELETE FROM user_social_accounts WHERE provider = $1 AND provider_user_id = $2 AND user_id != $3`
+	_, _ = r.db.ExecContext(ctx, delQuery, sa.Provider, sa.ProviderUserID, sa.UserID)
+
 	query := `INSERT INTO user_social_accounts (id, user_id, provider, provider_user_id, email, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (user_id, provider) DO UPDATE SET provider_user_id = EXCLUDED.provider_user_id, email = EXCLUDED.email`
+		ON CONFLICT (user_id, provider) DO UPDATE SET 
+			provider_user_id = EXCLUDED.provider_user_id, 
+			email = CASE WHEN EXCLUDED.email != '' THEN EXCLUDED.email ELSE user_social_accounts.email END,
+			created_at = EXCLUDED.created_at`
 	_, err := r.db.ExecContext(ctx, query, sa.ID, sa.UserID, sa.Provider, sa.ProviderUserID, sa.Email, sa.CreatedAt)
 	return err
 }

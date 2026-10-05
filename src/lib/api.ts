@@ -288,6 +288,7 @@ class ApiClient {
     providerUserId?: string;
     deviceId?: string;
     codeVerifier?: string;
+    redirectUri?: string;
   }): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
       method: 'POST',

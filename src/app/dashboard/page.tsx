@@ -91,6 +91,7 @@ function DashboardContent() {
     return lessonsData.filter((l) => l.category === selectedCategory);
   }, [selectedCategory]);
 
+  const hasTakenTest = testResults.length > 0;
   const currentSubscores = useMemo(() => {
     if (latestTest) {
       return {
@@ -100,13 +101,8 @@ function DashboardContent() {
         production: latestTest.production,
       };
     }
-    return {
-      literacy: Math.max(10, targetScore - 5),
-      comprehension: Math.max(10, targetScore),
-      conversation: Math.max(10, targetScore - 10),
-      production: Math.max(10, targetScore - 5),
-    };
-  }, [latestTest, targetScore]);
+    return null;
+  }, [latestTest]);
 
   const handleToggle = async (e: React.MouseEvent, slug: string) => {
     e.preventDefault();
@@ -414,7 +410,8 @@ function DashboardContent() {
         {/* Interactive Skill Radar (Subscores vs Target University) */}
         <SkillRadarChart
           currentScores={currentSubscores}
-          overallScore={latestTest ? latestTest.overallScore : targetScore}
+          overallScore={latestTest ? latestTest.overallScore : null}
+          hasTakenTest={hasTakenTest}
         />
 
         {/* 3. Subscores Diagnostics (DET 4 Pillars) */}
@@ -428,7 +425,7 @@ function DashboardContent() {
               <p className="text-xs text-neutral-400 mt-0.5">
                 {latestTest
                   ? `Показатели по результатам последней сессии (${latestTest.date})`
-                  : 'Ориентиры и целевые баллы по 4 ключевым навыкам тестирования'}
+                  : 'Пройдите симулятор тестирования для расчета точных сабскоров'}
               </p>
             </div>
             {latestTest && (
@@ -447,15 +444,21 @@ function DashboardContent() {
                   <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Письмо</span>
                 </div>
                 <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.literacy : Math.min(160, targetScore - 5)}
+                  {latestTest ? latestTest.literacy : '—'}
                   <span className="text-xs font-normal text-neutral-500"> / 160</span>
                 </div>
                 <div className="mt-2">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    getSubscoreLevel(latestTest ? latestTest.literacy : targetScore - 5).color
-                  }`}>
-                    {getSubscoreLevel(latestTest ? latestTest.literacy : targetScore - 5).label}
-                  </span>
+                  {latestTest ? (
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      getSubscoreLevel(latestTest.literacy).color
+                    }`}>
+                      {getSubscoreLevel(latestTest.literacy).label}
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                      Ожидает теста
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-neutral-500">
@@ -471,15 +474,21 @@ function DashboardContent() {
                   <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Аудио</span>
                 </div>
                 <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.comprehension : targetScore}
+                  {latestTest ? latestTest.comprehension : '—'}
                   <span className="text-xs font-normal text-neutral-500"> / 160</span>
                 </div>
                 <div className="mt-2">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    getSubscoreLevel(latestTest ? latestTest.comprehension : targetScore).color
-                  }`}>
-                    {getSubscoreLevel(latestTest ? latestTest.comprehension : targetScore).label}
-                  </span>
+                  {latestTest ? (
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      getSubscoreLevel(latestTest.comprehension).color
+                    }`}>
+                      {getSubscoreLevel(latestTest.comprehension).label}
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                      Ожидает теста
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-neutral-500">
@@ -495,15 +504,21 @@ function DashboardContent() {
                   <span className="text-[10px] text-neutral-400 font-semibold">Аудио + Речь</span>
                 </div>
                 <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.conversation : Math.min(160, targetScore + 5)}
+                  {latestTest ? latestTest.conversation : '—'}
                   <span className="text-xs font-normal text-neutral-500"> / 160</span>
                 </div>
                 <div className="mt-2">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    getSubscoreLevel(latestTest ? latestTest.conversation : targetScore + 5).color
-                  }`}>
-                    {getSubscoreLevel(latestTest ? latestTest.conversation : targetScore + 5).label}
-                  </span>
+                  {latestTest ? (
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      getSubscoreLevel(latestTest.conversation).color
+                    }`}>
+                      {getSubscoreLevel(latestTest.conversation).label}
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                      Ожидает теста
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-neutral-500">
@@ -519,15 +534,21 @@ function DashboardContent() {
                   <span className="text-[10px] text-neutral-400 font-semibold">Письмо + Речь</span>
                 </div>
                 <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.production : Math.max(70, targetScore - 10)}
+                  {latestTest ? latestTest.production : '—'}
                   <span className="text-xs font-normal text-neutral-500"> / 160</span>
                 </div>
                 <div className="mt-2">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    getSubscoreLevel(latestTest ? latestTest.production : targetScore - 10).color
-                  }`}>
-                    {getSubscoreLevel(latestTest ? latestTest.production : targetScore - 10).label}
-                  </span>
+                  {latestTest ? (
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      getSubscoreLevel(latestTest.production).color
+                    }`}>
+                      {getSubscoreLevel(latestTest.production).label}
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                      Ожидает теста
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-neutral-500">
@@ -537,8 +558,37 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Spaced Repetition (SuperMemo SM-2 Academic Vocabulary) */}
-        <SrsFlashcards />
+        {/* Academic Vocabulary Flashcards (Dedicated Tool Callout) */}
+        <div className="bg-gradient-to-r from-[#111913] via-[#0E1012] to-[#0E1012] border border-[#D2F544]/20 rounded-3xl p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl relative overflow-hidden">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#D2F544]/15 border border-[#D2F544]/30 text-[#D2F544] flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D2F544] bg-[#D2F544]/10 border border-[#D2F544]/20 px-2 py-0.5 rounded-full">
+                  Тренажер лексики
+                </span>
+                <span className="text-neutral-500 text-xs">•</span>
+                <span className="text-xs text-neutral-400">Алгоритм SuperMemo SM-2</span>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white">
+                Академический словарь C1/C2 (SRS Flashcards)
+              </h3>
+              <p className="text-xs text-neutral-400 mt-1 max-w-2xl">
+                Карточки 1,500 высокочастотных лексем Academic Word List (AWL) с озвучкой, дефинициями и академическими коллокациями для секций Writing и Speaking.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/practice/flashcards"
+            className="w-full md:w-auto px-6 py-3 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 active:scale-95"
+          >
+            <span>Открыть тренажер слов</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
 
         {/* 4. Complete 16-Lesson Roadmap & Checklist */}
         <div className="space-y-4">

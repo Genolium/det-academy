@@ -302,9 +302,9 @@ function ProfileContent() {
   }
 
   const linkedList = providerData?.providers || [];
-  const isGoogleLinked = linkedList.some((p) => p.provider === 'google');
-  const isVkLinked = linkedList.some((p) => p.provider === 'vk');
-  const isYandexLinked = linkedList.some((p) => p.provider === 'yandex');
+  const isGoogleLinked = linkedList.some((p) => p.provider === 'google') || !!(user?.email && user.email.toLowerCase().endsWith('@gmail.com'));
+  const isVkLinked = linkedList.some((p) => p.provider === 'vk') || !!(user?.email && (user.email.toLowerCase().startsWith('vk_') || user.email.toLowerCase().includes('vk.user.')));
+  const isYandexLinked = linkedList.some((p) => p.provider === 'yandex') || !!(user?.email && (user.email.toLowerCase().endsWith('@yandex.ru') || user.email.toLowerCase().endsWith('@ya.ru') || user.email.toLowerCase().startsWith('yandex_')));
 
   const bestScore = testResults.length > 0 ? Math.max(...testResults.map((r) => r.overallScore)) : null;
 

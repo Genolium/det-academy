@@ -354,25 +354,7 @@ export const AdminDashboard: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Admin Login Button */}
-          <div className="pt-2 border-t border-neutral-800/80 space-y-2">
-            <button
-              type="button"
-              disabled={loginLoading}
-              onClick={() => {
-                setAdminEmail('admin@det-academy.com');
-                setAdminPassword('admin123');
-                handleAdminLogin(undefined, 'admin@det-academy.com', 'admin123');
-              }}
-              className="w-full py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 hover:border-[#D2F544]/50 text-neutral-200 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer group shadow-sm"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#D2F544] group-hover:scale-110 transition-transform" />
-              <span>⚡ Войти как Super Administrator (Демо)</span>
-            </button>
-            <p className="text-[10px] text-center text-neutral-500 font-mono">
-              Логин: admin@det-academy.com · Пароль: admin123
-            </p>
-          </div>
+
 
           <div className="pt-1 text-center">
             <Link

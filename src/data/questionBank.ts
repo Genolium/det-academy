@@ -534,6 +534,182 @@ export const readSelectBank: ReadSelectWord[] = [
     "isReal": false,
     "difficulty": "B2"
   }
+,
+  {
+    "word": "ubiquitous",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "scrutinize",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "preliminary",
+    "isReal": true,
+    "difficulty": "B1"
+  },
+  {
+    "word": "resilient",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "mitigate",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "plausible",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "discrepancy",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "comprehensive",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "arbitrary",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "ambivalent",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "pragmatic",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "deteriorate",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "equilibrium",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "lucid",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "vulnerable",
+    "isReal": true,
+    "difficulty": "B1"
+  },
+  {
+    "word": "spontaneous",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "paramount",
+    "isReal": true,
+    "difficulty": "C1"
+  },
+  {
+    "word": "concur",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "diminish",
+    "isReal": true,
+    "difficulty": "B1"
+  },
+  {
+    "word": "rigorous",
+    "isReal": true,
+    "difficulty": "B2"
+  },
+  {
+    "word": "comprehendive",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "unclariable",
+    "isReal": false,
+    "difficulty": "B1"
+  },
+  {
+    "word": "prospectate",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "subvertionary",
+    "isReal": false,
+    "difficulty": "C1"
+  },
+  {
+    "word": "impenetrabilityness",
+    "isReal": false,
+    "difficulty": "C1"
+  },
+  {
+    "word": "disruptivement",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "transcendably",
+    "isReal": false,
+    "difficulty": "C1"
+  },
+  {
+    "word": "equilibrateous",
+    "isReal": false,
+    "difficulty": "C1"
+  },
+  {
+    "word": "reversitivity",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "hypothetize",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "intercedement",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "conclusible",
+    "isReal": false,
+    "difficulty": "B1"
+  },
+  {
+    "word": "unplausible",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "magnitudic",
+    "isReal": false,
+    "difficulty": "B2"
+  },
+  {
+    "word": "cogniscently",
+    "isReal": false,
+    "difficulty": "C1"
+  }
 ];
 
 // 2. BANK OF FILL IN THE BLANKS (16 items)
@@ -680,6 +856,133 @@ export const fillBlanksBank: FillBlanksQuestion[] = [
     "missingLetters": "gration",
     "sentenceAfter": " across glacial land bridges.",
     "fullWord": "migration",
+    "difficulty": "B2"
+  }
+,
+  {
+    "id": "fb-17",
+    "sentenceBefore": "The government launched an initiative to ",
+    "givenPrefix": "pro",
+    "missingLetters": "mote",
+    "sentenceAfter": " sustainable agricultural practices among local farmers.",
+    "fullWord": "promote",
+    "difficulty": "B1"
+  },
+  {
+    "id": "fb-18",
+    "sentenceBefore": "Recent clinical trials have ",
+    "givenPrefix": "dem",
+    "missingLetters": "onstrated",
+    "sentenceAfter": " the efficacy of the novel therapeutic compound.",
+    "fullWord": "demonstrated",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-19",
+    "sentenceBefore": "Environmental economists argue that carbon taxation can effectively ",
+    "givenPrefix": "cur",
+    "missingLetters": "tail",
+    "sentenceAfter": " industrial emissions.",
+    "fullWord": "curtail",
+    "difficulty": "C1"
+  },
+  {
+    "id": "fb-20",
+    "sentenceBefore": "The department dean was asked to ",
+    "givenPrefix": "cla",
+    "missingLetters": "rify",
+    "sentenceAfter": " the new examination guidelines for graduating seniors.",
+    "fullWord": "clarify",
+    "difficulty": "B1"
+  },
+  {
+    "id": "fb-21",
+    "sentenceBefore": "Scholars have long debated the ",
+    "givenPrefix": "or",
+    "missingLetters": "igin",
+    "sentenceAfter": " of dramatic theater in ancient Mediterranean societies.",
+    "fullWord": "origin",
+    "difficulty": "B1"
+  },
+  {
+    "id": "fb-22",
+    "sentenceBefore": "Heavy volcanic ash clouds can completely ",
+    "givenPrefix": "obs",
+    "missingLetters": "cure",
+    "sentenceAfter": " solar illumination for several consecutive days.",
+    "fullWord": "obscure",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-23",
+    "sentenceBefore": "The committee reached a unanimous ",
+    "givenPrefix": "de",
+    "missingLetters": "cision",
+    "sentenceAfter": " regarding the distribution of university research grants.",
+    "fullWord": "decision",
+    "difficulty": "B1"
+  },
+  {
+    "id": "fb-24",
+    "sentenceBefore": "To maintain structural integrity, modern skyscrapers are designed to ",
+    "givenPrefix": "abs",
+    "missingLetters": "orb",
+    "sentenceAfter": " seismic vibrations efficiently.",
+    "fullWord": "absorb",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-25",
+    "sentenceBefore": "The international summit aimed to ",
+    "givenPrefix": "str",
+    "missingLetters": "engthen",
+    "sentenceAfter": " diplomatic partnerships across participating continents.",
+    "fullWord": "strengthen",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-26",
+    "sentenceBefore": "Philosophers frequently ",
+    "givenPrefix": "que",
+    "missingLetters": "stion",
+    "sentenceAfter": " the fundamental assumptions underpinning ethical theories.",
+    "fullWord": "question",
+    "difficulty": "B1"
+  },
+  {
+    "id": "fb-27",
+    "sentenceBefore": "The company decided to ",
+    "givenPrefix": "ter",
+    "missingLetters": "minate",
+    "sentenceAfter": " non-essential operations to reduce overhead expenditures.",
+    "fullWord": "terminate",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-28",
+    "sentenceBefore": "Genetic mutations can either benefit an organism or prove distinctly ",
+    "givenPrefix": "det",
+    "missingLetters": "rimental",
+    "sentenceAfter": " to its survival.",
+    "fullWord": "detrimental",
+    "difficulty": "C1"
+  },
+  {
+    "id": "fb-29",
+    "sentenceBefore": "The primary objective of the survey is to ",
+    "givenPrefix": "eva",
+    "missingLetters": "luate",
+    "sentenceAfter": " consumer attitudes toward autonomous electric vehicles.",
+    "fullWord": "evaluate",
+    "difficulty": "B2"
+  },
+  {
+    "id": "fb-30",
+    "sentenceBefore": "Scientists gathered at the symposium to discuss the ",
+    "givenPrefix": "imp",
+    "missingLetters": "lications",
+    "sentenceAfter": " of generative models on intellectual copyright.",
+    "fullWord": "implications",
     "difficulty": "B2"
   }
 ];
@@ -909,6 +1212,171 @@ export const cTestBank: CTestQuestion[] = [
     ],
     "lastSentence": "Anthropologists assert that written symbols allowed human communities to transmit empirical knowledge across generations."
   }
+,
+  {
+    "id": "ct-7",
+    "title": "Quantum Computing & Information Security",
+    "difficulty": "C1",
+    "firstSentence": "Quantum computing has the potential to revolutionize how complex mathematical calculations are solved.",
+    "damagedTokens": [
+      {
+        "prefix": "Unli",
+        "missing": "ke"
+      },
+      {
+        "prefix": "clas",
+        "missing": "sical"
+      },
+      {
+        "prefix": "com",
+        "missing": "puters"
+      },
+      {
+        "prefix": "whi",
+        "missing": "ch"
+      },
+      {
+        "prefix": "pr",
+        "missing": "ocess"
+      },
+      {
+        "prefix": "bi",
+        "missing": "nary"
+      },
+      {
+        "prefix": "bi",
+        "missing": "ts"
+      },
+      {
+        "prefix": "qua",
+        "missing": "ntum"
+      }
+    ],
+    "lastSentence": "Consequently, cybersecurity experts are developing cryptographic systems capable of resisting quantum attacks."
+  },
+  {
+    "id": "ct-8",
+    "title": "Vertical Farming in Urban Landscapes",
+    "difficulty": "B2",
+    "firstSentence": "Indoor vertical farming represents an innovative method of cultivating fresh produce inside dense cities.",
+    "damagedTokens": [
+      {
+        "prefix": "The",
+        "missing": "se"
+      },
+      {
+        "prefix": "fac",
+        "missing": "ilities"
+      },
+      {
+        "prefix": "ut",
+        "missing": "ilize"
+      },
+      {
+        "prefix": "artif",
+        "missing": "icial"
+      },
+      {
+        "prefix": "lig",
+        "missing": "hting"
+      },
+      {
+        "prefix": "a",
+        "missing": "nd"
+      },
+      {
+        "prefix": "hydr",
+        "missing": "oponic"
+      },
+      {
+        "prefix": "sys",
+        "missing": "tems"
+      }
+    ],
+    "lastSentence": "By growing crops close to urban consumers, vertical farms substantially reduce transportation emissions."
+  },
+  {
+    "id": "ct-9",
+    "title": "Sleep Cycles & Memory Consolidation",
+    "difficulty": "B2",
+    "firstSentence": "Quality sleep is vital for maintaining physical well-being and peak cognitive performance.",
+    "damagedTokens": [
+      {
+        "prefix": "Dur",
+        "missing": "ing"
+      },
+      {
+        "prefix": "de",
+        "missing": "ep"
+      },
+      {
+        "prefix": "sle",
+        "missing": "ep"
+      },
+      {
+        "prefix": "th",
+        "missing": "e"
+      },
+      {
+        "prefix": "br",
+        "missing": "ain"
+      },
+      {
+        "prefix": "conso",
+        "missing": "lidates"
+      },
+      {
+        "prefix": "rec",
+        "missing": "ent"
+      },
+      {
+        "prefix": "memo",
+        "missing": "ries"
+      }
+    ],
+    "lastSentence": "Neuroscientists recommend eight hours of rest to optimize long-term learning retention."
+  },
+  {
+    "id": "ct-10",
+    "title": "Glacial Retreat & Global Sea Levels",
+    "difficulty": "B2",
+    "firstSentence": "Polar ice sheets and alpine glaciers are shrinking at rates faster than historical averages.",
+    "damagedTokens": [
+      {
+        "prefix": "Sate",
+        "missing": "llite"
+      },
+      {
+        "prefix": "obse",
+        "missing": "rvations"
+      },
+      {
+        "prefix": "sh",
+        "missing": "ow"
+      },
+      {
+        "prefix": "th",
+        "missing": "at"
+      },
+      {
+        "prefix": "mil",
+        "missing": "lions"
+      },
+      {
+        "prefix": "o",
+        "missing": "f"
+      },
+      {
+        "prefix": "to",
+        "missing": "ns"
+      },
+      {
+        "prefix": "me",
+        "missing": "lt"
+      }
+    ],
+    "lastSentence": "Rising coastal waters pose immediate environmental hazards to island communities and delta regions."
+  }
 ];
 
 // 4. BANK OF LISTEN AND TYPE (20 sentences)
@@ -1012,6 +1480,57 @@ export const listenTypeBank: ListenTypeQuestion[] = [
     "id": "lt-20",
     "audioSentence": "I do not think it is worth spending all that money on exploring the universe.",
     "difficulty": "B2"
+  }
+,
+  {
+    "id": "lt-21",
+    "audioSentence": "The university library provides extensive digital archives for graduate researchers.",
+    "difficulty": "B1"
+  },
+  {
+    "id": "lt-22",
+    "audioSentence": "Modern renewable technologies have significantly decreased the cost of solar energy.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-23",
+    "audioSentence": "Students who organize their revision schedules generally experience less stress before exams.",
+    "difficulty": "B1"
+  },
+  {
+    "id": "lt-24",
+    "audioSentence": "The laboratory technician calibrated the electronic balance before weighing the chemical samples.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-25",
+    "audioSentence": "Urban planning initiatives must prioritize pedestrian accessibility and efficient public transit.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-26",
+    "audioSentence": "Artificial intelligence algorithms require rigorous ethical oversight when deployed in healthcare.",
+    "difficulty": "C1"
+  },
+  {
+    "id": "lt-27",
+    "audioSentence": "She decided to enroll in an intensive language course before studying abroad in France.",
+    "difficulty": "B1"
+  },
+  {
+    "id": "lt-28",
+    "audioSentence": "Financial analysts predicted a modest economic recovery following the quarterly market report.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-29",
+    "audioSentence": "Marine reserves provide critical sanctuaries where endangered species can replenish their numbers.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-30",
+    "audioSentence": "Cognitive psychologists investigated how bilingualism influences working memory in young adults.",
+    "difficulty": "C1"
   }
 ];
 
@@ -1161,6 +1680,103 @@ export const interactiveReadingBank: InteractiveReadingBlock[] = [
       "correctIndex": 0
     }
   }
+,
+  {
+    "id": "ir-4",
+    "passageTitle": "Microbiome Ecology and Human Immunology",
+    "difficulty": "B2",
+    "passageText": "The human gastrointestinal tract harbors trillions of microorganisms that constitute the gut microbiome. Rather than functioning merely as passive organisms, these bacterial colonies play an active role in training the human immune system. Disruption of this microbial balance, termed dysbiosis, has been linked to numerous chronic conditions ranging from autoimmune disorders to metabolic syndromes.",
+    "gapSentence": {
+      "before": "Dietary fibers act as prebiotics that selectively promote the ",
+      "options": [
+        "proliferation",
+        "suppression",
+        "termination",
+        "contamination"
+      ],
+      "correct": "proliferation",
+      "after": " of beneficial probiotic bacterial species."
+    },
+    "sentenceOptions": {
+      "options": [
+        "Moreover, broad-spectrum antibiotics can inadvertently eradicate beneficial gut bacteria alongside pathogens.",
+        "Consequently, medieval trade routes were heavily guarded by royal cavalry.",
+        "Therefore, geothermal vents provide extreme pressure at the bottom of the Mariana Trench.",
+        "Nevertheless, steam locomotives revolutionized nineteenth-century continental logistics."
+      ],
+      "correctIndex": 0
+    },
+    "highlightPrompt": "Click and highlight the exact sentence that defines the term applied when the bacterial balance is disrupted.",
+    "highlightCorrectSubstring": "Disruption of this microbial balance, termed dysbiosis, has been linked to numerous chronic conditions ranging from autoimmune disorders to metabolic syndromes.",
+    "mainIdeaQuestion": {
+      "question": "What is the primary thesis advanced by the author regarding the gut microbiome?",
+      "options": [
+        "The gut microbiome plays an indispensable role in maintaining systemic immune and metabolic health.",
+        "All microorganisms living inside humans cause infectious diseases unless eradicated.",
+        "Dietary fiber has no measurable correlation with digestive well-being.",
+        "Antibiotics should replace dietary regulation in modern clinical protocols."
+      ],
+      "correctIndex": 0
+    },
+    "titleQuestion": {
+      "question": "Choose the most appropriate academic title for this passage:",
+      "options": [
+        "Symbiotic Microorganisms: The Immunological Significance of the Gut Microbiome",
+        "A History of Surgical Equipment in the Nineteenth Century",
+        "Industrial Food Processing and Packaging Techniques",
+        "How to Cultivate Tropical Plants in Greenhouses"
+      ],
+      "correctIndex": 0
+    }
+  },
+  {
+    "id": "ir-5",
+    "passageTitle": "The Geopolitics of Rare Earth Elements",
+    "difficulty": "C1",
+    "passageText": "The global transition toward renewable energy technologies relies heavily on critical minerals known as rare earth elements. Essential for the fabrication of permanent magnets used in wind turbines and electric vehicle motors, these elements are geologically dispersed yet geographically concentrated in their refining capacity. Securing stable supply chains has become a prominent geopolitical priority for industrialized nations striving to achieve net-zero targets.",
+    "gapSentence": {
+      "before": "Establishing domestic mineral processing facilities requires substantial capital investment and stringent ",
+      "options": [
+        "environmental",
+        "fictional",
+        "negligent",
+        "recreational"
+      ],
+      "correct": "environmental",
+      "after": " impact assessments to avoid toxic chemical runoff."
+    },
+    "sentenceOptions": {
+      "options": [
+        "Furthermore, international trade partnerships are forming to diversify supply sources and bolster geopolitical resilience.",
+        "However, classical Greek philosophers did not anticipate the emergence of commercial aviation.",
+        "Therefore, wooden ships were traditionally constructed using seasoned oak timber.",
+        "Consequently, Antarctic penguins migrate southward during the harsh austral winter."
+      ],
+      "correctIndex": 0
+    },
+    "highlightPrompt": "Click and highlight the sentence explaining why securing critical mineral supply chains has become a geopolitical priority.",
+    "highlightCorrectSubstring": "Securing stable supply chains has become a prominent geopolitical priority for industrialized nations striving to achieve net-zero targets.",
+    "mainIdeaQuestion": {
+      "question": "What is the central focus of the discussion regarding rare earth minerals?",
+      "options": [
+        "The critical strategic and environmental challenges surrounding mineral supply chains for clean energy",
+        "The mechanical engineering differences between diesel and electric motor transmissions",
+        "A detailed analysis of agricultural soil fertility in equatorial developing countries",
+        "The commercial collapse of international shipping container networks"
+      ],
+      "correctIndex": 0
+    },
+    "titleQuestion": {
+      "question": "Select the most accurate academic title for the passage:",
+      "options": [
+        "Critical Minerals in the Clean Energy Transition: Strategic Realities",
+        "The Exploration of Deep Ocean Abyssal Plains",
+        "Urbanization Trends in Twentieth-Century Europe",
+        "Principles of Aerodynamic Flight Control"
+      ],
+      "correctIndex": 0
+    }
+  }
 ];
 
 // 6. BANK OF INTERACTIVE LISTENING (2 blocks)
@@ -1247,6 +1863,48 @@ export const interactiveListeningBank: InteractiveListeningBlock[] = [
     ],
     "summaryPrompt": "In 75 seconds, write a concise summary (35–65 words) detailing why you met the advisor, their academic prerequisite recommendations, and your next step."
   }
+,
+  {
+    "id": "il-3",
+    "scenario": "You are a graduate student speaking with your faculty dissertation supervisor regarding changes in your methodology chapter.",
+    "difficulty": "B2",
+    "turns": [
+      {
+        "speaker": "Dr. Vance",
+        "speakerAudioText": "Good morning. I reviewed the draft of your methodology section. Have you considered using mixed methods instead of purely qualitative interviews?",
+        "options": [
+          "Good morning Dr. Vance. Yes, incorporating survey data would allow me to triangulate my findings across a larger sample size.",
+          "I forgot to return the laboratory keys yesterday afternoon.",
+          "The campus bus was running twenty minutes late this morning.",
+          "I am thinking about taking a painting class over the weekend."
+        ],
+        "correctIndex": 0
+      },
+      {
+        "speaker": "Dr. Vance",
+        "speakerAudioText": "That would strengthen your empirical rigor significantly. How long will it take you to design and pilot the online survey?",
+        "options": [
+          "I can draft the questionnaire within ten days and pilot it with a focus group next week.",
+          "I usually study in the library until eight in the evening.",
+          "Survey forms were invented over a hundred years ago in England.",
+          "No, I have never participated in varsity cross-country running."
+        ],
+        "correctIndex": 0
+      },
+      {
+        "speaker": "Dr. Vance",
+        "speakerAudioText": "Excellent timeline. Send me the survey questions as soon as they are ready so we can verify the statistical validity.",
+        "options": [
+          "I will email the survey draft by next Monday. Thank you for the constructive feedback, Dr. Vance.",
+          "I will probably buy a new laptop before next semester begins.",
+          "The university cafeteria menu changes every Tuesday morning.",
+          "Chemistry was always my favorite subject in high school."
+        ],
+        "correctIndex": 0
+      }
+    ],
+    "summaryPrompt": "In 75 seconds, write a concise summary (35\u201365 words) summarizing why you met Dr. Vance, the methodological recommendation made, and your agreed timeline."
+  }
 ];
 
 // 7. BANK OF WRITE ABOUT PHOTO (6 questions)
@@ -1287,6 +1945,25 @@ export const writePhotoBank: WritePhotoQuestion[] = [
     "altText": "A medical researcher adjusting optical lenses on a high-precision laboratory microscope",
     "difficulty": "C1"
   }
+,
+  {
+    "id": "wp-7",
+    "imageUrl": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
+    "altText": "A healthcare physician in scrubs consulting a digital tablet with patient medical imaging scans",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-8",
+    "imageUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
+    "altText": "A classroom teacher assisting young students engaged in hands-on science activities at round desks",
+    "difficulty": "B1"
+  },
+  {
+    "id": "wp-9",
+    "imageUrl": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+    "altText": "Modern corporate professionals collaborating in an open-plan glass-walled meeting space with digital whiteboard",
+    "difficulty": "B2"
+  }
 ];
 
 // 8. BANK OF INTERACTIVE WRITING (3 prompts)
@@ -1308,6 +1985,13 @@ export const interactiveWritingBank: InteractiveWritingQuestion[] = [
     "part1Prompt": "Some governments are investing substantial public funds into exploring deep space, while critics argue that domestic problems on Earth should take absolute priority. What is your stance? Write at least 80 words.",
     "part2Prompt": "Building upon your previous argument, how can technological innovations developed during space missions directly benefit social infrastructure and everyday life on Earth? Write at least 50 words.",
     "difficulty": "C1"
+  }
+,
+  {
+    "id": "iw-4",
+    "part1Prompt": "Many educators argue that secondary schools should teach personal financial literacy and investing rather than advanced theoretical calculus. What is your perspective? Write at least 80 words.",
+    "part2Prompt": "Following up on your answer, how can educational policymakers design a balanced curriculum that equips students with practical financial skills without compromising essential STEM foundations? Write at least 50 words.",
+    "difficulty": "B2"
   }
 ];
 
@@ -1331,6 +2015,12 @@ export const writingSampleBank: WritingSampleQuestion[] = [
   {
     "id": "ws-4",
     "prompt": "Do you believe artificial intelligence tools in universities empower students to conduct higher quality academic research, or do they weaken foundational critical thinking skills? Support your opinion with concrete examples. (Aim for 100+ words).",
+    "difficulty": "C1"
+  }
+,
+  {
+    "id": "ws-5",
+    "prompt": "With globalization and modern telecommunications, some sociologists predict regional dialects and minority languages will vanish within a century. Do you view this cultural homogenization as an inevitable cost of global progress, or should governments invest actively in language preservation? Give detailed reasons. (Aim for 100+ words).",
     "difficulty": "C1"
   }
 ];
