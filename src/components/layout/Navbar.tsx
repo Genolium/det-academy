@@ -240,17 +240,30 @@ export const Navbar: React.FC = () => {
             ) : (
               <button
                 onClick={() => setAuthModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full border border-neutral-200 bg-white text-xs font-bold text-neutral-800 hover:border-black hover:bg-neutral-50 transition-all shadow-sm cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full border border-neutral-200 bg-white text-xs font-bold text-neutral-800 hover:border-black hover:bg-neutral-50 transition-all shadow-sm cursor-pointer"
               >
                 <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
                 <span>{t.login}</span>
               </button>
             )}
 
-            {/* Primary Action Button */}
+            {/* Mobile: Single Green "Войти" button when not authenticated */}
+            {!isAuthenticated && (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="sm:hidden inline-flex items-center gap-1.5 bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide transition-all shadow-sm border border-[#C4F22C] cursor-pointer"
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>{t.login}</span>
+              </button>
+            )}
+
+            {/* Primary Action Button (Test) */}
             <Link
               href="/test"
-              className="inline-flex items-center gap-1.5 bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-sm border border-[#C4F22C]"
+              className={`${
+                isAuthenticated ? 'inline-flex' : 'hidden sm:inline-flex'
+              } items-center gap-1.5 bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-sm border border-[#C4F22C]`}
             >
               <Sparkles className="w-3.5 h-3.5 text-[#0C2418]" />
               <span className="hidden sm:inline">{t.freeMock}</span>
@@ -290,6 +303,54 @@ export const Navbar: React.FC = () => {
                   </Link>
                 );
               })}
+            </div>
+
+            {/* Test Link in Mobile Menu */}
+            <div className="pt-1">
+              <Link
+                href="/test"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition-all shadow-sm"
+              >
+                <Sparkles className="w-4 h-4 text-[#D2F544]" />
+                <span>{t.freeMock}</span>
+              </Link>
+            </div>
+
+            {/* Auth Actions in Mobile Menu */}
+            <div className="pt-2 border-t border-neutral-100">
+              {isAuthenticated && user ? (
+                <div className="flex items-center justify-between px-1">
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-xs font-bold text-neutral-800 hover:text-black"
+                  >
+                    <UserIcon className="w-4 h-4 text-neutral-500" />
+                    <span>{locale === 'ru' ? 'Личный кабинет' : 'My Profile'}</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer"
+                  >
+                    {t.logout}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAuthModalOpen(true);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <UserIcon className="w-3.5 h-3.5" />
+                  <span>{t.login}</span>
+                </button>
+              )}
             </div>
           </div>
         )}
