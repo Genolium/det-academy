@@ -8,11 +8,12 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: det_academy
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./backend/db/03-content-seed.sql:/docker-entrypoint-initdb.d/03-content-seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d det_academy"]
       interval: 5s
@@ -28,12 +29,14 @@ services:
     container_name: det-backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-18080}:8080"
     environment:
       PORT: "8080"
       DATABASE_URL: "postgres://postgres:postgres@postgres:5432/det_academy?sslmode=disable"
       JWT_SECRET: "det-academy-super-secure-jwt-secret-key-2026"
-      ALLOWED_ORIGIN: "http://localhost:3000"
+      ALLOWED_ORIGIN: "http://localhost:13000,http://localhost:3000,https://det-academy.ru,http://det-academy.ru,https://www.det-academy.ru"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,12 +47,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: "${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}"
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:18080}"
+        NEXT_PUBLIC_DIRECTUS_URL: "${NEXT_PUBLIC_DIRECTUS_URL:-http://localhost:18055}"
     container_name: det-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-13000}:3000"
     environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:8080"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:18080}"
+      NEXT_PUBLIC_DIRECTUS_URL: "${NEXT_PUBLIC_DIRECTUS_URL:-http://localhost:18055}"
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: "${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}"
       PORT: "3000"
       NODE_ENV: "production"
     depends_on:
@@ -62,7 +71,7 @@ services:
     container_name: det-directus
     restart: unless-stopped
     ports:
-      - "8055:8055"
+      - "${DIRECTUS_PORT:-18055}:8055"
     environment:
       KEY: "det-directus-system-secret-key-2026"
       SECRET: "det-directus-app-secret-jwt-key-2026"
@@ -76,7 +85,7 @@ services:
       DB_PASSWORD: "postgres"
       DB_SSL: "false"
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000"
+      CORS_ORIGIN: "http://localhost:13000,http://localhost:3000,https://det-academy.ru,http://det-academy.ru"
       STORAGE_LOCATIONS: "local"
       STORAGE_LOCAL_ROOT: "./uploads"
     volumes:

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { CalculatedScores, computeFinalScores } from '@/lib/scoring';
+import { evaluateWriteAboutPhoto, evaluateEssayWriting } from '@/lib/textEvaluator';
+import { updateTheta2PL, DIFFICULTY_THETA_MAP } from '@/lib/irtCatEngine';
 
 export type StageName =
   | 'READ_SELECT'
@@ -18,6 +20,7 @@ interface TestSessionState {
   candidateName: string;
   currentStage: StageName;
   difficultyLevel: 'A2' | 'B1' | 'B2' | 'C1';
+  thetaAbility: number; // IRT 2PL latent trait [-3.0 .. +3.0]
 
   // Metrics collection across stages
   readSelectCorrect: number;
@@ -61,6 +64,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
   candidateName: 'Candidate',
   currentStage: 'READ_SELECT',
   difficultyLevel: 'B1',
+  thetaAbility: 0.0,
 
   readSelectCorrect: 0,
   readSelectTotal: 0,
@@ -90,6 +94,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
       candidateName,
       currentStage: 'READ_SELECT',
       difficultyLevel: 'B1',
+      thetaAbility: 0.0,
       readSelectCorrect: 0,
       readSelectTotal: 0,
       fillBlanksCorrect: 0,
@@ -111,16 +116,23 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
 
   recordReadSelectResult: (correct, total) => {
     const accuracy = total > 0 ? correct / total : 0;
-    // CAT Multi-Stage Testing transition:
-    // If accuracy >= 80% -> elevate difficulty to B2/C1
-    // If accuracy < 50% -> lower difficulty to A2/B1
+    const currentState = get();
+
+    // 2-Parameter Logistic (2PL) Item Response Theory θ update:
+    const itemThetaB = DIFFICULTY_THETA_MAP[currentState.difficultyLevel] || 0.0;
+    const nextTheta = updateTheta2PL(currentState.thetaAbility, itemThetaB, accuracy, 1.3);
+
+    // Map latent ability theta to CEFR difficulty band
     let nextDiff: 'A2' | 'B1' | 'B2' | 'C1' = 'B2';
-    if (accuracy >= 0.8) nextDiff = 'C1';
-    else if (accuracy < 0.5) nextDiff = 'A2';
+    if (nextTheta >= 1.0) nextDiff = 'C1';
+    else if (nextTheta >= 0.0) nextDiff = 'B2';
+    else if (nextTheta >= -1.0) nextDiff = 'B1';
+    else nextDiff = 'A2';
 
     set((state) => ({
       readSelectCorrect: state.readSelectCorrect + correct,
       readSelectTotal: state.readSelectTotal + total,
+      thetaAbility: nextTheta,
       difficultyLevel: nextDiff,
     }));
   },
@@ -157,15 +169,21 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
     const ctRatio = state.cTestTotal > 0 ? state.cTestCorrect / state.cTestTotal : 0.8;
     const ltRatio = state.listenTypeTotal > 0 ? state.listenTypeSimilaritySum / state.listenTypeTotal : 0.85;
 
-    // Writing volume and quality estimation
-    const totalWords =
-      state.writePhotoTexts.join(' ').split(/\s+/).filter(Boolean).length +
-      state.interactiveWritingTexts.part1.split(/\s+/).filter(Boolean).length +
-      state.interactiveWritingTexts.part2.split(/\s+/).filter(Boolean).length +
-      state.writingSampleText.split(/\s+/).filter(Boolean).length;
+    // Writing evaluation using Rubric Grader (relevance, vocabulary, discourse markers, syntax)
+    let photoScoresSum = 0;
+    state.writePhotoTexts.forEach((text, i) => {
+      const fb = evaluateWriteAboutPhoto(text, {
+        expectedKeywords: ['laboratory', 'students', 'engineer', 'presentation', 'monitors', 'researcher'],
+      });
+      photoScoresSum += fb.score;
+    });
+    const photoAvg = state.writePhotoTexts.length > 0 ? photoScoresSum / state.writePhotoTexts.length : 0.75;
 
-    // 250+ total words across writing tasks yields high ratio
-    const writingRatio = Math.min(1.0, Math.max(0.4, totalWords / 250));
+    const iwPart1Fb = evaluateEssayWriting(state.interactiveWritingTexts.part1, 80, ['university', 'students', 'education', 'courses']);
+    const iwPart2Fb = evaluateEssayWriting(state.interactiveWritingTexts.part2, 50, ['support', 'stress', 'mental', 'employers']);
+    const wsFb = evaluateEssayWriting(state.writingSampleText, 100, ['transportation', 'environment', 'economic', 'philosophy', 'intelligence', 'academic']);
+
+    const writingRatio = Math.min(1.0, Math.max(0.35, photoAvg * 0.25 + iwPart1Fb.score * 0.25 + iwPart2Fb.score * 0.2 + wsFb.score * 0.3));
 
     const scores = computeFinalScores({
       readSelectAccuracy: rsRatio,

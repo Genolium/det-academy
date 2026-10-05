@@ -12,6 +12,7 @@ import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
 import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { translations } from '@/lib/translations';
+import { InteractiveLessonDrill } from '@/components/practice/InteractiveLessonDrill';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -21,6 +22,8 @@ import {
   FileCheck2,
   ShieldCheck,
   ChevronRight,
+  Sparkles,
+  UserCheck,
 } from 'lucide-react';
 
 interface LessonPageProps {
@@ -47,9 +50,11 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           format: dLesson.format,
           scoring: dLesson.scoring,
           timeLimit: dLesson.time_limit,
+          mentorIntro: staticLesson?.mentorIntro,
           rules: dLesson.rules,
           strategySteps: dLesson.strategy_steps,
           formula: dLesson.formula,
+          proTips: staticLesson?.proTips,
           examples: dLesson.examples,
           pitfalls: dLesson.pitfalls,
         });
@@ -94,9 +99,20 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
               <ArrowLeft className="w-4 h-4" /> {t.backToList}
             </Link>
 
-            <PillBadge variant="mint" prefixHash>
-              {categoryLabel}
-            </PillBadge>
+            <div className="flex items-center gap-3">
+              {isCompleted ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t.studiedBadge}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-500 border border-neutral-200">
+                  {t.inProgressBadge}
+                </span>
+              )}
+              <PillBadge variant="mint" prefixHash>
+                {categoryLabel}
+              </PillBadge>
+            </div>
           </div>
 
           {/* Title Block */}
@@ -118,6 +134,21 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
 
           {/* Content Modules */}
           <div className="space-y-8">
+            {/* 0. Human Mentor Introduction (if present) */}
+            {lesson.mentorIntro && (
+              <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-900 to-black text-white p-7 sm:p-9 rounded-3xl border border-neutral-700/80 shadow-2xl">
+                <div className="flex items-center gap-2.5 mb-3 text-[#D2F544]">
+                  <UserCheck className="w-5 h-5" />
+                  <span className="text-xs font-mono uppercase font-bold tracking-wider">
+                    {t.mentorIntroTitle}
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base text-neutral-200 leading-relaxed font-normal">
+                  {lesson.mentorIntro}
+                </p>
+              </div>
+            )}
+
             {/* 1. Rules Section */}
             <BentoCard variant="light">
               <div className="flex items-center gap-2.5 mb-4 text-[#0E1012]">
@@ -164,6 +195,26 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                 <div className="bg-[#0C2418] text-[#D2F544] p-5 rounded-2xl font-mono text-sm leading-relaxed whitespace-pre-line shadow-inner">
                   {lesson.formula}
                 </div>
+              </BentoCard>
+            )}
+
+            {/* 3.1 Pro Tips for 130+ (if present) */}
+            {lesson.proTips && lesson.proTips.length > 0 && (
+              <BentoCard variant="light" className="border-l-4 border-l-emerald-500 bg-emerald-50/20">
+                <div className="flex items-center gap-2.5 mb-4 text-emerald-950">
+                  <Sparkles className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-xl font-bold uppercase tracking-tight">{t.proTipsTitle}</h2>
+                </div>
+                <ul className="space-y-3">
+                  {lesson.proTips.map((tip, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-neutral-800 leading-relaxed">
+                      <span className="w-5 h-5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                        ★
+                      </span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
               </BentoCard>
             )}
 
@@ -227,6 +278,17 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                 </ul>
               </BentoCard>
             )}
+
+            {/* Interactive Dynamic Drill */}
+            <InteractiveLessonDrill
+              lessonSlug={lesson.slug}
+              category={lesson.category}
+              onDrillCompleted={() => {
+                if (!isCompleted) {
+                  toggleLessonCompleted(lesson.slug);
+                }
+              }}
+            />
 
             {/* Complete Lesson Action */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">

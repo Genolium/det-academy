@@ -18,6 +18,7 @@ export interface Translations {
   };
   navbar: {
     theory: string;
+    drills: string;
     practice: string;
     typing: string;
     verify: string;
@@ -165,6 +166,11 @@ export interface Translations {
     loginBtn: string;
     registerBtn: string;
     loading: string;
+    oauthDivider: string;
+    oauthGoogle: string;
+    oauthApple: string;
+    oauthVk: string;
+    oauthYandex: string;
     quickDemoHeading: string;
     demoStudentBtn: string;
     demoAdminBtn: string;
@@ -200,6 +206,12 @@ export interface Translations {
     score120: string;
     score125: string;
     score130: string;
+    subscoreFilterLabel: string;
+    subscoreAny: string;
+    subscoreWriting120: string;
+    subscoreLiteracy120: string;
+    subscoreAll115: string;
+    subscoreConversation120: string;
     mapHeading: string;
     mapPinsNote: string;
     foundLabel: string;
@@ -259,6 +271,8 @@ export interface Translations {
     strategyTitle: string;
     stepPrefix: string;
     formulaTitle: string;
+    mentorIntroTitle: string;
+    proTipsTitle: string;
     exampleTitle: string;
     modelAnswerLabel: string;
     expertCommentLabel: string;
@@ -392,12 +406,13 @@ export const translations: Record<Locale, Translations> = {
       freeMock: 'Пройти тест',
     },
     navbar: {
-      theory: 'Теория и гайды',
+      theory: 'Теория',
+      drills: 'Тренажеры',
+      typing: 'Скоропечатание',
       practice: 'Симулятор теста',
-      typing: 'Тренажер скоропечатания',
-      verify: 'Проверить сертификат',
+      verify: 'Сертификат',
       institutions: 'Вузы с DET',
-      admin: 'CRM Админка',
+      admin: 'Админка',
       profile: 'Кабинет',
       logout: 'Выйти',
       login: 'Войти',
@@ -540,6 +555,11 @@ export const translations: Record<Locale, Translations> = {
       loginBtn: 'Войти в аккаунт',
       registerBtn: 'Зарегистрироваться',
       loading: 'Загрузка...',
+      oauthDivider: 'или войти через',
+      oauthGoogle: 'Войти через Google',
+      oauthApple: 'Войти через Apple',
+      oauthVk: 'Войти через VK ID',
+      oauthYandex: 'Войти через Яндекс ID',
       quickDemoHeading: 'Быстрый вход для тестирования:',
       demoStudentBtn: 'Студент Alex Rivera (100% теории + Тест 125)',
       demoAdminBtn: 'Администратор (CRM-панель + Управление)',
@@ -555,10 +575,10 @@ export const translations: Record<Locale, Translations> = {
     },
     institutions: {
       badge: 'Worldwide University Acceptance',
-      countTag: '• 5 000+ институтов',
+      countTag: '• 12 000+ институтов по всему миру',
       title: 'Вузы, принимающие DET',
       subtitle: 'Исследуйте ведущие университеты мира, принимающие сертификаты Duolingo English Test. Фильтруйте по минимальному баллу, странам и категориям Лиги Плюща.',
-      statsWorld: '5,000+',
+      statsWorld: '12,000+',
       statsWorldLabel: 'Вузов по миру',
       statsIvy: '100%',
       statsIvyLabel: 'Вузов Лиги Плюща',
@@ -575,6 +595,12 @@ export const translations: Record<Locale, Translations> = {
       score120: 'От 120 баллов',
       score125: 'От 125 баллов (Ivy League / MIT)',
       score130: 'От 130 баллов (NYU / Top Tier)',
+      subscoreFilterLabel: 'Фильтр по субскорам:',
+      subscoreAny: 'Без ограничений по субскорам',
+      subscoreWriting120: 'Writing (Production) ≥ 120 (Канада U15, UBC)',
+      subscoreLiteracy120: 'Literacy (чтение/письмо) ≥ 120 (MIT, Harvard)',
+      subscoreAll115: 'Все субскоры ≥ 115 (Строгие требования)',
+      subscoreConversation120: 'Conversation (устная речь) ≥ 120',
       mapHeading: 'Интерактивная карта вузов мира',
       mapPinsNote: 'Пины отображают минимальный балл DET',
       foundLabel: 'Найдено:',
@@ -618,7 +644,7 @@ export const translations: Record<Locale, Translations> = {
     },
     theory: {
       curriculumBadge: `DET Curriculum ${YEAR}`,
-      lessonsCount: '12 обучающих блоков',
+      lessonsCount: '16 фундаментальных модулей',
       title: 'База знаний и стратегий DET',
       progressCardLabel: 'Прогресс теории для сертификата:',
       progressCardStatus: 'завершено • Нужно 100% + тест ≥105',
@@ -628,20 +654,22 @@ export const translations: Record<Locale, Translations> = {
       timingLabel: 'Тайминг:',
       openGuide: 'Открыть гайд',
       guardTitle: 'База знаний и стратегий DET',
-      guardSubtitle: 'Теоретический курс с подробным разбором всех 12 форматов экзамена, шаблонов OREO и ловушек доступен только после регистрации.',
+      guardSubtitle: 'Фундаментальный академический курс с подробным разбором всех 16 модулей экзамена, CAT-алгоритма, 4 сабскоров, шаблонов OREO и ловушек доступен только после регистрации.',
       backToList: 'Назад к списку тем',
-      rulesTitle: 'Правила и регламент задания',
-      strategyTitle: 'Пошаговая стратегия сдачи',
-      stepPrefix: 'Шаг',
-      formulaTitle: 'Золотая формула и шаблон',
-      exampleTitle: 'Реальный пример задания и разбор на 130+',
-      modelAnswerLabel: 'Эталонный ответ:',
-      expertCommentLabel: 'Комментарий эксперта:',
-      pitfallsTitle: 'Типичные ошибки и ловушки DET',
+      rulesTitle: 'Регламент и ограничения',
+      strategyTitle: 'Порядок действий',
+      stepPrefix: 'Этап',
+      formulaTitle: 'Рабочий шаблон ответа',
+      mentorIntroTitle: 'Контекст задания',
+      proTipsTitle: 'Практические рекомендации',
+      exampleTitle: 'Разбор задания',
+      modelAnswerLabel: 'Пример решения:',
+      expertCommentLabel: 'Разбор логики:',
+      pitfallsTitle: 'Частые ошибки',
       completedQuestion: 'Завершили изучение материала?',
       completedNote: 'Отметка фиксирует ваш прогресс в профиле и приближает выдачу сертификата.',
-      markDone: 'Урок пройден (Снять)',
-      markUndone: 'Отметить как пройденный',
+      markDone: 'Отметить как пройденный',
+      markUndone: 'Изучено (снять отметку)',
       prevLesson: 'Предыдущий урок',
       nextLesson: 'Следующий урок',
     },
@@ -765,12 +793,13 @@ export const translations: Record<Locale, Translations> = {
       freeMock: 'Take Test',
     },
     navbar: {
-      theory: 'Theory & Guides',
-      practice: 'Mock Test Simulator',
-      typing: 'DET Typing Trainer',
-      verify: 'Verify Certificate',
+      theory: 'Theory',
+      drills: 'Practice Hub',
+      typing: 'Typing Trainer',
+      practice: 'Mock Test',
+      verify: 'Verify',
       institutions: 'Universities',
-      admin: 'Admin CRM',
+      admin: 'Admin',
       profile: 'Dashboard',
       logout: 'Logout',
       login: 'Sign In',
@@ -913,6 +942,11 @@ export const translations: Record<Locale, Translations> = {
       loginBtn: 'Sign In',
       registerBtn: 'Create Account',
       loading: 'Loading...',
+      oauthDivider: 'or continue with',
+      oauthGoogle: 'Sign in with Google',
+      oauthApple: 'Sign in with Apple',
+      oauthVk: 'Sign in with VK ID',
+      oauthYandex: 'Sign in with Yandex ID',
       quickDemoHeading: 'Quick demo sign-in for testing:',
       demoStudentBtn: 'Student Alex Rivera (100% Theory + Score 125)',
       demoAdminBtn: 'Administrator (CRM Panel + Management)',
@@ -928,10 +962,10 @@ export const translations: Record<Locale, Translations> = {
     },
     institutions: {
       badge: 'Worldwide University Acceptance',
-      countTag: '• 5,000+ Institutions',
+      countTag: '• 12,000+ Global Institutions',
       title: 'Universities Accepting DET',
       subtitle: 'Discover world-leading universities accepting Duolingo English Test certificates. Filter by minimum cutoff scores, countries, and Ivy League status.',
-      statsWorld: '5,000+',
+      statsWorld: '12,000+',
       statsWorldLabel: 'Global Institutions',
       statsIvy: '100%',
       statsIvyLabel: 'Ivy League Universities',
@@ -948,6 +982,12 @@ export const translations: Record<Locale, Translations> = {
       score120: 'From 120 points',
       score125: 'From 125 points (Ivy League / MIT)',
       score130: 'From 130 points (NYU / Top Tier)',
+      subscoreFilterLabel: 'Subscore Requirements:',
+      subscoreAny: 'No Subscore Restrictions',
+      subscoreWriting120: 'Writing (Production) ≥ 120 (Canada U15, UBC)',
+      subscoreLiteracy120: 'Literacy (Reading/Writing) ≥ 120 (MIT, Harvard)',
+      subscoreAll115: 'All Subscores ≥ 115 (Strict Requirements)',
+      subscoreConversation120: 'Conversation (Spoken/Listening) ≥ 120',
       mapHeading: 'Interactive Global Universities Map',
       mapPinsNote: 'Pins display minimum DET score requirements',
       foundLabel: 'Found:',
@@ -991,7 +1031,7 @@ export const translations: Record<Locale, Translations> = {
     },
     theory: {
       curriculumBadge: `DET Curriculum ${YEAR}`,
-      lessonsCount: '12 Learning Modules',
+      lessonsCount: '16 Comprehensive Modules',
       title: 'DET Knowledge Base & Strategies',
       progressCardLabel: 'Curriculum Progress for Certificate:',
       progressCardStatus: 'completed • Requires 100% + Test ≥105',
@@ -1001,20 +1041,22 @@ export const translations: Record<Locale, Translations> = {
       timingLabel: 'Timing:',
       openGuide: 'Open Guide',
       guardTitle: 'DET Curriculum & Knowledge Base',
-      guardSubtitle: 'The complete theoretical guide covering all 12 exam formats, OREO templates, and pitfall analyses requires an account.',
+      guardSubtitle: 'The complete theoretical guide covering all 16 exam modules, CAT engine rules, 4 subscores, OREO templates, and pitfall analyses requires an account.',
       backToList: 'Back to curriculum overview',
-      rulesTitle: 'Task Rules & Protocol',
-      strategyTitle: 'Step-by-Step Strategy',
-      stepPrefix: 'Step',
-      formulaTitle: 'Golden Formula & Template',
-      exampleTitle: 'Authentic Exam Question & 130+ Analysis',
-      modelAnswerLabel: 'Model Answer:',
-      expertCommentLabel: 'Expert Comment:',
-      pitfallsTitle: 'Common Mistakes & Traps',
+      rulesTitle: 'Exam Rules & Requirements',
+      strategyTitle: 'Recommended Procedure',
+      stepPrefix: 'Phase',
+      formulaTitle: 'Response Structure',
+      mentorIntroTitle: 'Overview & Context',
+      proTipsTitle: 'Key Recommendations',
+      exampleTitle: 'Task Walkthrough',
+      modelAnswerLabel: 'Sample Response:',
+      expertCommentLabel: 'Analysis:',
+      pitfallsTitle: 'Common Errors',
       completedQuestion: 'Finished studying this module?',
       completedNote: 'Marking this lesson tracks progress in your profile and unlocks certificate eligibility.',
-      markDone: 'Completed (Mark Incomplete)',
-      markUndone: 'Mark as Completed',
+      markDone: 'Mark as Completed',
+      markUndone: 'Completed (Mark Incomplete)',
       prevLesson: 'Previous Lesson',
       nextLesson: 'Next Lesson',
     },

@@ -9,6 +9,7 @@ import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
 import { Award, ArrowRight, RotateCcw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SubscoresRadarChart } from '@/components/analytics/SubscoresRadarChart';
 
 interface TestResultModalProps {
   scores: CalculatedScores;
@@ -88,33 +89,39 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
           </div>
         </div>
 
-        {/* 4 DET Subscores */}
-        <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-4">
-          {t.subscoresLabel}:
-        </h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center">
-            <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Literacy</span>
-            <span className="text-[10px] text-neutral-500 block mb-2">{t.literacySub}</span>
-            <div className="text-3xl font-black text-[#D2F544] font-mono">{scores.literacy}</div>
-          </div>
-
-          <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center">
-            <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Comprehension</span>
-            <span className="text-[10px] text-neutral-500 block mb-2">{t.comprehensionSub}</span>
-            <div className="text-3xl font-black text-emerald-400 font-mono">{scores.comprehension}</div>
-          </div>
-
-          <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center">
-            <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Production</span>
-            <span className="text-[10px] text-neutral-500 block mb-2">{t.productionSub}</span>
-            <div className="text-3xl font-black text-amber-400 font-mono">{scores.production}</div>
-          </div>
-
-          <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 text-center">
-            <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Conversation</span>
-            <span className="text-[10px] text-neutral-500 block mb-2">{t.conversationSub}</span>
-            <div className="text-3xl font-black text-blue-400 font-mono">{scores.conversation}</div>
+        {/* 4 DET Subscores & Radar Chart */}
+        <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8">
+          <div className="flex flex-col md:flex-row items-center gap-8 justify-between">
+            <div className="w-full md:w-1/2 flex justify-center">
+              <SubscoresRadarChart scores={scores} size={300} showDetails={false} />
+            </div>
+            <div className="w-full md:w-1/2 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                {t.subscoresLabel}:
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
+                  <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Literacy</span>
+                  <span className="text-[10px] text-neutral-500 block mb-1">{t.literacySub}</span>
+                  <div className="text-2xl font-black text-[#D2F544] font-mono">{scores.literacy}</div>
+                </div>
+                <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
+                  <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Comprehension</span>
+                  <span className="text-[10px] text-neutral-500 block mb-1">{t.comprehensionSub}</span>
+                  <div className="text-2xl font-black text-emerald-400 font-mono">{scores.comprehension}</div>
+                </div>
+                <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
+                  <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Production</span>
+                  <span className="text-[10px] text-neutral-500 block mb-1">{t.productionSub}</span>
+                  <div className="text-2xl font-black text-amber-400 font-mono">{scores.production}</div>
+                </div>
+                <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
+                  <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Conversation</span>
+                  <span className="text-[10px] text-neutral-500 block mb-1">{t.conversationSub}</span>
+                  <div className="text-2xl font-black text-blue-400 font-mono">{scores.conversation}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

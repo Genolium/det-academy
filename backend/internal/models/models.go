@@ -124,6 +124,20 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type OAuthLoginRequest struct {
+	Provider    string `json:"provider"`    // "google", "apple", "vk", "yandex"
+	Code        string `json:"code"`        // OAuth authorization code
+	RedirectURI string `json:"redirectUri"` // redirect URI used in auth flow
+	Email       string `json:"email,omitempty"`
+	Name        string `json:"name,omitempty"`
+	AvatarURL   string `json:"avatarUrl,omitempty"`
+}
+
+type OAuthURLResponse struct {
+	Provider string `json:"provider"`
+	URL      string `json:"url"`
+}
+
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`

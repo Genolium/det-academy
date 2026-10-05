@@ -247,7 +247,7 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2.5">
             <a
-              href="http://localhost:8055"
+              href={process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm"
@@ -488,7 +488,7 @@ export const AdminDashboard: React.FC = () => {
 
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                 <a
-                  href="http://localhost:8055"
+                  href={process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md"

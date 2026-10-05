@@ -76,6 +76,35 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *AuthHandler) OAuthLogin(w http.ResponseWriter, r *http.Request) {
+	var req models.OAuthLoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	user, token, err := h.authService.OAuthLogin(r.Context(), req)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "det_token",
+		Value:    token,
+		Path:     "/",
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	})
+
+	RespondJSON(w, http.StatusOK, models.AuthResponse{
+		Token: token,
+		User:  *user,
+	})
+}
+
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	if userID == "" {

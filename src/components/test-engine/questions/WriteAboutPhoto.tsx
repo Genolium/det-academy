@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, Image as ImageIcon } from 'lucide-react';
+import { evaluateWriteAboutPhoto } from '@/lib/textEvaluator';
 
 interface WriteAboutPhotoProps {
   onComplete: () => void;
@@ -103,13 +104,32 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
             </div>
 
             <textarea
-              rows={7}
+              rows={6}
               value={currentText}
               onChange={(e) => setCurrentText(e.target.value)}
               placeholder="This image depicts... In the background... They appear to be..."
               className="w-full bg-neutral-900 border-2 border-neutral-700 focus:border-[#D2F544] rounded-2xl p-4 text-white text-sm outline-none leading-relaxed"
               autoFocus
             />
+
+            {/* Live Rubric Quality Meter */}
+            {wordCount >= 5 && (
+              <div className="mt-3 p-3 bg-neutral-900/90 rounded-2xl border border-neutral-800 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-neutral-400 font-bold uppercase tracking-wider">
+                    Оценка соответствия контексту
+                  </span>
+                  <span className="font-mono font-bold text-xs text-[#D2F544]">
+                    {Math.round(evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).relevanceScore * 100)}%
+                  </span>
+                </div>
+                {evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).recommendations.length > 0 && (
+                  <p className="text-[11px] text-amber-300/90">
+                    💡 {evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).recommendations[0]}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end pt-4">

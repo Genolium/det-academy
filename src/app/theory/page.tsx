@@ -48,8 +48,11 @@ export default function TheoryCatalogPage() {
   }, []);
 
   const totalLessons = lessons.length;
-  const completedCount = completedLessons.length;
-  const progressPercent = Math.round((completedCount / totalLessons) * 100);
+  // Count only completed lessons that actually match existing course modules
+  const validCompletedCount = completedLessons.filter((slug) =>
+    lessons.some((l) => l.slug === slug)
+  ).length;
+  const progressPercent = totalLessons > 0 ? Math.round((validCompletedCount / totalLessons) * 100) : 0;
 
   return (
     <AuthRequiredGuard
@@ -88,7 +91,7 @@ export default function TheoryCatalogPage() {
                 />
               </div>
               <span className="text-[11px] text-neutral-400">
-                {completedCount} / {totalLessons} {t.progressCardStatus}
+                {validCompletedCount} / {totalLessons} {t.progressCardStatus}
               </span>
             </div>
           </div>

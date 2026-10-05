@@ -8,7 +8,7 @@
  * - Ad Banners (`ad_banners`)
  */
 
-const DIRECTUS_URL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055';
+const DIRECTUS_URL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055';
 
 export interface DirectusTheoryLesson {
   id: string;

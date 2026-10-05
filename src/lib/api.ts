@@ -1,4 +1,9 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
+    ? process.env.NEXT_PUBLIC_API_URL
+    : typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? ''
+    : 'http://localhost:18080';
 
 export interface User {
   id: string;
@@ -104,6 +109,10 @@ export interface Institution {
   city: string;
   state?: string;
   minScore: number;
+  minLiteracy?: number;
+  minComprehension?: number;
+  minProduction?: number;
+  minConversation?: number;
   subscoreReqs?: string;
   latitude: number;
   longitude: number;
@@ -173,6 +182,31 @@ class ApiClient {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Login failed');
+    }
+    const data: AuthResponse = await res.json();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('det_token', data.token);
+    }
+    return data;
+  }
+
+  async oauthLogin(params: {
+    provider: 'google' | 'apple' | 'vk' | 'yandex';
+    code?: string;
+    redirectUri?: string;
+    email?: string;
+    name?: string;
+    avatarUrl?: string;
+  }): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'OAuth authentication failed');
     }
     const data: AuthResponse = await res.json();
     if (typeof window !== 'undefined') {

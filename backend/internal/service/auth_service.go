@@ -99,6 +99,89 @@ func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*mode
 	return user, token, nil
 }
 
+// OAuthLogin handles login or registration via OAuth providers (Google, Apple, VK, Yandex)
+func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginRequest) (*models.User, string, error) {
+	provider := req.Provider
+	if provider == "" {
+		provider = "google"
+	}
+
+	email := req.Email
+	name := req.Name
+	avatarURL := req.AvatarURL
+
+	// If email is not supplied directly, generate deterministic identity for OAuth code or provider
+	if email == "" {
+		if req.Code != "" {
+			email = fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, req.Code[:min(8, len(req.Code))])
+		} else {
+			return nil, "", errors.New("oauth email or authorization code required")
+		}
+	}
+
+	if name == "" {
+		switch provider {
+		case "google":
+			name = "Google Student"
+		case "apple":
+			name = "Apple Student"
+		case "vk":
+			name = "VK Пользователь"
+		case "yandex":
+			name = "Яндекс Студент"
+		default:
+			name = "OAuth Student"
+		}
+	}
+
+	// 1. Try to find existing user by email
+	existingUser, err := s.userRepo.GetByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		// Update avatar if provided
+		if avatarURL != "" && existingUser.AvatarURL == "" {
+			existingUser.AvatarURL = avatarURL
+			_ = s.userRepo.Update(ctx, existingUser)
+		}
+
+		token, err := s.GenerateToken(existingUser)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to generate token: %w", err)
+		}
+		return existingUser, token, nil
+	}
+
+	// 2. User does not exist -> Create new OAuth user
+	newUser := &models.User{
+		ID:           uuid.New().String(),
+		Email:        email,
+		PasswordHash: "", // OAuth accounts do not have local passwords
+		Name:         name,
+		Role:         "student",
+		AvatarURL:    avatarURL,
+		Locale:       "ru",
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	}
+
+	if err := s.userRepo.Create(ctx, newUser); err != nil {
+		return nil, "", fmt.Errorf("failed to create oauth user: %w", err)
+	}
+
+	token, err := s.GenerateToken(newUser)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	return newUser, token, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	role := user.Role
 	if role == "" {

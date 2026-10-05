@@ -5,10 +5,10 @@
 -- password for alex & student is 'password123'
 INSERT INTO users (id, email, password_hash, name, role, avatar_url, locale)
 VALUES 
-    ('00000000-0000-0000-0000-000000000000', 'admin@det-academy.com', '$2a$10$mC3B27.iU7b72c91Pz8X6e6G93w40V.R3N6Q9mH2o3o5X4y1L8j.W', 'Super Administrator', 'admin', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', 'ru'),
-    ('00000000-0000-0000-0000-000000000001', 'alex@det-academy.com', '$2a$10$mC3B27.iU7b72c91Pz8X6e6G93w40V.R3N6Q9mH2o3o5X4y1L8j.W', 'Alex Rivera', 'admin', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'en'),
-    ('00000000-0000-0000-0000-000000000002', 'student@det-academy.com', '$2a$10$mC3B27.iU7b72c91Pz8X6e6G93w40V.R3N6Q9mH2o3o5X4y1L8j.W', 'Demo Student', 'student', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'ru')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
+    ('00000000-0000-0000-0000-000000000000', 'admin@det-academy.com', '$2a$10$QeuP0mMvXlrZ74xIjWl2seR.wehogINtVG/JV8a0PCYDZwINP64tm', 'Super Administrator', 'admin', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', 'ru'),
+    ('00000000-0000-0000-0000-000000000001', 'alex@det-academy.com', '$2a$10$7QeHn3Xut56.7yiAR1yN6uBQuT5VbG0HZ8cK7ld.kxZPLlV31r6Q6', 'Alex Rivera', 'admin', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'en'),
+    ('00000000-0000-0000-0000-000000000002', 'student@det-academy.com', '$2a$10$7QeHn3Xut56.7yiAR1yN6uBQuT5VbG0HZ8cK7ld.kxZPLlV31r6Q6', 'Demo Student', 'student', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'ru')
+ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;
 
 -- Completed Theory for Alex Rivera (all 12 lessons completed)
 INSERT INTO theory_progress (user_id, lesson_slug, is_completed)

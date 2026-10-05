@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,9 +25,26 @@ import (
 // corsOrigins returns explicit origins. A wildcard "*" must not be used together with
 // AllowCredentials (browsers reject it), so ALLOWED_ORIGIN is appended instead.
 func corsOrigins() []string {
-	origins := []string{"http://localhost:3000", "http://127.0.0.1:3000", "http://frontend:3000"}
+	origins := []string{
+		"http://localhost:3000",
+		"http://127.0.0.1:3000",
+		"http://frontend:3000",
+		"http://localhost:13000",
+		"http://127.0.0.1:13000",
+		"http://localhost:18080",
+		"http://127.0.0.1:18080",
+		"https://det-academy.ru",
+		"http://det-academy.ru",
+		"https://www.det-academy.ru",
+		"http://www.det-academy.ru",
+	}
 	if extra := os.Getenv("ALLOWED_ORIGIN"); extra != "" && extra != "*" {
-		origins = append(origins, extra)
+		for _, o := range strings.Split(extra, ",") {
+			trimmed := strings.TrimSpace(o)
+			if trimmed != "" {
+				origins = append(origins, trimmed)
+			}
+		}
 	}
 	return origins
 }
@@ -128,6 +146,7 @@ func main() {
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
 			r.Post("/logout", authHandler.Logout)
+			r.Post("/oauth", authHandler.OAuthLogin)
 
 			// Protected auth endpoints
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)

@@ -6,21 +6,25 @@ import (
 	"det-academy-backend/internal/repository"
 )
 
-const TotalTheoryLessons = 12
+const TotalTheoryLessons = 16
 
 var LessonSlugs = []string{
 	"rules-and-technicalities",
+	"subscores-and-cat-engine",
 	"read-and-select",
+	"listen-and-select",
 	"fill-in-the-blanks",
 	"read-and-complete",
 	"listen-and-type",
+	"read-aloud",
 	"interactive-reading",
 	"interactive-listening",
-	"write-about-the-photo",
-	"speak-about-the-photo",
+	"write-about-photo",
 	"interactive-writing",
+	"writing-sample",
+	"speak-about-photo",
 	"read-listen-speak",
-	"interactive-speaking",
+	"speaking-sample",
 }
 
 type TheoryService struct {

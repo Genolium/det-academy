@@ -8,6 +8,7 @@ import { Search, MapPin, Globe, ExternalLink, Filter, GraduationCap, CheckCircle
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
+import { institutionsDataset } from '@/data/institutionsData';
 
 export const InstitutionsMap: React.FC = () => {
   const { locale } = useSettingsStore();
@@ -21,6 +22,7 @@ export const InstitutionsMap: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [minScoreFilter, setMinScoreFilter] = useState<number>(0);
+  const [subscoreFilter, setSubscoreFilter] = useState<'ANY' | 'WRITING_120' | 'LITERACY_120' | 'ALL_115' | 'CONVERSATION_120'>('ANY');
 
   // Selected item to center map
   const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
@@ -63,10 +65,17 @@ export const InstitutionsMap: React.FC = () => {
 
         // Fallback to Go Backend API
         const res = await api.getInstitutions();
-        setInstitutions(res.institutions);
-        setFilteredInstitutions(res.institutions);
+        if (res && res.institutions && res.institutions.length > 0) {
+          setInstitutions(res.institutions);
+          setFilteredInstitutions(res.institutions);
+        } else {
+          setInstitutions(institutionsDataset as Institution[]);
+          setFilteredInstitutions(institutionsDataset as Institution[]);
+        }
       } catch (err) {
-        console.error('Failed to load institutions:', err);
+        console.warn('Backend unavailable, loading verified static institutions dataset:', err);
+        setInstitutions(institutionsDataset as Institution[]);
+        setFilteredInstitutions(institutionsDataset as Institution[]);
       } finally {
         setLoading(false);
       }
@@ -100,8 +109,34 @@ export const InstitutionsMap: React.FC = () => {
       result = result.filter((inst) => inst.minScore >= minScoreFilter);
     }
 
+    // Faceted Subscore Filtering
+    if (subscoreFilter === 'WRITING_120') {
+      result = result.filter((inst) => {
+        const prod = inst.minProduction ?? (inst.minScore >= 125 ? 120 : 110);
+        return prod >= 120;
+      });
+    } else if (subscoreFilter === 'LITERACY_120') {
+      result = result.filter((inst) => {
+        const lit = inst.minLiteracy ?? (inst.minScore >= 125 ? 120 : 110);
+        return lit >= 120;
+      });
+    } else if (subscoreFilter === 'ALL_115') {
+      result = result.filter((inst) => {
+        const lit = inst.minLiteracy ?? inst.minScore - 10;
+        const comp = inst.minComprehension ?? inst.minScore - 10;
+        const prod = inst.minProduction ?? inst.minScore - 10;
+        const conv = inst.minConversation ?? inst.minScore - 10;
+        return lit >= 115 && comp >= 115 && prod >= 115 && conv >= 115;
+      });
+    } else if (subscoreFilter === 'CONVERSATION_120') {
+      result = result.filter((inst) => {
+        const conv = inst.minConversation ?? (inst.minScore >= 125 ? 120 : 110);
+        return conv >= 120;
+      });
+    }
+
     setFilteredInstitutions(result);
-  }, [search, selectedCountry, selectedCategory, minScoreFilter, institutions]);
+  }, [search, selectedCountry, selectedCategory, minScoreFilter, subscoreFilter, institutions]);
 
   // 3. Initialize Leaflet Map safely in client
   useEffect(() => {
@@ -166,14 +201,17 @@ export const InstitutionsMap: React.FC = () => {
     });
   }, [filteredInstitutions]);
 
-  // Helper to draw markers
+  // Helper to draw markers with performance cap for viewport responsiveness
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMarkers = (L: any, map: any, list: Institution[]) => {
     // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    list.forEach((inst) => {
+    // Render up to 250 markers at a time for optimal 60fps Leaflet performance
+    const renderList = list.slice(0, 250);
+
+    renderList.forEach((inst) => {
       if (!inst.latitude || !inst.longitude) return;
 
       // Color based on score
@@ -265,8 +303,46 @@ export const InstitutionsMap: React.FC = () => {
     }
   };
 
-  const countries = ['All', 'United States', 'United Kingdom', 'Canada', 'Germany', 'Australia', 'Singapore'];
-  const categories = ['All', 'Ivy League', 'Top Global', 'Top STEM', 'Public Ivy', 'Russell Group', 'Canadian Top', 'Europe'];
+  // Dynamically compute list of countries and categories from dataset
+  const countries = React.useMemo(() => {
+    const set = new Set<string>();
+    institutions.forEach((i) => {
+      if (i.country) set.add(i.country);
+    });
+    // Top destination countries first, then alphabetical
+    const priority = [
+      'United States',
+      'United Kingdom',
+      'Canada',
+      'Germany',
+      'France',
+      'Australia',
+      'Japan',
+      'China',
+      'India',
+      'Korea, Republic of',
+      'Spain',
+      'Italy',
+      'Switzerland',
+      'Singapore',
+      'Netherlands',
+      'Ireland',
+    ];
+    const rest = Array.from(set).filter((c) => !priority.includes(c)).sort();
+    return ['All', ...priority.filter((p) => set.has(p)), ...rest];
+  }, [institutions]);
+
+  const categories = [
+    'All',
+    'Ivy League',
+    'Top Global',
+    'Top STEM',
+    'Public Research',
+    'Private Research',
+    'Public University',
+    'Liberal Arts',
+    'Community College',
+  ];
 
   return (
     <div className="space-y-8">
@@ -274,7 +350,7 @@ export const InstitutionsMap: React.FC = () => {
       <div className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
           {/* Search box */}
-          <div className="md:col-span-6 relative">
+          <div className="md:col-span-4 relative">
             <Search className="w-4 h-4 text-neutral-400 absolute left-4 top-3.5" />
             <input
               type="text"
@@ -286,11 +362,11 @@ export const InstitutionsMap: React.FC = () => {
           </div>
 
           {/* Country filter */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-800 outline-none cursor-pointer"
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c} value={c}>
@@ -305,13 +381,28 @@ export const InstitutionsMap: React.FC = () => {
             <select
               value={minScoreFilter}
               onChange={(e) => setMinScoreFilter(Number(e.target.value))}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-800 outline-none cursor-pointer"
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
             >
               <option value={0}>{t.scoreAny}</option>
               <option value={115}>{t.score115}</option>
               <option value={120}>{t.score120}</option>
               <option value={125}>{t.score125}</option>
               <option value={130}>{t.score130}</option>
+            </select>
+          </div>
+
+          {/* Subscores Faceted Filter */}
+          <div className="md:col-span-3">
+            <select
+              value={subscoreFilter}
+              onChange={(e) => setSubscoreFilter(e.target.value as any)}
+              className="w-full bg-emerald-50/70 border border-emerald-300 focus:border-emerald-600 rounded-2xl px-3 py-3 text-xs sm:text-sm font-bold text-emerald-900 outline-none cursor-pointer"
+            >
+              <option value="ANY">{t.subscoreAny}</option>
+              <option value="WRITING_120">{t.subscoreWriting120}</option>
+              <option value="LITERACY_120">{t.subscoreLiteracy120}</option>
+              <option value="ALL_115">{t.subscoreAll115}</option>
+              <option value="CONVERSATION_120">{t.subscoreConversation120}</option>
             </select>
           </div>
         </div>
@@ -421,7 +512,7 @@ export const InstitutionsMap: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-              {filteredInstitutions.map((inst) => {
+              {filteredInstitutions.slice(0, 100).map((inst) => {
                 const isSelected = selectedInstitution?.id === inst.id;
                 return (
                   <div
@@ -458,6 +549,12 @@ export const InstitutionsMap: React.FC = () => {
                       {inst.name}
                     </h4>
 
+                    {inst.subscoreReqs && (
+                      <p className={`text-[11px] mb-2 leading-relaxed ${isSelected ? 'text-neutral-300' : 'text-neutral-600'}`}>
+                        {inst.subscoreReqs}
+                      </p>
+                    )}
+
                     <div className={`text-xs flex items-center justify-between ${isSelected ? 'text-neutral-400' : 'text-neutral-500'}`}>
                       <span>📍 {inst.city}, {inst.country}</span>
                       {inst.acceptanceRate && (
@@ -467,6 +564,11 @@ export const InstitutionsMap: React.FC = () => {
                   </div>
                 );
               })}
+              {filteredInstitutions.length > 100 && (
+                <div className="p-3 text-center bg-neutral-50 rounded-xl border border-neutral-200/80 text-[11px] font-semibold text-neutral-500">
+                  Показаны первые 100 из {filteredInstitutions.length.toLocaleString('ru-RU')} вузов. Уточните поиск или фильтры для точной выборки.
+                </div>
+              )}
             </div>
           )}
         </div>

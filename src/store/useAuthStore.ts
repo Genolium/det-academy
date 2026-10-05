@@ -8,6 +8,14 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
+  oauthLogin: (params: {
+    provider: 'google' | 'apple' | 'vk' | 'yandex';
+    code?: string;
+    redirectUri?: string;
+    email?: string;
+    name?: string;
+    avatarUrl?: string;
+  }) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -42,6 +50,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
+      set({ error: msg, isLoading: false });
+      return false;
+    }
+  },
+
+  oauthLogin: async (params) => {
+    set({ isLoading: true, error: null });
+    try {
+      const resp = await api.oauthLogin(params);
+      set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'OAuth authentication failed';
       set({ error: msg, isLoading: false });
       return false;
     }
