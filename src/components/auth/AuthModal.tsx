@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -215,8 +216,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         {/* Title */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-[#D2F544] text-[#0C2418] flex items-center justify-center font-black text-xl">
-            D
+          <div className="w-11 h-11 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-1.5 shadow-sm shrink-0">
+            <Image
+              src="/logo.svg"
+              alt="DET Academy"
+              width={32}
+              height={32}
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">

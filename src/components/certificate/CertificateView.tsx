@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Award, ShieldCheck, Download, Printer, CheckCircle, ExternalLink } from 'lucide-react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
@@ -78,8 +79,14 @@ export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
         {/* Top Certificate Header */}
         <div className="flex items-start justify-between border-b-2 border-neutral-100 pb-8 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#0E1012] text-[#D2F544] flex items-center justify-center font-black text-2xl shadow-lg">
-              D
+            <div className="w-16 h-16 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-2 shadow-lg shrink-0">
+              <Image
+                src="/logo.svg"
+                alt="DET Academy"
+                width={52}
+                height={52}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h2 className="text-2xl font-black uppercase tracking-tight text-neutral-900">

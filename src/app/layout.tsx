@@ -20,6 +20,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'DET Academy | Интерактивная платформа подготовки к Duolingo English Test',
   description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Симулятор экзамена, тренажер скоропечатания DET, карта мировых вузов, база знаний и сертификация.`,
+  icons: {
+    icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', sizes: '1024x1024', type: 'image/png' },
+    ],
+    shortcut: '/logo.svg',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

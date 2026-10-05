@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -134,8 +135,15 @@ export const Navbar: React.FC = () => {
             href="/" 
             className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] rounded-xl shrink-0"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#0E1012] flex items-center justify-center text-[#D2F544] font-black text-base shadow-sm group-hover:scale-105 transition-transform duration-200 border border-neutral-800">
-              D
+            <div className="w-9 h-9 rounded-xl bg-[#0E1012] flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform duration-200 border border-neutral-800 shrink-0">
+              <Image
+                src="/logo.svg"
+                alt="DET Academy"
+                width={26}
+                height={26}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base tracking-tight text-[#0E1012] flex items-center gap-1.5 leading-none">

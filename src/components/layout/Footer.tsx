@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
@@ -25,8 +26,14 @@ export const Footer: React.FC = () => {
           {/* Col 1 */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#D2F544] flex items-center justify-center text-[#0C2418] font-black text-lg">
-                D
+              <div className="w-10 h-10 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-1.5 shadow-sm shrink-0">
+                <Image
+                  src="/logo.svg"
+                  alt="DET Academy"
+                  width={28}
+                  height={28}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="font-extrabold text-lg text-white">
                 DET <span className="text-[#D2F544]">ACADEMY</span>
