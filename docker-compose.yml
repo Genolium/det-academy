@@ -37,6 +37,10 @@ services:
       ALLOWED_ORIGIN: "http://localhost:13000,http://localhost:3000,https://det-academy.ru,http://det-academy.ru,https://www.det-academy.ru"
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      VK_CLIENT_ID: "${NEXT_PUBLIC_VK_CLIENT_ID:-}"
+      VK_CLIENT_SECRET: "${VK_CLIENT_SECRET:-}"
+      YANDEX_CLIENT_ID: "${NEXT_PUBLIC_YANDEX_CLIENT_ID:-}"
+      YANDEX_CLIENT_SECRET: "${YANDEX_CLIENT_SECRET:-}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,6 +53,8 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: "${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}"
+        NEXT_PUBLIC_VK_CLIENT_ID: "${NEXT_PUBLIC_VK_CLIENT_ID:-}"
+        NEXT_PUBLIC_YANDEX_CLIENT_ID: "${NEXT_PUBLIC_YANDEX_CLIENT_ID:-}"
         NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:18080}"
         NEXT_PUBLIC_DIRECTUS_URL: "${NEXT_PUBLIC_DIRECTUS_URL:-http://localhost:18055}"
     container_name: det-frontend
@@ -59,6 +65,8 @@ services:
       NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:18080}"
       NEXT_PUBLIC_DIRECTUS_URL: "${NEXT_PUBLIC_DIRECTUS_URL:-http://localhost:18055}"
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: "${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}"
+      NEXT_PUBLIC_VK_CLIENT_ID: "${NEXT_PUBLIC_VK_CLIENT_ID:-}"
+      NEXT_PUBLIC_YANDEX_CLIENT_ID: "${NEXT_PUBLIC_YANDEX_CLIENT_ID:-}"
       PORT: "3000"
       NODE_ENV: "production"
     depends_on:
