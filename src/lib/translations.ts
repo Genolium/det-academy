@@ -271,9 +271,11 @@ export interface Translations {
     strategyTitle: string;
     stepPrefix: string;
     formulaTitle: string;
+    formulaRulesTitle: string;
     mentorIntroTitle: string;
     proTipsTitle: string;
     exampleTitle: string;
+    exampleScenarioTitle: string;
     modelAnswerLabel: string;
     expertCommentLabel: string;
     pitfallsTitle: string;
@@ -660,9 +662,11 @@ export const translations: Record<Locale, Translations> = {
       strategyTitle: 'Порядок действий',
       stepPrefix: 'Этап',
       formulaTitle: 'Рабочий шаблон ответа',
-      mentorIntroTitle: 'Контекст задания',
+      formulaRulesTitle: 'Ключевая памятка и регламент',
+      mentorIntroTitle: 'Контекст',
       proTipsTitle: 'Практические рекомендации',
       exampleTitle: 'Разбор задания',
+      exampleScenarioTitle: 'Разбор ситуации',
       modelAnswerLabel: 'Пример решения:',
       expertCommentLabel: 'Разбор логики:',
       pitfallsTitle: 'Частые ошибки',
@@ -1047,9 +1051,11 @@ export const translations: Record<Locale, Translations> = {
       strategyTitle: 'Recommended Procedure',
       stepPrefix: 'Phase',
       formulaTitle: 'Response Structure',
-      mentorIntroTitle: 'Overview & Context',
+      formulaRulesTitle: 'Core Protocol & Summary',
+      mentorIntroTitle: 'Context',
       proTipsTitle: 'Key Recommendations',
       exampleTitle: 'Task Walkthrough',
+      exampleScenarioTitle: 'Scenario Walkthrough',
       modelAnswerLabel: 'Sample Response:',
       expertCommentLabel: 'Analysis:',
       pitfallsTitle: 'Common Errors',

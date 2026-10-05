@@ -185,12 +185,14 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
               </div>
             </BentoCard>
 
-            {/* 3. Golden Formula (if present) */}
+            {/* 3. Golden Formula / Summary Framework (if present) */}
             {lesson.formula && (
               <BentoCard variant="lime">
                 <div className="flex items-center gap-2.5 mb-3 text-[#0C2418]">
                   <FileCheck2 className="w-5 h-5" />
-                  <h2 className="text-xl font-black uppercase tracking-tight">{t.formulaTitle}</h2>
+                  <h2 className="text-xl font-black uppercase tracking-tight">
+                    {lesson.category === 'rules' ? t.formulaRulesTitle : t.formulaTitle}
+                  </h2>
                 </div>
                 <div className="bg-[#0C2418] text-[#D2F544] p-5 rounded-2xl font-mono text-sm leading-relaxed whitespace-pre-line shadow-inner">
                   {lesson.formula}
@@ -224,7 +226,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                 {lesson.examples.map((ex, idx) => (
                   <BentoCard key={idx} variant="dark">
                     <div className="text-xs font-mono uppercase text-[#D2F544] font-bold mb-2">
-                      {t.exampleTitle} #{idx + 1}
+                      {lesson.category === 'rules' ? t.exampleScenarioTitle : t.exampleTitle} #{idx + 1}
                     </div>
                     {ex.question && (
                       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 mb-4 font-mono text-sm text-neutral-200 leading-relaxed whitespace-pre-line">
@@ -279,16 +281,18 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
               </BentoCard>
             )}
 
-            {/* Interactive Dynamic Drill */}
-            <InteractiveLessonDrill
-              lessonSlug={lesson.slug}
-              category={lesson.category}
-              onDrillCompleted={() => {
-                if (!isCompleted) {
-                  toggleLessonCompleted(lesson.slug);
-                }
-              }}
-            />
+            {/* Interactive Dynamic Drill (for practical test modules) */}
+            {lesson.category !== 'rules' && (
+              <InteractiveLessonDrill
+                lessonSlug={lesson.slug}
+                category={lesson.category}
+                onDrillCompleted={() => {
+                  if (!isCompleted) {
+                    toggleLessonCompleted(lesson.slug);
+                  }
+                }}
+              />
+            )}
 
             {/* Complete Lesson Action */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -311,22 +315,24 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
             </div>
 
             {/* Bottom Lesson Navigation */}
-            <div className="flex items-center justify-between pt-6 border-t border-neutral-200">
+            <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-neutral-200">
               {prevLesson ? (
                 <Link
                   href={`/theory/${prevLesson.slug}`}
-                  className="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-black"
+                  className="flex items-center justify-center sm:justify-start gap-2 px-4 py-3 sm:py-2 rounded-2xl bg-white border border-neutral-200/90 hover:border-black text-xs font-bold text-neutral-700 hover:text-black transition-all shadow-sm active:scale-98 cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" /> {t.prevLesson}
+                  <ArrowLeft className="w-4 h-4 shrink-0" />
+                  <span>{t.prevLesson}</span>
                 </Link>
-              ) : <div />}
+              ) : <div className="hidden sm:block" />}
 
               {nextLesson && (
                 <Link
                   href={`/theory/${nextLesson.slug}`}
-                  className="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-black"
+                  className="flex items-center justify-center sm:justify-end gap-2 px-5 py-3 sm:py-2.5 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] text-xs font-black transition-all shadow-sm active:scale-98 cursor-pointer border border-[#C4F22C]"
                 >
-                  {t.nextLesson} <ChevronRight className="w-4 h-4" />
+                  <span>{t.nextLesson}</span>
+                  <ChevronRight className="w-4 h-4 shrink-0" />
                 </Link>
               )}
             </div>
