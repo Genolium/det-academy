@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
+import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
 
 function ProfileContent() {
   const router = useRouter();
@@ -68,6 +69,8 @@ function ProfileContent() {
       setIsSavingName(false);
     }
   };
+
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
 
   // Password change state
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -404,6 +407,13 @@ function ProfileContent() {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setIsRenameModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-[#D2F544]" />
+              <span>Переименовать</span>
+            </button>
+            <button
               onClick={async () => {
                 await logout();
                 router.push('/');
@@ -442,7 +452,37 @@ function ProfileContent() {
         </div>
       )}
 
-      {/* 2. Security & Connected Accounts Section */}
+      {/* 2. Personal Student Profile Card */}
+      <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 text-white space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#D2F544]/15 border border-[#D2F544]/30 flex items-center justify-center text-[#D2F544] shrink-0">
+              <UserIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">Профиль студента</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-[#D2F544] border border-[#D2F544]/30">
+                  DET Candidate
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Имя для сертификатов: <span className="text-white font-bold">{user.name || 'Не указано'}</span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsRenameModalOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-xs font-black flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer self-start sm:self-auto"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+            <span>Переименовать профиль</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Security & Connected Accounts Section */}
       <div className="space-y-6">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -794,6 +834,11 @@ function ProfileContent() {
         </div>
       </div>
       </div>
+
+      <EditProfileNameModal
+        isOpen={isRenameModalOpen}
+        onClose={() => setIsRenameModalOpen(false)}
+      />
     </div>
   );
 }

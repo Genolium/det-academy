@@ -32,7 +32,9 @@ import {
   Check,
   ShieldCheck,
   Zap,
+  Edit2,
 } from 'lucide-react';
+import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
 
 const CATEGORY_NAMES: Record<string, string> = {
   all: 'Все разделы',
@@ -59,10 +61,12 @@ function DashboardContent() {
     getBestMockScore,
     getReadinessPercentage,
     isEligibleForCertificate,
+    candidateName,
   } = useProgressStore();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -171,14 +175,23 @@ function DashboardContent() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#D2F544]/5 rounded-full blur-3xl pointer-events-none" />
 
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#D2F544]/20 text-[#D2F544] border border-[#D2F544]/30">
                   Личный план обучения
                 </span>
                 <span className="text-neutral-500 text-xs">•</span>
-                <span className="text-neutral-400 text-xs font-medium">
-                  {user ? user.name : 'Кандидат DET'}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-neutral-300 text-xs font-bold">
+                    {user?.name || candidateName || 'Кандидат DET'}
+                  </span>
+                  <button
+                    onClick={() => setIsRenameModalOpen(true)}
+                    className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-[#D2F544] rounded-lg transition-colors cursor-pointer"
+                    title="Переименовать профиль"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -721,6 +734,11 @@ function DashboardContent() {
           )}
         </div>
       </div>
+
+      <EditProfileNameModal
+        isOpen={isRenameModalOpen}
+        onClose={() => setIsRenameModalOpen(false)}
+      />
     </div>
   );
 }
