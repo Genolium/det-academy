@@ -85,7 +85,7 @@ export const TestController: React.FC = () => {
           listenTypeAccuracy: ltRatio,
           interactiveReadingScore: state.interactiveReadingScore,
           interactiveListeningScore: state.interactiveListeningScore,
-          writingScore: 0.85,
+          writingScore: state.writingScoreRatio || 0.8,
         })
           .then((resp) => {
             if (resp?.certificate?.id) {

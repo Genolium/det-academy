@@ -22,6 +22,7 @@ import {
   X,
   ChevronDown,
   MapPin,
+  Swords,
 } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
 
@@ -116,6 +117,12 @@ export const Navbar: React.FC = () => {
       label: t.institutions,
       icon: MapPin,
       isActive: pathname.startsWith('/institutions'),
+    },
+    {
+      href: '/arena',
+      label: 'Арена 1v1',
+      icon: Swords,
+      isActive: pathname.startsWith('/arena'),
     },
   ];
 

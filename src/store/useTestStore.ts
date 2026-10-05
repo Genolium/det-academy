@@ -43,6 +43,7 @@ interface TestSessionState {
   writingSampleText: string;
 
   finalScores: CalculatedScores | null;
+  writingScoreRatio: number;
 
   // Actions
   startNewSession: (candidateName?: string) => void;
@@ -86,6 +87,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
   writingSampleText: '',
 
   finalScores: null,
+  writingScoreRatio: 0.8,
 
   startNewSession: (candidateName = 'Candidate') => {
     const newSessionId = 'det-' + Math.random().toString(36).substring(2, 9);
@@ -109,6 +111,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
       interactiveWritingTexts: { part1: '', part2: '' },
       writingSampleText: '',
       finalScores: null,
+      writingScoreRatio: 0.8,
     });
   },
 
@@ -195,7 +198,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
       writingScore: writingRatio,
     });
 
-    set({ finalScores: scores, currentStage: 'COMPLETED' });
+    set({ finalScores: scores, writingScoreRatio: writingRatio, currentStage: 'COMPLETED' });
     return scores;
   },
 }));

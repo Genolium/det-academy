@@ -1,0 +1,222 @@
+[
+  {
+    "id": "voc-1",
+    "word": "Substantiate",
+    "ipa": "/səbˈstæn.ʃi.eɪt/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Обосновывать, подкреплять доказательствами",
+    "definitionEn": "To provide evidence to support or prove the truth of an assertion.",
+    "example": "The candidate failed to substantiate her central claim with empirical research.",
+    "collocations": ["substantiate claims", "substantiate findings", "substantiate an argument"]
+  },
+  {
+    "id": "voc-2",
+    "word": "Corroborate",
+    "ipa": "/kəˈrɒb.ə.reɪt/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Подтверждать, свидетельствовать в пользу",
+    "definitionEn": "To confirm or give support to a statement, theory, or finding.",
+    "example": "Recent atmospheric observations corroborate the predictions of climate modeling.",
+    "collocations": ["corroborate evidence", "corroborate a hypothesis", "strongly corroborate"]
+  },
+  {
+    "id": "voc-3",
+    "word": "Paradigm",
+    "ipa": "/ˈpær.ə.daɪm/",
+    "pos": "noun",
+    "level": "C1",
+    "meaningRu": "Парадигма, образец, концептуальная модель",
+    "definitionEn": "A typical example or pattern of something; a model or overarching framework.",
+    "example": "The shift toward renewable energy represents a fundamental paradigm shift in economics.",
+    "collocations": ["paradigm shift", "dominant paradigm", "scientific paradigm"]
+  },
+  {
+    "id": "voc-4",
+    "word": "Empirical",
+    "ipa": "/ɪmˈpɪr.ɪ.kəl/",
+    "pos": "adjective",
+    "level": "C1",
+    "meaningRu": "Эмпирический, основанный на опыте и фактах",
+    "definitionEn": "Based on, concerned with, or verifiable by observation rather than theory alone.",
+    "example": "The author provides extensive empirical data to validate the sociolinguistic hypothesis.",
+    "collocations": ["empirical evidence", "empirical study", "empirical research"]
+  },
+  {
+    "id": "voc-5",
+    "word": "Delineate",
+    "ipa": "/dɪˈlɪn.i.eɪt/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Очерчивать, четко описывать, разграничивать",
+    "definitionEn": "To describe, portray, or outline with precision and detail.",
+    "example": "The initial chapter delineates the boundaries between micro- and macroeconomics.",
+    "collocations": ["delineate clearly", "delineate boundaries", "delineate responsibilities"]
+  },
+  {
+    "id": "voc-6",
+    "word": "Mitigate",
+    "ipa": "/ˈmɪt.ɪ.ɡeɪt/",
+    "pos": "verb",
+    "level": "B2",
+    "meaningRu": "Смягчать, уменьшать тяжесть или вред",
+    "definitionEn": "To make less severe, serious, or painful; to alleviate.",
+    "example": "Urban reforestation policies help mitigate the heat island effect in metropolitan areas.",
+    "collocations": ["mitigate risks", "mitigate impact", "mitigate circumstances"]
+  },
+  {
+    "id": "voc-7",
+    "word": "Exacerbate",
+    "ipa": "/ɪɡˈzæs.ə.beɪt/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Обострять, усугублять, ухудшать",
+    "definitionEn": "To make a problem, bad situation, or negative feeling worse.",
+    "example": "Delaying necessary structural reforms will only exacerbate fiscal instability.",
+    "collocations": ["exacerbate the problem", "exacerbate tensions", "exacerbate poverty"]
+  },
+  {
+    "id": "voc-8",
+    "word": "Ubiquitous",
+    "ipa": "/juːˈbɪk.wɪ.təs/",
+    "pos": "adjective",
+    "level": "C1",
+    "meaningRu": "Вездесущий, повсеместно распространенный",
+    "definitionEn": "Present, appearing, or found everywhere simultaneously.",
+    "example": "Mobile telecommunications have become ubiquitous across emerging global economies.",
+    "collocations": ["ubiquitous presence", "ubiquitous technology", "ubiquitous nature"]
+  },
+  {
+    "id": "voc-9",
+    "word": "Pragmatic",
+    "ipa": "/præɡˈmæt.ɪk/",
+    "pos": "adjective",
+    "level": "B2",
+    "meaningRu": "Прагматичный, ориентированный на практическую пользу",
+    "definitionEn": "Dealing with things sensibly and realistically in a way that is based on practical rather than theoretical considerations.",
+    "example": "The committee adopted a pragmatic approach to budget allocation under strict austerity.",
+    "collocations": ["pragmatic solution", "pragmatic approach", "pragmatic decision"]
+  },
+  {
+    "id": "voc-10",
+    "word": "Juxtapose",
+    "ipa": "/ˌdʒʌk.stəˈpəʊz/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Сопоставлять, помещать рядом для сравнения",
+    "definitionEn": "To place or deal with close together for contrasting effect.",
+    "example": "The essay juxtaposes traditional pedagogical philosophies with modern algorithmic learning.",
+    "collocations": ["juxtapose against", "juxtaposed with", "strikingly juxtapose"]
+  },
+  {
+    "id": "voc-11",
+    "word": "Ephemeral",
+    "ipa": "/ɪˈfem.ər.əl/",
+    "pos": "adjective",
+    "level": "C2",
+    "meaningRu": "Мимолетный, недолговечный, эфемерный",
+    "definitionEn": "Lasting for a very short time; transient.",
+    "example": "Online social media trends often exert an ephemeral influence on public consensus.",
+    "collocations": ["ephemeral nature", "ephemeral phenomenon", "ephemeral pleasures"]
+  },
+  {
+    "id": "voc-12",
+    "word": "Unprecedented",
+    "ipa": "/ʌnˈpres.ɪ.den.tɪd/",
+    "pos": "adjective",
+    "level": "C1",
+    "meaningRu": "Беспрецедентный, не имеющий аналогов в прошлом",
+    "definitionEn": "Never done or known before; without previous example.",
+    "example": "The past decade witnessed an unprecedented expansion of synthetic intelligence systems.",
+    "collocations": ["unprecedented scale", "unprecedented growth", "unprecedented challenge"]
+  },
+  {
+    "id": "voc-13",
+    "word": "Coherent",
+    "ipa": "/kəʊˈhɪə.rənt/",
+    "pos": "adjective",
+    "level": "B2",
+    "meaningRu": "Связный, логичный, последовательный",
+    "definitionEn": "Logical, consistent, and easily understood as a whole.",
+    "example": "The candidate was commended for presenting a remarkably coherent argumentative structure.",
+    "collocations": ["coherent argument", "coherent narrative", "coherent policy"]
+  },
+  {
+    "id": "voc-14",
+    "word": "Intrinsic",
+    "ipa": "/ɪnˈtrɪn.zɪk/",
+    "pos": "adjective",
+    "level": "C1",
+    "meaningRu": "Внутренний, присущий, неотъемлемый",
+    "definitionEn": "Belonging naturally; essential; inherent.",
+    "example": "Curiosity and autonomy are intrinsic drivers of sustained intellectual achievement.",
+    "collocations": ["intrinsic value", "intrinsic motivation", "intrinsic property"]
+  },
+  {
+    "id": "voc-15",
+    "word": "Elucidate",
+    "ipa": "/iˈluː.sɪ.deɪt/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Проливать свет, разъяснять, делать понятным",
+    "definitionEn": "To make something clear; explain thoroughly.",
+    "example": "The lecturer utilized statistical charts to elucidate the complexities of macro inflation.",
+    "collocations": ["elucidate the mechanism", "elucidate points", "further elucidate"]
+  },
+  {
+    "id": "voc-16",
+    "word": "Disparity",
+    "ipa": "/dɪˈspær.ə.ti/",
+    "pos": "noun",
+    "level": "C1",
+    "meaningRu": "Неравенство, несоответствие, разрыв",
+    "definitionEn": "A great difference or inequality, typically in an unfair manner.",
+    "example": "Significant income disparity persists between metropolitan and peripheral rural districts.",
+    "collocations": ["economic disparity", "growing disparity", "racial disparity"]
+  },
+  {
+    "id": "voc-17",
+    "word": "Synthesize",
+    "ipa": "/ˈsɪn.θə.saɪz/",
+    "pos": "verb",
+    "level": "C1",
+    "meaningRu": "Синтезировать, обобщать и объединять разнородное",
+    "definitionEn": "To combine a number of things into a coherent whole.",
+    "example": "In the conclusion, students must synthesize secondary literature into a novel perspective.",
+    "collocations": ["synthesize data", "synthesize information", "synthesize findings"]
+  },
+  {
+    "id": "voc-18",
+    "word": "Plausible",
+    "ipa": "/ˈplɔː.zə.bəl/",
+    "pos": "adjective",
+    "level": "B2",
+    "meaningRu": "Правдоподобный, убедительный, вероятный",
+    "definitionEn": "Seeming reasonable, probable, or worthy of belief.",
+    "example": "The experimental results provide a plausible explanation for the genetic mutation.",
+    "collocations": ["plausible explanation", "plausible scenario", "highly plausible"]
+  },
+  {
+    "id": "voc-19",
+    "word": "Advocate",
+    "ipa": "/ˈæd.və.keɪt/",
+    "pos": "verb",
+    "level": "B2",
+    "meaningRu": "Выступать в защиту, отстаивать, пропагандировать",
+    "definitionEn": "To publicly recommend or support a particular cause or policy.",
+    "example": "Leading economists advocate substantial investment in sustainable public transit.",
+    "collocations": ["strongly advocate", "advocate reforms", "advocate for change"]
+  },
+  {
+    "id": "voc-20",
+    "word": "Inherent",
+    "ipa": "/ɪnˈher.ənt/",
+    "pos": "adjective",
+    "level": "C1",
+    "meaningRu": "Неотъемлемый, прирожденный, свойственный",
+    "definitionEn": "Existing in something as a permanent, essential, or characteristic attribute.",
+    "example": "Every scientific measurement carries an inherent degree of margin error.",
+    "collocations": ["inherent risk", "inherent flaw", "inherent contradiction"]
+  }
+]

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore, TOTAL_LESSONS } from '@/store/useProgressStore';
 import { lessonsData, LessonGuide } from '@/data/theoryContent';
+import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
+import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
 import {
   GraduationCap,
   Sparkles,
@@ -84,6 +86,23 @@ function DashboardContent() {
     if (selectedCategory === 'all') return lessonsData;
     return lessonsData.filter((l) => l.category === selectedCategory);
   }, [selectedCategory]);
+
+  const currentSubscores = useMemo(() => {
+    if (latestTest) {
+      return {
+        literacy: latestTest.literacy,
+        comprehension: latestTest.comprehension,
+        conversation: latestTest.conversation,
+        production: latestTest.production,
+      };
+    }
+    return {
+      literacy: Math.max(10, targetScore - 5),
+      comprehension: Math.max(10, targetScore),
+      conversation: Math.max(10, targetScore - 10),
+      production: Math.max(10, targetScore - 5),
+    };
+  }, [latestTest, targetScore]);
 
   const handleToggle = async (e: React.MouseEvent, slug: string) => {
     e.preventDefault();
@@ -379,6 +398,12 @@ function DashboardContent() {
           </div>
         )}
 
+        {/* Interactive Skill Radar (Subscores vs Target University) */}
+        <SkillRadarChart
+          currentScores={currentSubscores}
+          overallScore={latestTest ? latestTest.overallScore : targetScore}
+        />
+
         {/* 3. Subscores Diagnostics (DET 4 Pillars) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -498,6 +523,9 @@ function DashboardContent() {
             </div>
           </div>
         </div>
+
+        {/* Spaced Repetition (SuperMemo SM-2 Academic Vocabulary) */}
+        <SrsFlashcards />
 
         {/* 4. Complete 16-Lesson Roadmap & Checklist */}
         <div className="space-y-4">
