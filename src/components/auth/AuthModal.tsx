@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { X, Lock, Mail, User, Sparkles, Shield } from 'lucide-react';
+import { X, Lock, Mail, User, Info } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
 
   const { login, register, oauthLogin, isLoading, error, clearError } = useAuthStore();
   const { setCandidateName, syncWithBackend } = useProgressStore();
@@ -152,29 +153,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
+    clearError();
+    setNotice(null);
+
     if (provider === 'google') {
       await handleGoogleRealLogin();
       return;
     }
 
-    clearError();
-    // For Apple, VK and Yandex:
-    if (provider === 'vk') {
-      alert('Для входа через VK ID требуется указать зарегистрированный ID приложения VK в настройках.');
-    } else if (provider === 'yandex') {
-      alert('Для входа через Яндекс ID требуется указать Client ID приложения в консоли Яндекс OAuth.');
-    } else if (provider === 'apple') {
-      alert('Для входа через Apple ID требуется Service ID Apple Developer.');
-    }
-  };
+    const redirectUri = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
 
-  const handleQuickDemoLogin = async () => {
-    clearError();
-    const ok = await login('alex@det-academy.com', 'password123');
-    if (ok) {
-      setCandidateName('Alex Rivera');
-      syncWithBackend();
-      onClose();
+    if (provider === 'vk') {
+      const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID;
+      if (vkAppId) {
+        window.location.href = `https://oauth.vk.com/authorize?client_id=${vkAppId}&display=page&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}&response_type=token&v=5.131`;
+        return;
+      }
+      setNotice('Вход через VK ID находится на стадии модерации приложения. Войдите через Google или Email.');
+      return;
+    }
+
+    if (provider === 'yandex') {
+      const yandexId = process.env.NEXT_PUBLIC_YANDEX_CLIENT_ID;
+      if (yandexId) {
+        window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${yandexId}&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}`;
+        return;
+      }
+      setNotice('Вход через Яндекс ID находится в процессе подключения. Войдите через Google или Email.');
+      return;
+    }
+
+    if (provider === 'apple') {
+      setNotice('Вход через Apple ID находится в процессе верификации. Войдите через Google или Email.');
+      return;
     }
   };
 
@@ -236,6 +251,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {error && (
           <div className="mb-4 p-3 bg-red-950/80 border border-red-800 text-red-300 text-xs rounded-xl">
             {error}
+          </div>
+        )}
+
+        {notice && (
+          <div className="mb-4 p-3 bg-blue-950/80 border border-blue-800 text-blue-300 text-xs rounded-xl flex items-start gap-2 animate-in fade-in duration-150">
+            <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+            <div className="flex-1 leading-relaxed">{notice}</div>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="text-neutral-400 hover:text-white px-1 text-sm font-bold"
+              title="Закрыть"
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -312,16 +342,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
             {/* Google */}
             <button
               type="button"
               onClick={() => handleOAuthLogin('google')}
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
-              title="Google Sign In"
+              className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm group"
+              title="Войти через Google"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"
@@ -347,10 +377,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               type="button"
               onClick={() => handleOAuthLogin('apple')}
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
-              title="Apple Sign In"
+              className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm group"
+              title="Войти через Apple"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 170 170">
+              <svg className="w-4 h-4 shrink-0 fill-current transition-transform group-hover:scale-110" viewBox="0 0 170 170">
                 <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.69-7.79-11.97-14.24-6.3-9.47-11.18-20.2-14.63-32.19-3.46-11.99-5.19-23.3-5.19-33.93 0-14.6 3.69-26.68 11.07-36.25 7.38-9.57 16.66-14.42 27.84-14.56 5.34 0 11.17 1.34 17.5 4.02 6.33 2.68 10.23 4.08 11.71 4.19 1.7.11 5.92-1.34 12.67-4.35 6.74-3.02 12.62-4.38 17.63-4.08 13.06.74 23.49 5.71 31.28 14.92-11.43 6.94-17.02 16.32-16.78 28.14.24 9.47 3.84 17.38 10.81 23.72 6.97 6.34 15.22 10.02 24.75 11.04-2.11 6.53-4.76 13.12-7.93 19.78zM119.22 33.15c0-7.38 2.64-14.16 7.92-20.35 5.28-6.19 11.78-10.45 19.5-12.8-1.05 7.6-3.9 14.53-8.56 20.8-4.66 6.27-10.96 10.39-18.86 12.35z" />
               </svg>
               <span>Apple</span>
@@ -361,11 +391,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               type="button"
               onClick={() => handleOAuthLogin('vk')}
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#0077FF]/15 hover:bg-[#0077FF]/25 border border-[#0077FF]/50 text-xs font-bold text-[#4B9CFF] transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
-              title="VK ID Sign In"
+              className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm group"
+              title="Войти через VK ID"
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M13.162 18.994c.609 0 .858-.406.851-.915-.072-1.428.643-2.138 1.455-2.138.813 0 1.547.781 2.378 1.956.845 1.196 1.488 1.097 2.155 1.097h2.894c1.196 0 1.62-.647 1.105-1.745-.631-1.348-2.613-3.649-3.235-4.463-.623-.814-.52-1.171 0-1.996.52-.825 2.29-3.266 2.628-4.442.227-.791-.252-1.344-1.258-1.344h-2.894c-.812 0-1.184.431-1.387.904-.766 1.785-2.029 4.195-2.576 4.417-.547.222-.728-.106-.728-.799V7.954c0-.987-.286-1.432-1.106-1.432h-4.545c-.623 0-.999.462-.999.897 0 .935 1.392 1.151 1.535 3.784v4.062c0 .889-.16 1.05-.512 1.05-.945 0-3.245-3.486-4.606-7.469-.364-1.066-.733-1.498-1.554-1.498H1.057C.244 8.799 0 9.177 0 9.734c0 .878 1.127 5.253 5.253 11.026 2.75 3.849 6.626 5.86 10.134 5.86l-2.225-7.626z" />
+              <svg className="w-4 h-4 shrink-0 rounded-sm transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none">
+                <rect width="24" height="24" rx="5" fill="#0077FF" />
+                <path d="M19.3 17.5h-1.8c-.7 0-.9-.5-2.1-1.8-1.1-1-1.5-1.2-1.8-1.2-.4 0-.5.1-.5.6v1.7c0 .4-.1.7-1.3.7-1.9 0-4-1.2-5.5-3.3-2.3-3.2-2.9-5.6-2.9-6.1 0-.3.1-.5.6-.5h1.8c.5 0 .6.2.8.7.9 2.6 2.4 4.9 3 4.9.2 0 .3-.1.3-.7V9.8c-.1-1.2-.7-1.3-.7-1.8 0-.2.2-.4.5-.4h2.8c.4 0 .5.2.5.7v3.6c0 .4.2.5.3.5.2 0 .4-.1.9-.6 1.3-1.5 2.3-3.7 2.3-3.7.1-.3.3-.5.8-.5h1.8c.5 0 .7.3.5.7-.2 1-2.3 3.8-2.3 3.8-.2.3-.3.5 0 .9.2.3.9.9 1.3 1.4.8 1 1.5 1.8 1.6 2.3.2.5-.1.8-.6.8z" fill="white" />
               </svg>
               <span>VK ID</span>
             </button>
@@ -375,48 +406,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               type="button"
               onClick={() => handleOAuthLogin('yandex')}
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#FC3F1D]/15 hover:bg-[#FC3F1D]/25 border border-[#FC3F1D]/50 text-xs font-bold text-[#FC3F1D] transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
-              title="Yandex ID Sign In"
+              className="flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm group"
+              title="Войти через Яндекс ID"
             >
-              <div className="w-4 h-4 rounded-full bg-[#FC3F1D] text-white flex items-center justify-center font-black text-[10px] leading-none">
-                Я
-              </div>
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#FC3F1D" />
+                <path d="M14.5 19H12.2V13.8H10.5L8.2 19H5.7L8.6 12.8C7.1 12.3 6.2 11.1 6.2 9.5C6.2 6.8 8.1 5 11.8 5H14.5V19ZM12.2 7.1H11.5C9.7 7.1 8.6 8 8.6 9.4C8.6 10.9 9.7 11.8 11.5 11.8H12.2V7.1Z" fill="white" />
+              </svg>
               <span>Яндекс</span>
             </button>
           </div>
-        </div>
-
-        {/* Quick Demo Login Options */}
-        <div className="mt-5 pt-4 border-t border-neutral-800/80 space-y-2">
-          <p className="text-[11px] text-neutral-400 mb-2 text-center">
-            {t.quickDemoHeading}
-          </p>
-          <button
-            type="button"
-            onClick={handleQuickDemoLogin}
-            disabled={isLoading}
-            className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-bold text-[#D2F544] flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {t.demoStudentBtn}
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              clearError();
-              const ok = await login('admin@det-academy.com', 'admin123');
-              if (ok) {
-                setCandidateName('Super Admin');
-                syncWithBackend();
-                onClose();
-              }
-            }}
-            disabled={isLoading}
-            className="w-full py-2 px-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/60 text-xs font-bold text-purple-300 flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <Shield className="w-3.5 h-3.5 text-purple-400" />
-            {t.demoAdminBtn}
-          </button>
         </div>
       </div>
     </div>

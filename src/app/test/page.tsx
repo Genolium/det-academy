@@ -18,7 +18,7 @@ export default function TestLobbyPage() {
   const { user } = useAuthStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testLobby;
-  const [candidateName, setCandidateName] = useState('Alex Rivera');
+  const [candidateName, setCandidateName] = useState('');
 
   useEffect(() => {
     if (user?.name) {

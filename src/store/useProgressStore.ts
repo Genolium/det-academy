@@ -26,13 +26,13 @@ interface ProgressState {
   getBestMockScore: () => number;
 }
 
-const TOTAL_LESSONS = 12;
+const TOTAL_LESSONS = 16;
 
 export const useProgressStore = create<ProgressState>((set, get) => ({
   completedLessons: [],
   bestTypingWpm: 0,
   testResults: [],
-  candidateName: 'Alex Rivera',
+  candidateName: '',
 
   setCandidateName: (candidateName) => {
     if (typeof window !== 'undefined') {

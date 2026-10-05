@@ -73,7 +73,7 @@ export default function VerifyCertificatePage({ params }: VerifyPageProps) {
       }
     : {
         id: certId,
-        candidateName: candidateName || 'Alex Rivera',
+        candidateName: candidateName || 'Студент DET Academy',
         issueDate: 'October 2, 2026',
         overallScore: 125,
         literacy: 120,
