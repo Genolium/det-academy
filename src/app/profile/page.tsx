@@ -266,7 +266,6 @@ function ProfileContent() {
   const isGoogleLinked = linkedList.some((p) => p.provider === 'google');
   const isVkLinked = linkedList.some((p) => p.provider === 'vk');
   const isYandexLinked = linkedList.some((p) => p.provider === 'yandex');
-  const isAppleLinked = linkedList.some((p) => p.provider === 'apple');
 
   const bestScore = testResults.length > 0 ? Math.max(...testResults.map((r) => r.overallScore)) : null;
 
@@ -448,8 +447,8 @@ function ProfileContent() {
           )}
         </div>
 
-        {/* Connected Social Accounts 2x2 Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Connected Social Accounts Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* 1. Google */}
           <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-4">
             <div className="flex items-start justify-between">
@@ -606,58 +605,6 @@ function ProfileContent() {
                 >
                   {actionLoading === 'yandex' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 text-[#FC3F1D]" />}
                   <span>Привязать Яндекс</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 4. Apple ID */}
-          <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 fill-current text-white" viewBox="0 0 170 170">
-                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.69-7.79-11.97-14.24-6.3-9.47-11.18-20.2-14.63-32.19-3.46-11.99-5.19-23.3-5.19-33.93 0-14.6 3.69-26.68 11.07-36.25 7.38-9.57 16.66-14.42 27.84-14.56 5.34 0 11.17 1.34 17.5 4.02 6.33 2.68 10.23 4.08 11.71 4.19 1.7.11 5.92-1.34 12.67-4.35 6.74-3.02 12.62-4.38 17.63-4.08 13.06.74 23.49 5.71 31.28 14.92-11.43 6.94-17.02 16.32-16.78 28.14.24 9.47 3.84 17.38 10.81 23.72 6.97 6.34 15.22 10.02 24.75 11.04-2.11 6.53-4.76 13.12-7.93 19.78zM119.22 33.15c0-7.38 2.64-14.16 7.92-20.35 5.28-6.19 11.78-10.45 19.5-12.8-1.05 7.6-3.9 14.53-8.56 20.8-4.66 6.27-10.96 10.39-18.86 12.35z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white">Apple ID</h4>
-                  <p className="text-[11px] text-neutral-400">
-                    {isAppleLinked ? 'Привязано' : 'Не подключено'}
-                  </p>
-                </div>
-              </div>
-
-              {isAppleLinked ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Подключено
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-500 border border-neutral-800">
-                  Не активно
-                </span>
-              )}
-            </div>
-
-            <div>
-              {isAppleLinked ? (
-                <button
-                  onClick={() => handleUnlink('apple')}
-                  disabled={actionLoading === 'apple'}
-                  className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-800 text-xs font-semibold text-neutral-400 hover:text-red-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {actionLoading === 'apple' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  <span>Отвязать Apple ID</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleLink('apple')}
-                  disabled={actionLoading === 'apple'}
-                  className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  {actionLoading === 'apple' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  <span>Привязать Apple ID</span>
                 </button>
               )}
             </div>
