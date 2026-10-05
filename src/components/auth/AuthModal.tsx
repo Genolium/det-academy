@@ -167,7 +167,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (provider === 'vk') {
       const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID;
       if (vkAppId) {
-        window.location.href = `https://id.vk.com/auth?app_id=${vkAppId}&response_type=code&redirect_uri=${encodeURIComponent(
+        window.location.href = `https://id.vk.com/authorize?client_id=${vkAppId}&app_id=${vkAppId}&response_type=code&redirect_uri=${encodeURIComponent(
           callbackUri
         )}&state=provider%3Dvk%26action%3Dlogin`;
         return;

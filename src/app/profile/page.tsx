@@ -170,7 +170,7 @@ function ProfileContent() {
         setErrorMsg('Для привязки VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в файле конфигурации .env на сервере.');
         return;
       }
-      const authUrl = `https://id.vk.com/auth?app_id=${vkClientId}&response_type=code&redirect_uri=${encodeURIComponent(
+      const authUrl = `https://id.vk.com/authorize?client_id=${vkClientId}&app_id=${vkClientId}&response_type=code&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&state=provider%3Dvk%26action%3Dlink`;
       window.location.href = authUrl;
