@@ -126,37 +126,37 @@ function DashboardContent() {
     <div className="min-h-screen bg-[#070809] text-white">
       {/* Sub-header navigation tabs */}
       <div className="border-b border-neutral-800/80 bg-[#0E1012]/80 backdrop-blur-md sticky top-[61px] z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-          <div className="flex items-center gap-6 text-xs font-bold">
-            <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between min-h-[56px] py-2 sm:py-0 overflow-x-auto no-scrollbar gap-4">
+          <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold shrink-0">
+            <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-3 sm:py-4 whitespace-nowrap">
               <GraduationCap className="w-4 h-4" />
               <span>Дашборд подготовки</span>
             </span>
             <Link
               href="/profile"
-              className="text-neutral-400 hover:text-white flex items-center gap-2 py-4 transition-colors"
+              className="text-neutral-400 hover:text-white flex items-center gap-2 py-3 sm:py-4 transition-colors whitespace-nowrap"
             >
               <Settings className="w-4 h-4" />
               <span>Безопасность и профиль</span>
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="text-xs text-neutral-400 hidden sm:inline-block">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <label className="text-xs text-neutral-400 hidden md:inline-block whitespace-nowrap">
               Целевой балл DET:
             </label>
-            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2 py-1">
-              <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5" />
+            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2 py-1 max-w-[155px] sm:max-w-none">
+              <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />
               <select
                 value={targetScore}
                 onChange={(e) => setTargetScore(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer truncate"
               >
                 <option value={105} className="bg-[#0E1012]">105+ (Foundation)</option>
                 <option value={115} className="bg-[#0E1012]">115+ (Bachelor entry)</option>
                 <option value={125} className="bg-[#0E1012]">125+ (Top-100 Global)</option>
-                <option value={135} className="bg-[#0E1012]">135+ (Top-30 Ivy League)</option>
-                <option value={150} className="bg-[#0E1012]">150+ (Maximum Band)</option>
+                <option value={135} className="bg-[#0E1012]">135+ (Top-30 Ivy)</option>
+                <option value={150} className="bg-[#0E1012]">150+ (Max Band)</option>
               </select>
             </div>
           </div>

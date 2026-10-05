@@ -142,15 +142,15 @@ export default function TheoryCatalogPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
-                    <span className="text-xs font-medium text-neutral-400">
-                      {t.timingLabel}: {lesson.timeLimit}
+                  <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-neutral-400 line-clamp-1 pr-1">
+                      <span className="font-semibold text-neutral-500">{t.timingLabel}</span> {lesson.timeLimit}
                     </span>
                     <Link
                       href={`/theory/${lesson.slug}`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#0E1012] bg-[#D2F544] hover:bg-[#C4F22C] px-3.5 py-1.5 rounded-full transition-transform active:scale-95 shadow-sm"
+                      className="inline-flex items-center justify-center gap-1 text-xs font-bold text-[#0E1012] bg-[#D2F544] hover:bg-[#C4F22C] px-3.5 py-1.5 h-8 min-w-[125px] rounded-full transition-transform active:scale-95 shadow-sm shrink-0 whitespace-nowrap"
                     >
-                      {t.openGuide} <ArrowUpRight className="w-3.5 h-3.5" />
+                      <span>{t.openGuide}</span> <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </BentoCard>

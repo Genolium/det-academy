@@ -312,16 +312,16 @@ function ProfileContent() {
     <div className="min-h-screen bg-[#070809] text-white">
       {/* Sub-header navigation tabs */}
       <div className="border-b border-neutral-800/80 bg-[#0E1012]/80 backdrop-blur-md sticky top-[61px] z-30 mb-8">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-          <div className="flex items-center gap-6 text-xs font-bold">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between min-h-[56px] py-2 sm:py-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold shrink-0">
             <Link
               href="/dashboard"
-              className="text-neutral-400 hover:text-white flex items-center gap-2 py-4 transition-colors"
+              className="text-neutral-400 hover:text-white flex items-center gap-2 py-3 sm:py-4 transition-colors whitespace-nowrap"
             >
               <GraduationCap className="w-4 h-4" />
               <span>Дашборд подготовки</span>
             </Link>
-            <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-4">
+            <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-3 sm:py-4 whitespace-nowrap">
               <Shield className="w-4 h-4" />
               <span>Безопасность и профиль</span>
             </span>
