@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { ArrowUpRight, X } from 'lucide-react';
 import { api, AdBannerData } from '@/lib/api';
-import { directusCms } from '@/lib/directus';
 import { translations } from '@/lib/translations';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
@@ -21,24 +20,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
 
   useEffect(() => {
     let isMounted = true;
-    directusCms.getBanners(placement)
-      .then((directusBanners) => {
-        if (isMounted && directusBanners && directusBanners.length > 0) {
-          const b = directusBanners[0];
-          setBanner({
-            id: b.id,
-            placement: b.placement,
-            imageUrl: b.image_url || '',
-            targetUrl: b.target_url,
-            altText: b.alt_text,
-            isActive: b.is_active,
-            impressions: b.impressions,
-            clicks: b.clicks,
-          });
-          return;
-        }
-        return api.getActiveBanners(placement);
-      })
+    api.getActiveBanners(placement)
       .then((banners) => {
         if (isMounted && banners && banners.length > 0) {
           setBanner(banners[0]);

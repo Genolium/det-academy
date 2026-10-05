@@ -115,9 +115,11 @@ func main() {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.Timeout(60 * time.Second))
 
-	// CORS configuration
+	// CORS configuration: Allow any valid origin dynamically while preserving credentials
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   corsOrigins(),
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			return true
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},

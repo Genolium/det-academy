@@ -93,7 +93,10 @@ services:
       DB_PASSWORD: "postgres"
       DB_SSL: "false"
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "http://localhost:13000,http://localhost:3000,https://det-academy.ru,http://det-academy.ru"
+      CORS_ORIGIN: "true"
+      PUBLIC_URL: "/"
+      CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-eval' 'unsafe-inline' blob:"
+      CONTENT_SECURITY_POLICY_DIRECTIVES__CONNECT_SRC: "'self' http: https: ws: wss: *"
       STORAGE_LOCATIONS: "local"
       STORAGE_LOCAL_ROOT: "./uploads"
     volumes:

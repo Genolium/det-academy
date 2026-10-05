@@ -26,13 +26,25 @@ import {
   Sliders,
   CheckCircle,
   XCircle,
+  Lock,
+  Mail,
+  LogOut,
+  ArrowRight,
+  Loader2,
+  Zap,
 } from 'lucide-react';
 
 type Tab = 'overview' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, login } = useAuthStore();
+  const { user, login, logout, checkAuth, isLoading } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+
+  // Quick Admin Login states (when accessing /admin unauthenticated)
+  const [adminEmail, setAdminEmail] = useState('admin@det-academy.com');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Data states
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -49,6 +61,11 @@ export const AdminDashboard: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
 
+  // Check auth on initial mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   // New Banner Form Modal
   const [showNewBannerModal, setShowNewBannerModal] = useState(false);
   const [newBannerPlacement, setNewBannerPlacement] = useState<'HEADER' | 'FOOTER'>('HEADER');
@@ -62,8 +79,9 @@ export const AdminDashboard: React.FC = () => {
   const [newQWord, setNewQWord] = useState('');
   const [newQIsReal, setNewQIsReal] = useState(true);
 
-  // Load stats and active tab data
+  // Load stats and active tab data only if user is admin
   const loadData = async () => {
+    if (!user || user.role !== 'admin') return;
     setLoading(true);
     try {
       const statsData = await api.getAdminStats();
@@ -71,23 +89,23 @@ export const AdminDashboard: React.FC = () => {
 
       if (activeTab === 'users' || activeTab === 'overview') {
         const uRes = await api.getAdminUsers({ search: userSearch, role: userRoleFilter });
-        setUsers(uRes.users);
+        setUsers(Array.isArray(uRes?.users) ? uRes.users : []);
       }
       if (activeTab === 'sessions') {
         const sRes = await api.getAdminSessions();
-        setSessions(sRes.sessions);
+        setSessions(Array.isArray(sRes?.sessions) ? sRes.sessions : []);
       }
       if (activeTab === 'banners') {
         const bRes = await api.getAdminBanners();
-        setBanners(bRes.banners);
+        setBanners(Array.isArray(bRes?.banners) ? bRes.banners : []);
       }
       if (activeTab === 'questions') {
         const qRes = await api.getAdminQuestions();
-        setQuestions(qRes.questions);
+        setQuestions(Array.isArray(qRes?.questions) ? qRes.questions : []);
       }
       if (activeTab === 'institutions') {
         const instRes = await api.getInstitutions();
-        setInstitutions(instRes.institutions);
+        setInstitutions(Array.isArray(instRes?.institutions) ? instRes.institutions : []);
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -97,8 +115,37 @@ export const AdminDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, [activeTab, userSearch, userRoleFilter]);
+    if (user && user.role === 'admin') {
+      loadData();
+    }
+  }, [user, activeTab, userSearch, userRoleFilter]);
+
+  const handleAdminLogin = async (e?: React.FormEvent, customEmail?: string, customPass?: string) => {
+    if (e) e.preventDefault();
+    const emailToUse = customEmail || adminEmail;
+    const passToUse = customPass || adminPassword;
+    if (!emailToUse || !passToUse) {
+      setLoginError('Введите email и пароль администратора');
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      const ok = await login(emailToUse, passToUse);
+      if (!ok) {
+        setLoginError('Неверный email или пароль');
+      } else {
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser?.role !== 'admin') {
+          setLoginError(`Учётная запись ${currentUser?.email} имеет роль "${currentUser?.role}", а не "admin".`);
+        }
+      }
+    } catch (err: unknown) {
+      setLoginError(err instanceof Error ? err.message : 'Ошибка при входе');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   // Actions
   const handleRoleChange = async (userId: string, currentRole: string) => {
@@ -190,33 +237,149 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // If user is not admin, show restricted screen
-  if (!user || user.role !== 'admin') {
+  // Loading state while checking auth
+  if (isLoading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-[#0E1012] border border-neutral-800 rounded-3xl p-8 text-white text-center space-y-6 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto text-red-400">
-            <Shield className="w-8 h-8" />
+        <div className="flex flex-col items-center gap-3 text-neutral-400 text-xs">
+          <Loader2 className="w-8 h-8 text-[#D2F544] animate-spin" />
+          <span>Проверка прав доступа к CRM...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not admin, show login form or access restricted screen
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center p-4 py-12">
+        <div className="max-w-md w-full bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-[#D2F544]/10 border border-[#D2F544]/30 flex items-center justify-center mx-auto text-[#D2F544]">
+              <Shield className="w-8 h-8" />
+            </div>
+
+            <div>
+              <PillBadge variant="dark" prefixHash className="mx-auto text-[#D2F544] border-neutral-800">
+                Admin CRM Panel
+              </PillBadge>
+              <h2 className="text-2xl font-black uppercase text-white tracking-tight mt-2">
+                Вход в Панель Управления
+              </h2>
+              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
+                Доступ к CRM, банку вопросов и баннерной сети открыт для администраторов DET Academy.
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <PillBadge variant="dark" prefixHash className="mx-auto text-red-400 border-red-800">
-              Admin Access Required
-            </PillBadge>
-            <h2 className="text-2xl font-black uppercase text-white tracking-tight">
-              Доступ ограничен
-            </h2>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Панель управления и CRM доступны только администраторам платформы DET Academy.
+          {user && user.role !== 'admin' && (
+            <div className="p-3.5 bg-amber-950/60 border border-amber-800/80 rounded-2xl text-amber-300 text-xs space-y-2">
+              <div className="font-bold flex items-center gap-1.5">
+                <span>⚠️ Текущий аккаунт не имеет прав администратора</span>
+              </div>
+              <p className="text-[11px] text-amber-200/80">
+                Вы авторизованы как <strong>{user.name}</strong> ({user.email}) с ролью <code>{user.role}</code>. Войдите под учётной записью администратора.
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:underline cursor-pointer pt-1"
+              >
+                <LogOut className="w-3 h-3" />
+                <span>Выйти из этого аккаунта</span>
+              </button>
+            </div>
+          )}
+
+          {loginError && (
+            <div className="p-3 bg-red-950/80 border border-red-800 rounded-2xl text-red-300 text-xs flex items-center gap-2">
+              <XCircle className="w-4 h-4 shrink-0 text-red-400" />
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <form onSubmit={(e) => handleAdminLogin(e)} className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                Email администратора
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
+                <input
+                  type="email"
+                  required
+                  placeholder="admin@det-academy.com"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#D2F544] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                Пароль
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-800 focus:border-[#D2F544] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] py-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md disabled:opacity-50 cursor-pointer"
+            >
+              {loginLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Проверка...</span>
+                </>
+              ) : (
+                <>
+                  <span>Войти в Панель CRM</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Demo Admin Login Button */}
+          <div className="pt-2 border-t border-neutral-800/80 space-y-2">
+            <button
+              type="button"
+              disabled={loginLoading}
+              onClick={() => {
+                setAdminEmail('admin@det-academy.com');
+                setAdminPassword('admin123');
+                handleAdminLogin(undefined, 'admin@det-academy.com', 'admin123');
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 hover:border-[#D2F544]/50 text-neutral-200 hover:text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer group shadow-sm"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#D2F544] group-hover:scale-110 transition-transform" />
+              <span>⚡ Войти как Super Administrator (Демо)</span>
+            </button>
+            <p className="text-[10px] text-center text-neutral-500 font-mono">
+              Логин: admin@det-academy.com · Пароль: admin123
             </p>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1 text-center">
             <Link
               href="/"
-              className="w-full bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer"
+              className="text-xs text-neutral-400 hover:text-white transition-colors"
             >
-              Вернуться на главную
+              ← Вернуться на главную
             </Link>
           </div>
         </div>
@@ -548,7 +711,7 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {users.map((u) => (
+                  {(users || []).map((u) => (
                     <tr key={u.id} className="hover:bg-neutral-50/80 transition-colors">
                       <td className="py-3 px-2 font-bold text-[#0E1012] flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-neutral-900 text-[#D2F544] flex items-center justify-center text-xs font-black">
@@ -617,7 +780,7 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {sessions.map((sess) => (
+                  {(sessions || []).map((sess) => (
                     <tr key={sess.id} className="hover:bg-neutral-50/80">
                       <td className="py-3 px-2 font-bold text-[#0E1012]">{sess.candidateName}</td>
                       <td className="py-3 px-2">
@@ -668,7 +831,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {banners.map((b) => {
+              {(banners || []).map((b) => {
                 const ctr = b.impressions && b.impressions > 0 ? (((b.clicks || 0) / b.impressions) * 100).toFixed(1) : '0.0';
                 return (
                   <div key={b.id} className="p-5 rounded-2xl border border-neutral-200 bg-neutral-50/50 space-y-3">
@@ -723,7 +886,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {questions.map((q) => (
+              {(questions || []).map((q) => (
                 <div key={q.id} className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -762,7 +925,7 @@ export const AdminDashboard: React.FC = () => {
                   Каталог университетов
                 </h3>
                 <p className="text-xs text-neutral-500">
-                  Всего вузов в базе: {institutions.length}. Отображаются на интерактивной карте.
+                  Всего вузов в базе: {(institutions || []).length}. Отображаются на интерактивной карте.
                 </p>
               </div>
 
@@ -775,7 +938,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {institutions.slice(0, 18).map((inst) => (
+              {(institutions || []).slice(0, 18).map((inst) => (
                 <div key={inst.id} className="p-4 rounded-2xl border border-neutral-200 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
