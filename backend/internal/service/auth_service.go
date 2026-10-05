@@ -109,6 +109,23 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 	email := req.Email
 	name := req.Name
 	avatarURL := req.AvatarURL
+	providerUID := req.Code
+	if providerUID == "" {
+		providerUID = email
+	}
+
+	// 1. Try to find user by linked social account first
+	if providerUID != "" {
+		if sa, err := s.userRepo.GetSocialAccountByProviderUID(ctx, provider, providerUID); err == nil && sa != nil {
+			if user, err := s.userRepo.GetByID(ctx, sa.UserID); err == nil && user != nil {
+				token, err := s.GenerateToken(user)
+				if err != nil {
+					return nil, "", fmt.Errorf("failed to generate token: %w", err)
+				}
+				return user, token, nil
+			}
+		}
+	}
 
 	// If email is not supplied directly, generate deterministic identity for OAuth code or provider
 	if email == "" {
@@ -134,7 +151,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 	}
 
-	// 1. Try to find existing user by email
+	// 2. Try to find existing user by email
 	existingUser, err := s.userRepo.GetByEmail(ctx, email)
 	if err == nil && existingUser != nil {
 		// Update avatar if provided
@@ -143,6 +160,16 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 			_ = s.userRepo.Update(ctx, existingUser)
 		}
 
+		// Ensure social account link is stored
+		_ = s.userRepo.LinkSocialAccount(ctx, &models.SocialAccount{
+			ID:             uuid.New().String(),
+			UserID:         existingUser.ID,
+			Provider:       provider,
+			ProviderUserID: providerUID,
+			Email:          email,
+			CreatedAt:      time.Now().UTC(),
+		})
+
 		token, err := s.GenerateToken(existingUser)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to generate token: %w", err)
@@ -150,11 +177,11 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		return existingUser, token, nil
 	}
 
-	// 2. User does not exist -> Create new OAuth user
+	// 3. User does not exist -> Create new OAuth user
 	newUser := &models.User{
 		ID:           uuid.New().String(),
 		Email:        email,
-		PasswordHash: "", // OAuth accounts do not have local passwords
+		PasswordHash: "", // OAuth accounts do not have local passwords initially
 		Name:         name,
 		Role:         "student",
 		AvatarURL:    avatarURL,
@@ -167,12 +194,136 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		return nil, "", fmt.Errorf("failed to create oauth user: %w", err)
 	}
 
+	// Store social account link
+	_ = s.userRepo.LinkSocialAccount(ctx, &models.SocialAccount{
+		ID:             uuid.New().String(),
+		UserID:         newUser.ID,
+		Provider:       provider,
+		ProviderUserID: providerUID,
+		Email:          email,
+		CreatedAt:      time.Now().UTC(),
+	})
+
 	token, err := s.GenerateToken(newUser)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate token: %w", err)
 	}
 
 	return newUser, token, nil
+}
+
+func (s *AuthService) GetLinkedProviders(ctx context.Context, userID string) (*models.LinkedProvidersResponse, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("пользователь не найден")
+	}
+
+	accounts, err := s.userRepo.GetSocialAccounts(ctx, userID)
+	if err != nil {
+		accounts = []models.SocialAccount{}
+	}
+
+	return &models.LinkedProvidersResponse{
+		Providers:   accounts,
+		HasPassword: user.PasswordHash != "",
+		Email:       user.Email,
+	}, nil
+}
+
+func (s *AuthService) SetPassword(ctx context.Context, userID string, req models.SetPasswordRequest) error {
+	if len(req.NewPassword) < 6 {
+		return errors.New("новый пароль должен содержать минимум 6 символов")
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return errors.New("пользователь не найден")
+	}
+
+	// If user already has a password, verify old password
+	if user.PasswordHash != "" {
+		if req.OldPassword == "" {
+			return errors.New("укажите старый пароль для смены")
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
+			return errors.New("неверный текущий пароль")
+		}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("ошибка хеширования пароля: %w", err)
+	}
+
+	return s.userRepo.UpdatePassword(ctx, userID, string(hashedPassword))
+}
+
+func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req models.LinkProviderRequest) error {
+	if req.Provider == "" {
+		return errors.New("провайдер обязателен")
+	}
+
+	providerUID := req.ProviderUserID
+	if providerUID == "" {
+		providerUID = req.Code
+	}
+	if providerUID == "" {
+		providerUID = req.Email
+	}
+	if providerUID == "" {
+		return errors.New("не удалось определить идентификатор внешнего аккаунта")
+	}
+
+	// Check if this providerUID is already linked to another user
+	if existing, err := s.userRepo.GetSocialAccountByProviderUID(ctx, req.Provider, providerUID); err == nil && existing != nil {
+		if existing.UserID != userID {
+			return errors.New("этот социальный аккаунт уже привязан к другому профилю")
+		}
+		return nil // Already linked to current user
+	}
+
+	sa := &models.SocialAccount{
+		ID:             uuid.New().String(),
+		UserID:         userID,
+		Provider:       req.Provider,
+		ProviderUserID: providerUID,
+		Email:          req.Email,
+		CreatedAt:      time.Now().UTC(),
+	}
+
+	return s.userRepo.LinkSocialAccount(ctx, sa)
+}
+
+func (s *AuthService) UnlinkSocialAccount(ctx context.Context, userID, provider string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return errors.New("пользователь не найден")
+	}
+
+	accounts, err := s.userRepo.GetSocialAccounts(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if this provider is linked
+	var isLinked bool
+	for _, a := range accounts {
+		if a.Provider == provider {
+			isLinked = true
+			break
+		}
+	}
+	if !isLinked {
+		return errors.New("аккаунт данного сервиса не привязан")
+	}
+
+	// Safety check: Cannot unlink if it's the only login method
+	hasPassword := user.PasswordHash != ""
+	if !hasPassword && len(accounts) <= 1 {
+		return errors.New("нельзя отвязать единственный способ входа. Сначала установите пароль в настройках или привяжите другой аккаунт")
+	}
+
+	return s.userRepo.UnlinkSocialAccount(ctx, userID, provider)
 }
 
 func min(a, b int) int {

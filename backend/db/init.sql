@@ -15,6 +15,18 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User social accounts / linked OAuth identities
+CREATE TABLE IF NOT EXISTS user_social_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(50) NOT NULL, -- 'google', 'vk', 'yandex', 'apple'
+    provider_user_id VARCHAR(255) NOT NULL,
+    email VARCHAR(255) DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_provider_user_id UNIQUE (provider, provider_user_id),
+    CONSTRAINT uq_user_provider UNIQUE (user_id, provider)
+);
+
 -- Theory lessons content (managed via Headless CMS / Directus)
 CREATE TABLE IF NOT EXISTS theory_lessons (
     id VARCHAR(100) PRIMARY KEY,

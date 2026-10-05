@@ -20,6 +20,21 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface SocialAccount {
+  id: string;
+  userId: string;
+  provider: 'google' | 'vk' | 'yandex' | 'apple';
+  providerUserId: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface LinkedProvidersResponse {
+  providers: SocialAccount[] | null;
+  hasPassword: boolean;
+  email: string;
+}
+
 export interface TheoryProgressResponse {
   completedLessons: string[];
   totalLessons: number;
@@ -235,6 +250,65 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('det_token');
     }
+  }
+
+  async getLinkedProviders(): Promise<LinkedProvidersResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Не удалось загрузить привязанные сервисы');
+    }
+    return res.json();
+  }
+
+  async linkProvider(params: {
+    provider: 'google' | 'vk' | 'yandex' | 'apple';
+    code?: string;
+    token?: string;
+    email?: string;
+    providerUserId?: string;
+  }): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Не удалось привязать аккаунт');
+    }
+    return res.json();
+  }
+
+  async unlinkProvider(provider: 'google' | 'vk' | 'yandex' | 'apple'): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/${provider}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Не удалось отвязать аккаунт');
+    }
+    return res.json();
+  }
+
+  async setPassword(params: { oldPassword?: string; newPassword: string }): Promise<{ message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/password`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Не удалось обновить пароль');
+    }
+    return res.json();
   }
 
   // --- Theory ---

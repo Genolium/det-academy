@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
@@ -116,6 +117,12 @@ func (r *UserRepo) Update(ctx context.Context, u *models.User) error {
 	return err
 }
 
+func (r *UserRepo) UpdatePassword(ctx context.Context, id, passwordHash string) error {
+	query := `UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.ExecContext(ctx, query, passwordHash, time.Now().UTC(), id)
+	return err
+}
+
 func (r *UserRepo) UpdateRole(ctx context.Context, id, role string) error {
 	query := `UPDATE users SET role = $1, updated_at = $2 WHERE id = $3`
 	_, err := r.db.ExecContext(ctx, query, role, time.Now().UTC(), id)
@@ -125,6 +132,53 @@ func (r *UserRepo) UpdateRole(ctx context.Context, id, role string) error {
 func (r *UserRepo) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
+func (r *UserRepo) GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error) {
+	query := `SELECT id, user_id, provider, provider_user_id, COALESCE(email, ''), created_at FROM user_social_accounts WHERE user_id = $1 ORDER BY created_at ASC`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var accounts []models.SocialAccount
+	for rows.Next() {
+		var sa models.SocialAccount
+		if err := rows.Scan(&sa.ID, &sa.UserID, &sa.Provider, &sa.ProviderUserID, &sa.Email, &sa.CreatedAt); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, sa)
+	}
+	return accounts, nil
+}
+
+func (r *UserRepo) GetSocialAccountByProviderUID(ctx context.Context, provider, providerUID string) (*models.SocialAccount, error) {
+	query := `SELECT id, user_id, provider, provider_user_id, COALESCE(email, ''), created_at FROM user_social_accounts WHERE provider = $1 AND provider_user_id = $2`
+	var sa models.SocialAccount
+	err := r.db.QueryRowContext(ctx, query, provider, providerUID).Scan(&sa.ID, &sa.UserID, &sa.Provider, &sa.ProviderUserID, &sa.Email, &sa.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &sa, nil
+}
+
+func (r *UserRepo) LinkSocialAccount(ctx context.Context, sa *models.SocialAccount) error {
+	if sa.ID == "" {
+		sa.ID = uuid.New().String()
+	}
+	sa.CreatedAt = time.Now().UTC()
+	query := `INSERT INTO user_social_accounts (id, user_id, provider, provider_user_id, email, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (user_id, provider) DO UPDATE SET provider_user_id = EXCLUDED.provider_user_id, email = EXCLUDED.email`
+	_, err := r.db.ExecContext(ctx, query, sa.ID, sa.UserID, sa.Provider, sa.ProviderUserID, sa.Email, sa.CreatedAt)
+	return err
+}
+
+func (r *UserRepo) UnlinkSocialAccount(ctx context.Context, userID, provider string) error {
+	query := `DELETE FROM user_social_accounts WHERE user_id = $1 AND provider = $2`
+	_, err := r.db.ExecContext(ctx, query, userID, provider)
 	return err
 }
 

@@ -204,6 +204,15 @@ export const Navbar: React.FC = () => {
                       <p className="text-[10px] text-neutral-500 truncate">{user.email}</p>
                     </div>
 
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
+                    >
+                      <UserIcon className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>{locale === 'ru' ? 'Личный кабинет' : 'My Profile'}</span>
+                    </Link>
+
                     {isAdmin && (
                       <Link
                         href="/admin"

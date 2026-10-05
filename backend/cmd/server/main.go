@@ -150,6 +150,10 @@ func main() {
 
 			// Protected auth endpoints
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
+			r.With(handlers.AuthMiddleware(authService)).Get("/providers", authHandler.GetLinkedProviders)
+			r.With(handlers.AuthMiddleware(authService)).Post("/providers/link", authHandler.LinkProvider)
+			r.With(handlers.AuthMiddleware(authService)).Delete("/providers/{provider}", authHandler.UnlinkProvider)
+			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)
 		})
 
 		// Theory routes (Strictly authenticated progress)

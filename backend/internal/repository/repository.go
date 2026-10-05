@@ -10,9 +10,16 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
+	UpdatePassword(ctx context.Context, id, passwordHash string) error
 	UpdateRole(ctx context.Context, id, role string) error
 	Delete(ctx context.Context, id string) error
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
+
+	// Social accounts / linked providers
+	GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error)
+	GetSocialAccountByProviderUID(ctx context.Context, provider, providerUID string) (*models.SocialAccount, error)
+	LinkSocialAccount(ctx context.Context, sa *models.SocialAccount) error
+	UnlinkSocialAccount(ctx context.Context, userID, provider string) error
 }
 
 type TheoryRepository interface {

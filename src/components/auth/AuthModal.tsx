@@ -161,34 +161,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    const redirectUri = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
+    const callbackUri = `${origin}/auth/callback?provider=${provider}`;
 
     if (provider === 'vk') {
       const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID;
       if (vkAppId) {
-        window.location.href = `https://oauth.vk.com/authorize?client_id=${vkAppId}&display=page&redirect_uri=${encodeURIComponent(
-          redirectUri
-        )}&response_type=token&v=5.131`;
+        window.location.href = `https://id.vk.com/auth?app_id=${vkAppId}&response_type=code&redirect_uri=${encodeURIComponent(
+          callbackUri
+        )}&state=action%3Dlogin`;
         return;
       }
-      setNotice('Вход через VK ID находится на стадии модерации приложения. Войдите через Google или Email.');
+      setNotice('Для входа через VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
       return;
     }
 
     if (provider === 'yandex') {
       const yandexId = process.env.NEXT_PUBLIC_YANDEX_CLIENT_ID;
       if (yandexId) {
-        window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${yandexId}&redirect_uri=${encodeURIComponent(
-          redirectUri
-        )}`;
+        window.location.href = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexId}&redirect_uri=${encodeURIComponent(
+          callbackUri
+        )}&state=action%3Dlogin`;
         return;
       }
-      setNotice('Вход через Яндекс ID находится в процессе подключения. Войдите через Google или Email.');
+      setNotice('Для входа через Яндекс ID укажите NEXT_PUBLIC_YANDEX_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
       return;
     }
 
     if (provider === 'apple') {
-      setNotice('Вход через Apple ID находится в процессе верификации. Войдите через Google или Email.');
+      const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
+      if (appleClientId) {
+        window.location.href = `https://appleid.apple.com/auth/authorize?client_id=${appleClientId}&redirect_uri=${encodeURIComponent(
+          callbackUri
+        )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=action%3Dlogin`;
+        return;
+      }
+      setNotice('Для входа через Apple ID укажите NEXT_PUBLIC_APPLE_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
       return;
     }
   };

@@ -250,3 +250,33 @@ type CreateInstitutionRequest struct {
 	AcceptanceRate string   `json:"acceptanceRate,omitempty"`
 	Programs       []string `json:"programs"`
 }
+
+// Social Accounts & Identity Linking DTOs
+
+type SocialAccount struct {
+	ID             string    `json:"id"`
+	UserID         string    `json:"userId"`
+	Provider       string    `json:"provider"` // "google", "vk", "yandex", "apple"
+	ProviderUserID string    `json:"providerUserId"`
+	Email          string    `json:"email"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+type LinkedProvidersResponse struct {
+	Providers   []SocialAccount `json:"providers"`
+	HasPassword bool            `json:"hasPassword"`
+	Email       string          `json:"email"`
+}
+
+type SetPasswordRequest struct {
+	OldPassword string `json:"oldPassword,omitempty"`
+	NewPassword string `json:"newPassword"`
+}
+
+type LinkProviderRequest struct {
+	Provider       string `json:"provider"`
+	Code           string `json:"code,omitempty"`
+	Token          string `json:"token,omitempty"`
+	Email          string `json:"email,omitempty"`
+	ProviderUserID string `json:"providerUserId,omitempty"`
+}

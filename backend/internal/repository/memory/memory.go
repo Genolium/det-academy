@@ -24,19 +24,21 @@ type MemoryStorage struct {
 	certificates map[string]*models.Certificate
 	banners      map[string]*models.AdBanner
 	institutions map[string]*models.Institution
+	socialAccounts map[string][]models.SocialAccount // userID -> []SocialAccount
 }
 
 func New() *MemoryStorage {
 	s := &MemoryStorage{
-		users:        make(map[string]*models.User),
-		usersByEmail: make(map[string]*models.User),
-		theory:       make(map[string]map[string]bool),
-		questions:    make(map[string]*models.Question),
-		sessions:     make(map[string]*models.TestSession),
-		responses:    make(map[string][]models.QuestionResponse),
-		certificates: make(map[string]*models.Certificate),
-		banners:      make(map[string]*models.AdBanner),
-		institutions: make(map[string]*models.Institution),
+		users:          make(map[string]*models.User),
+		usersByEmail:   make(map[string]*models.User),
+		theory:         make(map[string]map[string]bool),
+		questions:      make(map[string]*models.Question),
+		sessions:       make(map[string]*models.TestSession),
+		responses:      make(map[string][]models.QuestionResponse),
+		certificates:   make(map[string]*models.Certificate),
+		banners:        make(map[string]*models.AdBanner),
+		institutions:   make(map[string]*models.Institution),
+		socialAccounts: make(map[string][]models.SocialAccount),
 	}
 	s.seedDefaultData()
 	return s
@@ -859,6 +861,18 @@ func (r *userMemoryRepo) Update(ctx context.Context, u *models.User) error {
 	return nil
 }
 
+func (r *userMemoryRepo) UpdatePassword(ctx context.Context, id, passwordHash string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	u, ok := r.s.users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+	u.PasswordHash = passwordHash
+	u.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
 func (r *userMemoryRepo) UpdateRole(ctx context.Context, id, role string) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -880,6 +894,60 @@ func (r *userMemoryRepo) Delete(ctx context.Context, id string) error {
 	}
 	delete(r.s.usersByEmail, u.Email)
 	delete(r.s.users, id)
+	delete(r.s.socialAccounts, id)
+	return nil
+}
+
+func (r *userMemoryRepo) GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	return r.s.socialAccounts[userID], nil
+}
+
+func (r *userMemoryRepo) GetSocialAccountByProviderUID(ctx context.Context, provider, providerUID string) (*models.SocialAccount, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	for _, list := range r.s.socialAccounts {
+		for _, sa := range list {
+			if sa.Provider == provider && sa.ProviderUserID == providerUID {
+				return &sa, nil
+			}
+		}
+	}
+	return nil, errors.New("social account not found")
+}
+
+func (r *userMemoryRepo) LinkSocialAccount(ctx context.Context, sa *models.SocialAccount) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	list := r.s.socialAccounts[sa.UserID]
+	// Replace if provider already exists for user
+	found := false
+	for i, item := range list {
+		if item.Provider == sa.Provider {
+			list[i] = *sa
+			found = true
+			break
+		}
+	}
+	if !found {
+		list = append(list, *sa)
+	}
+	r.s.socialAccounts[sa.UserID] = list
+	return nil
+}
+
+func (r *userMemoryRepo) UnlinkSocialAccount(ctx context.Context, userID, provider string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	list := r.s.socialAccounts[userID]
+	var updated []models.SocialAccount
+	for _, sa := range list {
+		if sa.Provider != provider {
+			updated = append(updated, sa)
+		}
+	}
+	r.s.socialAccounts[userID] = updated
 	return nil
 }
 
