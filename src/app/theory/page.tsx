@@ -107,9 +107,15 @@ export default function TheoryCatalogPage() {
                 <BentoCard
                   key={lesson.slug}
                   variant="light"
-                  className="flex flex-col justify-between group hover:border-[#0E1012] transition-colors relative"
+                  className="flex flex-col justify-between group hover:border-[#0E1012] hover:shadow-lg transition-all relative cursor-pointer"
                 >
-                  <div>
+                  <Link
+                    href={`/theory/${lesson.slug}`}
+                    className="absolute inset-0 z-0 rounded-3xl"
+                    aria-label={title}
+                  />
+
+                  <div className="relative z-10 pointer-events-none">
                     <div className="flex items-center justify-between mb-4">
                       <PillBadge
                         variant={isDone ? 'mint' : 'slate'}
@@ -142,13 +148,13 @@ export default function TheoryCatalogPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-neutral-400 line-clamp-1 pr-1">
+                  <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3 relative z-10">
+                    <span className="text-xs font-medium text-neutral-400 line-clamp-1 pr-1 pointer-events-none">
                       <span className="font-semibold text-neutral-500">{t.timingLabel}</span> {lesson.timeLimit}
                     </span>
                     <Link
                       href={`/theory/${lesson.slug}`}
-                      className="inline-flex items-center justify-center gap-1 text-xs font-bold text-[#0E1012] bg-[#D2F544] hover:bg-[#C4F22C] px-3.5 py-1.5 h-8 min-w-[125px] rounded-full transition-transform active:scale-95 shadow-sm shrink-0 whitespace-nowrap"
+                      className="inline-flex items-center justify-center gap-1 text-xs font-bold text-[#0E1012] bg-[#D2F544] group-hover:bg-[#C4F22C] px-3.5 py-1.5 h-8 min-w-[125px] rounded-full transition-transform active:scale-95 shadow-sm shrink-0 whitespace-nowrap cursor-pointer z-10"
                     >
                       <span>{t.openGuide}</span> <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
