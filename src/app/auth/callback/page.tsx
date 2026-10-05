@@ -27,10 +27,20 @@ function CallbackContent() {
         return;
       }
 
-      // 2. Extract params
-      const providerParam = (searchParams.get('provider') || 'google') as 'google' | 'apple' | 'vk' | 'yandex';
       const code = searchParams.get('code');
       const state = searchParams.get('state') || '';
+
+      // 2. Extract provider (from query param or state)
+      let providerParam = searchParams.get('provider') as 'google' | 'apple' | 'vk' | 'yandex' | null;
+      if (!providerParam && state) {
+        if (state.includes('yandex')) providerParam = 'yandex';
+        else if (state.includes('vk')) providerParam = 'vk';
+        else if (state.includes('apple')) providerParam = 'apple';
+        else if (state.includes('google')) providerParam = 'google';
+      }
+      if (!providerParam) {
+        providerParam = 'google';
+      }
 
       // Check URL hash if tokens were returned directly (e.g. token flow)
       let accessToken = '';

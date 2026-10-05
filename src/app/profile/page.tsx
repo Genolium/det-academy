@@ -110,7 +110,7 @@ function ProfileContent() {
     setSuccessMsg(null);
 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
-    const redirectUri = `${origin}/auth/callback?provider=${provider}`;
+    const redirectUri = `${origin}/auth/callback`;
 
     if (provider === 'google') {
       const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -159,7 +159,7 @@ function ProfileContent() {
       // Fallback: redirect
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(
         redirectUri
-      )}&response_type=token&scope=openid%20email%20profile&state=action%3Dlink`;
+      )}&response_type=token&scope=openid%20email%20profile&state=provider%3Dgoogle%26action%3Dlink`;
       window.location.href = authUrl;
       return;
     }
@@ -172,7 +172,7 @@ function ProfileContent() {
       }
       const authUrl = `https://id.vk.com/auth?app_id=${vkClientId}&response_type=code&redirect_uri=${encodeURIComponent(
         redirectUri
-      )}&state=action%3Dlink`;
+      )}&state=provider%3Dvk%26action%3Dlink`;
       window.location.href = authUrl;
       return;
     }
@@ -185,7 +185,7 @@ function ProfileContent() {
       }
       const authUrl = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexClientId}&redirect_uri=${encodeURIComponent(
         redirectUri
-      )}&state=action%3Dlink`;
+      )}&state=provider%3Dyandex%26action%3Dlink`;
       window.location.href = authUrl;
       return;
     }
@@ -198,7 +198,7 @@ function ProfileContent() {
       }
       const authUrl = `https://appleid.apple.com/auth/authorize?client_id=${appleClientId}&redirect_uri=${encodeURIComponent(
         redirectUri
-      )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=action%3Dlink`;
+      )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=provider%3Dapple%26action%3Dlink`;
       window.location.href = authUrl;
       return;
     }

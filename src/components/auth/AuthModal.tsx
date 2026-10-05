@@ -162,14 +162,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
 
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
-    const callbackUri = `${origin}/auth/callback?provider=${provider}`;
+    const callbackUri = `${origin}/auth/callback`;
 
     if (provider === 'vk') {
       const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID;
       if (vkAppId) {
         window.location.href = `https://id.vk.com/auth?app_id=${vkAppId}&response_type=code&redirect_uri=${encodeURIComponent(
           callbackUri
-        )}&state=action%3Dlogin`;
+        )}&state=provider%3Dvk%26action%3Dlogin`;
         return;
       }
       setNotice('Для входа через VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
@@ -181,7 +181,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (yandexId) {
         window.location.href = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexId}&redirect_uri=${encodeURIComponent(
           callbackUri
-        )}&state=action%3Dlogin`;
+        )}&state=provider%3Dyandex%26action%3Dlogin`;
         return;
       }
       setNotice('Для входа через Яндекс ID укажите NEXT_PUBLIC_YANDEX_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
@@ -193,7 +193,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (appleClientId) {
         window.location.href = `https://appleid.apple.com/auth/authorize?client_id=${appleClientId}&redirect_uri=${encodeURIComponent(
           callbackUri
-        )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=action%3Dlogin`;
+        )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=provider%3Dapple%26action%3Dlogin`;
         return;
       }
       setNotice('Для входа через Apple ID укажите NEXT_PUBLIC_APPLE_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
