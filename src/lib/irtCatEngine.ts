@@ -91,3 +91,11 @@ export function detScoreToTheta(score: number): number {
   const clamped = Math.max(10, Math.min(160, score));
   return Math.max(-3.0, Math.min(3.0, (clamped - 105) / 18.5));
 }
+
+/**
+ * Ratio to theta latent ability trait mapping [-2.5 .. +2.5] matching backend cat_service.go
+ */
+export function ratioToTheta(ratio: number): number {
+  const clampedRatio = Math.max(0.05, Math.min(0.95, ratio));
+  return Math.log(clampedRatio / (1.0 - clampedRatio)) / 1.2;
+}

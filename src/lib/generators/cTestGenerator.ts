@@ -82,6 +82,86 @@ export const academicPassages = [
     difficulty: 'B1' as const,
     fullText: 'Historic buildings represent the cultural identity and creative craftsmanship of previous centuries. Restoring old stone libraries requires careful masonry techniques rather than destructive chemical washing. Preserving these historic monuments fosters civic pride and attracts visitors who appreciate authentic urban architecture.',
   },
+  {
+    title: 'Ancient Metallurgy and Civilization',
+    difficulty: 'C1' as const,
+    fullText: 'The discovery of bronze alloy production marked a pivotal transition in ancient Eurasian societal organization. Smelting native copper ore with imported tin required extensive transcontinental trade networks across mountainous provinces. Consequently, administrative elites emerged to control the distribution of valuable metallic ingots and weapons.',
+  },
+  {
+    title: 'Cognitive Linguistics and Metaphor',
+    difficulty: 'B2' as const,
+    fullText: 'Linguists argue that metaphorical expressions are not merely decorative figures of speech. Instead, conceptual metaphors structure how humans perceive abstract ideas such as temporal duration and interpersonal conflict. For instance, conceptualizing time as money fundamentally shapes how individuals prioritize daily professional duties.',
+  },
+  {
+    title: 'Coral Reef Acidification',
+    difficulty: 'B2' as const,
+    fullText: 'Elevated concentrations of atmospheric carbon dioxide are driving progressive chemical shifts in marine environments. When ocean waters absorb excess carbon emissions, surface seawater becomes increasingly acidic and deprives mollusks of calcium. This acidification severely inhibits the calcification processes necessary for reef building corals to construct durable skeletons.',
+  },
+  {
+    title: 'Autonomous Transportation Infrastructure',
+    difficulty: 'B2' as const,
+    fullText: 'Self-driving vehicles rely on complex sensor arrays to navigate unpredictable urban traffic conditions safely. Optical video cameras and radar scanners detect nearby pedestrians, cyclists, and lane boundaries within fractions of a second. Urban planners project that widespread vehicular automation could drastically reduce collision rates and roadway fatalities.',
+  },
+  {
+    title: 'Astrophysics of Exoplanetary Atmospheres',
+    difficulty: 'C1' as const,
+    fullText: 'Astronomers utilize transit spectroscopy to examine the chemical composition of planets orbiting distant stars. Whenever an exoplanet transits across its host star, starlight filters through gaseous upper atmospheric layers toward sensitive orbital telescopes. By analyzing distinct molecular absorption lines, researchers can detect water vapor, methane, and atmospheric carbon.',
+  },
+  {
+    title: 'The Architecture of Medieval Cathedrals',
+    difficulty: 'B2' as const,
+    fullText: 'Gothic master builders revolutionized structural engineering to maximize interior natural illumination. Pointed stone arches and ribbed ceiling vaults distributed heavy masonry weight outward toward external supporting buttresses. This enabled master masons to replace thick stone fortifications with expansive stained glass windows.',
+  },
+  {
+    title: 'Synthetic Biology and Enzyme Engineering',
+    difficulty: 'C1' as const,
+    fullText: 'Bioengineers are redesigning natural catalytic enzymes to decompose persistent industrial pollutants in soil. Computational molecular modeling predicts optimal amino acid sequences that stabilize protein structures under extreme temperatures. These engineered biocatalysts can break down non-biodegradable plastics into harmless organic compounds.',
+  },
+  {
+    title: 'Urban Heat Islands and Microclimates',
+    difficulty: 'B1' as const,
+    fullText: 'Densely built metropolitan zones absorb and re-emit solar radiation far more than rural surroundings. Dark asphalt pavements and concrete structures trap thermal energy during daytime hours and release it slowly throughout the night. Installing reflective roofing and planting street trees substantially alleviates nocturnal heat stress for city inhabitants.',
+  },
+  {
+    title: 'Neural Plasticity and Lifelong Learning',
+    difficulty: 'B2' as const,
+    fullText: 'Neurobiological discoveries demonstrate that mature brains continue forming novel synaptic connections throughout adulthood. Acquiring unfamiliar languages stimulates dendritic growth and reinforces neural pathways across both cerebral hemispheres. Regular cognitive engagement thereby builds a cognitive reserve that mitigates age-related memory deterioration.',
+  },
+  {
+    title: 'Volcanic Ash and Global Temperature',
+    difficulty: 'B2' as const,
+    fullText: 'Cataclysmic volcanic eruptions can alter hemispheric weather patterns for several consecutive years. Explosive eruption plumes inject sulfur dioxide aerosols directly into the stratosphere, forming reflective microscopic droplet veils. These airborne aerosol particles reflect incoming sunlight back into space, triggering temporary global cooling anomalies.',
+  },
+  {
+    title: 'The Economics of Circular Waste Management',
+    difficulty: 'C1' as const,
+    fullText: 'Traditional linear manufacturing models follow an unsustainable pattern of resource extraction and disposal. Circular economic frameworks recover valuable metals and polymers from discarded electronics for remanufacturing into consumer devices. By recycling rare minerals and synthetic compounds, industrial firms simultaneously reduce raw procurement costs and pollution.',
+  },
+  {
+    title: 'Marine Acoustic Ecology and Cetaceans',
+    difficulty: 'C1' as const,
+    fullText: 'Whales and dolphins depend on acoustic echolocation for navigation and long distance communication. Commercial cargo ships generate intense low-frequency noise that disrupts cetacean vocalizations across entire ocean basins. This chronic anthropomorphic acoustic disturbance impairs foraging efficiency and elevates physiological stress hormones in marine mammals.',
+  },
+  {
+    title: 'Dendrochronology and Ancient Climate Patterns',
+    difficulty: 'B2' as const,
+    fullText: 'Concentric growth rings preserved inside ancient trees document annual local hydrological variations. Wide annular rings indicate periods of abundant precipitation, whereas narrow rings correspond to severe regional drought conditions. By cross-dating timber across multiple historic archaeological sites, paleoclimatologists reconstruct precipitation records spanning millennia.',
+  },
+  {
+    title: 'Quantum Computing and Cryptography',
+    difficulty: 'C1' as const,
+    fullText: 'Quantum computing architectures exploit superposition and entanglement to solve computational problems at extraordinary speeds. Theoretical quantum processors could factor large prime numbers quickly, rendering conventional public-key encryption standards obsolete. Consequently, cybersecurity mathematicians are rapidly establishing quantum-resistant cryptographic algorithms to safeguard future global communications.',
+  },
+  {
+    title: 'The Restoration of Historic Wetland Ecosystems',
+    difficulty: 'B2' as const,
+    fullText: 'Ecological restoration teams are dismantling artificial dikes to reconnect inland rivers with natural floodplains. Rejuvenated marshland ecosystems filter agricultural runoff and sediment naturally before fresh water empties into coastal estuaries. Restored wetlands also serve as vital buffers that absorb catastrophic floods while creating sanctuaries for migratory waterfowl.',
+  },
+  {
+    title: 'Microscopic Fungi and Forest Mycelial Networks',
+    difficulty: 'C1' as const,
+    fullText: 'Beneath the forest floor, vast mycorrhizal networks link individual trees into cooperative biological communities. Subterranean fungal threads transport essential phosphorus and nitrogen between neighboring trees in exchange for photosynthetic carbohydrates. In return, mature canopy trees supply the subterranean fungi with photosynthetic sugars, sustaining the entire forest biome.',
+  },
 ];
 
 /**

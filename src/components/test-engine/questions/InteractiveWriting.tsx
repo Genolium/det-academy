@@ -16,7 +16,7 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
   const { recordInteractiveWritingResult } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const q = interactiveWritingBank[0];
+  const [q] = useState(() => interactiveWritingBank[Math.floor(Math.random() * interactiveWritingBank.length)]);
 
   // Part 1: 5 mins (300s), Part 2: 3 mins (180s)
   const [part, setPart] = useState<1 | 2>(1);

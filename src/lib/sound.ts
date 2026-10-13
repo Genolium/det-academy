@@ -120,6 +120,23 @@ class SoundEngine {
 
     window.speechSynthesis.speak(utterance);
   }
+
+  // Convenient semantic aliases
+  correct() {
+    this.playSuccessChime();
+  }
+
+  incorrect() {
+    this.playErrorBuzz();
+  }
+
+  start() {
+    this.playKeyClick();
+  }
+
+  complete() {
+    this.playSuccessChime();
+  }
 }
 
 export const sound = new SoundEngine();

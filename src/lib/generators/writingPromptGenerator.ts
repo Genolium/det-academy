@@ -1,3 +1,5 @@
+import { writePhotoBank, interactiveWritingBank, writingSampleBank } from '@/data/questionBank';
+
 export interface WritingPrompt {
   id: string;
   type: 'PHOTO' | 'INTERACTIVE' | 'WRITING_SAMPLE';
@@ -5,13 +7,13 @@ export interface WritingPrompt {
   imageUrl?: string;
   minWords: number;
   timeLimitSec: number;
-  difficulty: 'B1' | 'B2' | 'C1';
+  difficulty: 'A2' | 'B1' | 'B2' | 'C1';
   category: string;
   checklist: string[];
   modelAnswer: string;
 }
 
-export const writingPromptsCorpus: WritingPrompt[] = [
+const baseWritingPromptsCorpus: WritingPrompt[] = [
   // Additional authentic prompts from Writing 50 words, Tips & Argument, and Full Tests
   {
     id: 'wp-gen-auth-1',
@@ -161,6 +163,81 @@ export const writingPromptsCorpus: WritingPrompt[] = [
     modelAnswer: 'While automated artificial intelligence platforms can deliver personalized drills and instant linguistic feedback, I firmly disagree that they will completely replace human educators. Teachers cultivate critical emotional intelligence, collaborative ethics, and empathetic mentorship that algorithmic software cannot emulate. Consequently, hybrid learning models that synthesize AI precision with human mentorship will prove substantially more advantageous for future generations.',
   },
 ];
+
+// Merge writePhotoBank, interactiveWritingBank, and writingSampleBank into writingPromptsCorpus
+const mergedWritingPrompts: WritingPrompt[] = [...baseWritingPromptsCorpus];
+const existingImageUrls = new Set(baseWritingPromptsCorpus.map((p) => p.imageUrl).filter(Boolean));
+const existingPrompts = new Set(baseWritingPromptsCorpus.map((p) => p.prompt.toLowerCase()));
+
+writePhotoBank.forEach((wp) => {
+  if (!existingImageUrls.has(wp.imageUrl)) {
+    mergedWritingPrompts.push({
+      id: wp.id,
+      type: 'PHOTO',
+      prompt: 'Write one or more sentences that describe the image.',
+      imageUrl: wp.imageUrl,
+      minWords: 25,
+      timeLimitSec: 60,
+      difficulty: wp.difficulty,
+      category: 'Visual Scene Description',
+      checklist: [
+        'General overview of the central subject (Present Continuous)',
+        'Spatial orientation markers (in the foreground, against the backdrop)',
+        'Logical deduction using modal verbs (appears to be, might be)',
+      ],
+      modelAnswer: `This compelling photograph depicts ${wp.altText.toLowerCase()}. In the immediate foreground and surrounding workspace, distinct contextual details highlight the professional atmosphere. Judging by the focused posture and environment, the scene illustrates dedicated practical engagement.`,
+    });
+    existingImageUrls.add(wp.imageUrl);
+  }
+});
+
+interactiveWritingBank.forEach((iw) => {
+  const key = iw.part1Prompt.toLowerCase();
+  if (!existingPrompts.has(key)) {
+    mergedWritingPrompts.push({
+      id: iw.id,
+      type: 'INTERACTIVE',
+      prompt: `${iw.part1Prompt} (Follow-up: ${iw.part2Prompt})`,
+      minWords: 90,
+      timeLimitSec: 300,
+      difficulty: iw.difficulty,
+      category: 'Interactive Academic Essay',
+      checklist: [
+        'Explicit thesis statement addressing the core dilemma',
+        'Structured supporting rationale with academic discourse markers',
+        'Concrete real-world example or empirical evidence',
+        'Direct synthesis addressing the follow-up aspect',
+      ],
+      modelAnswer: 'In contemporary academic and policy discourse, this issue warrants a nuanced evaluation of both competing perspectives. Primarily, structural efficiency and long-term sustainability must be weighed against immediate socioeconomic considerations. For instance, empirical case studies across industrialized nations demonstrate that balanced regulatory frameworks paired with targeted innovation yield optimal outcomes. In conclusion, synthesizing pragmatic safeguards with forward-looking investment ensures resilient progress.',
+    });
+    existingPrompts.add(key);
+  }
+});
+
+writingSampleBank.forEach((ws) => {
+  const key = ws.prompt.toLowerCase();
+  if (!existingPrompts.has(key)) {
+    mergedWritingPrompts.push({
+      id: ws.id,
+      type: 'WRITING_SAMPLE',
+      prompt: ws.prompt,
+      minWords: 100,
+      timeLimitSec: 300,
+      difficulty: ws.difficulty,
+      category: 'Graded Admissions Essay',
+      checklist: [
+        'Hook & Clear Thesis (It is my firm conviction that...)',
+        'Concession & Rebuttal of the opposing perspective',
+        'Tangible historical, scientific, or societal example',
+        'Formal conclusion (In deduction / To recapitulate)',
+      ],
+      modelAnswer: 'The controversy surrounding this topic has sparked considerable debate among scholars and policymakers alike. While proponents of the alternative viewpoint raise valid points regarding short-term convenience, I firmly maintain that long-term societal and ethical imperatives must take precedence. As a tangible illustration, institutions that prioritize sustainable, evidence-based policies consistently achieve superior civic outcomes. To recapitulate, adopting a balanced, forward-looking framework remains of paramount importance.',
+    });
+    existingPrompts.add(key);
+  }
+});
+
+export const writingPromptsCorpus: WritingPrompt[] = mergedWritingPrompts;
 
 // Vocabulary upgrade dictionary: simple word -> advanced C1/C2 replacement
 export const vocabularyUpgrades: Record<string, string[]> = {

@@ -1,3 +1,5 @@
+import { readSelectBank, fillBlanksBank } from '@/data/questionBank';
+
 export interface VocabularyItem {
   word: string;
   isReal: boolean;
@@ -16,8 +18,8 @@ export interface GeneratedFillInBlank {
   explanation: string;
 }
 
-// 1. Real Academic & C2 Vocabulary (from Level C2 Word List & VIP Vocabulary)
-export const realWordsPool: VocabularyItem[] = [
+// 1. Base Real Academic & C2 Vocabulary (from Level C2 Word List & VIP Vocabulary)
+const baseRealWordsPool: VocabularyItem[] = [
   // Additional C1 & C2 authentic items from Level C2 Word List & VIP Vocabulary
   { word: 'accord', isReal: true, difficulty: 'C1', definition: 'Согласие, договор; of your own accord — по собственной воле.' },
   { word: 'adverse', isReal: true, difficulty: 'B2', definition: 'Неблагоприятный, враждебный (adverse weather conditions).' },
@@ -78,7 +80,7 @@ export const realWordsPool: VocabularyItem[] = [
 ];
 
 // 2. DET Trap Pseudo-Words (Phonologically plausible fake English words with clear explanations)
-export const fakeWordsPool: VocabularyItem[] = [
+const baseFakeWordsPool: VocabularyItem[] = [
   { word: 'disflown', isReal: false, difficulty: 'B1', definition: 'Ловушка DET: Выглядит как причастие от fly с приставкой dis-, но такого слова нет в английском языке.' },
   { word: 'tweenful', isReal: false, difficulty: 'B1', definition: 'Ловушка DET: Слово tween существует в сленге, но суффикс -ful с ним не образует нормативного слова.' },
   { word: 'unfluent', isReal: false, difficulty: 'B1', definition: 'Ловушка DET: В английском говорят non-fluent или not fluent. Форма с приставкой un- ошибочна.' },
@@ -100,7 +102,14 @@ export const fakeWordsPool: VocabularyItem[] = [
 ];
 
 // Sentences for dynamic Fill-in-the-Blanks generator
-const fillInBlanksCorpus = [
+const fillInBlanksCorpus: {
+  before: string;
+  word: string;
+  prefix: string;
+  after: string;
+  difficulty: 'A2' | 'B1' | 'B2' | 'C1';
+  explanation: string;
+}[] = [
   {
     before: 'The research committee ',
     word: 'concluded',
@@ -175,6 +184,59 @@ const fillInBlanksCorpus = [
   },
 ];
 
+// Merge readSelectBank into realWordsPool and fakeWordsPool
+const realMap = new Map<string, VocabularyItem>();
+baseRealWordsPool.forEach((item) => realMap.set(item.word.toLowerCase(), item));
+
+const fakeMap = new Map<string, VocabularyItem>();
+baseFakeWordsPool.forEach((item) => fakeMap.set(item.word.toLowerCase(), item));
+
+readSelectBank.forEach((item) => {
+  const lower = item.word.toLowerCase();
+  if (item.isReal) {
+    if (!realMap.has(lower)) {
+      realMap.set(lower, {
+        word: item.word,
+        isReal: true,
+        difficulty: item.difficulty,
+        definition: `Академическая лексика уровня ${item.difficulty} из официального вокабуляра DET.`,
+      });
+    }
+  } else {
+    if (!fakeMap.has(lower)) {
+      fakeMap.set(lower, {
+        word: item.word,
+        isReal: false,
+        difficulty: item.difficulty,
+        definition: `Ловушка DET (уровень ${item.difficulty}): фонетически правдоподобное псевдослово, отсутствующее в нормативном словаре.`,
+      });
+    }
+  }
+});
+
+export const realWordsPool: VocabularyItem[] = Array.from(realMap.values());
+export const fakeWordsPool: VocabularyItem[] = Array.from(fakeMap.values());
+
+// Merge fillBlanksBank into fillInBlanksCorpus
+const baseFibList = [...fillInBlanksCorpus];
+const existingFibKeys = new Set(baseFibList.map((f) => f.word.toLowerCase()));
+
+fillBlanksBank.forEach((fb) => {
+  if (!existingFibKeys.has(fb.fullWord.toLowerCase())) {
+    baseFibList.push({
+      before: fb.sentenceBefore + ' ',
+      word: fb.fullWord,
+      prefix: fb.givenPrefix,
+      after: ' ' + fb.sentenceAfter,
+      difficulty: fb.difficulty,
+      explanation: `Академическое слово "${fb.fullWord}" (уровень ${fb.difficulty}): определяется контекстом предложения.`,
+    });
+    existingFibKeys.add(fb.fullWord.toLowerCase());
+  }
+});
+
+const mergedFillInBlanksCorpus = baseFibList;
+
 /**
  * Generate a randomized Read & Select quiz batch of specified size
  * with balanced real and fake words
@@ -209,9 +271,9 @@ export function generateReadSelectBatch(count: number = 8, difficulty?: 'A2' | '
  * Generate a randomized Fill in the Blanks task
  */
 export function generateRandomFillInBlank(preferredDifficulty?: 'A2' | 'B1' | 'B2' | 'C1'): GeneratedFillInBlank {
-  let pool = fillInBlanksCorpus;
+  let pool = mergedFillInBlanksCorpus;
   if (preferredDifficulty) {
-    const filtered = fillInBlanksCorpus.filter((item) => item.difficulty === preferredDifficulty);
+    const filtered = mergedFillInBlanksCorpus.filter((item) => item.difficulty === preferredDifficulty);
     if (filtered.length > 0) pool = filtered;
   }
 

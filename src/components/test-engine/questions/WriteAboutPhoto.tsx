@@ -18,12 +18,13 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
+  const [photos] = useState(() => [...writePhotoBank].sort(() => 0.5 - Math.random()).slice(0, 3));
   const [photoIndex, setPhotoIndex] = useState(0);
   const [texts, setTexts] = useState<string[]>(['', '', '']);
   const [currentText, setCurrentText] = useState('');
   const [timeLeft, setTimeLeft] = useState(60); // 60s per photo
 
-  const currentPhoto = writePhotoBank[photoIndex];
+  const currentPhoto = photos[photoIndex];
 
   // 60-second timer per photo
   useEffect(() => {
@@ -50,7 +51,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
     updatedTexts[photoIndex] = currentText;
     setTexts(updatedTexts);
 
-    if (photoIndex + 1 < writePhotoBank.length) {
+    if (photoIndex + 1 < photos.length) {
       setPhotoIndex((p) => p + 1);
     } else {
       recordWritePhotoResult(updatedTexts);
@@ -65,7 +66,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
       {/* Header */}
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
         <span className="uppercase font-bold tracking-wider text-white">
-          Write About the Photo • {t.photoStep} {photoIndex + 1} / {writePhotoBank.length}
+          Write About the Photo • {t.photoStep} {photoIndex + 1} / {photos.length}
         </span>
         <div className="flex items-center gap-1.5 text-[#D2F544] font-bold text-sm bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
           <Clock className="w-4 h-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Swords,
@@ -18,6 +18,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { useProgressStore } from '@/store/useProgressStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { LeagueBadge } from '@/components/ui/LeagueBadge';
 
 type ArenaState = 'LOBBY' | 'SEARCHING' | 'COUNTDOWN' | 'DUELING' | 'RESULT';
 
@@ -46,10 +50,32 @@ const LEADERBOARD_PRESET = [
 ];
 
 export default function MultiplayerArenaPage() {
+  const { user } = useAuthStore();
+  const { locale } = useSettingsStore();
+  const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
+  const currentCandidateName = user?.name || candidateName || 'Candidate';
+
   const [state, setState] = useState<ArenaState>('LOBBY');
-  const [userElo, setUserElo] = useState<number>(1420);
+  const [userElo, setUserElo] = useState<number>(pvpElo || 1420);
   const [countdown, setCountdown] = useState<number>(3);
   const [timeLeft, setTimeLeft] = useState<number>(60);
+
+  const leaderboard = useMemo(() => {
+    return LEADERBOARD_PRESET.map((p) => {
+      if (p.rank === 4) {
+        return {
+          ...p,
+          name: `${currentCandidateName} (${locale === 'ru' ? 'Вы' : 'You'})`,
+          elo: userElo,
+        };
+      }
+      return p;
+    });
+  }, [currentCandidateName, locale, userElo]);
+
+  useEffect(() => {
+    if (pvpElo) setUserElo(pvpElo);
+  }, [pvpElo]);
 
   // Match details
   const [challenge, setChallenge] = useState<Challenge>({
@@ -99,7 +125,7 @@ export default function MultiplayerArenaPage() {
           JSON.stringify({
             type: 'join_queue',
             payload: {
-              playerName: 'Ilya Vasiunin',
+              playerName: currentCandidateName,
               playerElo: userElo,
             },
           })
@@ -134,6 +160,8 @@ export default function MultiplayerArenaPage() {
             setWon(msg.payload.won);
             setDeltaElo(msg.payload.deltaElo);
             setUserElo(msg.payload.yourElo);
+            setPvpElo(msg.payload.yourElo);
+            recordDailyActivity();
             setState('RESULT');
             if (timerRef.current) clearInterval(timerRef.current);
           }
@@ -273,9 +301,13 @@ export default function MultiplayerArenaPage() {
     } else {
       // Local fallback calculation
       const isWinner = accuracy >= 0.75;
+      const delta = isWinner ? 32 : -18;
+      const newElo = Math.max(100, userElo + delta);
       setWon(isWinner);
-      setDeltaElo(isWinner ? 32 : -18);
-      setUserElo((prev) => prev + (isWinner ? 32 : -18));
+      setDeltaElo(delta);
+      setUserElo(newElo);
+      setPvpElo(newElo);
+      recordDailyActivity();
       setState('RESULT');
     }
   };
@@ -313,7 +345,19 @@ export default function MultiplayerArenaPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Daily Streak */}
+            <div
+              className="px-3 py-1.5 rounded-2xl bg-orange-500/10 border border-orange-500/25 flex items-center gap-1.5 text-orange-400 text-xs font-black"
+              title="Ежедневный ударный режим активности"
+            >
+              <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+              <span>{streakDays} дн. ударный режим</span>
+            </div>
+
+            {/* League Badge */}
+            <LeagueBadge elo={userElo} size="md" />
+
             <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right">
               <span className="text-[10px] uppercase font-bold text-neutral-400 block">Ваш рейтинг ELO</span>
               <span className="text-xl font-black text-[#D2F544] flex items-center gap-1">
@@ -381,11 +425,11 @@ export default function MultiplayerArenaPage() {
               </div>
 
               <div className="space-y-2">
-                {LEADERBOARD_PRESET.map((p) => (
+                {leaderboard.map((p) => (
                   <div
                     key={p.rank}
                     className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
-                      p.name.includes('(Вы)')
+                      p.rank === 4
                         ? 'bg-[#D2F544]/10 border-[#D2F544]/30 text-white'
                         : 'bg-neutral-900/40 border-neutral-800/80 text-neutral-300'
                     }`}

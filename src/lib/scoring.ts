@@ -1,3 +1,5 @@
+import { thetaToDetScore, ratioToTheta } from './irtCatEngine';
+
 /**
  * Calculates Levenshtein distance between two strings
  */
@@ -64,6 +66,7 @@ export interface CalculatedScores {
 
 /**
  * Calculates DET 10-160 score and subscores based on test performance components
+ * Unified with Item Response Theory (IRT) 2PL model matching backend cat_service.go
  */
 export function computeFinalScores(params: {
   readSelectAccuracy: number;     // 0.0 - 1.0
@@ -74,10 +77,6 @@ export function computeFinalScores(params: {
   interactiveListeningScore: number; // 0.0 - 1.0
   writingScore: number;           // 0.0 - 1.0
 }): CalculatedScores {
-  // Base raw calculations mapped to 10..160 range:
-  // Baseline starts at ~30 for attempting, scales to 160 for perfection.
-  const toScale = (ratio: number) => 30 + ratio * 130;
-
   // Literacy = Reading + Writing (Read & Select, C-Test, Interactive Reading, Writing)
   const literacyRatio =
     params.readSelectAccuracy * 0.25 +
@@ -93,21 +92,21 @@ export function computeFinalScores(params: {
     params.listenTypeAccuracy * 0.2 +
     params.interactiveListeningScore * 0.2;
 
-  // Production = Writing + Speaking (In MVP non-speaking: Write about photo, Interactive Writing, Writing Sample, Summary)
+  // Production = Writing + Speaking (In MVP: Writing + C-Test + Fill in Blanks)
   const prodRatio =
     params.writingScore * 0.7 +
     params.cTestAccuracy * 0.15 +
     params.fillBlanksAccuracy * 0.15;
 
-  // Conversation = Listening + Speaking (In MVP non-speaking: Listen & Type, Interactive Listening dialog)
+  // Conversation = Listening + Speaking (In MVP: Listen & Type + Interactive Listening)
   const convRatio =
     params.listenTypeAccuracy * 0.5 +
     params.interactiveListeningScore * 0.5;
 
-  const literacy = roundToDetScale(toScale(literacyRatio));
-  const comprehension = roundToDetScale(toScale(compRatio));
-  const production = roundToDetScale(toScale(prodRatio));
-  const conversation = roundToDetScale(toScale(convRatio));
+  const literacy = thetaToDetScore(ratioToTheta(literacyRatio));
+  const comprehension = thetaToDetScore(ratioToTheta(compRatio));
+  const production = thetaToDetScore(ratioToTheta(prodRatio));
+  const conversation = thetaToDetScore(ratioToTheta(convRatio));
 
   const average = (literacy + comprehension + production + conversation) / 4;
   const overall = roundToDetScale(average);

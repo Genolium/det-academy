@@ -6,6 +6,7 @@ import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const cTestItem = cTestBank[0];
+  const [cTestItem] = useState(() => cTestBank[Math.floor(Math.random() * cTestBank.length)]);
   const [inputs, setInputs] = useState<string[]>(() =>
     new Array(cTestItem.damagedTokens.length).fill('')
   );
@@ -56,8 +57,21 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
   const handleSubmit = () => {
     let correct = 0;
     cTestItem.damagedTokens.forEach((token, idx) => {
-      if (inputs[idx].trim().toLowerCase() === token.missing.toLowerCase()) {
+      const userVal = inputs[idx] ? inputs[idx].trim().toLowerCase() : '';
+      if (userVal === token.missing.toLowerCase()) {
         correct++;
+      } else {
+        try {
+          useErrorBankStore.getState().addError({
+            type: 'C_TEST',
+            questionTitle: cTestItem.title,
+            tokenPrefix: token.prefix,
+            missingLetters: token.missing,
+            fullWord: `${token.prefix}${token.missing}`,
+            contextSentence: `${cTestItem.firstSentence} ... ${token.prefix}[...] ${token.suffix || ''}`,
+            userInput: userVal,
+          });
+        } catch {}
       }
     });
 
@@ -100,23 +114,32 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
           <p className="mb-4">{cTestItem.firstSentence}</p>
 
           <p className="inline">
-            {cTestItem.damagedTokens.map((token, idx) => (
-              <span key={idx} className="inline-block whitespace-nowrap mx-1">
-                <span className="font-semibold text-neutral-300">{token.prefix}</span>
-                <input
-                  ref={(el) => {
-                    inputRefs.current[idx] = el;
-                  }}
-                  type="text"
-                  maxLength={token.missing.length}
-                  value={inputs[idx]}
-                  onChange={(e) => handleInputChange(idx, e.target.value)}
-                  className="bg-neutral-900 border-b-2 border-[#D2F544] text-[#D2F544] font-bold px-1 py-0.5 text-center outline-none font-mono tracking-widest text-base"
-                  style={{ width: `${Math.max(28, token.missing.length * 14)}px` }}
-                />
-                {token.suffix && <span className="text-neutral-300 ml-1">{token.suffix}</span>}
-              </span>
-            ))}
+            {cTestItem.damagedTokens.map((token, idx) => {
+              const startsWithPunct = token.suffix ? /^[.,;!?]/.test(token.suffix) : false;
+              return (
+                <React.Fragment key={idx}>
+                  <span className="inline-block whitespace-nowrap ml-1">
+                    <span className="font-semibold text-neutral-300">{token.prefix}</span>
+                    <input
+                      ref={(el) => {
+                        inputRefs.current[idx] = el;
+                      }}
+                      type="text"
+                      maxLength={token.missing.length}
+                      value={inputs[idx]}
+                      onChange={(e) => handleInputChange(idx, e.target.value)}
+                      className="bg-neutral-900 border-b-2 border-[#D2F544] text-[#D2F544] font-bold px-1 py-0.5 text-center outline-none font-mono tracking-widest text-base"
+                      style={{ width: `${Math.max(28, token.missing.length * 14)}px` }}
+                    />
+                  </span>
+                  {token.suffix && (
+                    <span className={`text-neutral-300 ${startsWithPunct ? 'mr-1' : 'mx-1'}`}>
+                      {token.suffix}
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </p>
 
           <p className="mt-4">{cTestItem.lastSentence}</p>

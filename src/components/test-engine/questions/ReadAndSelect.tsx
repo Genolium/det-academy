@@ -6,6 +6,7 @@ import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 import { Check, X } from 'lucide-react';
 
 interface ReadAndSelectProps {
@@ -35,6 +36,15 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
       setCorrectCount((c) => c + 1);
     } else {
       if (soundEnabled) sound.playErrorBuzz();
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'READ_SELECT',
+          wordTested: currentItem.word,
+          isRealWord: currentItem.isReal,
+          userChoseReal: choseYes,
+          definition: currentItem.isReal ? 'Реальное академическое слово' : 'Несуществующее псевдослово (DET Trap)',
+        });
+      } catch {}
     }
 
     if (index + 1 < pool.length) {

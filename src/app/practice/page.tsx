@@ -5,25 +5,77 @@ import Link from 'next/link';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Button } from '@/components/ui/Button';
 import { PillBadge } from '@/components/ui/PillBadge';
-import { 
-  Keyboard, 
-  FileText, 
-  CheckSquare, 
-  Volume2, 
-  Camera, 
-  PenTool, 
-  ArrowRight, 
-  Sparkles, 
-  Layers, 
-  Play
+import {
+  Keyboard,
+  FileText,
+  CheckSquare,
+  Volume2,
+  Camera,
+  ArrowRight,
+  Sparkles,
+  Layers,
+  Play,
+  Mic,
+  MessageSquare,
+  AlertCircle,
+  TrendingUp,
+  RotateCcw,
 } from 'lucide-react';
 import { InteractiveLessonDrill } from '@/components/practice/InteractiveLessonDrill';
+import { SpeakAboutPhoto } from '@/components/test-engine/questions/SpeakAboutPhoto';
+import { SpeakingSample } from '@/components/test-engine/questions/SpeakingSample';
+import { WritingInspector } from '@/components/practice/WritingInspector';
+import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 
 export default function PracticeHubPage() {
   const [activeDrillSlug, setActiveDrillSlug] = useState<string | null>(null);
   const [drillCounter, setDrillCounter] = useState(0);
+  const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
+  const [inspectorText, setInspectorText] = useState(
+    'In my opinion, higher education represents a pivotal catalyst for modern socioeconomic mobility. This is primarily because university curricula foster advanced critical thinking and empirical inquiry. For instance, recent studies demonstrate that graduates adapt substantially faster to automated digital environments. Ultimately, governments must prioritize equitable access to tertiary learning.'
+  );
+
+  const { errors, getUnmasteredCount } = useErrorBankStore();
+  const unmasteredErrors = getUnmasteredCount();
 
   const practiceCategories = [
+    {
+      id: 'error-bank',
+      title: 'Smart Error Bank (Банк ошибок)',
+      description: `Автоматический сбор всех ваших ошибок из C-Test, Dictations, Fill Blanks и Read & Select. Отрабатывайте слабые места в изолированном режиме.`,
+      icon: <AlertCircle className="w-6 h-6 text-[#0C2418]" />,
+      badge: unmasteredErrors > 0 ? `${unmasteredErrors} на повтор` : 'Ошибок: 0',
+      isErrorModal: true,
+      actionText: 'Открыть банк ошибок',
+    },
+    {
+      id: 'speak-photo',
+      slug: 'speak-about-photo',
+      title: 'AI Speaking Studio (Speak About Photo)',
+      description: 'Живая осциллограмма голоса, замер WPM, распознавание речевых пауз и анализ лексики C1/C2 при описании фото за 90 секунд.',
+      icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'Live Audio Waveform',
+      actionText: 'Запустить Speaking Studio',
+    },
+    {
+      id: 'speaking-sample',
+      slug: 'speaking-sample',
+      title: 'Speaking Sample (Академический монолог)',
+      description: 'Устный видеомонолог 1–3 минуты на дискуссионную тему с live спектрограммой, таймером подготовки и скорингом беглости.',
+      icon: <MessageSquare className="w-6 h-6 text-[#0C2418]" />,
+      badge: '1-3 Min Monologue',
+      actionText: 'Тренировать устный монолог',
+    },
+    {
+      id: 'writing-inspector',
+      slug: 'writing-inspector',
+      title: 'AI Writing Diagnostic Inspector',
+      description: 'Интерактивная подсветка CEFR уровней (A1–C2), экспресс-замена слабых слов на C1/C2 (Vocab Upgrades) и OREO чек-лист.',
+      icon: <TrendingUp className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'CEFR + OREO Diagnostic',
+      actionText: 'Открыть Writing Inspector',
+    },
     {
       id: 'typing',
       title: 'DET Typing Trainer (Скоропечатание)',
@@ -92,16 +144,17 @@ export default function PracticeHubPage() {
   return (
     <div className="min-h-screen py-12 ambient-glow">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <PillBadge variant="mint" prefixHash className="mb-4">
-            Practice & Drill Hub
+            Practice & Drill Hub 2.0 Flagship
           </PillBadge>
           <h1 className="text-3xl sm:text-5xl font-black text-[#0E1012] tracking-tight mb-4">
             Тренажеры свободной практики
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-            Тренируйте любые типы заданий DET изолированно в бесконечном режиме с мгновенной динамической генерацией без необходимости сдавать полный часовой тест.
+            Тренируйте устную речь в AI Speaking Studio, диагностируйте эссе в Writing Inspector и закрывайте персональные пробелы в Smart Error Bank.
           </p>
         </div>
 
@@ -110,20 +163,55 @@ export default function PracticeHubPage() {
           <div className="mb-12">
             <div className="flex items-center justify-between mb-3 bg-neutral-900 text-white px-6 py-3 rounded-2xl">
               <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#D2F544]" /> Активный динамический дрилл
+                <Sparkles className="w-4 h-4 text-[#D2F544]" /> Активный тренажер: {activeDrillSlug}
               </span>
               <button
                 onClick={() => setActiveDrillSlug(null)}
-                className="text-xs text-neutral-400 hover:text-white font-bold"
+                className="text-xs text-neutral-400 hover:text-white font-bold cursor-pointer"
               >
                 ✕ Закрыть тренажер
               </button>
             </div>
-            <InteractiveLessonDrill 
-              key={`${activeDrillSlug}-${drillCounter}`} 
-              lessonSlug={activeDrillSlug} 
-              category="drill" 
-            />
+
+            {activeDrillSlug === 'speak-about-photo' ? (
+              <SpeakAboutPhoto
+                key={`photo-speak-${drillCounter}`}
+                isStandaloneDrill
+                onComplete={() => setActiveDrillSlug(null)}
+              />
+            ) : activeDrillSlug === 'speaking-sample' ? (
+              <SpeakingSample
+                key={`sample-speak-${drillCounter}`}
+                isStandaloneDrill
+                onComplete={() => setActiveDrillSlug(null)}
+              />
+            ) : activeDrillSlug === 'writing-inspector' ? (
+              <div className="space-y-4">
+                <div className="bg-[#0E1012] p-4 rounded-2xl border border-neutral-800">
+                  <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">
+                    Интерактивное поле ввода эссе:
+                  </span>
+                  <textarea
+                    rows={5}
+                    value={inspectorText}
+                    onChange={(e) => setInspectorText(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 focus:border-[#D2F544] rounded-xl p-3.5 text-white text-xs outline-none leading-relaxed"
+                  />
+                </div>
+                <WritingInspector
+                  text={inspectorText}
+                  onTextChange={setInspectorText}
+                  minWords={80}
+                  showOreoTracker={true}
+                />
+              </div>
+            ) : (
+              <InteractiveLessonDrill 
+                key={`${activeDrillSlug}-${drillCounter}`} 
+                lessonSlug={activeDrillSlug} 
+                category="drill" 
+              />
+            )}
           </div>
         )}
 
@@ -159,6 +247,13 @@ export default function PracticeHubPage() {
                     {cat.actionText} <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
+              ) : cat.isErrorModal ? (
+                <Button
+                  onClick={() => setIsErrorBankOpen(true)}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-[#0C2418] font-black text-xs flex items-center justify-center gap-2"
+                >
+                  {cat.actionText} <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
               ) : (
                 <Button
                   onClick={() => {
@@ -194,6 +289,12 @@ export default function PracticeHubPage() {
             </Button>
           </Link>
         </div>
+
+        {/* Error Bank Modal */}
+        <ErrorBankModal
+          isOpen={isErrorBankOpen}
+          onClose={() => setIsErrorBankOpen(false)}
+        />
       </div>
     </div>
   );

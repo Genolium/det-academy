@@ -16,7 +16,7 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
   const { recordInteractiveReadingResult } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const block = interactiveReadingBank[0];
+  const [block] = useState(() => interactiveReadingBank[Math.floor(Math.random() * interactiveReadingBank.length)]);
 
   // 5 screens: 1: gap word, 2: sentence insertion, 3: highlight, 4: main idea, 5: title
   const [subStep, setSubStep] = useState<1 | 2 | 3 | 4 | 5>(1);

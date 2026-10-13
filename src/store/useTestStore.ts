@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CalculatedScores, computeFinalScores } from '@/lib/scoring';
 import { evaluateWriteAboutPhoto, evaluateEssayWriting } from '@/lib/textEvaluator';
-import { updateTheta2PL, DIFFICULTY_THETA_MAP } from '@/lib/irtCatEngine';
+import { updateTheta2PL, DIFFICULTY_THETA_MAP, detScoreToTheta } from '@/lib/irtCatEngine';
 
 export type StageName =
   | 'READ_SELECT'
@@ -174,7 +174,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
 
     // Writing evaluation using Rubric Grader (relevance, vocabulary, discourse markers, syntax)
     let photoScoresSum = 0;
-    state.writePhotoTexts.forEach((text, i) => {
+    state.writePhotoTexts.forEach((text) => {
       const fb = evaluateWriteAboutPhoto(text, {
         expectedKeywords: ['laboratory', 'students', 'engineer', 'presentation', 'monitors', 'researcher'],
       });
@@ -198,7 +198,13 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
       writingScore: writingRatio,
     });
 
-    set({ finalScores: scores, writingScoreRatio: writingRatio, currentStage: 'COMPLETED' });
+    const finalTheta = detScoreToTheta(scores.overall);
+    set({
+      finalScores: scores,
+      writingScoreRatio: writingRatio,
+      thetaAbility: finalTheta,
+      currentStage: 'COMPLETED',
+    });
     return scores;
   },
 }));

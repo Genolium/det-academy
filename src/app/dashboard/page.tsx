@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore, TOTAL_LESSONS } from '@/store/useProgressStore';
-import { lessonsData, LessonGuide } from '@/data/theoryContent';
+import { lessonsData } from '@/data/theoryContent';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
+import { UniversityMatchWidget } from '@/components/institutions/UniversityMatchWidget';
+import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 import {
   GraduationCap,
   Sparkles,
@@ -67,6 +70,8 @@ function DashboardContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
+  const unmasteredErrors = useErrorBankStore((s) => s.getUnmasteredCount());
 
   useEffect(() => {
     checkAuth();
@@ -268,6 +273,14 @@ function DashboardContent() {
                 <Keyboard className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Тренировать печать</span>
               </Link>
+              <button
+                type="button"
+                onClick={() => setIsErrorBankOpen(true)}
+                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-amber-500/50 text-amber-300 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Банк ошибок ({unmasteredErrors})</span>
+              </button>
             </div>
           </div>
 
@@ -407,11 +420,18 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Interactive Skill Radar (Subscores vs Target University) */}
+        {/* Interactive Skill Radar (6 Core Skills vs Target University) */}
         <SkillRadarChart
           currentScores={currentSubscores}
           overallScore={latestTest ? latestTest.overallScore : null}
           hasTakenTest={hasTakenTest}
+          typingWpm={bestTypingWpm}
+          completedLessonsCount={completedLessons.length}
+        />
+
+        {/* University Match Widget (Ivy League & Global Top-100) */}
+        <UniversityMatchWidget
+          currentPredictedScore={bestScore > 0 ? bestScore : targetScore}
         />
 
         {/* 3. Subscores Diagnostics (DET 4 Pillars) */}
@@ -788,6 +808,11 @@ function DashboardContent() {
       <EditProfileNameModal
         isOpen={isRenameModalOpen}
         onClose={() => setIsRenameModalOpen(false)}
+      />
+
+      <ErrorBankModal
+        isOpen={isErrorBankOpen}
+        onClose={() => setIsErrorBankOpen(false)}
       />
     </div>
   );

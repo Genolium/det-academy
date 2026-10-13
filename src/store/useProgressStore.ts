@@ -12,12 +12,34 @@ export interface TestResult {
   candidateName: string;
 }
 
+export interface LeagueInfo {
+  name: string;
+  nameRu: string;
+  color: string;
+  badge: string;
+  minElo: number;
+  maxElo: number;
+}
+
+export function getLeagueInfo(elo: number): LeagueInfo {
+  if (elo >= 2050) return { name: 'Grandmaster', nameRu: 'Грандмастер', color: 'text-rose-400 bg-rose-950/60 border-rose-800/60', badge: '👑', minElo: 2050, maxElo: 3000 };
+  if (elo >= 1900) return { name: 'Master', nameRu: 'Мастер', color: 'text-purple-400 bg-purple-950/60 border-purple-800/60', badge: '🔮', minElo: 1900, maxElo: 2049 };
+  if (elo >= 1750) return { name: 'Diamond', nameRu: 'Алмаз', color: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/60', badge: '💎', minElo: 1750, maxElo: 1899 };
+  if (elo >= 1600) return { name: 'Platinum', nameRu: 'Платина', color: 'text-teal-400 bg-teal-950/60 border-teal-800/60', badge: '🛡️', minElo: 1600, maxElo: 1749 };
+  if (elo >= 1400) return { name: 'Gold', nameRu: 'Золото', color: 'text-amber-400 bg-amber-950/60 border-amber-800/60', badge: '🥇', minElo: 1400, maxElo: 1599 };
+  if (elo >= 1200) return { name: 'Silver', nameRu: 'Серебро', color: 'text-slate-300 bg-slate-800/60 border-slate-700/60', badge: '🥈', minElo: 1200, maxElo: 1399 };
+  return { name: 'Bronze', nameRu: 'Бронза', color: 'text-orange-400 bg-orange-950/60 border-orange-800/60', badge: '🥉', minElo: 0, maxElo: 1199 };
+}
+
 interface ProgressState {
   completedLessons: string[];
   bestTypingWpm: number;
   testResults: TestResult[];
   candidateName: string;
   targetScore: number;
+  streakDays: number;
+  lastActiveDate: string;
+  pvpElo: number;
   setCandidateName: (name: string) => void;
   setTargetScore: (score: number) => void;
   toggleLessonCompleted: (slug: string) => Promise<void>;
@@ -27,9 +49,16 @@ interface ProgressState {
   isEligibleForCertificate: () => boolean;
   getBestMockScore: () => number;
   getReadinessPercentage: () => number;
+  recordDailyActivity: () => void;
+  setPvpElo: (elo: number) => void;
+  getLeague: () => LeagueInfo;
 }
 
 export const TOTAL_LESSONS = 16;
+
+const getTodayDateString = () => {
+  return new Date().toISOString().split('T')[0];
+};
 
 const getInitialState = () => {
   if (typeof window === 'undefined') {
@@ -39,6 +68,9 @@ const getInitialState = () => {
       testResults: [],
       candidateName: '',
       targetScore: 125,
+      streakDays: 3,
+      lastActiveDate: '',
+      pvpElo: 1420,
     };
   }
 
@@ -57,6 +89,9 @@ const getInitialState = () => {
   const bestTypingWpm = parseInt(localStorage.getItem('det_best_wpm') || '0', 10) || 0;
   const candidateName = localStorage.getItem('det_candidate_name') || '';
   const targetScore = parseInt(localStorage.getItem('det_target_score') || '125', 10) || 125;
+  const streakDays = parseInt(localStorage.getItem('det_streak_days') || '3', 10) || 3;
+  const lastActiveDate = localStorage.getItem('det_last_active_date') || getTodayDateString();
+  const pvpElo = parseInt(localStorage.getItem('det_pvp_elo') || '1420', 10) || 1420;
 
   return {
     completedLessons,
@@ -64,6 +99,9 @@ const getInitialState = () => {
     testResults,
     candidateName,
     targetScore,
+    streakDays,
+    lastActiveDate,
+    pvpElo,
   };
 };
 
@@ -196,5 +234,44 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     const theoryFinished = completedLessons.length >= TOTAL_LESSONS;
     const testPassed = testResults.some((r) => r.overallScore >= 105);
     return theoryFinished && testPassed;
+  },
+
+  recordDailyActivity: () => {
+    const today = getTodayDateString();
+    const { lastActiveDate, streakDays } = get();
+
+    if (lastActiveDate === today) {
+      return; // Already recorded today
+    }
+
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split('T')[0];
+
+    let newStreak = streakDays;
+    if (lastActiveDate === yesterday) {
+      newStreak += 1;
+    } else if (!lastActiveDate) {
+      newStreak = 1;
+    } else {
+      newStreak = 1; // broken streak
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('det_streak_days', newStreak.toString());
+      localStorage.setItem('det_last_active_date', today);
+    }
+    set({ streakDays: newStreak, lastActiveDate: today });
+  },
+
+  setPvpElo: (pvpElo: number) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('det_pvp_elo', pvpElo.toString());
+    }
+    set({ pvpElo });
+  },
+
+  getLeague: () => {
+    return getLeagueInfo(get().pvpElo);
   },
 }));

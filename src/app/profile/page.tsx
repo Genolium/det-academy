@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
+import { UniversityMatchWidget } from '@/components/institutions/UniversityMatchWidget';
+import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 
 function ProfileContent() {
   const router = useRouter();
@@ -307,6 +309,15 @@ function ProfileContent() {
   const isYandexLinked = linkedList.some((p) => p.provider === 'yandex') || !!(user?.email && (user.email.toLowerCase().endsWith('@yandex.ru') || user.email.toLowerCase().endsWith('@ya.ru') || user.email.toLowerCase().startsWith('yandex_')));
 
   const bestScore = testResults.length > 0 ? Math.max(...testResults.map((r) => r.overallScore)) : null;
+  const latestTest = testResults.length > 0 ? testResults[testResults.length - 1] : null;
+  const currentSubscores = latestTest
+    ? {
+        literacy: latestTest.literacy,
+        comprehension: latestTest.comprehension,
+        conversation: latestTest.conversation,
+        production: latestTest.production,
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-[#070809] text-white">
@@ -831,6 +842,22 @@ function ProfileContent() {
               Рекомендуемый порог: 50+ WPM
             </p>
           </Link>
+        </div>
+
+        {/* Interactive Skill Radar (6 Core Skills) */}
+        <div className="pt-2">
+          <SkillRadarChart
+            currentScores={currentSubscores}
+            overallScore={bestScore}
+            hasTakenTest={testResults.length > 0}
+            typingWpm={bestTypingWpm}
+            completedLessonsCount={completedLessons.length}
+          />
+        </div>
+
+        {/* Target Universities Match Widget */}
+        <div className="pt-2">
+          <UniversityMatchWidget currentPredictedScore={bestScore || 115} />
         </div>
       </div>
       </div>

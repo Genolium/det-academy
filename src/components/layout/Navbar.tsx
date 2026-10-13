@@ -23,14 +23,16 @@ import {
   ChevronDown,
   MapPin,
   Swords,
+  Flame,
 } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { LeagueBadge } from '@/components/ui/LeagueBadge';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { locale, setLocale } = useSettingsStore();
   const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
-  const { syncWithBackend } = useProgressStore();
+  const { syncWithBackend, streakDays, pvpElo } = useProgressStore();
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -120,7 +122,7 @@ export const Navbar: React.FC = () => {
     },
     {
       href: '/arena',
-      label: 'Арена 1v1',
+      label: t.arena,
       icon: Swords,
       isActive: pathname.startsWith('/arena'),
     },
@@ -185,6 +187,20 @@ export const Navbar: React.FC = () => {
 
           {/* RIGHT: Consolidated User & Action Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Daily Streak Tracker */}
+            <div
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-600 text-xs font-black shadow-sm"
+              title={locale === 'ru' ? `Ударный режим: ${streakDays} дн.` : `Daily Streak: ${streakDays} days`}
+            >
+              <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
+              <span>{streakDays}</span>
+            </div>
+
+            {/* League Tier Badge */}
+            <div className="hidden lg:inline-block">
+              <LeagueBadge elo={pvpElo} size="sm" />
+            </div>
+
             {/* Language Switcher */}
             <button
               onClick={() => setLocale(locale === 'ru' ? 'en' : 'ru')}

@@ -1,3 +1,5 @@
+import { listenTypeBank } from '@/data/questionBank';
+
 export interface DictationItem {
   id: string;
   sentence: string;
@@ -13,7 +15,7 @@ export interface WordDiffResult {
 }
 
 // Corpus from Dictation Tips & Difficult Dictation 20 Tests
-export const dictationCorpus: DictationItem[] = [
+const baseDictationCorpus: DictationItem[] = [
   {
     id: 'dict-auth-1',
     sentence: 'There are thousands of robots doing a wide variety of tasks in hospitals.',
@@ -225,6 +227,25 @@ export const dictationCorpus: DictationItem[] = [
     translationRu: 'Инфраструктура возобновляемой энергетики продолжает расширяться как в развивающихся, так и в индустриальных странах.',
   },
 ];
+
+// Merge listenTypeBank from questionBank into dictationCorpus
+const dictationMap = new Map<string, DictationItem>();
+baseDictationCorpus.forEach((d) => dictationMap.set(d.sentence.toLowerCase(), d));
+
+listenTypeBank.forEach((lt) => {
+  const key = lt.audioSentence.toLowerCase();
+  if (!dictationMap.has(key)) {
+    dictationMap.set(key, {
+      id: lt.id,
+      sentence: lt.audioSentence,
+      difficulty: lt.difficulty,
+      topic: 'Academic Discourse',
+      translationRu: `Академический диктант уровня ${lt.difficulty} из банка экзаменационных заданий DET.`,
+    });
+  }
+});
+
+export const dictationCorpus: DictationItem[] = Array.from(dictationMap.values());
 
 /**
  * Word-by-word diff calculation

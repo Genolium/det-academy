@@ -6,7 +6,8 @@ import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, Clock, Award } from 'lucide-react';
+import { ArrowRight, Clock, Award, Sparkles } from 'lucide-react';
+import { WritingInspector } from '@/components/practice/WritingInspector';
 
 interface WritingSampleProps {
   onComplete: () => void;
@@ -16,10 +17,11 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
   const { recordWritingSampleResult } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const q = writingSampleBank[0];
+  const [q] = useState(() => writingSampleBank[Math.floor(Math.random() * writingSampleBank.length)]);
 
   const [essayText, setEssayText] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes = 300s
+  const [showInspector, setShowInspector] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -97,11 +99,32 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
             autoFocus
           />
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={() => setShowInspector(!showInspector)}
+              className="text-xs font-bold text-[#D2F544] hover:underline flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{showInspector ? 'Скрыть AI Writing Inspector' : 'Открыть AI Writing Inspector (CEFR & OREO)'}</span>
+            </button>
+
             <Button variant="primary" size="lg" onClick={handleSubmit} icon={<ArrowRight className="w-4 h-4" />}>
               {t.finishSampleBtn}
             </Button>
           </div>
+
+          {showInspector && (
+            <div className="pt-4 border-t border-neutral-800">
+              <WritingInspector
+                text={essayText}
+                onTextChange={setEssayText}
+                minWords={100}
+                promptText={q.prompt}
+                showOreoTracker={true}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

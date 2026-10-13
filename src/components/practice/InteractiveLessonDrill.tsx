@@ -36,6 +36,10 @@ import {
   ShieldAlert,
   Play
 } from 'lucide-react';
+import { SpeakAboutPhoto } from '@/components/test-engine/questions/SpeakAboutPhoto';
+import { SpeakingSample } from '@/components/test-engine/questions/SpeakingSample';
+import { WritingInspector } from '@/components/practice/WritingInspector';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 
 interface InteractiveLessonDrillProps {
   lessonSlug: string;
@@ -118,7 +122,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const aloudRecognitionRef = useRef<any>(null);
 
   // 7. Interactive Reading State
-  const [readingBlockIndex, setReadingBlockIndex] = useState(0);
+  const [readingBlockIndex, setReadingBlockIndex] = useState(() => Math.floor(Math.random() * interactiveReadingBank.length));
   const currentReadingBlock = interactiveReadingBank[readingBlockIndex % interactiveReadingBank.length];
   const [readingSubStep, setReadingSubStep] = useState<1 | 2 | 3>(1);
   const [readingGapChoice, setReadingGapChoice] = useState('');
@@ -127,14 +131,14 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [readingChecked, setReadingChecked] = useState(false);
 
   // 8. Interactive Listening State
-  const [listeningBlockIndex, setListeningBlockIndex] = useState(0);
+  const [listeningBlockIndex, setListeningBlockIndex] = useState(() => Math.floor(Math.random() * interactiveListeningBank.length));
   const currentListeningBlock = interactiveListeningBank[listeningBlockIndex % interactiveListeningBank.length];
   const [listeningTurnIdx, setListeningTurnIdx] = useState(0);
   const [listeningChosenTurns, setListeningChosenTurns] = useState<number[]>([]);
   const [listeningFinished, setListeningFinished] = useState(false);
 
   // 9. Photo Writing State (Write About Photo)
-  const [photoWriteIndex, setPhotoWriteIndex] = useState(0);
+  const [photoWriteIndex, setPhotoWriteIndex] = useState(() => Math.floor(Math.random() * writePhotoBank.length));
   const currentPhotoItem = writePhotoBank[photoWriteIndex % writePhotoBank.length];
   const [photoWriteText, setPhotoWriteText] = useState('');
   const [photoWriteAnalysis, setPhotoWriteAnalysis] = useState<ReturnType<typeof analyzeWritingVocabulary> | null>(null);
@@ -201,6 +205,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setAloudEvaluated(false);
 
     // Reset Interactive Reading
+    setReadingBlockIndex(Math.floor(Math.random() * interactiveReadingBank.length));
     setReadingSubStep(1);
     setReadingGapChoice('');
     setReadingSentenceIdx(null);
@@ -208,11 +213,13 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setReadingChecked(false);
 
     // Reset Interactive Listening
+    setListeningBlockIndex(Math.floor(Math.random() * interactiveListeningBank.length));
     setListeningTurnIdx(0);
     setListeningChosenTurns([]);
     setListeningFinished(false);
 
     // Reset Photo Writing
+    setPhotoWriteIndex(Math.floor(Math.random() * writePhotoBank.length));
     setPhotoWriteText('');
     setPhotoWriteAnalysis(null);
     setPhotoShowModel(false);
@@ -251,7 +258,21 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     let correct = 0;
     cTest.gaps.forEach((gap) => {
       const userVal = (cTestInputs[gap.index] || '').trim().toLowerCase();
-      if (userVal === gap.missing.toLowerCase()) correct++;
+      if (userVal === gap.missing.toLowerCase()) {
+        correct++;
+      } else {
+        try {
+          useErrorBankStore.getState().addError({
+            type: 'C_TEST',
+            questionTitle: 'C-Test Drill',
+            tokenPrefix: gap.prefix,
+            missingLetters: gap.missing,
+            fullWord: `${gap.prefix}${gap.missing}`,
+            contextSentence: `...${gap.prefix}[...]...`,
+            userInput: userVal,
+          });
+        } catch {}
+      }
     });
     setCTestScore(correct);
     setCTestChecked(true);
@@ -274,6 +295,17 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const handleRsChoice = (userBelievesReal: boolean) => {
     const currentWord = rsWords[rsIndex];
     const isCorrect = userBelievesReal === currentWord.isReal;
+    if (!isCorrect) {
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'READ_SELECT',
+          wordTested: currentWord.word,
+          isRealWord: currentWord.isReal,
+          userChoseReal: userBelievesReal,
+          definition: currentWord.isReal ? 'Реальное слово (Read & Select Drill)' : 'Псевдослово (DET Trap)',
+        });
+      } catch {}
+    }
     const newAnswers = [...rsAnswers, isCorrect];
     const newChoices = [...rsUserChoices, userBelievesReal];
     setRsAnswers(newAnswers);
@@ -340,6 +372,17 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     if (isOk) {
       setDrillCompleted(true);
       onDrillCompleted?.();
+    } else {
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'FILL_BLANKS',
+          contextSentence: `${fib.sentenceBefore} ${fib.givenPrefix}[...] ${fib.sentenceAfter}`,
+          givenPrefix: fib.givenPrefix,
+          userInput: fibInput.trim(),
+          missingLetters: fib.missingLetters,
+          correctAnswer: fib.fullWord,
+        });
+      } catch {}
     }
   };
 
@@ -379,6 +422,15 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     if (evalResult.similarity >= 0.65) {
       setDrillCompleted(true);
       onDrillCompleted?.();
+    } else {
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'LISTEN_TYPE',
+          audioSentence: dictation.sentence,
+          userTranscript: dictInput.trim(),
+          similarityRatio: evalResult.similarity,
+        });
+      } catch {}
     }
   };
 
@@ -1475,7 +1527,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
               className="w-full p-4 rounded-xl border border-neutral-300 font-medium text-neutral-900 focus:outline-none focus:border-black text-sm"
             />
 
-            <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
+            <div className="mt-3 flex items-center justify-between text-xs text-neutral-500 flex-wrap gap-2">
               <span>Слов: <b>{writingText.trim().split(/\s+/).filter(Boolean).length}</b> / мин. {writingPrompt.minWords}</span>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setShowModelAnswer(!showModelAnswer)}>
@@ -1484,6 +1536,18 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 <Button size="sm" onClick={handleWritingAnalyze}>Анализ эссе</Button>
               </div>
             </div>
+
+            {writingText.trim().length > 0 && (
+              <div className="mt-4">
+                <WritingInspector
+                  text={writingText}
+                  onTextChange={setWritingText}
+                  minWords={writingPrompt.minWords}
+                  promptText={writingPrompt.prompt}
+                  showOreoTracker={true}
+                />
+              </div>
+            )}
 
             {writingAnalysis && (
               <div className="mt-4 p-5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-3">
@@ -1540,120 +1604,101 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         {/* ========================================================================= */}
         {(isPhotoSpeaking || isReadListenSpeak || isSpeakingSample) && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                {isPhotoSpeaking ? 'Speak About the Photo · 75–85 секунд монолога' :
-                 isReadListenSpeak ? 'Read / Listen, Then Speak · Развернутый ответ по карточке' :
-                 'Speaking Sample · Итоговое академическое видеоинтервью'}
-              </span>
-              <span className="text-xs font-mono font-bold text-neutral-400">
-                Целевое время: {isPhotoSpeaking ? '80 сек' : isReadListenSpeak ? '90 сек' : '120–150 сек'}
-              </span>
-            </div>
-
-            {/* Prompt Display */}
-            {isPhotoSpeaking && (
-              <div className="flex flex-col sm:flex-row gap-6 mb-5 items-center">
-                <img
-                  src={currentPhotoItem.imageUrl}
-                  alt={currentPhotoItem.altText}
-                  className="w-full sm:w-1/2 max-h-56 object-cover rounded-2xl border border-neutral-200"
-                />
-                <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-700 space-y-2 flex-1">
-                  <span className="font-bold text-neutral-900 block">5-зонный маршрут говорения (75–85 сек):</span>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>Общий план (Present Continuous): Who is doing what and where.</li>
-                    <li>Пространственные детали (foreground, adjacent to).</li>
-                    <li>Предметы в руках и мимика.</li>
-                    <li>Академическая гипотеза (judging by their posture...).</li>
-                    <li>Синтезирующий вывод об атмосфере кадра.</li>
-                  </ol>
-                </div>
-              </div>
-            )}
-
-            {isReadListenSpeak && (
-              <div className="p-5 bg-white rounded-2xl border-2 border-neutral-200 mb-5">
-                <span className="text-xs font-bold text-[#0C2418] uppercase tracking-wider block mb-2">
-                  Карточка вопроса (Card Prompt):
-                </span>
-                <p className="text-sm sm:text-base font-bold text-neutral-900 mb-3 leading-relaxed">
-                  Talk about a challenging academic or professional project you recently completed.
-                </p>
-                <ul className="text-xs text-neutral-600 space-y-1 list-disc pl-5">
-                  <li>What was the project about, and why was it significant?</li>
-                  <li>What principal obstacles did you or your team encounter?</li>
-                  <li>How did you resolve these challenges, and what valuable lesson did you learn?</li>
-                </ul>
-              </div>
-            )}
-
-            {isSpeakingSample && (
-              <div className="p-5 bg-neutral-900 rounded-2xl border border-neutral-800 text-white mb-5">
-                <span className="text-xs font-mono text-[#D2F544] uppercase tracking-wider block mb-2 font-bold">
-                  University Video Interview Prompt:
-                </span>
-                <p className="text-sm sm:text-base font-bold text-neutral-100 mb-2 leading-relaxed">
-                  &ldquo;Should artificial intelligence tools be integrated into higher education curricula, or do they undermine academic integrity?&rdquo;
-                </p>
-                <p className="text-xs text-neutral-400">
-                  Говорите прямо в камеру спокойным уверенным тоном. Приведите 2 аргумента и контраргумент.
-                </p>
-              </div>
-            )}
-
-            {/* Speaking Session Control */}
-            <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-200 flex flex-col items-center justify-center text-center">
-              {!isSpeakingActive ? (
-                <div>
-                  <button
-                    onClick={() => startSpeakingTimer(isPhotoSpeaking ? 80 : isReadListenSpeak ? 90 : 120)}
-                    className="w-16 h-16 mx-auto rounded-full bg-[#D2F544] hover:bg-[#c3e839] text-[#0C2418] flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer mb-3"
-                  >
-                    <Mic className="w-8 h-8" />
-                  </button>
-                  <span className="text-xs font-bold text-neutral-800 block">
-                    Начать устную сессию с таймером
+            {isPhotoSpeaking ? (
+              <SpeakAboutPhoto
+                isStandaloneDrill
+                onComplete={() => {
+                  setDrillCompleted(true);
+                  onDrillCompleted?.();
+                }}
+              />
+            ) : isSpeakingSample ? (
+              <SpeakingSample
+                isStandaloneDrill
+                onComplete={() => {
+                  setDrillCompleted(true);
+                  onDrillCompleted?.();
+                }}
+              />
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                    Read / Listen, Then Speak · Развернутый ответ по карточке
                   </span>
-                  <span className="text-[11px] text-neutral-400">
-                    Активирует микрофон и обратный отсчет времени говорения
+                  <span className="text-xs font-mono font-bold text-neutral-400">
+                    Целевое время: 90 сек
                   </span>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg animate-pulse">
-                    <Mic className="w-8 h-8" />
-                  </div>
-                  <div className="text-2xl font-black text-neutral-900">
-                    Осталось: <span className="text-red-600">{speakingSecRemaining} сек</span>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={stopSpeakingSession} className="text-xs">
-                    Завершить досрочно
-                  </Button>
-                </div>
-              )}
-            </div>
 
-            {/* Speaking Feedback */}
-            {speakingCompleted && (
-              <div className="mt-4 p-5 bg-white rounded-2xl border border-neutral-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-black text-neutral-900 flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-amber-500" /> Устный ответ зафиксирован
-                  </div>
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                    Сессия завершена
+                <div className="p-5 bg-white rounded-2xl border-2 border-neutral-200 mb-5">
+                  <span className="text-xs font-bold text-[#0C2418] uppercase tracking-wider block mb-2">
+                    Карточка вопроса (Card Prompt):
                   </span>
+                  <p className="text-sm sm:text-base font-bold text-neutral-900 mb-3 leading-relaxed">
+                    Talk about a challenging academic or professional project you recently completed.
+                  </p>
+                  <ul className="text-xs text-neutral-600 space-y-1 list-disc pl-5">
+                    <li>What was the project about, and why was it significant?</li>
+                    <li>What principal obstacles did you or your team encounter?</li>
+                    <li>How did you resolve these challenges, and what valuable lesson did you learn?</li>
+                  </ul>
                 </div>
-                {speakingTranscript && (
-                  <div className="text-xs text-neutral-600 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-                    <span className="font-bold block text-neutral-800 mb-1">Транскрипт ответа:</span>
-                    <i>{speakingTranscript}</i>
+
+                {/* Speaking Session Control */}
+                <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-200 flex flex-col items-center justify-center text-center">
+                  {!isSpeakingActive ? (
+                    <div>
+                      <button
+                        onClick={() => startSpeakingTimer(90)}
+                        className="w-16 h-16 mx-auto rounded-full bg-[#D2F544] hover:bg-[#c3e839] text-[#0C2418] flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer mb-3"
+                      >
+                        <Mic className="w-8 h-8" />
+                      </button>
+                      <span className="text-xs font-bold text-neutral-800 block">
+                        Начать устную сессию с таймером
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        Активирует микрофон и обратный отсчет времени говорения
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="w-16 h-16 mx-auto rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg animate-pulse">
+                        <Mic className="w-8 h-8" />
+                      </div>
+                      <div className="text-2xl font-black text-neutral-900">
+                        Осталось: <span className="text-red-600">{speakingSecRemaining} сек</span>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={stopSpeakingSession} className="text-xs">
+                        Завершить досрочно
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Speaking Feedback */}
+                {speakingCompleted && (
+                  <div className="mt-4 p-5 bg-white rounded-2xl border border-neutral-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-black text-neutral-900 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-500" /> Устный ответ зафиксирован
+                      </div>
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                        Сессия завершена
+                      </span>
+                    </div>
+                    {speakingTranscript && (
+                      <div className="text-xs text-neutral-600 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
+                        <span className="font-bold block text-neutral-800 mb-1">Транскрипт ответа:</span>
+                        <i>{speakingTranscript}</i>
+                      </div>
+                    )}
+                    <div className="text-xs text-neutral-600">
+                      💡 <b>Чек-лист самопроверки:</b> непрерывная беглость без вокализованных пауз (uh/um), раскрытие всех подвопросов, уверенный контакт с камерой.
+                    </div>
                   </div>
                 )}
-                <div className="text-xs text-neutral-600">
-                  💡 <b>Чек-лист самопроверки:</b> непрерывная беглость без вокализованных пауз (uh/um), раскрытие всех подвопросов, уверенный контакт с камерой.
-                </div>
               </div>
             )}
           </div>

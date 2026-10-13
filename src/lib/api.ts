@@ -1,6 +1,7 @@
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
-    ? process.env.NEXT_PUBLIC_API_URL
+  rawApiUrl !== undefined && rawApiUrl !== ''
+    ? rawApiUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '')
     : typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     ? ''
     : 'http://localhost:18080';
@@ -619,7 +620,7 @@ class ApiClient {
     return res.json();
   }
 
-  async createQuestion(data: any): Promise<BackendQuestion> {
+  async createQuestion(data: Record<string, unknown>): Promise<BackendQuestion> {
     const res = await fetch(`${API_BASE_URL}/api/v1/admin/questions`, {
       method: 'POST',
       headers: this.getHeaders(),

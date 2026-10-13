@@ -6,6 +6,7 @@ import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const [pool] = useState(() => fillBlanksBank);
+  const [pool] = useState(() => [...fillBlanksBank].sort(() => 0.5 - Math.random()).slice(0, 8));
   const [index, setIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [inputVal, setInputVal] = useState('');
@@ -41,6 +42,16 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
       setCorrectCount((c) => c + 1);
     } else {
       if (soundEnabled) sound.playErrorBuzz();
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'FILL_BLANKS',
+          contextSentence: `${currentItem.sentenceBefore} ${currentItem.givenPrefix}[...] ${currentItem.sentenceAfter}`,
+          givenPrefix: currentItem.givenPrefix,
+          userInput: inputVal.trim(),
+          missingLetters: currentItem.missingLetters,
+          correctAnswer: currentItem.fullWord,
+        });
+      } catch {}
     }
 
     if (index + 1 < pool.length) {
