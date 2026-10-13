@@ -87,6 +87,12 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
           <img
             src={currentPhoto.imageUrl}
             alt={currentPhoto.altText}
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              if (target.src !== '/drills/wp-1.jpg') {
+                target.src = '/drills/wp-1.jpg';
+              }
+            }}
             className="w-full h-72 object-cover rounded-2xl"
           />
           <span className="text-[11px] text-neutral-400 mt-2 italic text-center">

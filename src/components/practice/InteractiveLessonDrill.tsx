@@ -1433,10 +1433,16 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               {/* Photo */}
-              <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 flex items-center justify-center p-2 max-h-72">
+              <div className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100 flex items-center justify-center p-2 min-h-60 max-h-72">
                 <img
                   src={currentPhotoItem.imageUrl}
                   alt={currentPhotoItem.altText}
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== '/drills/wp-1.jpg') {
+                      target.src = '/drills/wp-1.jpg';
+                    }
+                  }}
                   className="max-h-64 w-auto rounded-xl object-contain shadow-sm"
                 />
               </div>

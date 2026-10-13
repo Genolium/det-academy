@@ -4346,133 +4346,133 @@ export const interactiveListeningBank: InteractiveListeningBlock[] = [
 export const writePhotoBank: WritePhotoQuestion[] = [
   {
     "id": "wp-1",
-    "imageUrl": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-1.jpg",
     "altText": "A focused biochemical researcher manipulating micro-pipettes inside a sterile laboratory",
     "difficulty": "B2"
   },
   {
     "id": "wp-2",
-    "imageUrl": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-2.jpg",
     "altText": "A diverse group of university students collaborating over notebooks and laptops in a campus library",
     "difficulty": "B1"
   },
   {
     "id": "wp-3",
-    "imageUrl": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-3.jpg",
     "altText": "A civil engineer wearing a high-visibility vest inspecting blueprints at an active urban construction site",
     "difficulty": "B2"
   },
   {
     "id": "wp-4",
-    "imageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-4.jpg",
     "altText": "Two software specialists analyzing data visualizations and code on multi-monitor workstations",
     "difficulty": "C1"
   },
   {
     "id": "wp-5",
-    "imageUrl": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-5.jpg",
     "altText": "A ceramic artisan shaping clay pottery on a spinning wheel in an illuminated rustic workshop",
     "difficulty": "B2"
   },
   {
     "id": "wp-6",
-    "imageUrl": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-6.jpg",
     "altText": "Botanical researchers inspecting rows of vibrant hydroponic crops inside an automated greenhouse",
     "difficulty": "B2"
   },
   {
     "id": "wp-7",
-    "imageUrl": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-7.jpg",
     "altText": "Automated warehouse logistics with robotic sorting units and organized tiered shelving",
     "difficulty": "C1"
   },
   {
     "id": "wp-8",
-    "imageUrl": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-8.jpg",
     "altText": "A medical surgical team in protective scrubs performing a delicate procedure under bright surgical lamps",
     "difficulty": "C1"
   },
   {
     "id": "wp-9",
-    "imageUrl": "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-9.jpg",
     "altText": "Commuters waiting along an illuminated underground subway platform as a train approaches the station",
     "difficulty": "B1"
   },
   {
     "id": "wp-10",
-    "imageUrl": "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-10.jpg",
     "altText": "Solar energy technicians installing photovoltaic panels across an expansive desert utility farm",
     "difficulty": "B2"
   },
   {
     "id": "wp-11",
-    "imageUrl": "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-11.jpg",
     "altText": "An archaeological research team meticulously brushing soil away from ancient masonry ruins",
     "difficulty": "B2"
   },
   {
     "id": "wp-12",
-    "imageUrl": "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-12.jpg",
     "altText": "An industrial wind turbine maintenance specialist suspended alongside immense composite rotor blades",
     "difficulty": "C1"
   },
   {
     "id": "wp-13",
-    "imageUrl": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-13.jpg",
     "altText": "Professional chefs plating gourmet dishes with culinary tweezers in a bustling restaurant kitchen",
     "difficulty": "B2"
   },
   {
     "id": "wp-14",
-    "imageUrl": "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-14.jpg",
     "altText": "A conservation forester examining coniferous tree bark inside a foggy old-growth woodland preserve",
     "difficulty": "B1"
   },
   {
     "id": "wp-15",
-    "imageUrl": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-15.jpg",
     "altText": "Marine scientific divers recording ecological data on a submerged coral reef transect line",
     "difficulty": "C1"
   },
   {
     "id": "wp-16",
-    "imageUrl": "https://images.unsplash.com/photo-1517976487502-55a0b777a82c?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-16.jpg",
     "altText": "Aerospace propulsion engineers testing a jet turbine inside a specialized acoustic wind tunnel",
     "difficulty": "C1"
   },
   {
     "id": "wp-17",
-    "imageUrl": "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-17.jpg",
     "altText": "An astronomer adjusting optical controls beside an astronomical telescope inside a mountaintop observatory",
     "difficulty": "B2"
   },
   {
     "id": "wp-18",
-    "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-18.jpg",
     "altText": "Landscape architects reviewing architectural blueprints atop an urban rooftop garden overlooking skyscrapers",
     "difficulty": "B2"
   },
   {
     "id": "wp-19",
-    "imageUrl": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-19.jpg",
     "altText": "A fine art conservator using magnifying tools to clean pigments on an antique oil canvas painting",
     "difficulty": "C1"
   },
   {
     "id": "wp-20",
-    "imageUrl": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-20.jpg",
     "altText": "Chemical engineering students observing fractional distillation columns in an academic pilot plant",
     "difficulty": "B2"
   },
   {
     "id": "wp-21",
-    "imageUrl": "https://images.unsplash.com/photo-1508873696983-2df57046475a?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-21.jpg",
     "altText": "A field geologist tapping sedimentary rock strata with a rock hammer along an exposed mountain cliff",
     "difficulty": "B2"
   },
   {
     "id": "wp-22",
-    "imageUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-22.jpg",
     "altText": "A cross-functional startup team engaged in an animated brainstorming session in front of a glass whiteboard",
     "difficulty": "B1"
   }
@@ -4680,7 +4680,7 @@ export const writingSampleBank: WritingSampleQuestion[] = [
 export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   {
     "id": "sp-1",
-    "imageUrl": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-1.jpg",
     "altText": "A scientist in protective equipment conducting research in a modern laboratory",
     "topic": "Laboratory Science & Biochemical Research",
     "difficulty": "B2",
@@ -4696,7 +4696,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-2",
-    "imageUrl": "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-2.jpg",
     "altText": "University students studying collaboratively around a library table",
     "topic": "Higher Education & Collaborative Learning",
     "difficulty": "B2",
@@ -4712,7 +4712,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-3",
-    "imageUrl": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-3.jpg",
     "altText": "An engineer inspecting structural blueprints on a busy urban construction site",
     "topic": "Civil Engineering & Infrastructure Development",
     "difficulty": "C1",
@@ -4728,7 +4728,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-4",
-    "imageUrl": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-4.jpg",
     "altText": "Two software specialists discussing complex algorithms in front of illuminated monitor displays",
     "topic": "Information Technology & Data Analysis",
     "difficulty": "C1",
@@ -4744,7 +4744,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-5",
-    "imageUrl": "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-5.jpg",
     "altText": "A ceramic artisan shaping clay pottery on a spinning wheel in an illuminated rustic workshop",
     "topic": "Traditional Craftsmanship & Ceramic Art",
     "difficulty": "B2",
@@ -4760,7 +4760,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-6",
-    "imageUrl": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-6.jpg",
     "altText": "Botanical researchers inspecting rows of vibrant hydroponic crops inside an automated greenhouse",
     "topic": "Sustainable Agribusiness & Hydroponic Horticulture",
     "difficulty": "B2",
@@ -4776,7 +4776,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-7",
-    "imageUrl": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-7.jpg",
     "altText": "Automated warehouse logistics with robotic sorting units and organized tiered shelving",
     "topic": "Supply Chain Automation & Industrial Logistics",
     "difficulty": "C1",
@@ -4792,7 +4792,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-8",
-    "imageUrl": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-8.jpg",
     "altText": "A medical surgical team in protective scrubs performing a delicate procedure under bright surgical lamps",
     "topic": "Healthcare Sciences & Surgical Precision",
     "difficulty": "C1",
@@ -4808,7 +4808,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-9",
-    "imageUrl": "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-9.jpg",
     "altText": "Commuters waiting along an illuminated underground subway platform as a train approaches the station",
     "topic": "Urban Transit Systems & Metropolitan Commuting",
     "difficulty": "B1",
@@ -4824,7 +4824,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-10",
-    "imageUrl": "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-10.jpg",
     "altText": "Solar energy technicians installing photovoltaic panels across an expansive desert utility farm",
     "topic": "Renewable Energy Transition & Solar Engineering",
     "difficulty": "B2",
@@ -4840,7 +4840,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-11",
-    "imageUrl": "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-11.jpg",
     "altText": "An archaeological research team meticulously brushing soil away from ancient masonry ruins",
     "topic": "Historical Archaeology & Cultural Preservation",
     "difficulty": "B2",
@@ -4856,7 +4856,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-12",
-    "imageUrl": "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-12.jpg",
     "altText": "An industrial wind turbine maintenance specialist suspended alongside immense composite rotor blades",
     "topic": "Offshore & Onshore Wind Energy Engineering",
     "difficulty": "C1",
@@ -4872,7 +4872,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-13",
-    "imageUrl": "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-13.jpg",
     "altText": "Professional chefs plating gourmet dishes with culinary tweezers in a bustling restaurant kitchen",
     "topic": "Gastronomy & High-Paced Culinary Arts",
     "difficulty": "B2",
@@ -4888,7 +4888,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-14",
-    "imageUrl": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-14.jpg",
     "altText": "Marine scientific divers recording ecological data on a submerged coral reef transect line",
     "topic": "Marine Conservation & Coral Reef Ecology",
     "difficulty": "C1",
@@ -4904,7 +4904,7 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
   },
   {
     "id": "sp-15",
-    "imageUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
+    "imageUrl": "/drills/wp-15.jpg",
     "altText": "A cross-functional startup team engaged in an animated brainstorming session in front of a glass whiteboard",
     "topic": "Collaborative Innovation & Enterprise Brainstorming",
     "difficulty": "B1",
