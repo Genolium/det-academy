@@ -187,19 +187,22 @@ export const Navbar: React.FC = () => {
 
           {/* RIGHT: Consolidated User & Action Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Daily Streak Tracker */}
-            <div
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-600 text-xs font-black shadow-sm"
-              title={locale === 'ru' ? `Ударный режим: ${streakDays} дн.` : `Daily Streak: ${streakDays} days`}
-            >
-              <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
-              <span>{streakDays}</span>
-            </div>
+            {/* Daily Streak Tracker & League Tier Badge (Only when authenticated) */}
+            {isAuthenticated && user && (
+              <>
+                <div
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-600 text-xs font-black shadow-sm"
+                  title={locale === 'ru' ? `Ударный режим: ${streakDays} дн.` : `Daily Streak: ${streakDays} days`}
+                >
+                  <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
+                  <span>{streakDays}</span>
+                </div>
 
-            {/* League Tier Badge */}
-            <div className="hidden lg:inline-block">
-              <LeagueBadge elo={pvpElo} size="sm" />
-            </div>
+                <div className="hidden lg:inline-block">
+                  <LeagueBadge elo={pvpElo} size="sm" />
+                </div>
+              </>
+            )}
 
             {/* Language Switcher */}
             <button

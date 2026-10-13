@@ -33,47 +33,57 @@ export const InstitutionsMap: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
 
-  // 1. Fetch institutions from Directus CMS / Go backend API
+  // 1. Fetch institutions: merge comprehensive dataset with Directus & Go backend
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Try Directus CMS first
-        const directusData = await directusCms.getInstitutions();
-        if (directusData && directusData.length > 0) {
-          const mapped: Institution[] = directusData.map((d) => ({
-            id: d.id,
-            name: d.name,
-            country: d.country,
-            city: d.city,
-            state: d.state,
-            minScore: d.min_score,
-            subscoreReqs: d.subscore_reqs,
-            latitude: d.latitude,
-            longitude: d.longitude,
-            websiteUrl: d.website_url,
-            logoUrl: d.logo_url,
-            category: d.category || 'Top Global',
-            acceptanceRate: d.acceptance_rate,
-            programs: d.programs || [],
-            createdAt: new Date().toISOString(),
-          }));
-          setInstitutions(mapped);
-          setFilteredInstitutions(mapped);
-          return;
-        }
+        const baseMap = new Map<string, Institution>();
+        (institutionsDataset as Institution[]).forEach((item) => {
+          baseMap.set(item.name.toLowerCase().trim(), item);
+        });
 
-        // Fallback to Go Backend API
-        const res = await api.getInstitutions();
-        if (res && res.institutions && res.institutions.length > 0) {
-          setInstitutions(res.institutions);
-          setFilteredInstitutions(res.institutions);
-        } else {
-          setInstitutions(institutionsDataset as Institution[]);
-          setFilteredInstitutions(institutionsDataset as Institution[]);
-        }
+        // Merge from Go Backend API
+        try {
+          const res = await api.getInstitutions();
+          if (res && res.institutions) {
+            res.institutions.forEach((item) => {
+              baseMap.set(item.name.toLowerCase().trim(), item);
+            });
+          }
+        } catch {}
+
+        // Merge from Directus CMS
+        try {
+          const directusData = await directusCms.getInstitutions();
+          if (directusData && directusData.length > 0) {
+            directusData.forEach((d) => {
+              baseMap.set(d.name.toLowerCase().trim(), {
+                id: d.id,
+                name: d.name,
+                country: d.country,
+                city: d.city,
+                state: d.state,
+                minScore: d.min_score,
+                subscoreReqs: d.subscore_reqs,
+                latitude: d.latitude,
+                longitude: d.longitude,
+                websiteUrl: d.website_url,
+                logoUrl: d.logo_url,
+                category: d.category || 'Top Global',
+                acceptanceRate: d.acceptance_rate,
+                programs: d.programs || [],
+                createdAt: new Date().toISOString(),
+              });
+            });
+          }
+        } catch {}
+
+        const allMerged = Array.from(baseMap.values());
+        setInstitutions(allMerged);
+        setFilteredInstitutions(allMerged);
       } catch (err) {
-        console.warn('Backend unavailable, loading verified static institutions dataset:', err);
+        console.warn('Fallback to static institutions dataset:', err);
         setInstitutions(institutionsDataset as Institution[]);
         setFilteredInstitutions(institutionsDataset as Institution[]);
       } finally {
@@ -163,18 +173,19 @@ export const InstitutionsMap: React.FC = () => {
         mapInstanceRef.current = null;
       }
 
-      // Initialize map centered at global view (Europe / Atlantic view)
+      // Initialize map centered at global view with attribution disabled for clean UI
       const map = L.map(mapContainerRef.current, {
         center: [38.0, -20.0],
         zoom: 3,
         minZoom: 2,
         maxZoom: 18,
         scrollWheelZoom: false,
+        attributionControl: false,
       });
 
-      // OpenStreetMap Standard Tiles (100% Free, no API key required)
+      // OpenStreetMap Standard Tiles (Attribution disabled as requested)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: '',
         maxZoom: 19,
       }).addTo(map);
 
@@ -208,8 +219,8 @@ export const InstitutionsMap: React.FC = () => {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Render up to 250 markers at a time for optimal 60fps Leaflet performance
-    const renderList = list.slice(0, 250);
+    // Render up to 1500 markers across the world for rich map coverage at 60fps
+    const renderList = list.slice(0, 1500);
 
     renderList.forEach((inst) => {
       if (!inst.latitude || !inst.longitude) return;

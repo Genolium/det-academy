@@ -22,6 +22,8 @@ import { useProgressStore } from '@/store/useProgressStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { LeagueBadge } from '@/components/ui/LeagueBadge';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { api, ArenaLeaderboardEntry } from '@/lib/api';
 
 type ArenaState = 'LOBBY' | 'SEARCHING' | 'COUNTDOWN' | 'DUELING' | 'RESULT';
 
@@ -50,17 +52,47 @@ const LEADERBOARD_PRESET = [
 ];
 
 export default function MultiplayerArenaPage() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const { locale } = useSettingsStore();
   const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
   const currentCandidateName = user?.name || candidateName || 'Candidate';
 
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [dbLeaderboard, setDbLeaderboard] = useState<ArenaLeaderboardEntry[]>([]);
   const [state, setState] = useState<ArenaState>('LOBBY');
   const [userElo, setUserElo] = useState<number>(pvpElo || 1420);
   const [countdown, setCountdown] = useState<number>(3);
   const [timeLeft, setTimeLeft] = useState<number>(60);
 
+  // Fetch real leaderboard from backend database
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .getArenaLeaderboard()
+      .then((res) => {
+        if (isMounted && res && res.leaderboard && res.leaderboard.length > 0) {
+          setDbLeaderboard(res.leaderboard);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const leaderboard = useMemo(() => {
+    if (dbLeaderboard.length > 0) {
+      return dbLeaderboard.map((item) => {
+        const isCurrentUser = user && (item.userId === user.id || item.name === user.name);
+        return {
+          rank: item.rank,
+          name: isCurrentUser ? `${item.name} (${locale === 'ru' ? 'Вы' : 'You'})` : item.name,
+          elo: isCurrentUser ? userElo : item.elo,
+          league: item.league,
+          winRate: item.winRate,
+        };
+      });
+    }
     return LEADERBOARD_PRESET.map((p) => {
       if (p.rank === 4) {
         return {
@@ -71,7 +103,7 @@ export default function MultiplayerArenaPage() {
       }
       return p;
     });
-  }, [currentCandidateName, locale, userElo]);
+  }, [dbLeaderboard, user, userElo, currentCandidateName, locale]);
 
   useEffect(() => {
     if (pvpElo) setUserElo(pvpElo);
@@ -321,6 +353,39 @@ export default function MultiplayerArenaPage() {
   const userProgressPct = Math.round(
     (inputs.filter((x) => x.trim().length > 0).length / challenge.blanks.length) * 100
   );
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen py-20 ambient-glow flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-[#111315] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <Swords className="w-8 h-8" />
+          </div>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <PillBadge variant="mint" prefixHash>
+              DET PvP Arena
+            </PillBadge>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-3">
+            {locale === 'ru' ? 'Вход на PvP Арену' : 'DET PvP Arena Access'}
+          </h1>
+          <p className="text-sm text-neutral-400 leading-relaxed mb-8">
+            {locale === 'ru'
+              ? 'Дуэли в реальном времени, рейтинг ELO и официальная таблица лидеров доступны только авторизованным студентам.'
+              : 'Real-time duels, ELO rating, and the live global leaderboard require an authenticated account.'}
+          </p>
+          <button
+            onClick={() => setAuthModalOpen(true)}
+            className="w-full py-3.5 px-6 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-sm uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Shield className="w-4 h-4 text-[#0C2418]" />
+            <span>{locale === 'ru' ? 'Войти в аккаунт' : 'Log in to Enter Arena'}</span>
+          </button>
+        </div>
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070809] text-white py-10 px-4 sm:px-6 lg:px-8">

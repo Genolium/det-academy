@@ -55,13 +55,8 @@ export default function TheoryCatalogPage() {
   const progressPercent = totalLessons > 0 ? Math.round((validCompletedCount / totalLessons) * 100) : 0;
 
   return (
-    <AuthRequiredGuard
-      title={t.guardTitle}
-      subtitle={t.guardSubtitle}
-      badge="DET Theory & Curriculum"
-    >
-      <div className="min-h-screen py-12 ambient-glow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 ambient-glow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -165,6 +160,5 @@ export default function TheoryCatalogPage() {
           </div>
         </div>
       </div>
-    </AuthRequiredGuard>
   );
 }

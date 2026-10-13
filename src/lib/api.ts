@@ -641,6 +641,26 @@ class ApiClient {
       throw new Error('Failed to delete question');
     }
   }
+
+  async getArenaLeaderboard(): Promise<{ leaderboard: ArenaLeaderboardEntry[]; total: number }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/arena/leaderboard`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to load arena leaderboard');
+    }
+    return res.json();
+  }
+}
+
+export interface ArenaLeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  elo: number;
+  league: string;
+  winRate: string;
+  avatar?: string;
 }
 
 export const api = new ApiClient();

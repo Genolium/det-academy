@@ -28,7 +28,10 @@ import { WritingInspector } from '@/components/practice/WritingInspector';
 import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
 import { useErrorBankStore } from '@/store/useErrorBankStore';
 
+import { useAuthStore } from '@/store/useAuthStore';
+
 export default function PracticeHubPage() {
+  const { user, isAuthenticated } = useAuthStore();
   const [activeDrillSlug, setActiveDrillSlug] = useState<string | null>(null);
   const [drillCounter, setDrillCounter] = useState(0);
   const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
@@ -39,43 +42,9 @@ export default function PracticeHubPage() {
   const { errors, getUnmasteredCount } = useErrorBankStore();
   const unmasteredErrors = getUnmasteredCount();
 
+  // Strict requested order:
+  // 1. скоропечатание, 2. read and complete, 3. словарный блиц, 4. fill in blanks, 5. аудио-диктанты, 6. академический словарь, потом всё остальное
   const practiceCategories = [
-    {
-      id: 'error-bank',
-      title: 'Smart Error Bank (Банк ошибок)',
-      description: `Автоматический сбор всех ваших ошибок из C-Test, Dictations, Fill Blanks и Read & Select. Отрабатывайте слабые места в изолированном режиме.`,
-      icon: <AlertCircle className="w-6 h-6 text-[#0C2418]" />,
-      badge: unmasteredErrors > 0 ? `${unmasteredErrors} на повтор` : 'Ошибок: 0',
-      isErrorModal: true,
-      actionText: 'Открыть банк ошибок',
-    },
-    {
-      id: 'speak-photo',
-      slug: 'speak-about-photo',
-      title: 'AI Speaking Studio (Speak About Photo)',
-      description: 'Живая осциллограмма голоса, замер WPM, распознавание речевых пауз и анализ лексики C1/C2 при описании фото за 90 секунд.',
-      icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
-      badge: 'Live Audio Waveform',
-      actionText: 'Запустить Speaking Studio',
-    },
-    {
-      id: 'speaking-sample',
-      slug: 'speaking-sample',
-      title: 'Speaking Sample (Академический монолог)',
-      description: 'Устный видеомонолог 1–3 минуты на дискуссионную тему с live спектрограммой, таймером подготовки и скорингом беглости.',
-      icon: <MessageSquare className="w-6 h-6 text-[#0C2418]" />,
-      badge: '1-3 Min Monologue',
-      actionText: 'Тренировать устный монолог',
-    },
-    {
-      id: 'writing-inspector',
-      slug: 'writing-inspector',
-      title: 'AI Writing Diagnostic Inspector',
-      description: 'Интерактивная подсветка CEFR уровней (A1–C2), экспресс-замена слабых слов на C1/C2 (Vocab Upgrades) и OREO чек-лист.',
-      icon: <TrendingUp className="w-6 h-6 text-[#0C2418]" />,
-      badge: 'CEFR + OREO Diagnostic',
-      actionText: 'Открыть Writing Inspector',
-    },
     {
       id: 'typing',
       title: 'DET Typing Trainer (Скоропечатание)',
@@ -86,18 +55,9 @@ export default function PracticeHubPage() {
       actionText: 'Открыть тренажер печати',
     },
     {
-      id: 'flashcards',
-      title: 'Академический словарь (SRS Flashcards)',
-      description: 'Карточки 1,500 слов Academic Word List с алгоритмом интервального повторения SuperMemo SM-2, озвучкой и коллокациями.',
-      icon: <Sparkles className="w-6 h-6 text-[#0C2418]" />,
-      badge: 'SuperMemo SM-2',
-      href: '/practice/flashcards',
-      actionText: 'Учить слова C1/C2',
-    },
-    {
       id: 'c-test',
       slug: 'read-and-complete',
-      title: 'Read and Complete (Академическое чтение)',
+      title: 'Read and Complete (C-Test)',
       description: 'Интерактивное восстановление текста: допишите недостающие буквы в словах, опираясь на контекст.',
       icon: <FileText className="w-6 h-6 text-[#0C2418]" />,
       badge: 'C-Test Practice',
@@ -131,6 +91,43 @@ export default function PracticeHubPage() {
       actionText: 'Тренировать диктанты',
     },
     {
+      id: 'flashcards',
+      title: 'Академический словарь (SRS Flashcards)',
+      description: 'Карточки 1,500 слов Academic Word List с алгоритмом интервального повторения SuperMemo SM-2, озвучкой и коллокациями.',
+      icon: <Sparkles className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'SuperMemo SM-2',
+      href: '/practice/flashcards',
+      actionText: 'Учить слова C1/C2',
+    },
+    // Потом всё остальное:
+    {
+      id: 'speak-photo',
+      slug: 'speak-about-photo',
+      title: 'AI Speaking Studio (Speak About Photo)',
+      description: 'Живая осциллограмма голоса, замер WPM, распознавание речевых пауз и анализ лексики C1/C2 при описании фото за 90 секунд.',
+      icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'Live Audio Waveform',
+      actionText: 'Запустить Speaking Studio',
+    },
+    {
+      id: 'speaking-sample',
+      slug: 'speaking-sample',
+      title: 'Speaking Sample (Академический монолог)',
+      description: 'Устный видеомонолог 1–3 минуты на дискуссионную тему с live спектрограммой, таймером подготовки и скорингом беглости.',
+      icon: <MessageSquare className="w-6 h-6 text-[#0C2418]" />,
+      badge: '1-3 Min Monologue',
+      actionText: 'Тренировать устный монолог',
+    },
+    {
+      id: 'writing-inspector',
+      slug: 'writing-inspector',
+      title: 'AI Writing Diagnostic Inspector',
+      description: 'Интерактивная подсветка CEFR уровней (A1–C2), экспресс-замена слабых слов на C1/C2 (Vocab Upgrades) и OREO чек-лист.',
+      icon: <TrendingUp className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'CEFR + OREO Diagnostic',
+      actionText: 'Открыть Writing Inspector',
+    },
+    {
       id: 'photo-writing',
       slug: 'write-about-the-photo',
       title: 'Writing Lab & Photo Studio',
@@ -139,6 +136,20 @@ export default function PracticeHubPage() {
       badge: 'Production 60s/300s',
       actionText: 'Тренировать письмо',
     },
+    // Банк ошибок появляется ТОЛЬКО для авторизованных пользователей
+    ...(isAuthenticated && user
+      ? [
+          {
+            id: 'error-bank',
+            title: 'Smart Error Bank (Банк ошибок)',
+            description: `Автоматический сбор всех ваших ошибок из C-Test, Dictations, Fill Blanks и Read & Select. Отрабатывайте слабые места в изолированном режиме.`,
+            icon: <AlertCircle className="w-6 h-6 text-[#0C2418]" />,
+            badge: unmasteredErrors > 0 ? `${unmasteredErrors} на повтор` : 'Ошибок: 0',
+            isErrorModal: true,
+            actionText: 'Открыть банк ошибок',
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -148,13 +159,13 @@ export default function PracticeHubPage() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <PillBadge variant="mint" prefixHash className="mb-4">
-            Practice & Drill Hub 2.0 Flagship
+            Тренажеры DET
           </PillBadge>
           <h1 className="text-3xl sm:text-5xl font-black text-[#0E1012] tracking-tight mb-4">
             Тренажеры свободной практики
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-            Тренируйте устную речь в AI Speaking Studio, диагностируйте эссе в Writing Inspector и закрывайте персональные пробелы в Smart Error Bank.
+            Отрабатывайте все типы заданий Duolingo English Test в изолированном интерактивном режиме с таймерами и детальной диагностикой.
           </p>
         </div>
 

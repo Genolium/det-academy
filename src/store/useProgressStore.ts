@@ -141,24 +141,34 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
     }
 
-    // 2. Sync theory progress from backend
-    try {
-      const resp = await api.getTheoryProgress();
-      if (resp && resp.completedLessons) {
-        set({ completedLessons: resp.completedLessons });
+    // 2. Sync theory progress from backend if logged in
+    const token = typeof window !== 'undefined' ? localStorage.getItem('det_token') : null;
+    if (token) {
+      try {
+        const resp = await api.getTheoryProgress();
+        if (resp && resp.completedLessons) {
+          set({ completedLessons: resp.completedLessons });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('det_completed_lessons', JSON.stringify(resp.completedLessons));
+          }
+        }
+      } catch {
+        // Fallback to local storage if offline
         if (typeof window !== 'undefined') {
-          localStorage.setItem('det_completed_lessons', JSON.stringify(resp.completedLessons));
+          const stored = localStorage.getItem('det_completed_lessons');
+          if (stored) {
+            try {
+              set({ completedLessons: JSON.parse(stored) });
+            } catch {}
+          }
         }
       }
-    } catch {
-      // Fallback to local storage if offline or not logged in
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('det_completed_lessons');
-        if (stored) {
-          try {
-            set({ completedLessons: JSON.parse(stored) });
-          } catch {}
-        }
+    } else if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('det_completed_lessons');
+      if (stored) {
+        try {
+          set({ completedLessons: JSON.parse(stored) });
+        } catch {}
       }
     }
   },
