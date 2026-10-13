@@ -190,6 +190,14 @@ export const InstitutionsMap: React.FC = () => {
       }).addTo(map);
 
       mapInstanceRef.current = map;
+
+      // Dynamic clustering on pan and zoom
+      const onMapMove = () => {
+        updateMarkers(L, map, filteredInstitutionsRef.current);
+      };
+      map.on('zoomend', onMapMove);
+      map.on('moveend', onMapMove);
+
       updateMarkers(L, map, filteredInstitutions);
     });
 
@@ -202,6 +210,11 @@ export const InstitutionsMap: React.FC = () => {
     };
   }, []);
 
+  const filteredInstitutionsRef = useRef<Institution[]>(filteredInstitutions);
+  useEffect(() => {
+    filteredInstitutionsRef.current = filteredInstitutions;
+  }, [filteredInstitutions]);
+
   // 4. Update markers on map when filteredInstitutions changes
   useEffect(() => {
     if (!mapInstanceRef.current || typeof window === 'undefined') return;
@@ -212,88 +225,186 @@ export const InstitutionsMap: React.FC = () => {
     });
   }, [filteredInstitutions]);
 
-  // Helper to draw markers with performance cap for viewport responsiveness
+  // Helper to render individual university badge marker
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderSingleMarker = (L: any, map: any, inst: Institution) => {
+    if (!inst.latitude || !inst.longitude) return;
+
+    // Color based on score
+    const badgeBg = inst.minScore >= 125 ? '#0C2418' : inst.minScore >= 120 ? '#111315' : '#1e293b';
+    const badgeText = '#D2F544';
+
+    const customIcon = L.divIcon({
+      className: 'custom-det-marker',
+      html: `
+        <div style="
+          background: ${badgeBg};
+          color: ${badgeText};
+          border: 2px solid #D2F544;
+          border-radius: 9999px;
+          padding: 3px 8px;
+          font-size: 11px;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+          cursor: pointer;
+          transform: translate(-50%, -50%);
+        ">
+          <span>${inst.minScore}</span>
+        </div>
+      `,
+      iconSize: [40, 24],
+      iconAnchor: [20, 12],
+    });
+
+    const marker = L.marker([inst.latitude, inst.longitude], { icon: customIcon });
+
+    const popupContent = `
+      <div style="font-family: inherit; padding: 4px; max-width: 240px;">
+        <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #16a34a; margin-bottom: 2px;">
+          ${inst.category} • ${inst.country}
+        </div>
+        <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.2;">
+          ${inst.name}
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
+          📍 ${inst.city}${inst.state ? ', ' + inst.state : ''}
+        </div>
+        <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
+          <strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>
+          ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${inst.subscoreReqs}</div>` : ''}
+        </div>
+        <a href="${inst.websiteUrl}" target="_blank" rel="noopener noreferrer" style="
+          display: inline-block;
+          background: #0f172a;
+          color: #D2F544;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 5px 10px;
+          border-radius: 9999px;
+          text-decoration: none;
+        ">
+          Сайт приемной комиссии ↗
+        </a>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent);
+    marker.on('click', () => {
+      setSelectedInstitution(inst);
+    });
+
+    marker.addTo(map);
+    markersRef.current.push(marker);
+  };
+
+  // Helper to draw markers: clusters into blobs at macro scale, unfolds into individual unis when zoomed in
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMarkers = (L: any, map: any, list: Institution[]) => {
     // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Render up to 1500 markers across the world for rich map coverage at 60fps
-    const renderList = list.slice(0, 1500);
+    if (!map || list.length === 0) return;
 
-    renderList.forEach((inst) => {
-      if (!inst.latitude || !inst.longitude) return;
+    const zoom = map.getZoom();
+    const bounds = map.getBounds().pad(0.25);
 
-      // Color based on score
-      const badgeBg = inst.minScore >= 125 ? '#0C2418' : inst.minScore >= 120 ? '#111315' : '#1e293b';
-      const badgeText = '#D2F544';
+    // Filter to current viewport
+    const visible = list.filter(
+      (inst) => inst.latitude && inst.longitude && bounds.contains([inst.latitude, inst.longitude])
+    );
 
-      const customIcon = L.divIcon({
-        className: 'custom-det-marker',
-        html: `
-          <div style="
-            background: ${badgeBg};
-            color: ${badgeText};
-            border: 2px solid #D2F544;
-            border-radius: 9999px;
-            padding: 3px 8px;
-            font-size: 11px;
-            font-weight: 800;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            white-space: nowrap;
-            cursor: pointer;
-            transform: translate(-50%, -50%);
-          ">
-            <span>${inst.minScore}</span>
-          </div>
-        `,
-        iconSize: [40, 24],
-        iconAnchor: [20, 12],
+    // Macro zoom (< 10): Cluster into sleek brand blobs
+    if (zoom < 10) {
+      const clusterRadius = zoom <= 4 ? 80 : zoom <= 6 ? 65 : 50; // pixels
+      const clusters: Record<string, { institutions: Institution[]; sumLat: number; sumLng: number }> = {};
+
+      visible.forEach((inst) => {
+        const p = map.project([inst.latitude, inst.longitude], zoom);
+        const cellX = Math.floor(p.x / clusterRadius);
+        const cellY = Math.floor(p.y / clusterRadius);
+        const key = `${cellX}_${cellY}`;
+
+        if (!clusters[key]) {
+          clusters[key] = {
+            institutions: [],
+            sumLat: 0,
+            sumLng: 0,
+          };
+        }
+        clusters[key].institutions.push(inst);
+        clusters[key].sumLat += inst.latitude;
+        clusters[key].sumLng += inst.longitude;
       });
 
-      const marker = L.marker([inst.latitude, inst.longitude], { icon: customIcon });
+      Object.values(clusters).forEach((cluster) => {
+        const count = cluster.institutions.length;
+        if (count === 1) {
+          renderSingleMarker(L, map, cluster.institutions[0]);
+        } else {
+          const centerLat = cluster.sumLat / count;
+          const centerLng = cluster.sumLng / count;
+          const blobSize = count >= 100 ? 52 : count >= 20 ? 44 : 36;
 
-      const popupContent = `
-        <div style="font-family: inherit; padding: 4px; max-width: 240px;">
-          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #16a34a; margin-bottom: 2px;">
-            ${inst.category} • ${inst.country}
-          </div>
-          <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.2;">
-            ${inst.name}
-          </div>
-          <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
-            📍 ${inst.city}${inst.state ? ', ' + inst.state : ''}
-          </div>
-          <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
-            <strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>
-            ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${inst.subscoreReqs}</div>` : ''}
-          </div>
-          <a href="${inst.websiteUrl}" target="_blank" rel="noopener noreferrer" style="
-            display: inline-block;
-            background: #0f172a;
-            color: #D2F544;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 5px 10px;
-            border-radius: 9999px;
-            text-decoration: none;
-          ">
-            Сайт приемной комиссии ↗
-          </a>
-        </div>
-      `;
+          const clusterIcon = L.divIcon({
+            className: 'custom-det-cluster-blob',
+            html: `
+              <div style="
+                width: ${blobSize}px;
+                height: ${blobSize}px;
+                background: linear-gradient(135deg, #0C2418 0%, #153e2a 100%);
+                border: 2px solid #D2F544;
+                border-radius: 9999px;
+                color: #D2F544;
+                font-family: inherit;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.4), 0 0 10px rgba(210, 245, 68, 0.25);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                user-select: none;
+                transform: translate(-50%, -50%);
+              ">
+                <span style="font-size: ${count >= 100 ? '12px' : '11px'}; font-weight: 900; line-height: 1;">${count}</span>
+                <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; opacity: 0.85; line-height: 1; margin-top: 1px;">вузов</span>
+              </div>
+            `,
+            iconSize: [blobSize, blobSize],
+            iconAnchor: [blobSize / 2, blobSize / 2],
+          });
 
-      marker.bindPopup(popupContent);
-      marker.on('click', () => {
-        setSelectedInstitution(inst);
+          const marker = L.marker([centerLat, centerLng], { icon: clusterIcon }).addTo(map);
+
+          marker.on('click', () => {
+            const lats = cluster.institutions.map((i) => i.latitude);
+            const lngs = cluster.institutions.map((i) => i.longitude);
+            const minLat = Math.min(...lats);
+            const maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs);
+            const maxLng = Math.max(...lngs);
+
+            if (Math.abs(minLat - maxLat) < 0.005 && Math.abs(minLng - maxLng) < 0.005) {
+              map.setView([centerLat, centerLng], Math.min(map.getZoom() + 3, 13), { animate: true });
+            } else {
+              const b = L.latLngBounds([minLat, minLng], [maxLat, maxLng]);
+              map.fitBounds(b.pad(0.3), { animate: true, maxZoom: 13 });
+            }
+          });
+
+          markersRef.current.push(marker);
+        }
       });
+      return;
+    }
 
-      marker.addTo(map);
-      markersRef.current.push(marker);
+    // Micro zoom (zoom >= 10): Render individual university markers directly
+    visible.slice(0, 400).forEach((inst) => {
+      renderSingleMarker(L, map, inst);
     });
   };
 
