@@ -40,6 +40,7 @@ import { SpeakAboutPhoto } from '@/components/test-engine/questions/SpeakAboutPh
 import { SpeakingSample } from '@/components/test-engine/questions/SpeakingSample';
 import { WritingInspector } from '@/components/practice/WritingInspector';
 import { useErrorBankStore } from '@/store/useErrorBankStore';
+import { useProgressStore } from '@/store/useProgressStore';
 
 interface InteractiveLessonDrillProps {
   lessonSlug: string;
@@ -52,6 +53,12 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   category,
   onDrillCompleted,
 }) => {
+  const { recordDailyActivity } = useProgressStore();
+
+  const handleDrillFinished = () => {
+    recordDailyActivity();
+    onDrillCompleted?.();
+  };
   // Determine active task mechanics based on official 16 lessons
   const isReadSelect = lessonSlug === 'read-and-select';
   const isListenSelect = lessonSlug === 'listen-and-select';
@@ -278,7 +285,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setCTestChecked(true);
     if (correct >= Math.floor(cTest.gaps.length * 0.5)) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     }
   };
 
@@ -318,7 +325,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       const correctTotal = newAnswers.filter(Boolean).length;
       if (correctTotal >= Math.floor(rsWords.length * 0.6)) {
         setDrillCompleted(true);
-        onDrillCompleted?.();
+        handleDrillFinished();
       }
     }
   };
@@ -349,7 +356,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       const correctTotal = newAnswers.filter(Boolean).length;
       if (correctTotal >= Math.floor(lsWords.length * 0.5)) {
         setDrillCompleted(true);
-        onDrillCompleted?.();
+        handleDrillFinished();
       }
     }
   };
@@ -371,7 +378,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setFibChecked(true);
     if (isOk) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     } else {
       try {
         useErrorBankStore.getState().addError({
@@ -421,7 +428,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setDictResult(evalResult);
     if (evalResult.similarity >= 0.65) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     } else {
       try {
         useErrorBankStore.getState().addError({
@@ -514,7 +521,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setAloudEvaluated(true);
     if (percent >= 60) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     }
   };
 
@@ -529,7 +536,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setReadingChecked(true);
     if (score >= 60) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     }
   };
 
@@ -551,7 +558,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       });
       if (correct >= 2) {
         setDrillCompleted(true);
-        onDrillCompleted?.();
+        handleDrillFinished();
       }
     }
   };
@@ -564,7 +571,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setPhotoWriteAnalysis(analysis);
     if (!analysis.isGibberish && analysis.wordCount >= 20) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     }
   };
 
@@ -576,7 +583,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setWritingAnalysis(analysis);
     if (!analysis.isGibberish && analysis.wordCount >= writingPrompt.minWords * 0.5) {
       setDrillCompleted(true);
-      onDrillCompleted?.();
+      handleDrillFinished();
     }
   };
 
@@ -628,7 +635,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     }
     setSpeakingCompleted(true);
     setDrillCompleted(true);
-    onDrillCompleted?.();
+    handleDrillFinished();
   };
 
   return (
@@ -1609,7 +1616,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 isStandaloneDrill
                 onComplete={() => {
                   setDrillCompleted(true);
-                  onDrillCompleted?.();
+                  handleDrillFinished();
                 }}
               />
             ) : isSpeakingSample ? (
@@ -1617,7 +1624,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 isStandaloneDrill
                 onComplete={() => {
                   setDrillCompleted(true);
-                  onDrillCompleted?.();
+                  handleDrillFinished();
                 }}
               />
             ) : (

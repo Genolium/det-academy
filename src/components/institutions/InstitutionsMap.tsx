@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Institution, api } from '@/lib/api';
 import { directusCms } from '@/lib/directus';
 import { PillBadge } from '@/components/ui/PillBadge';
@@ -14,7 +14,6 @@ export const InstitutionsMap: React.FC = () => {
   const { locale } = useSettingsStore();
   const t = translations[locale].institutions;
   const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [filteredInstitutions, setFilteredInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -81,11 +80,9 @@ export const InstitutionsMap: React.FC = () => {
 
         const allMerged = Array.from(baseMap.values());
         setInstitutions(allMerged);
-        setFilteredInstitutions(allMerged);
       } catch (err) {
         console.warn('Fallback to static institutions dataset:', err);
         setInstitutions(institutionsDataset as Institution[]);
-        setFilteredInstitutions(institutionsDataset as Institution[]);
       } finally {
         setLoading(false);
       }
@@ -93,8 +90,8 @@ export const InstitutionsMap: React.FC = () => {
     fetchData();
   }, []);
 
-  // 2. Filter logic
-  useEffect(() => {
+  // 2. Synchronous Filter Logic (useMemo guarantees 0 lag and eliminates ghost cards in sidebar)
+  const filteredInstitutions = useMemo(() => {
     let result = institutions;
 
     if (search.trim() !== '') {
@@ -145,7 +142,7 @@ export const InstitutionsMap: React.FC = () => {
       });
     }
 
-    setFilteredInstitutions(result);
+    return result;
   }, [search, selectedCountry, selectedCategory, minScoreFilter, subscoreFilter, institutions]);
 
   // 3. Initialize Leaflet Map safely in client

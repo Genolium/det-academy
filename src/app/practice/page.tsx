@@ -254,14 +254,14 @@ export default function PracticeHubPage() {
 
               {cat.href ? (
                 <Link href={cat.href}>
-                  <Button className="w-full bg-[#0C2418] text-white hover:bg-black font-bold text-xs flex items-center justify-center gap-2">
+                  <Button className="w-full bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
                     {cat.actionText} <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
               ) : cat.isErrorModal ? (
                 <Button
                   onClick={() => setIsErrorBankOpen(true)}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-[#0C2418] font-black text-xs flex items-center justify-center gap-2"
+                  className="w-full bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
                 >
                   {cat.actionText} <RotateCcw className="w-3.5 h-3.5" />
                 </Button>
@@ -272,7 +272,7 @@ export default function PracticeHubPage() {
                     setDrillCounter((prev) => prev + 1);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="w-full bg-[#0C2418] text-white hover:bg-black font-bold text-xs flex items-center justify-center gap-2"
+                  className="w-full bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
                 >
                   {cat.actionText} <Play className="w-3.5 h-3.5 fill-current" />
                 </Button>

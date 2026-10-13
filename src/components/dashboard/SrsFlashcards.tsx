@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import vocabData from '@/data/academicVocabulary.json';
 import { Sparkles, RotateCw, Volume2, CheckCircle2, Flame, Award, ArrowRight } from 'lucide-react';
+import { useProgressStore } from '@/store/useProgressStore';
 
 interface FlashcardProgress {
   id: string;
@@ -20,13 +21,14 @@ interface SrsStorage {
 }
 
 export const SrsFlashcards: React.FC = () => {
+  const { streakDays: globalStreak, recordDailyActivity } = useProgressStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [storage, setStorage] = useState<SrsStorage>({
     cards: {},
-    streakDays: 3,
+    streakDays: 0,
     lastStudiedDate: '',
-    totalReviewed: 14,
+    totalReviewed: 0,
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -127,6 +129,7 @@ export const SrsFlashcards: React.FC = () => {
     };
 
     saveStorage(updatedStorage);
+    recordDailyActivity();
 
     // Advance to next card
     setIsFlipped(false);
@@ -158,7 +161,7 @@ export const SrsFlashcards: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
             <Flame className="w-4 h-4 fill-current animate-pulse text-amber-500" />
-            <span>{storage.streakDays} дн. ударный режим</span>
+            <span>{Math.max(storage.streakDays, globalStreak)} дн. ударный режим</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-bold">

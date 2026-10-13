@@ -68,7 +68,7 @@ const getInitialState = () => {
       testResults: [],
       candidateName: '',
       targetScore: 125,
-      streakDays: 3,
+      streakDays: 0,
       lastActiveDate: '',
       pvpElo: 1420,
     };
@@ -89,8 +89,8 @@ const getInitialState = () => {
   const bestTypingWpm = parseInt(localStorage.getItem('det_best_wpm') || '0', 10) || 0;
   const candidateName = localStorage.getItem('det_candidate_name') || '';
   const targetScore = parseInt(localStorage.getItem('det_target_score') || '125', 10) || 125;
-  const streakDays = parseInt(localStorage.getItem('det_streak_days') || '3', 10) || 3;
-  const lastActiveDate = localStorage.getItem('det_last_active_date') || getTodayDateString();
+  const streakDays = parseInt(localStorage.getItem('det_streak_days') || '0', 10) || 0;
+  const lastActiveDate = localStorage.getItem('det_last_active_date') || '';
   const pvpElo = parseInt(localStorage.getItem('det_pvp_elo') || '1420', 10) || 1420;
 
   return {
@@ -205,6 +205,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
       return { bestTypingWpm: newBest };
     });
+    get().recordDailyActivity();
   },
 
   addTestResult: (result) => {
@@ -215,6 +216,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
       return { testResults: updated };
     });
+    get().recordDailyActivity();
   },
 
   getBestMockScore: () => {
@@ -261,10 +263,9 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     let newStreak = streakDays;
     if (lastActiveDate === yesterday) {
       newStreak += 1;
-    } else if (!lastActiveDate) {
-      newStreak = 1;
     } else {
-      newStreak = 1; // broken streak
+      // First activity ever (streakDays 0 or empty) or broke streak by skipping a day
+      newStreak = 1;
     }
 
     if (typeof window !== 'undefined') {
