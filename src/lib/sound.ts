@@ -104,13 +104,34 @@ class SoundEngine {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.95; // Natural clear pace for DET
+    utterance.rate = 0.92; // Slightly more deliberate, natural pace matching authentic DET prompts
+    utterance.pitch = 1.0;
 
-    // Try finding natural US voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const usVoice = voices.find((v) => v.lang.startsWith('en-US') || v.lang.startsWith('en_US'));
-    if (usVoice) {
-      utterance.voice = usVoice;
+    const selectBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return;
+
+      // Priority list of high quality neural / studio natural voices
+      const usVoices = voices.filter(
+        (v) => v.lang.startsWith('en-US') || v.lang.startsWith('en_US') || v.lang === 'en'
+      );
+
+      const premium = usVoices.find(
+        (v) =>
+          /natural|neural|online|google us english|samantha|jenny|guy|aria/i.test(v.name)
+      );
+
+      const standardUs = usVoices.find((v) => !v.localService) || usVoices[0];
+      utterance.voice = premium || standardUs || voices[0];
+    };
+
+    selectBestVoice();
+
+    // If voices are loaded asynchronously in Chrome/Safari
+    if (!utterance.voice && window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        selectBestVoice();
+      };
     }
 
     if (onEnd) {

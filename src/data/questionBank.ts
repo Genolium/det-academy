@@ -3532,6 +3532,47 @@ export const listenTypeBank: ListenTypeQuestion[] = [
     "audioSentence": "The global transition toward sustainable energy represents an urgent technological challenge.",
     "difficulty": "B2"
   }
+,
+  {
+    "id": "lt-new-1",
+    "audioSentence": "Empirical observations demonstrated that the catalytic reaction accelerated exponentially at higher temperatures.",
+    "difficulty": "C1"
+  },
+  {
+    "id": "lt-new-2",
+    "audioSentence": "Undergraduate scholars are strongly encouraged to submit their research proposals before the semester deadline.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-new-3",
+    "audioSentence": "Architectural designers must carefully balance structural durability with environmental sustainability.",
+    "difficulty": "C1"
+  },
+  {
+    "id": "lt-new-4",
+    "audioSentence": "The psychology departmental seminar will be held in the auditorium this Thursday morning.",
+    "difficulty": "B1"
+  },
+  {
+    "id": "lt-new-5",
+    "audioSentence": "Renewable energy adoption has expanded substantially across industrialized nations over recent decades.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-new-6",
+    "audioSentence": "Scholars disagree on whether technological disruption inevitably widens income inequality.",
+    "difficulty": "C1"
+  },
+  {
+    "id": "lt-new-7",
+    "audioSentence": "All incoming international applicants must provide official verification of their secondary education credentials.",
+    "difficulty": "B2"
+  },
+  {
+    "id": "lt-new-8",
+    "audioSentence": "The historical museum exhibition highlights ancient commercial maritime routes across the Mediterranean basin.",
+    "difficulty": "B2"
+  }
 ];
 
 // interactiveReadingBank
@@ -4476,6 +4517,79 @@ export const writePhotoBank: WritePhotoQuestion[] = [
     "altText": "A cross-functional startup team engaged in an animated brainstorming session in front of a glass whiteboard",
     "difficulty": "B1"
   }
+,
+  {
+    "id": "wp-23",
+    "imageUrl": "/drills/wp-23.jpg",
+    "altText": "A diverse group of university students gathered around a library desk analyzing lecture slides on laptops",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-24",
+    "imageUrl": "/drills/wp-24.jpg",
+    "altText": "An engineering team presenting algorithmic metrics on a large screen inside a glass conference boardroom",
+    "difficulty": "C1"
+  },
+  {
+    "id": "wp-25",
+    "imageUrl": "/drills/wp-25.jpg",
+    "altText": "Healthcare researchers in sterile coats consulting electronic medical records in an outpatient clinic",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-26",
+    "imageUrl": "/drills/wp-26.jpg",
+    "altText": "A corporate strategy director reviewing analytical performance reports beside a floor-to-ceiling skyscraper window",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-27",
+    "imageUrl": "/drills/wp-27.jpg",
+    "altText": "University graduates celebrating their commencement ceremony while tossing ceremonial caps outdoors",
+    "difficulty": "B1"
+  },
+  {
+    "id": "wp-28",
+    "imageUrl": "/drills/wp-28.jpg",
+    "altText": "An undergraduate student wearing headphones deeply absorbed in academic literature at an individual carrel desk",
+    "difficulty": "B1"
+  },
+  {
+    "id": "wp-29",
+    "imageUrl": "/drills/wp-29.jpg",
+    "altText": "Students strolling along cobblestone walkways framed by collegiate gothic brick campus architecture",
+    "difficulty": "B1"
+  },
+  {
+    "id": "wp-30",
+    "imageUrl": "/drills/wp-30.jpg",
+    "altText": "A fine arts apprentice painting oil on canvas beside natural lighting in an airy studio loft",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-31",
+    "imageUrl": "/drills/wp-31.jpg",
+    "altText": "An electrical engineer in protective goggles soldering micro-circuitry at a robotics testing workbench",
+    "difficulty": "C1"
+  },
+  {
+    "id": "wp-32",
+    "imageUrl": "/drills/wp-32.jpg",
+    "altText": "A university professor lecturing energetically from a wooden podium before an amphitheater filled with scholars",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-33",
+    "imageUrl": "/drills/wp-33.jpg",
+    "altText": "A researcher browsing towering oak archival library stacks lined with bound historical manuscripts",
+    "difficulty": "B2"
+  },
+  {
+    "id": "wp-34",
+    "imageUrl": "/drills/wp-34.jpg",
+    "altText": "An organized study desk illuminated by a warm lamp with an open textbook, highlighter pens, and a notebook",
+    "difficulty": "B1"
+  }
 ];
 
 // interactiveWritingBank
@@ -4917,6 +5031,87 @@ export const speakPhotoBank: SpeakAboutPhotoQuestion[] = [
       "team culture"
     ],
     "modelTranscript": "This lively photograph portrays a multidisciplinary startup team clustered around a transparent glass whiteboard covered in colorful diagrams, arrows, and strategic bullet points. The participants are smiling and gesturing energetically as they debate concepts for an upcoming product launch. Natural daylight floods their open-plan workspace, creating an inviting, collaborative atmosphere. It highlights how transparent visual brainstorming and diverse perspectives drive creative innovation in modern knowledge enterprises."
+  }
+,
+  {
+    "id": "sp-16",
+    "imageUrl": "/drills/wp-23.jpg",
+    "altText": "A diverse group of students collaborating over study material in an academic library",
+    "topic": "Collaborative Study & Peer Learning",
+    "difficulty": "B2",
+    "prepTimeSec": 20,
+    "speakTimeSec": 90,
+    "keyThemes": [
+      "peer interaction",
+      "multicultural collaboration",
+      "scholarly concentration",
+      "resource sharing"
+    ],
+    "modelTranscript": "This vibrant photograph illustrates four undergraduate students actively engaged in a study session inside an academic library. In the foreground, open notebooks and laptop screens display presentation slides, while one student gestures enthusiastically to explain a concept to her peers. The background features natural light streaming through expansive windows, illuminating shelves stacked with research journals. The scene effectively reflects modern collaborative pedagogical methods, emphasizing teamwork, reciprocal critique, and mutual academic encouragement."
+  },
+  {
+    "id": "sp-17",
+    "imageUrl": "/drills/wp-24.jpg",
+    "altText": "A professional technology team presenting quarterly performance metrics in a boardroom",
+    "topic": "Corporate Strategy & Digital Data Analytics",
+    "difficulty": "C1",
+    "prepTimeSec": 20,
+    "speakTimeSec": 90,
+    "keyThemes": [
+      "data presentation",
+      "executive consultation",
+      "strategic decision-making",
+      "modern corporate facility"
+    ],
+    "modelTranscript": "This image portrays a formal business presentation taking place within a contemporary glass-enclosed conference room. A project leader is standing beside an illuminated monitor detailing graphical trend analysis, while colleagues around the mahogany table take meticulous notes. The sophisticated corporate aesthetic underscores the pivotal role of empirical data analytics in driving high-stakes organizational strategy. Every individual displays an attentive posture, highlighting professional collaboration and strategic consensus."
+  },
+  {
+    "id": "sp-18",
+    "imageUrl": "/drills/wp-25.jpg",
+    "altText": "Medical clinicians reviewing diagnostic records inside a modern healthcare facility",
+    "topic": "Clinical Medicine & Diagnostic Technology",
+    "difficulty": "C1",
+    "prepTimeSec": 20,
+    "speakTimeSec": 90,
+    "keyThemes": [
+      "clinical consultation",
+      "patient data ethics",
+      "medical technology",
+      "interdisciplinary care"
+    ],
+    "modelTranscript": "In this photograph, two healthcare specialists in white laboratory coats are meticulously consulting digital patient records on a mobile workstation. The hospital corridor appears immaculate and efficiently organized, suggesting a well-equipped, specialized clinical environment. Their solemn facial expressions and synchronized focus emphasize the profound responsibility inherent in medical diagnosis. This picture serves as a testament to the intersection of medical expertise and digitized health records in enhancing clinical outcomes."
+  },
+  {
+    "id": "sp-19",
+    "imageUrl": "/drills/wp-31.jpg",
+    "altText": "An electrical engineer performing precision testing on advanced robotics circuitry",
+    "topic": "Robotics Engineering & Technological Innovation",
+    "difficulty": "C1",
+    "prepTimeSec": 20,
+    "speakTimeSec": 90,
+    "keyThemes": [
+      "precision soldering",
+      "circuitry diagnostics",
+      "technological prototyping",
+      "STEM leadership"
+    ],
+    "modelTranscript": "This compelling image showcases a female robotics engineer focused intently on soldering microscopic components onto an integrated circuit board. She is equipped with protective safety glasses, and her workbench is populated with oscilloscopes, wire strippers, and robotic actuators. The ambient industrial lighting casts crisp reflections across her metallic workstation, underscoring technical diligence and craftsmanship. It vividly captures how continuous hardware iteration drives breakthrough innovations in automation and artificial intelligence."
+  },
+  {
+    "id": "sp-20",
+    "imageUrl": "/drills/wp-32.jpg",
+    "altText": "A university professor giving a keynote lecture in an amphitheater",
+    "topic": "Higher Education & Academic Discourse",
+    "difficulty": "B2",
+    "prepTimeSec": 20,
+    "speakTimeSec": 90,
+    "keyThemes": [
+      "academic discourse",
+      "lecture hall pedagogy",
+      "scholarly engagement",
+      "higher education"
+    ],
+    "modelTranscript": "This photo depicts an experienced university professor delivering an inspiring lecture from a podium in a tiered academic auditorium. Rows of motivated students lean forward, either listening raptly or taking structured notes on portable tablets. The expansive projection screen behind the lecturer outlines core conceptual pillars of the lecture. This captures the enduring significance of formal collegiate discourse in inspiring intellectual curiosity and disseminating specialized domain knowledge."
   }
 ];
 
