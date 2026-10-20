@@ -114,7 +114,7 @@ func main() {
 
 	arenaHub := handlers.NewArenaHub()
 	go arenaHub.Run()
-	arenaHandler := handlers.NewArenaHandler(arenaHub)
+	arenaHandler := handlers.NewArenaHandler(arenaHub, store.Users(), store.Sessions())
 
 	// Router setup
 	r := chi.NewRouter()
@@ -225,8 +225,9 @@ func main() {
 			r.With(handlers.AuthMiddleware(authService)).Get("/user/me", certHandler.GetMyCertificates)
 		})
 
-		// Multiplayer Arena WebSocket
+		// Multiplayer Arena WebSocket & Leaderboard
 		r.Get("/arena/ws", arenaHandler.HandleWebSocket)
+		r.Get("/arena/leaderboard", arenaHandler.GetLeaderboard)
 
 		// Ad Banners routes
 		r.Route("/banners", func(r chi.Router) {
