@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { listenTypeBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -45,23 +45,16 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     return () => clearTimeout(autoPlayTimer);
   }, []);
 
-  // 60-second timer
+  const typedRef = useRef(typedText);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    typedRef.current = typedText;
   }, [typedText]);
+  const isSubmittedRef = useRef(false);
 
   const handleSubmit = () => {
-    const similarity = stringSimilarity(typedText, currentItem.audioSentence);
+    if (isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
+    const similarity = stringSimilarity(typedRef.current, currentItem.audioSentence);
     recordListenTypeResult(similarity);
 
     if (soundEnabled && similarity > 0.7) {
@@ -69,6 +62,26 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     }
     onComplete();
   };
+
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
+
+  // 60-second deadline-based timer
+  useEffect(() => {
+    const deadline = Date.now() + 60 * 1000;
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleSubmitRef.current();
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">

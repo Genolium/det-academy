@@ -2,7 +2,19 @@
 
 import React, { useState, useMemo } from 'react';
 import institutionsData from '@/data/duolingoInstitutions.json';
-import { Search, Globe, ExternalLink, GraduationCap, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { useProgressStore } from '@/store/useProgressStore';
+import {
+  Search,
+  Globe,
+  ExternalLink,
+  GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Target,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react';
 import { PillBadge } from '@/components/ui/PillBadge';
 
 interface DuolingoInstitution {
@@ -13,6 +25,7 @@ interface DuolingoInstitution {
   state: string;
   websiteUrl: string;
   fulfillsRequirement: boolean;
+  minScore?: number;
   programTypes: string[];
   programsCount: number;
   programs: Array<{
@@ -28,10 +41,22 @@ interface DuolingoInstitution {
 
 const ITEMS_PER_PAGE = 24;
 
+// Verified score cutoff lookup (returns null if requirements are not officially confirmed)
+function getVerifiedMinScore(inst: { minScore?: number } | null | undefined): number | null {
+  if (typeof inst?.minScore === 'number') {
+    return inst.minScore;
+  }
+  return null;
+}
+
 export const DuolingoRegistry: React.FC = () => {
+  const { getBestMockScore, testResults } = useProgressStore();
+  const bestScore = getBestMockScore();
+
   const [search, setSearch] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [selectedType, setSelectedType] = useState('ALL');
+  const [matchMyScore, setMatchMyScore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Available countries sorted by frequency
@@ -67,8 +92,15 @@ export const DuolingoRegistry: React.FC = () => {
       result = result.filter((item) => item.programTypes.includes(selectedType));
     }
 
+    if (matchMyScore && bestScore > 0) {
+      result = result.filter((item) => {
+        const required = getVerifiedMinScore(item);
+        return required !== null && bestScore >= required;
+      });
+    }
+
     return result;
-  }, [search, selectedCountry, selectedType]);
+  }, [search, selectedCountry, selectedType, matchMyScore, bestScore]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
   const paginated = useMemo(() => {
@@ -136,83 +168,140 @@ export const DuolingoRegistry: React.FC = () => {
           </div>
         </div>
 
-        {/* Counter & Status */}
-        <div className="flex items-center justify-between text-xs text-neutral-500 pt-2 border-t border-neutral-100">
-          <div>
-            Найдено вузов: <strong className="text-[#0E1012]">{filtered.length.toLocaleString('ru-RU')}</strong> из {institutionsData.length.toLocaleString('ru-RU')}
+        {/* Score Matching Banner & Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-neutral-100">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                setMatchMyScore(!matchMyScore);
+                setCurrentPage(1);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                matchMyScore
+                  ? 'bg-[#0E1012] text-[#D2F544] shadow-md'
+                  : 'bg-neutral-100 hover:bg-neutral-200 text-[#0E1012]'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>
+                {matchMyScore ? '✓ Фильтр: Только подходящие под мой балл' : 'Фильтр: Подходит под мой балл'}
+              </span>
+            </button>
+
+            {bestScore > 0 ? (
+              <span className="text-xs text-neutral-500">
+                Ваш текущий результат: <strong className="text-emerald-700">{bestScore} / 160</strong>
+              </span>
+            ) : (
+              <span className="text-xs text-neutral-400 italic">
+                (Тест еще не пройден — отображаются ориентировочные пороги)
+              </span>
+            )}
           </div>
-          <div>
-            Страница {currentPage} из {totalPages}
+
+          <div className="text-xs text-neutral-500">
+            Найдено вузов: <strong className="text-[#0E1012]">{filtered.length.toLocaleString('ru-RU')}</strong> из {institutionsData.length.toLocaleString('ru-RU')}
           </div>
         </div>
       </div>
 
       {/* Grid of Universities */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paginated.map((inst) => (
-          <div
-            key={inst.id}
-            className="bg-white rounded-3xl p-5 border border-neutral-200 hover:border-neutral-900 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">
-                  <Globe className="w-3 h-3 text-neutral-400" />
-                  {inst.country}
-                  {inst.state && ` • ${inst.state}`}
+        {paginated.map((inst) => {
+          const reqScore = getVerifiedMinScore(inst);
+          const isEligible = reqScore !== null && bestScore > 0 && bestScore >= reqScore;
+          const scoreGap = reqScore !== null && bestScore > 0 ? reqScore - bestScore : null;
+
+          return (
+            <div
+              key={inst.id}
+              className="bg-white rounded-3xl p-5 border border-neutral-200 hover:border-neutral-900 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">
+                    <Globe className="w-3 h-3 text-neutral-400" />
+                    {inst.country}
+                    {inst.state && ` • ${inst.state}`}
+                  </span>
+                  {inst.fulfillsRequirement && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Официально DET
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="font-extrabold text-[#0E1012] text-base leading-snug group-hover:text-emerald-700 transition-colors">
+                    {inst.name}
+                  </h3>
+                </div>
+
+                {/* Score Requirement & Eligibility Pill */}
+                <div className="p-2.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-neutral-500 text-[11px] block">Проходной балл:</span>
+                    <strong className="text-[#0E1012] font-black">
+                      {reqScore ? `${reqScore}+ DET` : 'Уточняется в вузе'}
+                    </strong>
+                  </div>
+                  {reqScore && bestScore > 0 ? (
+                    isEligible ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        Вы проходите (+{bestScore - reqScore})
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                        Нужно еще {scoreGap} б.
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-[10px] text-neutral-400">
+                      {inst.fulfillsRequirement ? 'Принимает DET' : 'Требования уточняются'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Program Badges */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {inst.programTypes.map((pt) => (
+                    <span
+                      key={pt}
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700"
+                    >
+                      {pt === 'UNDERGRADUATE' ? 'Undergraduate' : pt === 'GRADUATE' ? 'Graduate' : pt}
+                    </span>
+                  ))}
+                  {inst.programsCount > 1 && (
+                    <span className="text-[10px] font-semibold text-neutral-400 px-1 py-0.5">
+                      +{inst.programsCount} программ
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-xs text-neutral-400 font-medium">
+                  ID: {inst.accountId.slice(0, 10)}...
                 </span>
-                {inst.fulfillsRequirement && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                    Официально DET
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <h3 className="font-extrabold text-[#0E1012] text-base leading-snug group-hover:text-emerald-700 transition-colors">
-                  {inst.name}
-                </h3>
-              </div>
-
-              {/* Program Badges */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {inst.programTypes.map((pt) => (
-                  <span
-                    key={pt}
-                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700"
+                {inst.websiteUrl ? (
+                  <a
+                    href={inst.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#0E1012] hover:text-emerald-600 transition-colors"
                   >
-                    {pt === 'UNDERGRADUATE' ? 'Undergraduate' : pt === 'GRADUATE' ? 'Graduate' : pt}
-                  </span>
-                ))}
-                {inst.programsCount > 1 && (
-                  <span className="text-[10px] font-semibold text-neutral-400 px-1 py-0.5">
-                    +{inst.programsCount} программ
-                  </span>
+                    Требования вуза <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                ) : (
+                  <span className="text-xs text-neutral-400">Ссылка в профиле</span>
                 )}
               </div>
             </div>
-
-            {/* Bottom Actions */}
-            <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between">
-              <span className="text-xs text-neutral-400 font-medium">
-                ID: {inst.accountId.slice(0, 10)}...
-              </span>
-              {inst.websiteUrl ? (
-                <a
-                  href={inst.websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#0E1012] hover:text-emerald-600 transition-colors"
-                >
-                  Требования вуза <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              ) : (
-                <span className="text-xs text-neutral-400">Ссылка в профиле</span>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination Controls */}

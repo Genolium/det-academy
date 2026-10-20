@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, User } from '@/lib/api';
+import { useProgressStore } from '@/store/useProgressStore';
 
 interface AuthState {
   user: User | null;
@@ -37,6 +38,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.login({ email, password });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      if (resp.user?.name) {
+        useProgressStore.getState().setCandidateName(resp.user.name);
+      }
+      useProgressStore.getState().syncWithBackend(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
@@ -50,6 +55,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.register({ email, password, name });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      if (resp.user?.name) {
+        useProgressStore.getState().setCandidateName(resp.user.name);
+      }
+      useProgressStore.getState().syncWithBackend(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
@@ -63,6 +72,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.oauthLogin(params);
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      if (resp.user?.name) {
+        useProgressStore.getState().setCandidateName(resp.user.name);
+      }
+      useProgressStore.getState().syncWithBackend(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'OAuth authentication failed';
@@ -76,6 +89,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const updatedUser = await api.updateProfile(params);
       set({ user: updatedUser, isLoading: false });
+      if (updatedUser?.name) {
+        useProgressStore.getState().setCandidateName(updatedUser.name);
+      }
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Profile update failed';
@@ -89,6 +105,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await api.logout();
     } finally {
+      useProgressStore.getState().resetProgressState();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
@@ -96,14 +113,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuth: async () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('det_token');
-    if (!token) return;
+    if (!token) {
+      useProgressStore.getState().resetProgressState();
+      return;
+    }
 
     set({ isLoading: true });
     try {
       const user = await api.getMe();
       set({ user, isAuthenticated: true, isLoading: false });
+      if (user?.name) {
+        useProgressStore.getState().setCandidateName(user.name);
+      }
+      useProgressStore.getState().syncWithBackend(user.id);
     } catch {
       localStorage.removeItem('det_token');
+      useProgressStore.getState().resetProgressState();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

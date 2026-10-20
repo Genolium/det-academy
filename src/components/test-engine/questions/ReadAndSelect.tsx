@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { readSelectBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
 import { Check, X } from 'lucide-react';
@@ -35,6 +36,15 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
       setCorrectCount((c) => c + 1);
     } else {
       if (soundEnabled) sound.playErrorBuzz();
+      useErrorNotebookStore.getState().addError({
+        type: 'read-select',
+        prompt: `Word verification: "${currentItem.word}"`,
+        userAnswer: choseYes ? 'Yes (real word)' : 'No (pseudo-word)',
+        correctAnswer: currentItem.isReal ? 'Real English word' : 'Deceptive pseudo-word',
+        explanation: currentItem.isReal
+          ? `"${currentItem.word}" is an authentic academic English word.`
+          : `"${currentItem.word}" is an artificial pseudo-word (DET trap).`,
+      });
     }
 
     if (index + 1 < pool.length) {

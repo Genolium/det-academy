@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cTestBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
 import { Button } from '@/components/ui/Button';
@@ -25,21 +26,56 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
   const [timeLeft, setTimeLeft] = useState(180); // 3 minutes = 180s
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // 3 minute timer
+  const inputsRef = useRef(inputs);
   useEffect(() => {
+    inputsRef.current = inputs;
+  }, [inputs]);
+  const isSubmittedRef = useRef(false);
+
+  const handleSubmit = () => {
+    if (isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
+    let correct = 0;
+    const { addError } = useErrorNotebookStore.getState();
+    const currentInputs = inputsRef.current;
+
+    cTestItem.damagedTokens.forEach((token, idx) => {
+      const userVal = currentInputs[idx]?.trim() || '';
+      if (userVal.toLowerCase() === token.missing.toLowerCase()) {
+        correct++;
+      } else {
+        addError({
+          type: 'c-test',
+          prompt: `C-Test word: ${token.prefix}[...] in "${cTestItem.title}"`,
+          userAnswer: token.prefix + userVal,
+          correctAnswer: token.prefix + token.missing,
+          explanation: `Complete word was "${token.prefix + token.missing}"`,
+        });
+      }
+    });
+
+    if (soundEnabled) {
+      if (correct > cTestItem.damagedTokens.length / 2) sound.playSuccessChime();
+    }
+
+    recordCTestResult(correct, cTestItem.damagedTokens.length);
+    onComplete();
+  };
+
+  // 3 minute deadline-based countdown
+  useEffect(() => {
+    const deadline = Date.now() + 180 * 1000;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleSubmit();
+      }
+    }, 250);
 
     return () => clearInterval(timer);
-  }, [inputs]);
+  }, []);
 
   const handleInputChange = (idx: number, val: string) => {
     const targetLength = cTestItem.damagedTokens[idx].missing.length;
@@ -51,22 +87,6 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
     if (val.length === targetLength && idx + 1 < cTestItem.damagedTokens.length) {
       inputRefs.current[idx + 1]?.focus();
     }
-  };
-
-  const handleSubmit = () => {
-    let correct = 0;
-    cTestItem.damagedTokens.forEach((token, idx) => {
-      if (inputs[idx].trim().toLowerCase() === token.missing.toLowerCase()) {
-        correct++;
-      }
-    });
-
-    if (soundEnabled) {
-      if (correct > cTestItem.damagedTokens.length / 2) sound.playSuccessChime();
-    }
-
-    recordCTestResult(correct, cTestItem.damagedTokens.length);
-    onComplete();
   };
 
   const minutes = Math.floor(timeLeft / 60);

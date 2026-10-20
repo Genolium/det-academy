@@ -73,7 +73,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/verify/det-cert-8f921a4" className="hover:text-white transition-colors flex items-center gap-1">
+                <Link href="/verify" className="hover:text-white transition-colors flex items-center gap-1">
                   {t.verifyLink} <ArrowUpRight className="w-3 h-3 text-[#D2F544]" />
                 </Link>
               </li>

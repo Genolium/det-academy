@@ -34,7 +34,7 @@ export default function FlashcardsPracticePage() {
             <PillBadge variant="lime" prefixHash>
               Academic Vocabulary
             </PillBadge>
-            <span className="text-xs text-neutral-400 font-semibold">1,500 Academic Words</span>
+            <span className="text-xs text-neutral-400 font-semibold">500+ Academic Words</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Карточки академического словаря C1/C2

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { writePhotoBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, Image as ImageIcon } from 'lucide-react';
 import { evaluateWriteAboutPhoto } from '@/lib/textEvaluator';
@@ -14,7 +15,7 @@ interface WriteAboutPhotoProps {
 }
 
 export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) => {
-  const { recordWritePhotoResult } = useTestStore();
+  const { recordWritePhotoResult, backendSessionId } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
@@ -25,38 +26,59 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
 
   const currentPhoto = writePhotoBank[photoIndex];
 
-  // 60-second timer per photo
+  const currentTextRef = useRef(currentText);
   useEffect(() => {
-    setTimeLeft(60);
-    setCurrentText('');
-  }, [photoIndex]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleNextPhoto();
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [photoIndex, currentText]);
+    currentTextRef.current = currentText;
+  }, [currentText]);
+  const isAdvancingRef = useRef(false);
 
   const handleNextPhoto = () => {
+    if (isAdvancingRef.current) return;
+    const textToSubmit = currentTextRef.current;
     const updatedTexts = [...texts];
-    updatedTexts[photoIndex] = currentText;
+    updatedTexts[photoIndex] = textToSubmit;
     setTexts(updatedTexts);
+
+    if (backendSessionId) {
+      api.submitQuestionResponse(backendSessionId, {
+        questionId: `wp-${photoIndex + 1}`,
+        userResponse: { text: textToSubmit },
+        rawScore: 0,
+        timeSpentSec: Math.max(1, 60 - timeLeft),
+      }).catch(() => {});
+    }
 
     if (photoIndex + 1 < writePhotoBank.length) {
       setPhotoIndex((p) => p + 1);
     } else {
+      isAdvancingRef.current = true;
       recordWritePhotoResult(updatedTexts);
       onComplete();
     }
   };
+
+  const handleNextPhotoRef = useRef(handleNextPhoto);
+  useEffect(() => {
+    handleNextPhotoRef.current = handleNextPhoto;
+  }, [handleNextPhoto]);
+
+  // 60-second deadline-based timer per photo
+  useEffect(() => {
+    setTimeLeft(60);
+    setCurrentText('');
+    const deadline = Date.now() + 60 * 1000;
+
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleNextPhotoRef.current();
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, [photoIndex]);
 
   const wordCount = currentText.trim().split(/\s+/).filter(Boolean).length;
 

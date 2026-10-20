@@ -46,6 +46,10 @@ type TestSessionRepository interface {
 	GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error)
 	ListRecent(ctx context.Context, limit int) ([]models.TestSession, error)
 	GetStats(ctx context.Context) (total int, completed int, avgScore float64, scoreDist map[string]int, err error)
+	SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error
+	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
+	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
+	GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error)
 }
 
 type CertificateRepository interface {
@@ -76,6 +80,24 @@ type InstitutionRepository interface {
 	Count(ctx context.Context) (int, error)
 }
 
+type StudyRepository interface {
+	// Goals
+	GetGoals(ctx context.Context, userID string) (*models.UserGoal, error)
+	UpsertGoals(ctx context.Context, goal *models.UserGoal) error
+
+	// Error Notebook
+	GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error)
+	GetErrorByID(ctx context.Context, userID, errorID string) (*models.UserErrorItem, error)
+	SaveError(ctx context.Context, item *models.UserErrorItem) error
+	DeleteError(ctx context.Context, userID, errorID string) error
+
+	// Spaced Repetition (SRS)
+	GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error)
+	SaveSRSStats(ctx context.Context, userID string, stats *models.SRSStats) error
+	GetSRSCards(ctx context.Context, userID string) (map[string]models.SRSCardProgress, error)
+	SaveSRSCard(ctx context.Context, userID string, card *models.SRSCardProgress) error
+}
+
 type Storage interface {
 	Users() UserRepository
 	Theory() TheoryRepository
@@ -84,5 +106,6 @@ type Storage interface {
 	Certificates() CertificateRepository
 	Banners() BannerRepository
 	Institutions() InstitutionRepository
+	Study() StudyRepository
 	Close() error
 }

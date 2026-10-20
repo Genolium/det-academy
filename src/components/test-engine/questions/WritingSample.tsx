@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { writingSampleBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, Award } from 'lucide-react';
 
@@ -13,32 +14,60 @@ interface WritingSampleProps {
 }
 
 export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
-  const { recordWritingSampleResult } = useTestStore();
+  const { recordWritingSampleResult, backendSessionId, serverQuestions } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const q = writingSampleBank[0];
+
+  const serverQ = serverQuestions.find((q) => q.type === 'WRITING_SAMPLE');
+  const serverPayload = (serverQ?.contentPayload || {}) as { prompt?: string };
+  const promptTopic = serverPayload.prompt || writingSampleBank[0].prompt;
 
   const [essayText, setEssayText] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes = 300s
 
+  const essayRef = useRef(essayText);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
+    essayRef.current = essayText;
   }, [essayText]);
+  const isSubmittedRef = useRef(false);
 
   const handleSubmit = () => {
-    recordWritingSampleResult(essayText);
+    if (isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
+    const textToSubmit = essayRef.current;
+
+    if (backendSessionId) {
+      api.submitQuestionResponse(backendSessionId, {
+        questionId: serverQ?.id || 'ws-1',
+        userResponse: { text: textToSubmit },
+        rawScore: 0,
+        timeSpentSec: Math.max(1, 300 - timeLeft),
+      }).catch(() => {});
+    }
+
+    recordWritingSampleResult(textToSubmit);
     onComplete();
   };
+
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
+
+  // 5 minute deadline-based timer
+  useEffect(() => {
+    const deadline = Date.now() + 300 * 1000;
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleSubmitRef.current();
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -75,7 +104,7 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
             </span>
           </div>
           <p className="text-base sm:text-lg leading-relaxed text-neutral-200">
-            {q.prompt}
+            {promptTopic}
           </p>
         </div>
 

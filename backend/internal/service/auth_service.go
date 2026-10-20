@@ -476,71 +476,164 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 	return uid, resolvedEmail, resolvedName, resolvedAvatar, nil
 }
 
+// verifyGoogleToken verifies a Google ID Token or Access Token via Google API
+func (s *AuthService) verifyGoogleToken(ctx context.Context, token string) (uid, email, name, avatar string, err error) {
+	if token == "" {
+		return "", "", "", "", errors.New("google token is required")
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// 1. Try as ID Token via Google tokeninfo endpoint
+	reqURL := "https://oauth2.googleapis.com/tokeninfo?id_token=" + url.QueryEscape(token)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err == nil {
+		resp, err := client.Do(req)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				var info struct {
+					Sub           string `json:"sub"`
+					Email         string `json:"email"`
+					EmailVerified string `json:"email_verified"`
+					Name          string `json:"name"`
+					Picture       string `json:"picture"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&info); err == nil && info.Sub != "" {
+					return info.Sub, info.Email, info.Name, info.Picture, nil
+				}
+			}
+		}
+	}
+
+	// 2. Try as Access Token via userinfo endpoint
+	userinfoURL := "https://www.googleapis.com/oauth2/v3/userinfo"
+	reqUI, err := http.NewRequestWithContext(ctx, "GET", userinfoURL, nil)
+	if err == nil {
+		reqUI.Header.Set("Authorization", "Bearer "+token)
+		respUI, err := client.Do(reqUI)
+		if err == nil {
+			defer respUI.Body.Close()
+			if respUI.StatusCode == http.StatusOK {
+				var uiInfo struct {
+					Sub     string `json:"sub"`
+					Email   string `json:"email"`
+					Name    string `json:"name"`
+					Picture string `json:"picture"`
+				}
+				if err := json.NewDecoder(respUI.Body).Decode(&uiInfo); err == nil && uiInfo.Sub != "" {
+					return uiInfo.Sub, uiInfo.Email, uiInfo.Name, uiInfo.Picture, nil
+				}
+			}
+		}
+	}
+
+	return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+}
+
+// verifyAppleToken decodes and verifies an Apple identity token (JWT)
+func (s *AuthService) verifyAppleToken(ctx context.Context, token string) (uid, email string, err error) {
+	if token == "" {
+		return "", "", errors.New("apple identity token is required")
+	}
+
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return "", "", errors.New("недействительный формат токена Apple")
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", "", errors.New("ошибка декодирования токена Apple")
+	}
+
+	var claims struct {
+		Iss   string `json:"iss"`
+		Sub   string `json:"sub"`
+		Exp   int64  `json:"exp"`
+		Email string `json:"email"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return "", "", errors.New("неверный формат данных токена Apple")
+	}
+
+	if claims.Sub == "" || (claims.Iss != "https://appleid.apple.com" && claims.Iss != "appleid.apple.com") {
+		return "", "", errors.New("недостоверный издатель токена Apple")
+	}
+
+	if claims.Exp > 0 && time.Now().Unix() > claims.Exp {
+		return "", "", errors.New("срок действия токена Apple истёк")
+	}
+
+	return claims.Sub, claims.Email, nil
+}
+
 // OAuthLogin handles login or registration via OAuth providers (Google, Apple, VK, Yandex)
+// Requires genuine server-side verification with the provider. Arbitrary email logins are strictly rejected.
 func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginRequest) (*models.User, string, error) {
-	provider := req.Provider
+	provider := strings.ToLower(strings.TrimSpace(req.Provider))
 	if provider == "" {
-		provider = "google"
+		return nil, "", errors.New("провайдер авторизации обязателен")
 	}
 
-	email := req.Email
-	name := req.Name
-	avatarURL := req.AvatarURL
-	providerUID := req.Code
-	if providerUID == "" {
-		providerUID = email
+	authCodeOrToken := strings.TrimSpace(req.Code)
+	if authCodeOrToken == "" {
+		return nil, "", errors.New("код авторизации или токен провайдера обязателен")
 	}
 
-	// 1. Try real provider profile fetch if authorization code or token is supplied
-	if provider == "yandex" && req.Code != "" {
-		pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, req.Code)
+	var providerUID, resolvedEmail, resolvedName, resolvedAvatar string
+
+	switch provider {
+	case "yandex":
+		pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, authCodeOrToken)
 		if err != nil {
 			return nil, "", fmt.Errorf("ошибка авторизации через Яндекс ID: %w", err)
 		}
-		if pUID != "" {
-			providerUID = pUID
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "vk":
+		redirectURI := req.RedirectURI
+		if redirectURI == "" {
+			redirectURI = "https://det-academy.ru/auth/callback"
 		}
-		if pEmail != "" {
-			email = pEmail
-		}
-		if pName != "" {
-			name = pName
-		}
-		if pAvatar != "" {
-			avatarURL = pAvatar
-		}
-	} else if provider == "vk" && req.Code != "" {
-		pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, req.Code, req.DeviceID, req.CodeVerifier, req.RedirectURI)
+		pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, authCodeOrToken, req.DeviceID, req.CodeVerifier, redirectURI)
 		if err != nil {
 			return nil, "", fmt.Errorf("ошибка авторизации через VK ID: %w", err)
 		}
-		if pUID != "" {
-			providerUID = pUID
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "google":
+		pUID, pEmail, pName, pAvatar, err := s.verifyGoogleToken(ctx, authCodeOrToken)
+		if err != nil {
+			return nil, "", fmt.Errorf("ошибка авторизации через Google: %w", err)
 		}
-		if pEmail != "" {
-			email = pEmail
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "apple":
+		pUID, pEmail, err := s.verifyAppleToken(ctx, authCodeOrToken)
+		if err != nil {
+			return nil, "", fmt.Errorf("ошибка авторизации через Apple ID: %w", err)
 		}
-		if pName != "" {
-			name = pName
-		}
-		if pAvatar != "" {
-			avatarURL = pAvatar
-		}
+		providerUID, resolvedEmail = pUID, pEmail
+		resolvedName = "Apple Student"
+	default:
+		return nil, "", fmt.Errorf("неподдерживаемый провайдер авторизации: %s", provider)
+	}
+
+	if providerUID == "" {
+		return nil, "", errors.New("не удалось подтвердить личность у внешнего провайдера")
 	}
 
 	// Helper to upgrade placeholder names / emails on login
 	upgradeUserIfPlaceholder := func(u *models.User) {
 		modified := false
-		if name != "" && (u.Name == "" || u.Name == "Яндекс Студент" || u.Name == "VK Пользователь" || u.Name == "VK Студент" || u.Name == "OAuth Student") {
-			u.Name = name
+		if resolvedName != "" && (u.Name == "" || u.Name == "Яндекс Студент" || u.Name == "VK Пользователь" || u.Name == "VK Студент" || u.Name == "OAuth Student") {
+			u.Name = resolvedName
 			modified = true
 		}
-		if email != "" && strings.Contains(u.Email, "@oauth.det-academy.com") && !strings.Contains(email, "@oauth.det-academy.com") {
-			u.Email = email
+		if resolvedEmail != "" && strings.Contains(u.Email, "@oauth.det-academy.com") && !strings.Contains(resolvedEmail, "@oauth.det-academy.com") {
+			u.Email = resolvedEmail
 			modified = true
 		}
-		if avatarURL != "" && (u.AvatarURL == "" || strings.Contains(u.AvatarURL, "unsplash")) {
-			u.AvatarURL = avatarURL
+		if resolvedAvatar != "" && (u.AvatarURL == "" || strings.Contains(u.AvatarURL, "unsplash")) {
+			u.AvatarURL = resolvedAvatar
 			modified = true
 		}
 		if modified {
@@ -548,67 +641,39 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 	}
 
-	// 2. Try to find user by linked social account first (permanent providerUID)
-	if providerUID != "" {
-		if sa, err := s.userRepo.GetSocialAccountByProviderUID(ctx, provider, providerUID); err == nil && sa != nil {
-			if user, err := s.userRepo.GetByID(ctx, sa.UserID); err == nil && user != nil {
-				upgradeUserIfPlaceholder(user)
-				token, err := s.GenerateToken(user)
-				if err != nil {
-					return nil, "", fmt.Errorf("failed to generate token: %w", err)
-				}
-				return user, token, nil
-			}
-		}
-	}
-
-	// 3. Check if there is an existing user created with placeholder email for this code
-	if req.Code != "" {
-		legacyPlaceholderEmail := fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, req.Code[:min(8, len(req.Code))])
-		if legacyUser, err := s.userRepo.GetByEmail(ctx, legacyPlaceholderEmail); err == nil && legacyUser != nil {
-			upgradeUserIfPlaceholder(legacyUser)
-			_ = s.userRepo.LinkSocialAccount(ctx, &models.SocialAccount{
-				ID:             uuid.New().String(),
-				UserID:         legacyUser.ID,
-				Provider:       provider,
-				ProviderUserID: providerUID,
-				Email:          legacyUser.Email,
-				CreatedAt:      time.Now().UTC(),
-			})
-			token, err := s.GenerateToken(legacyUser)
+	// 1. Try to find user by linked social account first (permanent providerUID)
+	if sa, err := s.userRepo.GetSocialAccountByProviderUID(ctx, provider, providerUID); err == nil && sa != nil {
+		if user, err := s.userRepo.GetByID(ctx, sa.UserID); err == nil && user != nil {
+			upgradeUserIfPlaceholder(user)
+			token, err := s.GenerateToken(user)
 			if err != nil {
 				return nil, "", fmt.Errorf("failed to generate token: %w", err)
 			}
-			return legacyUser, token, nil
+			return user, token, nil
 		}
 	}
 
-	// 4. If email is not supplied directly, generate deterministic identity for providerUID
-	if email == "" {
-		if providerUID != "" {
-			email = fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, providerUID)
-		} else {
-			return nil, "", errors.New("oauth email or provider user ID required")
-		}
+	// 2. Fallback email/name normalization from verified provider identity ONLY
+	if resolvedEmail == "" {
+		resolvedEmail = fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, providerUID)
 	}
-
-	if name == "" {
+	if resolvedName == "" {
 		switch provider {
 		case "google":
-			name = "Google Student"
+			resolvedName = "Google Student"
 		case "apple":
-			name = "Apple Student"
+			resolvedName = "Apple Student"
 		case "vk":
-			name = "VK Пользователь"
+			resolvedName = "VK Пользователь"
 		case "yandex":
-			name = "Яндекс Студент"
+			resolvedName = "Яндекс Студент"
 		default:
-			name = "OAuth Student"
+			resolvedName = "OAuth Student"
 		}
 	}
 
-	// 5. Try to find existing user by email
-	existingUser, err := s.userRepo.GetByEmail(ctx, email)
+	// 3. Try to find existing user by verified provider email
+	existingUser, err := s.userRepo.GetByEmail(ctx, resolvedEmail)
 	if err == nil && existingUser != nil {
 		upgradeUserIfPlaceholder(existingUser)
 
@@ -618,7 +683,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 			UserID:         existingUser.ID,
 			Provider:       provider,
 			ProviderUserID: providerUID,
-			Email:          email,
+			Email:          resolvedEmail,
 			CreatedAt:      time.Now().UTC(),
 		})
 
@@ -629,14 +694,14 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		return existingUser, token, nil
 	}
 
-	// 6. User does not exist -> Create new OAuth user
+	// 4. User does not exist -> Create new OAuth user
 	newUser := &models.User{
 		ID:           uuid.New().String(),
-		Email:        email,
+		Email:        resolvedEmail,
 		PasswordHash: "", // OAuth accounts do not have local passwords initially
-		Name:         name,
+		Name:         resolvedName,
 		Role:         "student",
-		AvatarURL:    avatarURL,
+		AvatarURL:    resolvedAvatar,
 		Locale:       "ru",
 		CreatedAt:    time.Now().UTC(),
 		UpdatedAt:    time.Now().UTC(),
@@ -652,7 +717,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		UserID:         newUser.ID,
 		Provider:       provider,
 		ProviderUserID: providerUID,
-		Email:          email,
+		Email:          resolvedEmail,
 		CreatedAt:      time.Now().UTC(),
 	})
 
@@ -673,62 +738,6 @@ func (s *AuthService) GetLinkedProviders(ctx context.Context, userID string) (*m
 	accounts, err := s.userRepo.GetSocialAccounts(ctx, userID)
 	if err != nil {
 		accounts = []models.SocialAccount{}
-	}
-
-	hasProvider := func(p string) bool {
-		for _, a := range accounts {
-			if a.Provider == p {
-				return true
-			}
-		}
-		return false
-	}
-
-	lowerEmail := strings.ToLower(user.Email)
-
-	// Auto-detect and record social accounts based on email identity
-	if !hasProvider("vk") && (strings.HasPrefix(lowerEmail, "vk_") || strings.Contains(lowerEmail, "vk.user.")) {
-		parts := strings.Split(strings.TrimPrefix(lowerEmail, "vk_"), "@")
-		vkUID := parts[0]
-		if vkUID == "" {
-			vkUID = user.ID
-		}
-		sa := &models.SocialAccount{
-			ID:             uuid.New().String(),
-			UserID:         user.ID,
-			Provider:       "vk",
-			ProviderUserID: vkUID,
-			Email:          user.Email,
-			CreatedAt:      time.Now().UTC(),
-		}
-		_ = s.userRepo.LinkSocialAccount(ctx, sa)
-		accounts = append(accounts, *sa)
-	}
-
-	if !hasProvider("yandex") && (strings.HasSuffix(lowerEmail, "@yandex.ru") || strings.HasSuffix(lowerEmail, "@ya.ru") || strings.HasPrefix(lowerEmail, "yandex_")) {
-		sa := &models.SocialAccount{
-			ID:             uuid.New().String(),
-			UserID:         user.ID,
-			Provider:       "yandex",
-			ProviderUserID: user.Email,
-			Email:          user.Email,
-			CreatedAt:      time.Now().UTC(),
-		}
-		_ = s.userRepo.LinkSocialAccount(ctx, sa)
-		accounts = append(accounts, *sa)
-	}
-
-	if !hasProvider("google") && (strings.HasSuffix(lowerEmail, "@gmail.com") || strings.HasPrefix(lowerEmail, "google_") || strings.Contains(lowerEmail, "google.user.")) {
-		sa := &models.SocialAccount{
-			ID:             uuid.New().String(),
-			UserID:         user.ID,
-			Provider:       "google",
-			ProviderUserID: user.Email,
-			Email:          user.Email,
-			CreatedAt:      time.Now().UTC(),
-		}
-		_ = s.userRepo.LinkSocialAccount(ctx, sa)
-		accounts = append(accounts, *sa)
 	}
 
 	return &models.LinkedProvidersResponse{
@@ -767,13 +776,17 @@ func (s *AuthService) SetPassword(ctx context.Context, userID string, req models
 }
 
 func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req models.LinkProviderRequest) error {
-	if req.Provider == "" {
+	provider := strings.ToLower(strings.TrimSpace(req.Provider))
+	if provider == "" {
 		return errors.New("провайдер обязателен")
 	}
 
-	providerUID := req.ProviderUserID
-	if providerUID == "" {
-		providerUID = req.Token
+	token := strings.TrimSpace(req.Code)
+	if token == "" {
+		token = strings.TrimSpace(req.Token)
+	}
+	if token == "" {
+		return errors.New("код подтверждения или токен провайдера обязателен для привязки")
 	}
 
 	redirectURI := req.RedirectURI
@@ -781,29 +794,34 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		redirectURI = "https://det-academy.ru/auth/callback"
 	}
 
-	var resolvedEmail, resolvedName, resolvedAvatar string
-	if req.Provider == "yandex" && req.Code != "" {
-		pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, req.Code)
+	var providerUID, resolvedEmail, resolvedName, resolvedAvatar string
+	switch provider {
+	case "yandex":
+		pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, token)
 		if err != nil {
 			return fmt.Errorf("ошибка авторизации Яндекс ID: %w", err)
 		}
-		if pUID != "" {
-			providerUID = pUID
-		}
-		resolvedEmail = pEmail
-		resolvedName = pName
-		resolvedAvatar = pAvatar
-	} else if req.Provider == "vk" && req.Code != "" {
-		pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, req.Code, req.DeviceID, req.CodeVerifier, redirectURI)
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "vk":
+		pUID, pEmail, pName, pAvatar, err := s.exchangeVKID(ctx, token, req.DeviceID, req.CodeVerifier, redirectURI)
 		if err != nil {
 			return fmt.Errorf("ошибка авторизации VK ID: %w", err)
 		}
-		if pUID != "" {
-			providerUID = pUID
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "google":
+		pUID, pEmail, pName, pAvatar, err := s.verifyGoogleToken(ctx, token)
+		if err != nil {
+			return fmt.Errorf("ошибка авторизации Google: %w", err)
 		}
-		resolvedEmail = pEmail
-		resolvedName = pName
-		resolvedAvatar = pAvatar
+		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
+	case "apple":
+		pUID, pEmail, err := s.verifyAppleToken(ctx, token)
+		if err != nil {
+			return fmt.Errorf("ошибка авторизации Apple ID: %w", err)
+		}
+		providerUID, resolvedEmail = pUID, pEmail
+	default:
+		return fmt.Errorf("неподдерживаемый провайдер: %s", provider)
 	}
 
 	if providerUID == "" {
@@ -811,11 +829,11 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 	}
 
 	// Check if this providerUID is already linked to another user
-	if existing, err := s.userRepo.GetSocialAccountByProviderUID(ctx, req.Provider, providerUID); err == nil && existing != nil {
+	if existing, err := s.userRepo.GetSocialAccountByProviderUID(ctx, provider, providerUID); err == nil && existing != nil {
 		if existing.UserID != userID {
-			// Unlink from prior user (e.g. leftover temporary user)
-			_ = s.userRepo.UnlinkSocialAccount(ctx, existing.UserID, req.Provider)
+			return fmt.Errorf("данный аккаунт %s уже привязан к другому профилю", provider)
 		}
+		return nil // already linked to current user
 	}
 
 	// Upgrade user profile if placeholder
@@ -834,17 +852,16 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		}
 	}
 
-	linkEmail := req.Email
-	if linkEmail == "" {
-		linkEmail = resolvedEmail
+	if resolvedEmail == "" {
+		resolvedEmail = fmt.Sprintf("%s_%s@oauth.det-academy.com", provider, providerUID)
 	}
 
 	sa := &models.SocialAccount{
 		ID:             uuid.New().String(),
 		UserID:         userID,
-		Provider:       req.Provider,
+		Provider:       provider,
 		ProviderUserID: providerUID,
-		Email:          linkEmail,
+		Email:          resolvedEmail,
 		CreatedAt:      time.Now().UTC(),
 	}
 

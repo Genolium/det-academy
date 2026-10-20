@@ -53,11 +53,14 @@ func main() {
 	cfg := config.Load()
 	log.Printf("Starting DET Academy Backend Server on port %s...", cfg.Port)
 
-	// Initialize Storage: Try Postgres, fallback to Memory
+	// Initialize Storage: Try Postgres, fallback to Memory (strictly disallow fallback in production)
 	var store repository.Storage
 	pgStore, err := postgres.New(cfg.DatabaseURL)
 	if err != nil {
-		log.Printf("[Storage] PostgreSQL not reachable at %s: %v", cfg.DatabaseURL, err)
+		if cfg.Env == "production" || os.Getenv("ENV") == "production" || os.Getenv("NODE_ENV") == "production" {
+			log.Fatalf("[Storage FATAL] PostgreSQL connection failed in production mode, aborting: %v", err)
+		}
+		log.Printf("[Storage] PostgreSQL not reachable: %v", err)
 		log.Printf("[Storage] Falling back to preloaded In-Memory Storage for MVP / local testing")
 		store = memory.New()
 	} else {
@@ -91,6 +94,7 @@ func main() {
 		store.Banners(),
 		store.Institutions(),
 	)
+	studyService := service.NewStudyService(store, theoryService, catService)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -100,6 +104,13 @@ func main() {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
+	studyHandler := handlers.NewStudyHandler(studyService)
+
+	mediaUploadDir := os.Getenv("MEDIA_UPLOAD_DIR")
+	if mediaUploadDir == "" {
+		mediaUploadDir = "data/media/audio"
+	}
+	mediaHandler := handlers.NewMediaHandler(catService, mediaUploadDir)
 
 	arenaHub := handlers.NewArenaHub()
 	go arenaHub.Run()
@@ -115,11 +126,10 @@ func main() {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.Timeout(60 * time.Second))
 
-	// CORS configuration: Allow any valid origin dynamically while preserving credentials
+	// CORS configuration: Allow explicit trusted origins with credentials
+	allowedOrigins := corsOrigins()
 	r.Use(cors.Handler(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			return true
-		},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -163,6 +173,21 @@ func main() {
 			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)
 		})
 
+		// User Study Plan, Error Notebook, SRS, and Skill Analytics
+		r.Route("/user", func(r chi.Router) {
+			r.Use(handlers.AuthMiddleware(authService))
+			r.Get("/goals", studyHandler.GetGoals)
+			r.Put("/goals", studyHandler.UpdateGoals)
+			r.Get("/plan", studyHandler.GetStudyPlan)
+			r.Get("/analytics/skills", studyHandler.GetSkillAnalytics)
+			r.Get("/errors", studyHandler.GetErrors)
+			r.Post("/errors", studyHandler.SaveError)
+			r.Post("/errors/{id}/recall", studyHandler.RecallError)
+			r.Delete("/errors/{id}", studyHandler.DeleteError)
+			r.Get("/srs", studyHandler.GetSRSState)
+			r.Post("/srs/review", studyHandler.ReviewSRSCard)
+		})
+
 		// Theory routes (Strictly authenticated progress)
 		r.Route("/theory", func(r chi.Router) {
 			r.Get("/lessons", theoryHandler.GetLessons)
@@ -175,17 +200,28 @@ func main() {
 			r.Get("/questions", testHandler.GetQuestions)
 
 			// Session routes strictly require authentication
-			r.With(handlers.AuthMiddleware(authService)).Post("/sessions", testHandler.StartSession)
-			r.Get("/sessions/{id}", testHandler.GetSession)
-			r.Post("/sessions/{id}/respond", testHandler.RecordResponse)
-			r.Post("/sessions/{id}/stage-complete", testHandler.CompleteStage)
-			r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
+			r.Group(func(r chi.Router) {
+				r.Use(handlers.AuthMiddleware(authService))
+				r.Post("/sessions", testHandler.StartSession)
+				r.Get("/sessions/me", testHandler.GetMySessions)
+				r.Get("/sessions/{id}", testHandler.GetSession)
+				r.Post("/sessions/{id}/respond", testHandler.RecordResponse)
+				r.Post("/sessions/{id}/stage-complete", testHandler.CompleteStage)
+				r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
+				r.Post("/sessions/{id}/audio", mediaHandler.UploadAudio)
+				r.Get("/sessions/{id}/evaluations", testHandler.GetSessionEvaluations)
+			})
+		})
+
+		// Media serving routes (Audio and uploaded responses)
+		r.Route("/media", func(r chi.Router) {
+			r.Get("/audio/{filename}", mediaHandler.ServeAudio)
 		})
 
 		// Certificates routes (Public verification and retrieval)
 		r.Route("/certificates", func(r chi.Router) {
 			r.Get("/{id}", certHandler.GetByID)
-			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/", certHandler.IssueCertificate)
+			r.With(handlers.AuthMiddleware(authService)).Post("/", certHandler.IssueCertificate)
 			r.With(handlers.AuthMiddleware(authService)).Get("/user/me", certHandler.GetMyCertificates)
 		})
 

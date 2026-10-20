@@ -40,10 +40,14 @@ func (s *CertificateService) GetByUserID(ctx context.Context, userID string) ([]
 	return s.certRepo.GetByUserID(ctx, userID)
 }
 
-func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID string) (*models.Certificate, error) {
+func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, userID string) (*models.Certificate, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, errors.New("session not found")
+	}
+
+	if session.UserID != userID {
+		return nil, errors.New("access denied: cannot issue certificate for another user's session")
 	}
 
 	if session.Status != "COMPLETED" || session.OverallScore == nil {

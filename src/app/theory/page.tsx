@@ -27,7 +27,7 @@ export default function TheoryCatalogPage() {
           number: d.number,
           titleRu: d.title_ru,
           titleEn: d.title_en,
-          category: d.category as any,
+          category: d.category as LessonGuide['category'],
           categoryLabelRu: d.category_label_ru,
           categoryLabelEn: d.category_label_en,
           format: d.format,

@@ -37,6 +37,36 @@ import {
   Play
 } from 'lucide-react';
 
+interface SpeechRecognitionResultItem {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  [index: number]: {
+    [index: number]: SpeechRecognitionResultItem;
+  };
+}
+
+interface SpeechRecognitionEventLike {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((evt: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type WindowWithSpeech = Window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
+
 interface InteractiveLessonDrillProps {
   lessonSlug: string;
   category: string;
@@ -115,7 +145,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [aloudTranscript, setAloudTranscript] = useState('');
   const [aloudScore, setAloudScore] = useState<number | null>(null);
   const [aloudEvaluated, setAloudEvaluated] = useState(false);
-  const aloudRecognitionRef = useRef<any>(null);
+  const aloudRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   // 7. Interactive Reading State
   const [readingBlockIndex, setReadingBlockIndex] = useState(0);
@@ -151,8 +181,9 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [isSpeakingActive, setIsSpeakingActive] = useState(false);
   const [speakingTranscript, setSpeakingTranscript] = useState('');
   const [speakingCompleted, setSpeakingCompleted] = useState(false);
-  const speakingTimerRef = useRef<any>(null);
-  const speakingRecognitionRef = useRef<any>(null);
+  const speakingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const speakingRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const speakingTranscriptRef = useRef<string>('');
 
   // Reset drill state when lesson slug changes
   useEffect(() => {
@@ -409,14 +440,15 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       setAloudEvaluated(false);
       setAloudScore(null);
 
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
+      const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
       if (SpeechRecognition) {
         try {
           const rec = new SpeechRecognition();
           rec.lang = 'en-US';
           rec.continuous = true;
           rec.interimResults = true;
-          rec.onresult = (evt: any) => {
+          rec.onresult = (evt: SpeechRecognitionEventLike) => {
             let fullText = '';
             for (let i = 0; i < evt.results.length; ++i) {
               fullText += evt.results[i][0].transcript + ' ';
@@ -430,26 +462,26 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
           rec.start();
           setIsRecordingAloud(true);
         } catch {
-          simulateMicrophoneAloud();
+          setIsRecordingAloud(false);
+          setAloudTranscript('Не удалось получить доступ к микрофону. Проверьте разрешения в браузере.');
+          setAloudScore(0);
+          setAloudEvaluated(true);
         }
       } else {
-        simulateMicrophoneAloud();
+        setIsRecordingAloud(false);
+        setAloudTranscript('Распознавание речи не поддерживается в вашем браузере.');
+        setAloudScore(0);
+        setAloudEvaluated(true);
       }
     }
   };
 
-  const simulateMicrophoneAloud = () => {
-    setIsRecordingAloud(true);
-    setAloudTranscript('Слушаю произношение...');
-    setTimeout(() => {
-      setIsRecordingAloud(false);
-      const simulatedText = targetAloudSentence;
-      setAloudTranscript(simulatedText);
-      evaluateAloudFluency(simulatedText);
-    }, 4000);
-  };
-
   const evaluateAloudFluency = (text: string) => {
+    if (!text || text.trim().length === 0) {
+      setAloudScore(0);
+      setAloudEvaluated(true);
+      return;
+    }
     const cleanTarget = targetAloudSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
     const cleanUser = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
     let matched = 0;
@@ -538,19 +570,22 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setSpeakingCompleted(false);
 
     // Audio recording via SpeechRecognition if available
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
+    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
     if (SpeechRecognition) {
       try {
         const rec = new SpeechRecognition();
         rec.lang = 'en-US';
         rec.continuous = true;
         rec.interimResults = true;
-        rec.onresult = (evt: any) => {
+        rec.onresult = (evt: SpeechRecognitionEventLike) => {
           let fullText = '';
           for (let i = 0; i < evt.results.length; ++i) {
             fullText += evt.results[i][0].transcript + ' ';
           }
-          setSpeakingTranscript(fullText.trim());
+          const text = fullText.trim();
+          speakingTranscriptRef.current = text;
+          setSpeakingTranscript(text);
         };
         speakingRecognitionRef.current = rec;
         rec.start();
@@ -574,9 +609,15 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     if (speakingRecognitionRef.current) {
       try { speakingRecognitionRef.current.stop(); } catch {}
     }
-    setSpeakingCompleted(true);
-    setDrillCompleted(true);
-    onDrillCompleted?.();
+    const words = (speakingTranscriptRef.current || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length >= 5) {
+      setSpeakingCompleted(true);
+      setDrillCompleted(true);
+      onDrillCompleted?.();
+    } else {
+      setSpeakingCompleted(false);
+      setSpeakingTranscript('Речь не распознана или сказано менее 5 слов. Попробуйте записать ответ ещё раз.');
+    }
   };
 
   return (
@@ -945,7 +986,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                             {isCorrect ? (
                               <span className="font-bold text-green-700">✓ Верно</span>
                             ) : (
-                              <span className="font-bold text-red-700">Введено: "{userVal || '—'}"</span>
+                              <span className="font-bold text-red-700">Введено: &quot;{userVal || '—'}&quot;</span>
                             )}
                           </div>
                         </div>
@@ -1043,7 +1084,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 </div>
 
                 <div className="text-xs text-neutral-700 bg-white p-3 rounded-xl border border-neutral-200">
-                  <span className="font-bold block text-neutral-900 mb-0.5">Оригинал: "{dictation.sentence}"</span>
+                  <span className="font-bold block text-neutral-900 mb-0.5">Оригинал: &quot;{dictation.sentence}&quot;</span>
                   <span className="text-neutral-500">Перевод: {dictation.translationRu}</span>
                 </div>
               </div>
@@ -1499,7 +1540,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                   <>
                     {writingAnalysis.hasContractions && (
                       <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-                        ⚠️ <b>Обнаружены неформальные сокращения (don't, can't и др.).</b> В академическом письме DET обязательно пишите раздельно: <i>do not, cannot</i>.
+                        ⚠️ <b>Обнаружены неформальные сокращения (don&apos;t, can&apos;t и др.).</b> В академическом письме DET обязательно пишите раздельно: <i>do not, cannot</i>.
                       </div>
                     )}
                     {writingAnalysis.wordCount < writingPrompt.minWords && (
@@ -1515,7 +1556,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                         <div className="space-y-1.5 text-xs">
                           {writingAnalysis.suggestions.map((s, i) => (
                             <div key={i} className="text-neutral-700 bg-white p-2.5 rounded-lg border border-neutral-200">
-                              Замените простое <b>"{s.word}"</b> на продвинутые аналоги: <i className="text-emerald-700 font-semibold">{s.upgrades.join(', ')}</i>
+                              Замените простое <b>&quot;{s.word}&quot;</b> на продвинутые аналоги: <i className="text-emerald-700 font-semibold">{s.upgrades.join(', ')}</i>
                             </div>
                           ))}
                         </div>

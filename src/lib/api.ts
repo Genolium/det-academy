@@ -74,18 +74,56 @@ export interface BackendTestSession {
   stageName: string;
   difficultyLevel: string;
   overallScore?: number;
+  readingScore?: number;
+  listeningScore?: number;
+  writingScore?: number;
+  speakingScore?: number;
   literacyScore?: number;
   comprehensionScore?: number;
   productionScore?: number;
   conversationScore?: number;
+  deadlineAt?: string;
   createdAt: string;
   completedAt?: string;
+}
+
+export interface BlueprintStage {
+  stageName: string;
+  displayName: string;
+  skillCategory: string;
+  itemCount: number;
+  timeLimitSec: number;
+  description: string;
+}
+
+export interface ExamBlueprint {
+  version: string;
+  totalStages: number;
+  stages: BlueprintStage[];
+}
+
+export interface SessionDetailsResponse {
+  session: BackendTestSession;
+  questions: BackendQuestion[];
+  responses: Array<{
+    id: string;
+    sessionId: string;
+    questionId: string;
+    userResponse: unknown;
+    rawScore: number;
+    timeSpentSec: number;
+  }>;
+  blueprint: ExamBlueprint;
 }
 
 export interface SessionCompleteResponse {
   session: BackendTestSession;
   scores: {
     overall: number;
+    reading: number;
+    listening: number;
+    writing: number;
+    speaking: number;
     literacy: number;
     comprehension: number;
     production: number;
@@ -96,6 +134,10 @@ export interface SessionCompleteResponse {
     id: string;
     candidateName: string;
     overallScore: number;
+    readingScore?: number;
+    listeningScore?: number;
+    writingScore?: number;
+    speakingScore?: number;
     literacyScore: number;
     comprehensionScore: number;
     productionScore: number;
@@ -104,6 +146,182 @@ export interface SessionCompleteResponse {
     pdfUrl?: string;
     isVerified: boolean;
   };
+}
+
+export interface MediaAsset {
+  id: string;
+  userId: string;
+  sessionId?: string;
+  questionId?: string;
+  fileType: string;
+  filePath: string;
+  url: string;
+  fileSize: number;
+  durationSec: number;
+  createdAt: string;
+}
+
+export interface EvaluationResult {
+  id: string;
+  responseId?: string;
+  sessionId: string;
+  questionId: string;
+  questionType: string;
+  status: 'COMPLETED' | 'EMPTY' | 'INSUFFICIENT' | 'FAILED';
+  score: number;
+  wordCount: number;
+  uniqueWords: number;
+  lexicalDiversity: number;
+  academicWords: string[];
+  connectors: string[];
+  relevanceScore: number;
+  cefrLevel: 'Pre-A1' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  speakingDuration?: number;
+  wpm?: number;
+  recommendations: string[];
+  audioUrl?: string;
+  transcript?: string;
+  createdAt: string;
+}
+
+// --- Stage D: Study Plan, SRS, Error Notebook & Skills ---
+
+export interface UserGoal {
+  userId: string;
+  targetScore: number;
+  targetDate: string; // YYYY-MM-DD
+  dailyMinutes: number;
+  targetUniversityId?: string;
+  updatedAt: string;
+}
+
+export interface UpdateGoalsRequest {
+  targetScore: number;
+  targetDate: string;
+  dailyMinutes: number;
+  targetUniversityId?: string;
+}
+
+export interface DailyTask {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  actionUrl: string;
+  count?: number;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  completed: boolean;
+}
+
+export interface StudyPlanResponse {
+  targetScore: number;
+  targetDate: string;
+  daysRemaining: number;
+  dailyMinutes: number;
+  currentEstimate: number;
+  weakestSkill: string;
+  weeklyHoursNeeded: number;
+  readinessPercent: number;
+  statusMessage: string;
+  tasksToday: DailyTask[];
+}
+
+export interface UserErrorItem {
+  id: string;
+  userId: string;
+  type: string;
+  prompt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation?: string;
+  consecutiveSuccesses: number;
+  attemptsCount: number;
+  mastered: boolean;
+  lastReviewedAt?: string;
+  createdAt: string;
+}
+
+export interface SaveErrorRequest {
+  type: string;
+  prompt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation?: string;
+}
+
+export interface RecallErrorResponse {
+  success: boolean;
+  consecutiveSuccesses: number;
+  mastered: boolean;
+  correctAnswer: string;
+  explanation?: string;
+  message: string;
+}
+
+export interface SRSCardProgress {
+  cardId: string;
+  intervalDays: number;
+  repetitions: number;
+  easinessFactor: number;
+  dueDate: string; // YYYY-MM-DD
+  lastReviewedAt: string;
+}
+
+export interface SRSStats {
+  streakDays: number;
+  lastStudiedDate: string;
+  totalReviewed: number;
+}
+
+export interface SRSStateResponse {
+  stats: SRSStats;
+  cards: Record<string, SRSCardProgress>;
+  overdueCount: number;
+  dueTodayCount: number;
+  totalLearned: number;
+}
+
+export interface ReviewSRSCardResponse {
+  cardId: string;
+  intervalDays: number;
+  repetitions: number;
+  easinessFactor: number;
+  dueDate: string;
+  streakDays: number;
+  totalReviewed: number;
+}
+
+export interface ModalityScore {
+  score: number;
+  cefr: string;
+  questionsCount: number;
+  status: string;
+}
+
+export interface IntegratedSubscores {
+  literacy: number;
+  comprehension: number;
+  production: number;
+  conversation: number;
+}
+
+export interface SkillAttemptHistory {
+  sessionId: string;
+  date: string;
+  overall: number;
+  modalities: Record<string, number>;
+  subscores: IntegratedSubscores;
+}
+
+export interface SkillAnalyticsResponse {
+  hasData: boolean;
+  latestOverall: number;
+  bestOverall: number;
+  modalities: Record<string, ModalityScore>;
+  subscores: IntegratedSubscores;
+  weakestSkill: string;
+  recommendations: string[];
+  history: SkillAttemptHistory[];
 }
 
 export interface AdBannerData {
@@ -154,7 +372,7 @@ export interface AdminStats {
 }
 
 class ApiClient {
-  private getHeaders(): HeadersInit {
+  private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -362,7 +580,16 @@ class ApiClient {
     return res.json();
   }
 
-  // --- Test & CAT ---
+  async getMyTestSessions(): Promise<{ sessions: BackendTestSession[] }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/me`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      return { sessions: [] };
+    }
+    return res.json();
+  }
 
   async startTestSession(params: { candidateName?: string; difficultyLevel?: string }): Promise<{
     session: BackendTestSession;
@@ -413,23 +640,70 @@ class ApiClient {
     return res.json();
   }
 
-  async completeTestSession(sessionId: string, scores: {
-    readSelectAccuracy: number;
-    fillBlanksAccuracy: number;
-    cTestAccuracy: number;
-    listenTypeAccuracy: number;
-    interactiveReadingScore: number;
-    interactiveListeningScore: number;
-    writingScore: number;
+  async getTestSession(sessionId: string): Promise<SessionDetailsResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to retrieve test session');
+    }
+    return res.json();
+  }
+
+  async completeTestSession(sessionId: string, scores?: {
+    readSelectAccuracy?: number;
+    fillBlanksAccuracy?: number;
+    cTestAccuracy?: number;
+    listenTypeAccuracy?: number;
+    interactiveReadingScore?: number;
+    interactiveListeningScore?: number;
+    writingScore?: number;
+    speakingScore?: number;
   }): Promise<SessionCompleteResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/complete`, {
       method: 'POST',
       headers: this.getHeaders(),
       credentials: 'include',
-      body: JSON.stringify(scores),
+      body: JSON.stringify(scores || {}),
     });
     if (!res.ok) {
-      throw new Error('Failed to finalize test session on backend');
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to finalize test session on backend');
+    }
+    return res.json();
+  }
+
+  async uploadSpeakingAudio(sessionId: string, formData: FormData): Promise<{
+    asset: MediaAsset;
+    url: string;
+    evaluation: EvaluationResult;
+  }> {
+    const headers = this.getHeaders();
+    // Do not set Content-Type header manually for FormData so browser sets correct boundary
+    delete headers['Content-Type'];
+
+    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/audio`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to upload speaking audio');
+    }
+    return res.json();
+  }
+
+  async getSessionEvaluations(sessionId: string): Promise<{ evaluations: EvaluationResult[] }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/evaluations`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      return { evaluations: [] };
     }
     return res.json();
   }
@@ -619,7 +893,7 @@ class ApiClient {
     return res.json();
   }
 
-  async createQuestion(data: any): Promise<BackendQuestion> {
+  async createQuestion(data: Record<string, unknown>): Promise<BackendQuestion> {
     const res = await fetch(`${API_BASE_URL}/api/v1/admin/questions`, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -639,6 +913,116 @@ class ApiClient {
     if (!res.ok) {
       throw new Error('Failed to delete question');
     }
+  }
+
+  // --- Stage D: Study Plan, SRS, Error Notebook & Skills ---
+
+  async getUserGoals(): Promise<UserGoal> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/goals`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to get user goals');
+    }
+    return res.json();
+  }
+
+  async updateUserGoals(data: UpdateGoalsRequest): Promise<UserGoal> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/goals`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to update user goals');
+    }
+    return res.json();
+  }
+
+  async getUserStudyPlan(): Promise<StudyPlanResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/plan`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to get study plan');
+    }
+    return res.json();
+  }
+
+  async getUserSkillAnalytics(): Promise<SkillAnalyticsResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/analytics/skills`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to get skill analytics');
+    }
+    return res.json();
+  }
+
+  async getUserErrors(): Promise<{ errors: UserErrorItem[]; total: number }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/errors`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to load user errors');
+    }
+    return res.json();
+  }
+
+  async saveUserError(data: SaveErrorRequest): Promise<UserErrorItem> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/errors`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to save error item');
+    }
+    return res.json();
+  }
+
+  async recallUserError(id: string, answer: string): Promise<RecallErrorResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/errors/${id}/recall`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ answer }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to submit recall answer');
+    }
+    return res.json();
+  }
+
+  async deleteUserError(id: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/errors/${id}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to delete error item');
+    }
+  }
+
+  async getUserSRSState(): Promise<SRSStateResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/srs`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to get SRS state');
+    }
+    return res.json();
+  }
+
+  async reviewSRSCard(cardId: string, quality: number): Promise<ReviewSRSCardResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/srs/review`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ cardId, quality }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to review SRS card');
+    }
+    return res.json();
   }
 }
 

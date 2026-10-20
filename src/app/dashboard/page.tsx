@@ -8,6 +8,7 @@ import { useProgressStore, TOTAL_LESSONS } from '@/store/useProgressStore';
 import { lessonsData, LessonGuide } from '@/data/theoryContent';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
+import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget';
 import {
   GraduationCap,
   Sparkles,
@@ -33,8 +34,10 @@ import {
   ShieldCheck,
   Zap,
   Edit2,
+  Calendar,
 } from 'lucide-react';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 const CATEGORY_NAMES: Record<string, string> = {
   all: 'Все разделы',
@@ -55,7 +58,13 @@ function DashboardContent() {
     testResults,
     bestTypingWpm,
     targetScore,
+    targetDate,
+    dailyMinutes,
+    studyPlan,
     setTargetScore,
+    setTargetDate,
+    setDailyMinutes,
+    loadStudyPlan,
     toggleLessonCompleted,
     syncWithBackend,
     getBestMockScore,
@@ -64,14 +73,18 @@ function DashboardContent() {
     candidateName,
   } = useProgressStore();
 
+  const { loadForUser: loadErrorsForUser } = useErrorNotebookStore();
+
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [subscoresViewMode, setSubscoresViewMode] = useState<'subscores' | 'modalities'>('subscores');
 
   useEffect(() => {
     checkAuth();
-    syncWithBackend();
-  }, [checkAuth, syncWithBackend]);
+    syncWithBackend(user?.id);
+    loadErrorsForUser(user?.id);
+  }, [checkAuth, syncWithBackend, loadErrorsForUser, user?.id]);
 
   const bestScore = getBestMockScore();
   const readiness = getReadinessPercentage();
@@ -79,6 +92,16 @@ function DashboardContent() {
 
   const remainingLessonsCount = Math.max(0, TOTAL_LESSONS - completedLessons.length);
   const estimatedHoursLeft = Math.ceil((remainingLessonsCount * 25) / 60);
+
+  // Countdown to exam
+  const daysUntilExam = useMemo(() => {
+    if (studyPlan?.daysRemaining) return studyPlan.daysRemaining;
+    if (!targetDate) return 30;
+    const target = new Date(targetDate).getTime();
+    const now = new Date().getTime();
+    const diff = Math.ceil((target - now) / (1000 * 3600 * 24));
+    return diff > 0 ? diff : 1;
+  }, [studyPlan?.daysRemaining, targetDate]);
 
   // Find next recommended lesson to study
   const nextLesson = useMemo(() => {
@@ -99,6 +122,18 @@ function DashboardContent() {
         comprehension: latestTest.comprehension,
         conversation: latestTest.conversation,
         production: latestTest.production,
+      };
+    }
+    return null;
+  }, [latestTest]);
+
+  const currentModalities = useMemo(() => {
+    if (latestTest) {
+      return {
+        reading: latestTest.reading || 0,
+        listening: latestTest.listening || 0,
+        writing: latestTest.writing || 0,
+        speaking: latestTest.speaking || 0,
       };
     }
     return null;
@@ -141,22 +176,48 @@ function DashboardContent() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <label className="text-xs text-neutral-400 hidden md:inline-block whitespace-nowrap">
-              Целевой балл DET:
-            </label>
-            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2 py-1 max-w-[155px] sm:max-w-none">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+            {/* Target Score */}
+            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />
+              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Цель:</span>
               <select
                 value={targetScore}
                 onChange={(e) => setTargetScore(Number(e.target.value))}
-                className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer truncate"
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
               >
                 <option value={105} className="bg-[#0E1012]">105+ (Foundation)</option>
                 <option value={115} className="bg-[#0E1012]">115+ (Bachelor entry)</option>
                 <option value={125} className="bg-[#0E1012]">125+ (Top-100 Global)</option>
                 <option value={135} className="bg-[#0E1012]">135+ (Top-30 Ivy)</option>
                 <option value={150} className="bg-[#0E1012]">150+ (Max Band)</option>
+              </select>
+            </div>
+
+            {/* Target Date */}
+            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
+              <Calendar className="w-3.5 h-3.5 text-blue-400 mr-1.5 shrink-0" />
+              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Дата:</span>
+              <input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            {/* Daily Minutes */}
+            <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
+              <Flame className="w-3.5 h-3.5 text-amber-400 mr-1.5 shrink-0" />
+              <select
+                value={dailyMinutes}
+                onChange={(e) => setDailyMinutes(Number(e.target.value))}
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
+              >
+                <option value={30} className="bg-[#0E1012]">30 мин/день</option>
+                <option value={45} className="bg-[#0E1012]">45 мин/день</option>
+                <option value={60} className="bg-[#0E1012]">60 мин/день</option>
+                <option value={90} className="bg-[#0E1012]">90 мин/день</option>
               </select>
             </div>
           </div>
@@ -251,6 +312,49 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+
+            {/* Dynamic Daily Plan Tasks */}
+            {studyPlan?.tasksToday && studyPlan.tasksToday.length > 0 && (
+              <div className="mt-5 p-4 rounded-2xl bg-neutral-950/70 border border-neutral-800/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D2F544]" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                      Задания на сегодня ({studyPlan.daysRemaining} дн. до экзамена)
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-neutral-400">
+                    Бюджет: <strong>{dailyMinutes} мин</strong>
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {studyPlan.tasksToday.map((task) => (
+                    <Link
+                      key={task.id}
+                      href={task.actionUrl}
+                      className="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800/80 border border-neutral-800 hover:border-neutral-700 transition-all flex items-center justify-between group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            task.priority === 'HIGH' ? 'bg-amber-400 animate-pulse' : 'bg-[#D2F544]'
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate group-hover:text-[#D2F544] transition-colors">
+                            {task.title}
+                          </p>
+                          <p className="text-[10px] text-neutral-400 truncate max-w-[240px]">
+                            {task.description}
+                          </p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors shrink-0 ml-2" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions Footer */}
             <div className="flex flex-wrap items-center gap-3 pt-6 mt-6 border-t border-neutral-800/80">
@@ -407,21 +511,54 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Interactive Skill Radar (Subscores vs Target University) */}
+        {/* Interactive Skill Radar (Subscores vs Target University / Modalities) */}
         <SkillRadarChart
           currentScores={currentSubscores}
+          currentModalities={currentModalities}
           overallScore={latestTest ? latestTest.overallScore : null}
+          targetScore={targetScore}
           hasTakenTest={hasTakenTest}
         />
 
-        {/* 3. Subscores Diagnostics (DET 4 Pillars) */}
+        {/* Weak Spots & Error Notebook */}
+        <ErrorNotebookWidget />
+
+        {/* 3. Subscores Diagnostics (DET 4 Pillars + 4 Modalities) */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-[#D2F544]" />
-                <span>Сабскоры Duolingo English Test</span>
-              </h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#D2F544]" />
+                  <span>
+                    {subscoresViewMode === 'subscores'
+                      ? 'Официальные сабскоры Duolingo English Test'
+                      : 'Четыре фундаментальных навыка (Reading, Listening, Writing, Speaking)'}
+                  </span>
+                </h2>
+                <div className="flex bg-neutral-900 border border-neutral-800 rounded-xl p-0.5 text-[11px] font-bold">
+                  <button
+                    onClick={() => setSubscoresViewMode('subscores')}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      subscoresViewMode === 'subscores'
+                        ? 'bg-neutral-800 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Сабскоры (4)
+                  </button>
+                  <button
+                    onClick={() => setSubscoresViewMode('modalities')}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      subscoresViewMode === 'modalities'
+                        ? 'bg-neutral-800 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Модальности (4)
+                  </button>
+                </div>
+              </div>
               <p className="text-xs text-neutral-400 mt-0.5">
                 {latestTest
                   ? `Показатели по результатам последней сессии (${latestTest.date})`
@@ -435,127 +572,251 @@ function DashboardContent() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Literacy */}
-            <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">Literacy</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Письмо</span>
+          {subscoresViewMode === 'subscores' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Literacy */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Literacy</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Письмо</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest ? latestTest.literacy : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.literacy).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.literacy).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.literacy : '—'}
-                  <span className="text-xs font-normal text-neutral-500"> / 160</span>
-                </div>
-                <div className="mt-2">
-                  {latestTest ? (
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      getSubscoreLevel(latestTest.literacy).color
-                    }`}>
-                      {getSubscoreLevel(latestTest.literacy).label}
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                      Ожидает теста
-                    </span>
-                  )}
-                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Read & Complete, Fill in Blanks, Writing Sample.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-500">
-                Read & Complete, Fill in Blanks, Writing Sample.
-              </p>
-            </div>
 
-            {/* Comprehension */}
-            <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">Comprehension</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Аудио</span>
+              {/* Comprehension */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Comprehension</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Аудио</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest ? latestTest.comprehension : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.comprehension).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.comprehension).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.comprehension : '—'}
-                  <span className="text-xs font-normal text-neutral-500"> / 160</span>
-                </div>
-                <div className="mt-2">
-                  {latestTest ? (
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      getSubscoreLevel(latestTest.comprehension).color
-                    }`}>
-                      {getSubscoreLevel(latestTest.comprehension).label}
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                      Ожидает теста
-                    </span>
-                  )}
-                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Interactive Reading, Listen & Type, Read & Select.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-500">
-                Interactive Reading, Listen & Type, Read Aloud.
-              </p>
-            </div>
 
-            {/* Conversation */}
-            <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">Conversation</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Аудио + Речь</span>
+              {/* Conversation */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Conversation</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Аудио + Речь</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest ? latestTest.conversation : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.conversation).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.conversation).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.conversation : '—'}
-                  <span className="text-xs font-normal text-neutral-500"> / 160</span>
-                </div>
-                <div className="mt-2">
-                  {latestTest ? (
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      getSubscoreLevel(latestTest.conversation).color
-                    }`}>
-                      {getSubscoreLevel(latestTest.conversation).label}
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                      Ожидает теста
-                    </span>
-                  )}
-                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Interactive Listening, Speak About Photo, Interactive Speaking.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-500">
-                Interactive Listening, Speak About Photo, Interview.
-              </p>
-            </div>
 
-            {/* Production */}
-            <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white">Production</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Письмо + Речь</span>
+              {/* Production */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Production</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Письмо + Речь</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest ? latestTest.production : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.production).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.production).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-black text-white">
-                  {latestTest ? latestTest.production : '—'}
-                  <span className="text-xs font-normal text-neutral-500"> / 160</span>
-                </div>
-                <div className="mt-2">
-                  {latestTest ? (
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      getSubscoreLevel(latestTest.production).color
-                    }`}>
-                      {getSubscoreLevel(latestTest.production).label}
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                      Ожидает теста
-                    </span>
-                  )}
-                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Самый требовательный блок: академический вокабуляр C1.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-500">
-                Самый сложный блок: академический вокабуляр C1.
-              </p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Reading */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Reading</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest && latestTest.reading && latestTest.reading > 0 ? latestTest.reading : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest && latestTest.reading && latestTest.reading > 0 ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.reading).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.reading).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Read & Select, Fill in Blanks, Read & Complete, Interactive Reading.
+                </p>
+              </div>
+
+              {/* Listening */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Listening</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Аудирование</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest && latestTest.listening && latestTest.listening > 0 ? latestTest.listening : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest && latestTest.listening && latestTest.listening > 0 ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.listening).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.listening).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Listen & Type, Interactive Listening (диалог и резюме).
+                </p>
+              </div>
+
+              {/* Writing */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Writing</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Письмо</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest && latestTest.writing && latestTest.writing > 0 ? latestTest.writing : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest && latestTest.writing && latestTest.writing > 0 ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.writing).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.writing).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Write About Photo, Interactive Writing, Writing Sample.
+                </p>
+              </div>
+
+              {/* Speaking */}
+              <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">Speaking</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">Устная речь</span>
+                  </div>
+                  <div className="text-2xl font-black text-white">
+                    {latestTest && latestTest.speaking && latestTest.speaking > 0 ? latestTest.speaking : '—'}
+                    <span className="text-xs font-normal text-neutral-500"> / 160</span>
+                  </div>
+                  <div className="mt-2">
+                    {latestTest && latestTest.speaking && latestTest.speaking > 0 ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        getSubscoreLevel(latestTest.speaking).color
+                      }`}>
+                        {getSubscoreLevel(latestTest.speaking).label}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
+                        Ожидает теста
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500">
+                  Speak About Photo, Read Then Speak, Interactive Speaking, Speaking Sample.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Academic Vocabulary Flashcards (Dedicated Tool Callout) */}
@@ -576,7 +837,7 @@ function DashboardContent() {
                 Академический словарь C1/C2 (SRS Flashcards)
               </h3>
               <p className="text-xs text-neutral-400 mt-1 max-w-2xl">
-                Карточки 1,500 высокочастотных лексем Academic Word List (AWL) с озвучкой, дефинициями и академическими коллокациями для секций Writing и Speaking.
+                Карточки 500+ высокочастотных лексем Academic Word List (AWL) с озвучкой, дефинициями и академическими коллокациями для секций Writing и Speaking.
               </p>
             </div>
           </div>

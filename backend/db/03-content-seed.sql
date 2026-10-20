@@ -3743,3 +3743,132 @@ VALUES (
   difficulty_band = EXCLUDED.difficulty_band,
   time_limit_sec = EXCLUDED.time_limit_sec,
   is_active = TRUE;
+
+-- Speaking Questions (Official modern DET format)
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'sp-1',
+  'SPEAK_PHOTO',
+  'B1',
+  '{"imageUrl": "/images/practice/park-gathering.jpg", "prompt": "Speak for 90 seconds about the scene in this image. Describe what the people are doing and the environment around them."}',
+  '{"rubric": "fluency_pronunciation_vocabulary_min90s"}',
+  90,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'sp-2',
+  'SPEAK_PHOTO',
+  'B2',
+  '{"imageUrl": "/images/practice/engineering-workshop.jpg", "prompt": "Speak for 90 seconds about what you see in the photo. Describe the equipment, the people involved, and what they appear to be building."}',
+  '{"rubric": "fluency_pronunciation_vocabulary_min90s"}',
+  90,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'rts-1',
+  'READ_THEN_SPEAK',
+  'B1',
+  '{"prompt": "Describe a memorable journey or trip you have taken. Where did you travel, who accompanied you, and what made this experience unforgettable? Speak for 90 seconds."}',
+  '{"rubric": "fluency_organization_academic_discourse_min90s"}',
+  90,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'rts-2',
+  'READ_THEN_SPEAK',
+  'B2',
+  '{"prompt": "Discuss a technological advancement that has significantly affected human communication over the past decade. Explain how it has altered relationships and what drawbacks have arisen. Speak for 90 seconds."}',
+  '{"rubric": "fluency_organization_academic_discourse_min90s"}',
+  90,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'is-1',
+  'INTERACTIVE_SPEAKING',
+  'B1',
+  '{"scenario": "You are speaking with your academic advisor about your study schedule.", "prompt": "Explain why you want to change one of your elective courses for next term. Speak clearly for 35 seconds."}',
+  '{"rubric": "conversational_fluency_responsiveness"}',
+  210,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'is-2',
+  'INTERACTIVE_SPEAKING',
+  'B2',
+  '{"scenario": "You are participating in an academic seminar discussing public health initiatives.", "prompt": "Address the question: how can local governments incentivize healthy eating habits among urban populations? Speak for 35 seconds."}',
+  '{"rubric": "conversational_fluency_responsiveness"}',
+  210,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ss-1',
+  'SPEAKING_SAMPLE',
+  'B1',
+  '{"prompt": "Some people prefer living in large cosmopolitan cities, while others find life in smaller rural towns more satisfying. Which lifestyle do you personally prefer, and why? Speak for 1 to 3 minutes."}',
+  '{"rubric": "extended_discourse_academic_speech_min180s"}',
+  180,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ss-2',
+  'SPEAKING_SAMPLE',
+  'B2',
+  '{"prompt": "With the rapid development of artificial intelligence, should schools mandate AI literacy courses for all students, or should AI tools be restricted in academic evaluations? Defend your opinion for 1 to 3 minutes."}',
+  '{"rubric": "extended_discourse_academic_speech_min180s"}',
+  180,
+  TRUE
+) ON CONFLICT (id) DO UPDATE SET
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  difficulty_band = EXCLUDED.difficulty_band,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = TRUE;

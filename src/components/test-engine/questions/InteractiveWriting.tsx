@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { interactiveWritingBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, BookOpen, Lock } from 'lucide-react';
 
@@ -13,10 +14,19 @@ interface InteractiveWritingProps {
 }
 
 export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComplete }) => {
-  const { recordInteractiveWritingResult } = useTestStore();
+  const { recordInteractiveWritingResult, backendSessionId, serverQuestions } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const q = interactiveWritingBank[0];
+
+  const serverQ = serverQuestions.find((q) => q.type === 'INTERACTIVE_WRITING');
+  const serverPayload = (serverQ?.contentPayload || {}) as {
+    part1Prompt?: string;
+    part2Prompt?: string;
+  };
+  const q = {
+    part1Prompt: serverPayload.part1Prompt || interactiveWritingBank[0].part1Prompt,
+    part2Prompt: serverPayload.part2Prompt || interactiveWritingBank[0].part2Prompt,
+  };
 
   // Part 1: 5 mins (300s), Part 2: 3 mins (180s)
   const [part, setPart] = useState<1 | 2>(1);
@@ -24,34 +34,61 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
   const [part2Text, setPart2Text] = useState('');
   const [timeLeft, setTimeLeft] = useState(300);
 
+  const part1Ref = useRef(part1Text);
+  const part2Ref = useRef(part2Text);
   useEffect(() => {
-    if (part === 2) {
-      setTimeLeft(180);
-    }
-  }, [part]);
-
+    part1Ref.current = part1Text;
+  }, [part1Text]);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleNext();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [part, part1Text, part2Text]);
+    part2Ref.current = part2Text;
+  }, [part2Text]);
+  const isPartAdvancingRef = useRef(false);
 
   const handleNext = () => {
+    if (isPartAdvancingRef.current) return;
     if (part === 1) {
       setPart(2);
+      setTimeLeft(180);
     } else {
-      recordInteractiveWritingResult(part1Text, part2Text);
+      isPartAdvancingRef.current = true;
+      const finalP1 = part1Ref.current;
+      const finalP2 = part2Ref.current;
+
+      if (backendSessionId) {
+        api.submitQuestionResponse(backendSessionId, {
+          questionId: serverQ?.id || 'iw-1',
+          userResponse: { part1: finalP1, part2: finalP2 },
+          rawScore: 0,
+          timeSpentSec: Math.max(1, 480 - timeLeft),
+        }).catch(() => {});
+      }
+
+      recordInteractiveWritingResult(finalP1, finalP2);
       onComplete();
     }
   };
+
+  const handleNextRef = useRef(handleNext);
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+  }, [handleNext]);
+
+  useEffect(() => {
+    const duration = part === 1 ? 300 : 180;
+    const deadline = Date.now() + duration * 1000;
+    setTimeLeft(duration);
+
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleNextRef.current();
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, [part]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

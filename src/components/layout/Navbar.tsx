@@ -118,12 +118,6 @@ export const Navbar: React.FC = () => {
       icon: MapPin,
       isActive: pathname.startsWith('/institutions'),
     },
-    {
-      href: '/arena',
-      label: 'Арена 1v1',
-      icon: Swords,
-      isActive: pathname.startsWith('/arena'),
-    },
   ];
 
   return (

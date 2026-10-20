@@ -54,8 +54,29 @@ export function roundToDetScale(score: number): number {
   return Math.round(clamped / 5) * 5;
 }
 
+/**
+ * Maps latent trait θ [-3.0 .. +3.0] to official DET scale [10 .. 160] (step of 5)
+ */
+export function thetaToDetScore(theta: number): number {
+  const raw = 105.0 + theta * 18.5;
+  const clamped = Math.max(10.0, Math.min(160.0, raw));
+  return Math.round(clamped / 5.0) * 5.0;
+}
+
+/**
+ * Maps accuracy ratio [0.05 .. 0.95] to latent ability trait θ
+ */
+export function ratioToTheta(ratio: number): number {
+  const clamped = Math.max(0.05, Math.min(0.95, ratio));
+  return Math.log(clamped / (1.0 - clamped)) / 1.2;
+}
+
 export interface CalculatedScores {
   overall: number;
+  reading?: number;
+  listening?: number;
+  writing?: number;
+  speaking?: number;
   literacy: number;
   comprehension: number;
   production: number;
@@ -63,7 +84,8 @@ export interface CalculatedScores {
 }
 
 /**
- * Calculates DET 10-160 score and subscores based on test performance components
+ * Calculates DET 10-160 score and subscores based on calibrated IRT scale,
+ * aligning with the server engine.
  */
 export function computeFinalScores(params: {
   readSelectAccuracy: number;     // 0.0 - 1.0
@@ -73,47 +95,38 @@ export function computeFinalScores(params: {
   interactiveReadingScore: number;// 0.0 - 1.0
   interactiveListeningScore: number; // 0.0 - 1.0
   writingScore: number;           // 0.0 - 1.0
+  speakingScore?: number;         // 0.0 - 1.0
 }): CalculatedScores {
-  // Base raw calculations mapped to 10..160 range:
-  // Baseline starts at ~30 for attempting, scales to 160 for perfection.
-  const toScale = (ratio: number) => 30 + ratio * 130;
+  const readingRatio =
+    (params.readSelectAccuracy +
+      params.fillBlanksAccuracy +
+      params.cTestAccuracy +
+      params.interactiveReadingScore) /
+    4.0;
+  const listeningRatio =
+    (params.listenTypeAccuracy + params.interactiveListeningScore) / 2.0;
+  const writingRatio = params.writingScore;
+  const speakingRatio = params.speakingScore ?? (listeningRatio + writingRatio) / 2.0;
 
-  // Literacy = Reading + Writing (Read & Select, C-Test, Interactive Reading, Writing)
-  const literacyRatio =
-    params.readSelectAccuracy * 0.25 +
-    params.cTestAccuracy * 0.25 +
-    params.interactiveReadingScore * 0.25 +
-    params.writingScore * 0.25;
+  const reading = thetaToDetScore(ratioToTheta(readingRatio));
+  const listening = thetaToDetScore(ratioToTheta(listeningRatio));
+  const writing = thetaToDetScore(ratioToTheta(writingRatio));
+  const speaking = thetaToDetScore(ratioToTheta(speakingRatio));
 
-  // Comprehension = Reading + Listening (Read & Select, Fill in Blanks, Interactive Reading, Listen & Type, Interactive Listening)
-  const compRatio =
-    params.readSelectAccuracy * 0.2 +
-    params.fillBlanksAccuracy * 0.2 +
-    params.interactiveReadingScore * 0.2 +
-    params.listenTypeAccuracy * 0.2 +
-    params.interactiveListeningScore * 0.2;
+  const literacy = roundToDetScale((reading + writing) / 2.0);
+  const comprehension = roundToDetScale((reading + listening) / 2.0);
+  const production = roundToDetScale((writing + speaking) / 2.0);
+  const conversation = roundToDetScale((listening + speaking) / 2.0);
 
-  // Production = Writing + Speaking (In MVP non-speaking: Write about photo, Interactive Writing, Writing Sample, Summary)
-  const prodRatio =
-    params.writingScore * 0.7 +
-    params.cTestAccuracy * 0.15 +
-    params.fillBlanksAccuracy * 0.15;
-
-  // Conversation = Listening + Speaking (In MVP non-speaking: Listen & Type, Interactive Listening dialog)
-  const convRatio =
-    params.listenTypeAccuracy * 0.5 +
-    params.interactiveListeningScore * 0.5;
-
-  const literacy = roundToDetScale(toScale(literacyRatio));
-  const comprehension = roundToDetScale(toScale(compRatio));
-  const production = roundToDetScale(toScale(prodRatio));
-  const conversation = roundToDetScale(toScale(convRatio));
-
-  const average = (literacy + comprehension + production + conversation) / 4;
+  const average = (reading + listening + writing + speaking) / 4.0;
   const overall = roundToDetScale(average);
 
   return {
     overall,
+    reading,
+    listening,
+    writing,
+    speaking,
     literacy,
     comprehension,
     production,

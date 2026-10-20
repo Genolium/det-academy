@@ -21,10 +21,16 @@ type MemoryStorage struct {
 	questions    map[string]*models.Question
 	sessions     map[string]*models.TestSession
 	responses    map[string][]models.QuestionResponse
-	certificates map[string]*models.Certificate
-	banners      map[string]*models.AdBanner
-	institutions map[string]*models.Institution
-	socialAccounts map[string][]models.SocialAccount // userID -> []SocialAccount
+	evaluations  map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
+	mediaAssets    map[string]*models.MediaAsset        // assetID -> *MediaAsset
+	certificates   map[string]*models.Certificate
+	banners        map[string]*models.AdBanner
+	institutions   map[string]*models.Institution
+	socialAccounts map[string][]models.SocialAccount             // userID -> []SocialAccount
+	goals          map[string]*models.UserGoal                   // userID -> *UserGoal
+	errors         map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
+	srsStats       map[string]*models.SRSStats                   // userID -> *SRSStats
+	srsCards       map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
 }
 
 func New() *MemoryStorage {
@@ -35,10 +41,16 @@ func New() *MemoryStorage {
 		questions:      make(map[string]*models.Question),
 		sessions:       make(map[string]*models.TestSession),
 		responses:      make(map[string][]models.QuestionResponse),
+		evaluations:    make(map[string][]models.EvaluationResult),
+		mediaAssets:    make(map[string]*models.MediaAsset),
 		certificates:   make(map[string]*models.Certificate),
 		banners:        make(map[string]*models.AdBanner),
 		institutions:   make(map[string]*models.Institution),
 		socialAccounts: make(map[string][]models.SocialAccount),
+		goals:          make(map[string]*models.UserGoal),
+		errors:         make(map[string]map[string]*models.UserErrorItem),
+		srsStats:       make(map[string]*models.SRSStats),
+		srsCards:       make(map[string]map[string]*models.SRSCardProgress),
 	}
 	s.seedDefaultData()
 	return s
@@ -51,6 +63,7 @@ func (s *MemoryStorage) Sessions() repository.TestSessionRepository     { return
 func (s *MemoryStorage) Certificates() repository.CertificateRepository { return &certMemoryRepo{s: s} }
 func (s *MemoryStorage) Banners() repository.BannerRepository           { return &bannerMemoryRepo{s: s} }
 func (s *MemoryStorage) Institutions() repository.InstitutionRepository { return &institutionMemoryRepo{s: s} }
+func (s *MemoryStorage) Study() repository.StudyRepository               { return &studyMemoryRepo{s: s} }
 func (s *MemoryStorage) Close() error                                   { return nil }
 
 func (s *MemoryStorage) seedDefaultData() {
@@ -274,6 +287,339 @@ func (s *MemoryStorage) seedQuestions() {
 			DifficultyBand: "B2",
 			ContentPayload: json.RawMessage(`{"text":"Urban architecture is rapidly transforming modern cities worldwide. Architects now inc________ sustainable materials to mi________ environmental damage. Green spaces are cr______ within high-density districts. This innovative approach fosters community resilience and improves public well-being."}`),
 			CorrectAnswers: json.RawMessage(`{"answers":["orporate","nimize","eated"]}`),
+			TimeLimitSec:   180,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ir-01",
+			Type:           "INTERACTIVE_READING",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"passageTitle":"Marine Ecosystems","passageText":"Coral reefs represent some of the most biodiverse ecosystems on our planet. They provide vital coastal protection against severe storms and support thousands of marine species. Recent rises in ocean temperatures have accelerated coral bleaching worldwide. Conservationists are deploying artificial reefs to facilitate habitat regeneration.","gapSentence":{"before":"Coral reefs provide vital coastal ","options":["protection","destruction","pollution","navigation"],"correct":"protection","after":" against severe tropical storms."}}`),
+			CorrectAnswers: json.RawMessage(`{"gapCorrect":"protection","highlightCorrect":"provide vital coastal protection"}`),
+			TimeLimitSec:   420,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ir-02",
+			Type:           "INTERACTIVE_READING",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"passageTitle":"Renewable Energy Storage","passageText":"As renewable generation expands, grid-scale energy storage becomes essential. Lithium-ion batteries currently dominate short-duration balancing, while pumped hydroelectric systems handle long-term demands. Emerging technologies like flow batteries and compressed air offer scalable alternatives for multi-day storage needs.","gapSentence":{"before":"Grid-scale storage becomes essential to balance ","options":["intermittent","permanent","negligible","identical"],"correct":"intermittent","after":" renewable energy production."}}`),
+			CorrectAnswers: json.RawMessage(`{"gapCorrect":"intermittent","highlightCorrect":"grid-scale energy storage becomes essential"}`),
+			TimeLimitSec:   420,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-il-01",
+			Type:           "INTERACTIVE_LISTENING",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"scenario":"You are talking to your academic advisor about your course schedule.","turns":[{"speaker":"Advisor","speakerAudioText":"Good morning! How are your preparation plans coming along for next semester?","options":["I would like to discuss enrolling in advanced statistics and economics.","I forgot where the library is located.","I am looking for the cafeteria."],"correctIndex":0}],"summaryPrompt":"Write a 75-word summary of your conversation with your academic advisor."}`),
+			CorrectAnswers: json.RawMessage(`{"turnsAnswers":[0],"summaryRubric":"advisor_course_schedule"}`),
+			TimeLimitSec:   240,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-il-02",
+			Type:           "INTERACTIVE_LISTENING",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"scenario":"You are speaking with your biology lab instructor regarding a project deadline.","turns":[{"speaker":"Instructor","speakerAudioText":"Hello! Did your group complete the water quality sampling protocol?","options":["Yes, we gathered all field samples and are ready to run the spectrometry analysis.","No, we decided to cancel the entire semester.","We have not attended any classes."],"correctIndex":0}],"summaryPrompt":"Summarize the key decisions agreed upon during the lab briefing."}`),
+			CorrectAnswers: json.RawMessage(`{"turnsAnswers":[0],"summaryRubric":"lab_water_sampling"}`),
+			TimeLimitSec:   240,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-wp-01",
+			Type:           "WRITE_PHOTO",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/student-library.jpg","prompt":"Write one or more complete sentences describing what you see in the photo."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"grammar_vocabulary_structure"}`),
+			TimeLimitSec:   60,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-wp-02",
+			Type:           "WRITE_PHOTO",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/laboratory-science.jpg","prompt":"Write one or more complete sentences describing what you see in the photo."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"grammar_vocabulary_structure"}`),
+			TimeLimitSec:   60,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-iw-01",
+			Type:           "INTERACTIVE_WRITING",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"part1Prompt":"Describe an important hobby or interest that you pursue in your free time. Explain why it is valuable to you. Write for 5 minutes (minimum 80 words).","part2Prompt":"How does engaging in hobbies help people maintain balance during demanding academic or professional periods? Write for 3 minutes (minimum 50 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_cohesion_min80_min50"}`),
+			TimeLimitSec:   480,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-iw-02",
+			Type:           "INTERACTIVE_WRITING",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"part1Prompt":"Some universities require students to complete community service hours prior to graduation. Do you support this policy? Explain your reasons with examples. Write for 5 minutes (minimum 80 words).","part2Prompt":"What unintended challenges might students encounter when community service is made mandatory rather than voluntary? Write for 3 minutes (minimum 50 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_cohesion_min80_min50"}`),
+			TimeLimitSec:   480,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-sp-01",
+			Type:           "SPEAK_PHOTO",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/park-gathering.jpg","prompt":"Speak for 90 seconds about the scene in this image. Describe what the people are doing and the environment around them."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_pronunciation_vocabulary_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-sp-02",
+			Type:           "SPEAK_PHOTO",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/engineering-workshop.jpg","prompt":"Speak for 90 seconds about what you see in the photo. Describe the equipment, the people involved, and what they appear to be building."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_pronunciation_vocabulary_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rts-01",
+			Type:           "READ_THEN_SPEAK",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"prompt":"Describe a memorable journey or trip you have taken. Where did you travel, who accompanied you, and what made this experience unforgettable? Speak for 90 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_organization_academic_discourse_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rts-02",
+			Type:           "READ_THEN_SPEAK",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"prompt":"Discuss a technological advancement that has significantly affected human communication over the past decade. Explain how it has altered relationships and what drawbacks have arisen. Speak for 90 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_organization_academic_discourse_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-is-01",
+			Type:           "INTERACTIVE_SPEAKING",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"scenario":"You are speaking with your academic advisor about your study schedule.","prompt":"Explain why you want to change one of your elective courses for next term. Speak clearly for 35 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"conversational_fluency_responsiveness"}`),
+			TimeLimitSec:   210,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-is-02",
+			Type:           "INTERACTIVE_SPEAKING",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"scenario":"You are participating in an academic seminar discussing public health initiatives.","prompt":"Address the question: how can local governments incentivize healthy eating habits among urban populations? Speak for 35 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"conversational_fluency_responsiveness"}`),
+			TimeLimitSec:   210,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ws-01",
+			Type:           "WRITING_SAMPLE",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"prompt":"Many people argue that students benefit more from studying practical career skills than theoretical academic subjects. Which do you consider more beneficial for long-term success? Write for 5 minutes (minimum 100 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_argumentation_min100"}`),
+			TimeLimitSec:   300,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ws-02",
+			Type:           "WRITING_SAMPLE",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"prompt":"Do you believe governments should prioritize public funding for space exploration or for resolving pressing environmental issues on Earth? State your position and defend it with reasons and evidence. Write for 5 minutes (minimum 100 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_argumentation_min100"}`),
+			TimeLimitSec:   300,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ss-01",
+			Type:           "SPEAKING_SAMPLE",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"prompt":"Some people prefer living in large cosmopolitan cities, while others find life in smaller rural towns more satisfying. Which lifestyle do you personally prefer, and why? Speak for 1 to 3 minutes."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"extended_discourse_academic_speech_min180s"}`),
+			TimeLimitSec:   180,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ss-02",
+			Type:           "SPEAKING_SAMPLE",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"prompt":"With the rapid development of artificial intelligence, should schools mandate AI literacy courses for all students, or should AI tools be restricted in academic evaluations? Defend your opinion for 1 to 3 minutes."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"extended_discourse_academic_speech_min180s"}`),
+			TimeLimitSec:   180,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rs-05",
+			Type:           "READ_SELECT",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"word":"substantiate"}`),
+			CorrectAnswers: json.RawMessage(`{"isReal":true}`),
+			TimeLimitSec:   5,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rs-06",
+			Type:           "READ_SELECT",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"word":"incomplience"}`),
+			CorrectAnswers: json.RawMessage(`{"isReal":false}`),
+			TimeLimitSec:   5,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rs-07",
+			Type:           "READ_SELECT",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"word":"ephemeral"}`),
+			CorrectAnswers: json.RawMessage(`{"isReal":true}`),
+			TimeLimitSec:   5,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rs-08",
+			Type:           "READ_SELECT",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"word":"transpeciate"}`),
+			CorrectAnswers: json.RawMessage(`{"isReal":false}`),
+			TimeLimitSec:   5,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-fb-03",
+			Type:           "FILL_BLANKS",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"sentence":"The professor asked the students to cl___fy their thesis argument.","prefix":"cl","length":3}`),
+			CorrectAnswers: json.RawMessage(`{"answer":"arify"}`),
+			TimeLimitSec:   20,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-fb-04",
+			Type:           "FILL_BLANKS",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"sentence":"The committee reached a unan_____ decision after lengthy debates.","prefix":"unan","length":5}`),
+			CorrectAnswers: json.RawMessage(`{"answer":"imous"}`),
+			TimeLimitSec:   20,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-lt-02",
+			Type:           "LISTEN_TYPE",
+			DifficultyBand: "B2",
+			ContentPayload: json.RawMessage(`{"audioUrl":"","spokenText":"Technological innovations are reshaping global transportation networks."}`),
+			CorrectAnswers: json.RawMessage(`{"text":"Technological innovations are reshaping global transportation networks."}`),
+			TimeLimitSec:   60,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-lt-03",
+			Type:           "LISTEN_TYPE",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"audioUrl":"","spokenText":"The economic consequences of inflation require comprehensive fiscal intervention."}`),
+			CorrectAnswers: json.RawMessage(`{"text":"The economic consequences of inflation require comprehensive fiscal intervention."}`),
+			TimeLimitSec:   60,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ct-02",
+			Type:           "C_TEST",
+			DifficultyBand: "B1",
+			ContentPayload: json.RawMessage(`{"text":"Environmental conservation is essential for preserving global biodiversity. Forest ec________ provide critical habitats for en________ species. Without rigorous prot______, numerous species could face extinction in coming decades."}`),
+			CorrectAnswers: json.RawMessage(`{"answers":["osystems","dangered","ection"]}`),
+			TimeLimitSec:   180,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ct-03",
+			Type:           "C_TEST",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"text":"Cognitive psychology investigates the underlying mechanisms of human memory retention. Researchers hypothesize that sleep facilitates mem________ consolidation, allowing the brain to str________ synaptic connections. Further empirical st________ are warranted to substantiate this model."}`),
+			CorrectAnswers: json.RawMessage(`{"answers":["ory","engthen","udies"]}`),
+			TimeLimitSec:   180,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ir-03",
+			Type:           "INTERACTIVE_READING",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"passageTitle":"Quantum Computing Horizons","passageText":"Quantum computing harnesses superposition and entanglement to solve computational problems intractable for classical hardware. While cryptographic implications raise pressing security concerns, quantum algorithms promise unprecedented acceleration in molecular simulation and materials design.","gapSentence":{"before":"Quantum algorithms offer unprecedented acceleration in ","options":["materials","destructive","negligible","obsolete"],"correct":"materials","after":" design and pharmaceutical modeling."}}`),
+			CorrectAnswers: json.RawMessage(`{"gapCorrect":"materials","highlightCorrect":"cryptographic implications raise pressing security concerns"}`),
+			TimeLimitSec:   420,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-il-03",
+			Type:           "INTERACTIVE_LISTENING",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"scenario":"You are speaking with a university admissions officer regarding international scholarship requirements.","turns":[{"speaker":"Officer","speakerAudioText":"Welcome to the office. Are you applying for the merit-based global leadership stipend?","options":["Yes, I would like to confirm the submission criteria and minimum Duolingo score required.","No, I want to withdraw my application immediately.","Where can I buy lunch on campus?"],"correctIndex":0}],"summaryPrompt":"Summarize the required application credentials discussed in your consultation."}`),
+			CorrectAnswers: json.RawMessage(`{"turnsAnswers":[0],"summaryRubric":"admissions_scholarship_criteria"}`),
+			TimeLimitSec:   240,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-wp-03",
+			Type:           "WRITE_PHOTO",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/university-lecture.jpg","prompt":"Write one or more complete sentences describing what you see in the photo."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"grammar_vocabulary_structure"}`),
+			TimeLimitSec:   60,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-iw-03",
+			Type:           "INTERACTIVE_WRITING",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"part1Prompt":"Some educational theorists propose that remote learning should permanently replace traditional lecture halls in higher education. To what extent do you agree or disagree? Write for 5 minutes (minimum 80 words).","part2Prompt":"What psychological impacts might fully virtual university degree programs have on student collaboration and networking? Write for 3 minutes (minimum 50 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_cohesion_min80_min50"}`),
+			TimeLimitSec:   480,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-sp-03",
+			Type:           "SPEAK_PHOTO",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"imageUrl":"/images/practice/city-skyline.jpg","prompt":"Speak for 90 seconds about the scene in this urban photograph, focusing on architectural dynamics and sustainability."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_pronunciation_vocabulary_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-rts-03",
+			Type:           "READ_THEN_SPEAK",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"prompt":"Many sociologists argue that rapid urbanization has eroded local community cohesion in favor of individualized lifestyles. Do you agree with this assessment? Provide concrete reasons and examples. Speak for 90 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"fluency_organization_academic_discourse_min90s"}`),
+			TimeLimitSec:   90,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-is-03",
+			Type:           "INTERACTIVE_SPEAKING",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"scenario":"You are participating in an academic panel debating global carbon offset programs.","prompt":"Explain how verifiable third-party auditing can prevent corporate greenwashing. Speak clearly for 35 seconds."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"conversational_fluency_responsiveness"}`),
+			TimeLimitSec:   210,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ws-03",
+			Type:           "WRITING_SAMPLE",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"prompt":"Should scientific research funded by public tax revenues be published under open-access mandates without embargo periods, or should academic publishers retain copyright monetization? Defend your viewpoint. Write for 5 minutes (minimum 100 words)."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"academic_argumentation_min100"}`),
+			TimeLimitSec:   300,
+			IsActive:       true,
+		},
+		{
+			ID:             "q-ss-03",
+			Type:           "SPEAKING_SAMPLE",
+			DifficultyBand: "C1",
+			ContentPayload: json.RawMessage(`{"prompt":"Some experts predict that autonomous artificial intelligence will eliminate more jobs than it creates over the next generation. In your view, will technological disruption exacerbate societal inequality or stimulate new industries? Speak for 1 to 3 minutes."}`),
+			CorrectAnswers: json.RawMessage(`{"rubric":"extended_discourse_academic_speech_min180s"}`),
 			TimeLimitSec:   180,
 			IsActive:       true,
 		},
@@ -1190,6 +1536,42 @@ func (r *sessionMemoryRepo) GetStats(ctx context.Context) (int, int, float64, ma
 	return total, completed, avg, scoreDist, nil
 }
 
+func (r *sessionMemoryRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.evaluations[eval.SessionID] = append(r.s.evaluations[eval.SessionID], *eval)
+	return nil
+}
+
+func (r *sessionMemoryRepo) GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	evals := r.s.evaluations[sessionID]
+	if evals == nil {
+		return []models.EvaluationResult{}, nil
+	}
+	res := make([]models.EvaluationResult, len(evals))
+	copy(res, evals)
+	return res, nil
+}
+
+func (r *sessionMemoryRepo) SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.mediaAssets[asset.ID] = asset
+	return nil
+}
+
+func (r *sessionMemoryRepo) GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	asset, ok := r.s.mediaAssets[id]
+	if !ok {
+		return nil, errors.New("media asset not found")
+	}
+	return asset, nil
+}
+
 // --- Certificate Memory Repo ---
 
 type certMemoryRepo struct{ s *MemoryStorage }
@@ -1392,3 +1774,123 @@ func (r *institutionMemoryRepo) Count(ctx context.Context) (int, error) {
 	defer r.s.mu.RUnlock()
 	return len(r.s.institutions), nil
 }
+
+// --- Study, Goals, Error Notebook and SRS ---
+
+type studyMemoryRepo struct {
+	s *MemoryStorage
+}
+
+func (r *studyMemoryRepo) GetGoals(ctx context.Context, userID string) (*models.UserGoal, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	g, ok := r.s.goals[userID]
+	if !ok {
+		return nil, errors.New("goals not found")
+	}
+	cp := *g
+	return &cp, nil
+}
+
+func (r *studyMemoryRepo) UpsertGoals(ctx context.Context, goal *models.UserGoal) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	cp := *goal
+	cp.UpdatedAt = time.Now()
+	r.s.goals[goal.UserID] = &cp
+	return nil
+}
+
+func (r *studyMemoryRepo) GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	userMap, ok := r.s.errors[userID]
+	if !ok {
+		return []models.UserErrorItem{}, nil
+	}
+	res := make([]models.UserErrorItem, 0, len(userMap))
+	for _, item := range userMap {
+		res = append(res, *item)
+	}
+	return res, nil
+}
+
+func (r *studyMemoryRepo) GetErrorByID(ctx context.Context, userID, errorID string) (*models.UserErrorItem, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	userMap, ok := r.s.errors[userID]
+	if !ok {
+		return nil, errors.New("error item not found")
+	}
+	item, ok := userMap[errorID]
+	if !ok {
+		return nil, errors.New("error item not found")
+	}
+	cp := *item
+	return &cp, nil
+}
+
+func (r *studyMemoryRepo) SaveError(ctx context.Context, item *models.UserErrorItem) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if _, ok := r.s.errors[item.UserID]; !ok {
+		r.s.errors[item.UserID] = make(map[string]*models.UserErrorItem)
+	}
+	cp := *item
+	r.s.errors[item.UserID][item.ID] = &cp
+	return nil
+}
+
+func (r *studyMemoryRepo) DeleteError(ctx context.Context, userID, errorID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if userMap, ok := r.s.errors[userID]; ok {
+		delete(userMap, errorID)
+	}
+	return nil
+}
+
+func (r *studyMemoryRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	stats, ok := r.s.srsStats[userID]
+	if !ok {
+		return &models.SRSStats{StreakDays: 0, LastStudiedDate: "", TotalReviewed: 0}, nil
+	}
+	cp := *stats
+	return &cp, nil
+}
+
+func (r *studyMemoryRepo) SaveSRSStats(ctx context.Context, userID string, stats *models.SRSStats) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	cp := *stats
+	r.s.srsStats[userID] = &cp
+	return nil
+}
+
+func (r *studyMemoryRepo) GetSRSCards(ctx context.Context, userID string) (map[string]models.SRSCardProgress, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	userMap, ok := r.s.srsCards[userID]
+	if !ok {
+		return make(map[string]models.SRSCardProgress), nil
+	}
+	res := make(map[string]models.SRSCardProgress, len(userMap))
+	for k, v := range userMap {
+		res[k] = *v
+	}
+	return res, nil
+}
+
+func (r *studyMemoryRepo) SaveSRSCard(ctx context.Context, userID string, card *models.SRSCardProgress) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if _, ok := r.s.srsCards[userID]; !ok {
+		r.s.srsCards[userID] = make(map[string]*models.SRSCardProgress)
+	}
+	cp := *card
+	r.s.srsCards[userID][card.CardID] = &cp
+	return nil
+}
+

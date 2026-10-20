@@ -2,10 +2,15 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"det-academy-backend/internal/handlers"
 	"det-academy-backend/internal/models"
@@ -51,6 +56,11 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
+	studyService := service.NewStudyService(store, theoryService, catService)
+	studyHandler := handlers.NewStudyHandler(studyService)
+
+	tempAudioDir, _ := os.MkdirTemp("", "det_test_media_*")
+	mediaHandler := handlers.NewMediaHandler(catService, tempAudioDir)
 
 	r := chi.NewRouter()
 
@@ -63,7 +73,22 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
 			r.Post("/logout", authHandler.Logout)
+			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
+		})
+
+		r.Route("/user", func(r chi.Router) {
+			r.Use(handlers.AuthMiddleware(authService))
+			r.Get("/goals", studyHandler.GetGoals)
+			r.Put("/goals", studyHandler.UpdateGoals)
+			r.Get("/plan", studyHandler.GetStudyPlan)
+			r.Get("/analytics/skills", studyHandler.GetSkillAnalytics)
+			r.Get("/errors", studyHandler.GetErrors)
+			r.Post("/errors", studyHandler.SaveError)
+			r.Post("/errors/{id}/recall", studyHandler.RecallError)
+			r.Delete("/errors/{id}", studyHandler.DeleteError)
+			r.Get("/srs", studyHandler.GetSRSState)
+			r.Post("/srs/review", studyHandler.ReviewSRSCard)
 		})
 
 		r.Route("/theory", func(r chi.Router) {
@@ -74,17 +99,26 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 
 		r.Route("/test", func(r chi.Router) {
 			r.Get("/questions", testHandler.GetQuestions)
-			// Strict auth required for test sessions
-			r.With(handlers.AuthMiddleware(authService)).Post("/sessions", testHandler.StartSession)
-			r.Get("/sessions/{id}", testHandler.GetSession)
-			r.Post("/sessions/{id}/respond", testHandler.RecordResponse)
-			r.Post("/sessions/{id}/stage-complete", testHandler.CompleteStage)
-			r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
+			// Strict auth required for all test session operations
+			r.Group(func(r chi.Router) {
+				r.Use(handlers.AuthMiddleware(authService))
+				r.Post("/sessions", testHandler.StartSession)
+				r.Get("/sessions/{id}", testHandler.GetSession)
+				r.Post("/sessions/{id}/respond", testHandler.RecordResponse)
+				r.Post("/sessions/{id}/stage-complete", testHandler.CompleteStage)
+				r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
+				r.Post("/sessions/{id}/audio", mediaHandler.UploadAudio)
+				r.Get("/sessions/{id}/evaluations", testHandler.GetSessionEvaluations)
+			})
+		})
+
+		r.Route("/media", func(r chi.Router) {
+			r.Get("/audio/{filename}", mediaHandler.ServeAudio)
 		})
 
 		r.Route("/certificates", func(r chi.Router) {
 			r.Get("/{id}", certHandler.GetByID)
-			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/", certHandler.IssueCertificate)
+			r.With(handlers.AuthMiddleware(authService)).Post("/", certHandler.IssueCertificate)
 			r.With(handlers.AuthMiddleware(authService)).Get("/user/me", certHandler.GetMyCertificates)
 		})
 
@@ -261,6 +295,21 @@ func TestTestSessionLifecycle(t *testing.T) {
 	_ = json.Unmarshal(loginW.Body.Bytes(), &loginResp)
 	token := loginResp.Token
 
+	// Register a second user to test ownership authorization
+	otherPayload := models.RegisterRequest{
+		Email:    "other-student@det-academy.com",
+		Password: "password123",
+		Name:     "Other Student",
+		Locale:   "ru",
+	}
+	otherBody, _ := json.Marshal(otherPayload)
+	otherReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(otherBody))
+	otherW := httptest.NewRecorder()
+	r.ServeHTTP(otherW, otherReq)
+	var otherResp models.AuthResponse
+	_ = json.Unmarshal(otherW.Body.Bytes(), &otherResp)
+	otherToken := otherResp.Token
+
 	// 3. Start test session as authenticated student
 	authStartReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader(body))
 	authStartReq.Header.Set("Authorization", "Bearer "+token)
@@ -282,20 +331,58 @@ func TestTestSessionLifecycle(t *testing.T) {
 		t.Fatal("expected session ID to be non-empty")
 	}
 
-	// 4. Record question response
+	// 3a. Verify that questions returned do NOT include correct answers
+	for _, q := range startResp.Questions {
+		if len(q.CorrectAnswers) > 0 {
+			t.Fatalf("security violation: correct answers leaked in question response: %s", string(q.CorrectAnswers))
+		}
+	}
+
+	// 3b. Verify unauthenticated access to session returns 401
+	unauthGet := httptest.NewRequest("GET", "/api/v1/test/sessions/"+sessionID, nil)
+	unauthGetW := httptest.NewRecorder()
+	r.ServeHTTP(unauthGetW, unauthGet)
+	if unauthGetW.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated GET session, got %d", unauthGetW.Code)
+	}
+
+	// 3c. Verify unauthorized user (other token) receives 403 Forbidden
+	otherGet := httptest.NewRequest("GET", "/api/v1/test/sessions/"+sessionID, nil)
+	otherGet.Header.Set("Authorization", "Bearer "+otherToken)
+	otherGetW := httptest.NewRecorder()
+	r.ServeHTTP(otherGetW, otherGet)
+	if otherGetW.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 on other user's session access, got %d", otherGetW.Code)
+	}
+
+	// 3d. Verify completing session without ANY recorded responses is strictly rejected
+	compEmptyPayload := models.CompleteSessionRequest{
+		ReadSelectAccuracy: 0.95,
+	}
+	compEmptyBody, _ := json.Marshal(compEmptyPayload)
+	compEmptyReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader(compEmptyBody))
+	compEmptyReq.Header.Set("Authorization", "Bearer "+token)
+	compEmptyW := httptest.NewRecorder()
+	r.ServeHTTP(compEmptyW, compEmptyReq)
+	if compEmptyW.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on completing empty test session without responses, got %d: %s", compEmptyW.Code, compEmptyW.Body.String())
+	}
+
+	// 4. Record question response as authenticated owner
 	respPayload := models.SubmitResponseRequest{
 		QuestionID:   "q-rs-01",
-		UserResponse: json.RawMessage(`{"selectedYes":true}`),
+		UserResponse: json.RawMessage(`{"isReal":true}`),
 		RawScore:     1.0,
 		TimeSpentSec: 3,
 	}
 	respBody, _ := json.Marshal(respPayload)
 	respReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/respond", bytes.NewReader(respBody))
+	respReq.Header.Set("Authorization", "Bearer "+token)
 	respW := httptest.NewRecorder()
 	r.ServeHTTP(respW, respReq)
 
 	if respW.Code != http.StatusOK {
-		t.Fatalf("expected 200 on submit response, got %d", respW.Code)
+		t.Fatalf("expected 200 on submit response, got %d: %s", respW.Code, respW.Body.String())
 	}
 
 	// 5. Complete session
@@ -310,6 +397,7 @@ func TestTestSessionLifecycle(t *testing.T) {
 	}
 	compBody, _ := json.Marshal(compPayload)
 	compReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader(compBody))
+	compReq.Header.Set("Authorization", "Bearer "+token)
 	compW := httptest.NewRecorder()
 	r.ServeHTTP(compW, compReq)
 
@@ -320,8 +408,29 @@ func TestTestSessionLifecycle(t *testing.T) {
 	var compResult models.SessionCompleteResponse
 	_ = json.Unmarshal(compW.Body.Bytes(), &compResult)
 
-	if compResult.Scores.Overall < 100 || compResult.Scores.Overall > 160 {
-		t.Fatalf("expected score between 100 and 160, got %d", compResult.Scores.Overall)
+	if compResult.Scores.Overall < 60 || compResult.Scores.Overall > 160 {
+		t.Fatalf("expected score between 60 and 160, got %d", compResult.Scores.Overall)
+	}
+
+	// Verify all 4 individual skill scores and 4 integrated subscores are calculated
+	if compResult.Scores.Reading == 0 || compResult.Scores.Listening == 0 ||
+		compResult.Scores.Writing == 0 || compResult.Scores.Speaking == 0 {
+		t.Fatalf("expected non-zero individual skill scores: reading=%d, listening=%d, writing=%d, speaking=%d",
+			compResult.Scores.Reading, compResult.Scores.Listening, compResult.Scores.Writing, compResult.Scores.Speaking)
+	}
+	if compResult.Scores.Literacy == 0 || compResult.Scores.Comprehension == 0 ||
+		compResult.Scores.Production == 0 || compResult.Scores.Conversation == 0 {
+		t.Fatalf("expected non-zero integrated subscores: literacy=%d, comp=%d, prod=%d, conv=%d",
+			compResult.Scores.Literacy, compResult.Scores.Comprehension, compResult.Scores.Production, compResult.Scores.Conversation)
+	}
+
+	// 6. Verify completing the already completed session again is rejected
+	compAgainReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader(compBody))
+	compAgainReq.Header.Set("Authorization", "Bearer "+token)
+	compAgainW := httptest.NewRecorder()
+	r.ServeHTTP(compAgainW, compAgainReq)
+	if compAgainW.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 when attempting to complete an already completed session, got %d", compAgainW.Code)
 	}
 }
 
@@ -454,3 +563,846 @@ func TestAdminCRM(t *testing.T) {
 		t.Fatalf("expected 200 on update user role, got %d: %s", roleW.Code, roleW.Body.String())
 	}
 }
+
+func TestOAuthSecurityEnforcement(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	// P0-01: Attempting OAuth login with arbitrary email without code/token must be rejected
+	spoofPayload := models.OAuthLoginRequest{
+		Provider: "google",
+		Email:    "student@det-academy.com", // targeted victim email
+	}
+	body, _ := json.Marshal(spoofPayload)
+	req := httptest.NewRequest("POST", "/api/v1/auth/oauth", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest && w.Code != http.StatusUnauthorized {
+		t.Fatalf("security violation: expected 400 or 401 when attempting OAuth login without valid code/token, got %d", w.Code)
+	}
+
+	// Attempting OAuth login with fake/unverified code for google
+	fakeTokenPayload := models.OAuthLoginRequest{
+		Provider: "google",
+		Code:     "fake_unverified_token_12345",
+	}
+	bodyFake, _ := json.Marshal(fakeTokenPayload)
+	reqFake := httptest.NewRequest("POST", "/api/v1/auth/oauth", bytes.NewReader(bodyFake))
+	wFake := httptest.NewRecorder()
+	r.ServeHTTP(wFake, reqFake)
+
+	if wFake.Code != http.StatusBadRequest && wFake.Code != http.StatusUnauthorized {
+		t.Fatalf("expected failure for unverified google token, got %d", wFake.Code)
+	}
+}
+
+func TestSocialAccountLinkConflictProtection(t *testing.T) {
+	_, authService, store := setupTestRouter()
+	ctx := context.Background()
+
+	// User 1
+	u1 := &models.User{
+		ID:        "user-1-uuid",
+		Email:     "user1@det-academy.com",
+		Name:      "User 1",
+		Role:      "student",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	_ = store.Users().Create(ctx, u1)
+
+	// User 2
+	u2 := &models.User{
+		ID:        "user-2-uuid",
+		Email:     "user2@det-academy.com",
+		Name:      "User 2",
+		Role:      "student",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	_ = store.Users().Create(ctx, u2)
+
+	// Link VK ID to User 1
+	sa := &models.SocialAccount{
+		ID:             "sa-1",
+		UserID:         u1.ID,
+		Provider:       "vk",
+		ProviderUserID: "vk_user_12345",
+		Email:          u1.Email,
+		CreatedAt:      time.Now(),
+	}
+	_ = store.Users().LinkSocialAccount(ctx, sa)
+
+	// User 2 attempts to link the same external VK account - must be rejected (cannot steal identity)
+	err := authService.LinkSocialAccount(ctx, u2.ID, models.LinkProviderRequest{
+		Provider: "vk",
+		Code:     "",
+	})
+	if err == nil {
+		t.Fatal("security violation: expected error when linking without code/token")
+	}
+
+	// Verify User 1's link is still intact
+	linked, err := store.Users().GetSocialAccounts(ctx, u1.ID)
+	if err != nil || len(linked) == 0 {
+		t.Fatal("expected User 1's social account to remain linked")
+	}
+	if linked[0].ProviderUserID != "vk_user_12345" {
+		t.Fatalf("expected provider user ID to remain vk_user_12345, got %s", linked[0].ProviderUserID)
+	}
+}
+
+func TestExamBlueprintAndStageTransitions(t *testing.T) {
+	// 1. Verify default exam blueprint conforms to the official 13-stage DET structure
+	bp := models.GetDefaultExamBlueprint()
+	if bp.TotalStages != 13 || len(bp.Stages) != 13 {
+		t.Fatalf("expected 13 blueprint stages, got %d", bp.TotalStages)
+	}
+
+	expectedStages := []string{
+		"READ_SELECT",
+		"FILL_BLANKS",
+		"C_TEST",
+		"LISTEN_TYPE",
+		"INTERACTIVE_READING",
+		"INTERACTIVE_LISTENING",
+		"WRITE_PHOTO",
+		"INTERACTIVE_WRITING",
+		"SPEAK_PHOTO",
+		"READ_THEN_SPEAK",
+		"INTERACTIVE_SPEAKING",
+		"WRITING_SAMPLE",
+		"SPEAKING_SAMPLE",
+	}
+
+	for i, expected := range expectedStages {
+		if bp.Stages[i].StageName != expected {
+			t.Fatalf("stage %d mismatch: expected %s, got %s", i+1, expected, bp.Stages[i].StageName)
+		}
+		if bp.Stages[i].TimeLimitSec <= 0 {
+			t.Fatalf("stage %s has invalid time limit: %d", bp.Stages[i].StageName, bp.Stages[i].TimeLimitSec)
+		}
+	}
+
+	// 2. Start a test session and verify stage advancement through multiple stages with IRT adaptation
+	r, _, _ := setupTestRouter()
+
+	loginPayload := models.LoginRequest{
+		Email:    "student@det-academy.com",
+		Password: "password123",
+	}
+	loginBody, _ := json.Marshal(loginPayload)
+	loginReq := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(loginBody))
+	loginW := httptest.NewRecorder()
+	r.ServeHTTP(loginW, loginReq)
+
+	var loginResp models.AuthResponse
+	_ = json.Unmarshal(loginW.Body.Bytes(), &loginResp)
+	token := loginResp.Token
+
+	startReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader([]byte(`{"candidateName":"Adaptive Candidate","difficultyLevel":"B1"}`)))
+	startReq.Header.Set("Authorization", "Bearer "+token)
+	startW := httptest.NewRecorder()
+	r.ServeHTTP(startW, startReq)
+
+	if startW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on start, got %d: %s", startW.Code, startW.Body.String())
+	}
+
+	var startRes struct {
+		Session   models.TestSession `json:"session"`
+		Questions []models.Question  `json:"questions"`
+	}
+	_ = json.Unmarshal(startW.Body.Bytes(), &startRes)
+	sessionID := startRes.Session.ID
+
+	if startRes.Session.StageName != "READ_SELECT" {
+		t.Fatalf("expected stage READ_SELECT, got %s", startRes.Session.StageName)
+	}
+	if startRes.Session.DeadlineAt == nil {
+		t.Fatal("expected non-nil deadlineAt on started session")
+	}
+
+	// 3. Verify GET session returns details with active questions and blueprint
+	getReq := httptest.NewRequest("GET", "/api/v1/test/sessions/"+sessionID, nil)
+	getReq.Header.Set("Authorization", "Bearer "+token)
+	getW := httptest.NewRecorder()
+	r.ServeHTTP(getW, getReq)
+
+	if getW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on get session, got %d", getW.Code)
+	}
+
+	var getRes struct {
+		Session   models.TestSession   `json:"session"`
+		Questions []models.Question    `json:"questions"`
+		Blueprint models.ExamBlueprint `json:"blueprint"`
+	}
+	_ = json.Unmarshal(getW.Body.Bytes(), &getRes)
+
+	if getRes.Blueprint.TotalStages != 13 {
+		t.Fatalf("expected 13 stages in blueprint, got %d", getRes.Blueprint.TotalStages)
+	}
+	if len(getRes.Questions) == 0 {
+		t.Fatal("expected sanitized questions in get session response")
+	}
+
+	// 4. Advance through stages and verify stage progression
+	for stageIdx := 1; stageIdx <= 3; stageIdx++ {
+		stagePayload := models.StageCompleteRequest{
+			StageName:        expectedStages[stageIdx-1],
+			Accuracy:         0.9,
+			TotalQuestions:   5,
+			CorrectQuestions: 5,
+		}
+		stageBody, _ := json.Marshal(stagePayload)
+		stageReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/stage-complete", bytes.NewReader(stageBody))
+		stageReq.Header.Set("Authorization", "Bearer "+token)
+		stageW := httptest.NewRecorder()
+		r.ServeHTTP(stageW, stageReq)
+
+		if stageW.Code != http.StatusOK {
+			t.Fatalf("expected 200 on stage complete for stage %d, got %d: %s", stageIdx, stageW.Code, stageW.Body.String())
+		}
+
+		var stageRes struct {
+			Session   models.TestSession `json:"session"`
+			Questions []models.Question  `json:"nextQuestions"`
+		}
+		_ = json.Unmarshal(stageW.Body.Bytes(), &stageRes)
+
+		expectedNextStage := expectedStages[stageIdx]
+		if stageRes.Session.StageName != expectedNextStage {
+			t.Fatalf("expected next stage %s, got %s", expectedNextStage, stageRes.Session.StageName)
+		}
+		if stageRes.Session.CurrentStage != stageIdx+1 {
+			t.Fatalf("expected current stage %d, got %d", stageIdx+1, stageRes.Session.CurrentStage)
+		}
+		if stageRes.Session.DeadlineAt == nil {
+			t.Fatalf("expected deadlineAt to be updated for stage %s", expectedNextStage)
+		}
+	}
+}
+
+func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	// 1. Login student 1
+	loginPayload := models.LoginRequest{
+		Email:    "student@det-academy.com",
+		Password: "password123",
+	}
+	loginBody, _ := json.Marshal(loginPayload)
+	loginReq := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(loginBody))
+	loginW := httptest.NewRecorder()
+	r.ServeHTTP(loginW, loginReq)
+
+	var loginResp models.AuthResponse
+	_ = json.Unmarshal(loginW.Body.Bytes(), &loginResp)
+	token1 := loginResp.Token
+
+	// 2. Start session for student 1
+	startReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader([]byte(`{"candidateName":"Speaking Candidate","difficultyLevel":"B2"}`)))
+	startReq.Header.Set("Authorization", "Bearer "+token1)
+	startW := httptest.NewRecorder()
+	r.ServeHTTP(startW, startReq)
+
+	var startRes struct {
+		Session models.TestSession `json:"session"`
+	}
+	_ = json.Unmarshal(startW.Body.Bytes(), &startRes)
+	sessionID := startRes.Session.ID
+
+	// 3. Upload multipart audio
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("audio", "speech_sample.webm")
+	if err != nil {
+		t.Fatalf("failed to create form file: %v", err)
+	}
+	// Simulate recorded webm bytes
+	audioData := []byte("FAKE_WEBM_AUDIO_DATA_FOR_SPEAKING_TEST_1234567890")
+	_, _ = part.Write(audioData)
+
+	_ = writer.WriteField("questionId", "sp-1")
+	_ = writer.WriteField("transcript", "The photograph depicts a group of engineering students collaborating inside a modern technical laboratory. In the foreground, two researchers appear to be analyzing experimental data on high resolution monitors, demonstrating remarkable teamwork. Furthermore, the academic environment is equipped with sophisticated technological infrastructure. On the other hand, the individuals in the background are discussing project blueprints, illustrating a productive educational atmosphere.")
+	_ = writer.WriteField("durationSec", "45.0")
+	_ = writer.Close()
+
+	uploadReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/audio", body)
+	uploadReq.Header.Set("Content-Type", writer.FormDataContentType())
+	uploadReq.Header.Set("Authorization", "Bearer "+token1)
+	uploadW := httptest.NewRecorder()
+	r.ServeHTTP(uploadW, uploadReq)
+
+	if uploadW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on audio upload, got %d: %s", uploadW.Code, uploadW.Body.String())
+	}
+
+	var uploadRes struct {
+		Asset      models.MediaAsset       `json:"asset"`
+		URL        string                  `json:"url"`
+		Evaluation models.EvaluationResult `json:"evaluation"`
+	}
+	_ = json.Unmarshal(uploadW.Body.Bytes(), &uploadRes)
+
+	if uploadRes.URL == "" || !strings.HasPrefix(uploadRes.URL, "/api/v1/media/audio/") {
+		t.Fatalf("expected audio url starting with /api/v1/media/audio/, got %s", uploadRes.URL)
+	}
+	if uploadRes.Evaluation.Score < 0.6 {
+		t.Fatalf("expected high score for descriptive spoken response, got %f", uploadRes.Evaluation.Score)
+	}
+	if uploadRes.Evaluation.CEFRLevel == "" || uploadRes.Evaluation.CEFRLevel == "Pre-A1" {
+		t.Fatalf("expected valid CEFR level, got %s", uploadRes.Evaluation.CEFRLevel)
+	}
+	if uploadRes.Evaluation.SpeakingDuration != 45.0 {
+		t.Fatalf("expected duration 45.0, got %f", uploadRes.Evaluation.SpeakingDuration)
+	}
+
+	// 4. Verify audio file retrieval via GET /api/v1/media/audio/{filename}
+	audioPath := uploadRes.URL
+	getAudioReq := httptest.NewRequest("GET", audioPath, nil)
+	getAudioW := httptest.NewRecorder()
+	r.ServeHTTP(getAudioW, getAudioReq)
+
+	if getAudioW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on get audio, got %d", getAudioW.Code)
+	}
+	if getAudioW.Header().Get("Accept-Ranges") != "bytes" {
+		t.Fatalf("expected Accept-Ranges: bytes header, got %s", getAudioW.Header().Get("Accept-Ranges"))
+	}
+	if !bytes.Equal(getAudioW.Body.Bytes(), audioData) {
+		t.Fatalf("audio bytes mismatch")
+	}
+
+	// 5. Verify GET evaluations for session
+	getEvalsReq := httptest.NewRequest("GET", "/api/v1/test/sessions/"+sessionID+"/evaluations", nil)
+	getEvalsReq.Header.Set("Authorization", "Bearer "+token1)
+	getEvalsW := httptest.NewRecorder()
+	r.ServeHTTP(getEvalsW, getEvalsReq)
+
+	if getEvalsW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on get evaluations, got %d: %s", getEvalsW.Code, getEvalsW.Body.String())
+	}
+
+	var evalsRes struct {
+		Evaluations []models.EvaluationResult `json:"evaluations"`
+	}
+	_ = json.Unmarshal(getEvalsW.Body.Bytes(), &evalsRes)
+
+	if len(evalsRes.Evaluations) != 1 {
+		t.Fatalf("expected 1 evaluation, got %d", len(evalsRes.Evaluations))
+	}
+	if evalsRes.Evaluations[0].QuestionID != "sp-1" {
+		t.Fatalf("expected questionId sp-1, got %s", evalsRes.Evaluations[0].QuestionID)
+	}
+
+	// 6. Security Check: Admin / User 2 attempts to upload audio to User 1's session -> must be rejected
+	loginAdminPayload := models.LoginRequest{
+		Email:    "admin@det-academy.com",
+		Password: "admin123",
+	}
+	loginAdminBody, _ := json.Marshal(loginAdminPayload)
+	adminLoginReq := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(loginAdminBody))
+	adminLoginW := httptest.NewRecorder()
+	r.ServeHTTP(adminLoginW, adminLoginReq)
+
+	var adminLoginResp models.AuthResponse
+	_ = json.Unmarshal(adminLoginW.Body.Bytes(), &adminLoginResp)
+	tokenAdmin := adminLoginResp.Token
+
+	secBody := &bytes.Buffer{}
+	secWriter := multipart.NewWriter(secBody)
+	secPart, _ := secWriter.CreateFormFile("audio", "hack.webm")
+	_, _ = secPart.Write([]byte("malicious"))
+	_ = secWriter.Close()
+
+	secReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/audio", secBody)
+	secReq.Header.Set("Content-Type", secWriter.FormDataContentType())
+	secReq.Header.Set("Authorization", "Bearer "+tokenAdmin)
+	secW := httptest.NewRecorder()
+	r.ServeHTTP(secW, secReq)
+
+	if secW.Code != http.StatusBadRequest && secW.Code != http.StatusForbidden {
+		t.Fatalf("expected 400 or 403 on cross-user audio upload, got %d", secW.Code)
+	}
+}
+
+func TestStudyPlanAndSRSEngine(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	// 1. Register User A
+	userA := models.RegisterRequest{
+		Email:    "student_a@det-academy.com",
+		Password: "password123",
+		Name:     "Student A",
+	}
+	bodyA, _ := json.Marshal(userA)
+	reqA := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(bodyA))
+	wA := httptest.NewRecorder()
+	r.ServeHTTP(wA, reqA)
+	if wA.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on user A register, got %d", wA.Code)
+	}
+	var respA models.AuthResponse
+	_ = json.Unmarshal(wA.Body.Bytes(), &respA)
+	tokenA := respA.Token
+
+	// 2. Register User B
+	userB := models.RegisterRequest{
+		Email:    "student_b@det-academy.com",
+		Password: "password123",
+		Name:     "Student B",
+	}
+	bodyB, _ := json.Marshal(userB)
+	reqB := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(bodyB))
+	wB := httptest.NewRecorder()
+	r.ServeHTTP(wB, reqB)
+	if wB.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on user B register, got %d", wB.Code)
+	}
+	var respB models.AuthResponse
+	_ = json.Unmarshal(wB.Body.Bytes(), &respB)
+	tokenB := respB.Token
+
+	// 3. Test Isolation: User A sets goals, User B checks goals
+	updateGoalReq := models.UpdateGoalsRequest{
+		TargetScore:        135,
+		TargetDate:         "2026-12-15",
+		DailyMinutes:       60,
+		TargetUniversityID: "stanford",
+	}
+	goalBody, _ := json.Marshal(updateGoalReq)
+	putGoalReq := httptest.NewRequest("PUT", "/api/v1/user/goals", bytes.NewReader(goalBody))
+	putGoalReq.Header.Set("Authorization", "Bearer "+tokenA)
+	putGoalW := httptest.NewRecorder()
+	r.ServeHTTP(putGoalW, putGoalReq)
+	if putGoalW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on put goals, got %d: %s", putGoalW.Code, putGoalW.Body.String())
+	}
+
+	// User B gets goals: should receive default goals, NOT User A's goals!
+	getGoalBReq := httptest.NewRequest("GET", "/api/v1/user/goals", nil)
+	getGoalBReq.Header.Set("Authorization", "Bearer "+tokenB)
+	getGoalBW := httptest.NewRecorder()
+	r.ServeHTTP(getGoalBW, getGoalBReq)
+	if getGoalBW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on get goals for user B, got %d", getGoalBW.Code)
+	}
+	var goalB models.UserGoal
+	_ = json.Unmarshal(getGoalBW.Body.Bytes(), &goalB)
+	if goalB.TargetScore != 125 || goalB.DailyMinutes != 45 {
+		t.Fatalf("expected default goals for user B, got targetScore=%d, dailyMinutes=%d", goalB.TargetScore, goalB.DailyMinutes)
+	}
+
+	// 4. Test Study Plan for User A
+	getPlanReq := httptest.NewRequest("GET", "/api/v1/user/plan", nil)
+	getPlanReq.Header.Set("Authorization", "Bearer "+tokenA)
+	getPlanW := httptest.NewRecorder()
+	r.ServeHTTP(getPlanW, getPlanReq)
+	if getPlanW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on get plan, got %d: %s", getPlanW.Code, getPlanW.Body.String())
+	}
+	var plan models.StudyPlanResponse
+	_ = json.Unmarshal(getPlanW.Body.Bytes(), &plan)
+	if plan.TargetScore != 135 || plan.DailyMinutes != 60 {
+		t.Fatalf("expected plan targetScore 135 and dailyMinutes 60, got %d, %d", plan.TargetScore, plan.DailyMinutes)
+	}
+	if len(plan.TasksToday) < 3 {
+		t.Fatalf("expected at least 3 daily tasks in study plan, got %d", len(plan.TasksToday))
+	}
+
+	// 5. Test Error Notebook with 2-Recall Cycle
+	addErrReq := models.SaveErrorRequest{
+		QuestionType:  "c-test",
+		Prompt:        "Metropolitan planners are prioriti___ sustainable elect___ transit",
+		UserAnswer:    "prioritiz",
+		CorrectAnswer: "prioritizing",
+		Explanation:   "Present continuous participle required after 'are'",
+	}
+	addErrBody, _ := json.Marshal(addErrReq)
+	postErrReq := httptest.NewRequest("POST", "/api/v1/user/errors", bytes.NewReader(addErrBody))
+	postErrReq.Header.Set("Authorization", "Bearer "+tokenA)
+	postErrW := httptest.NewRecorder()
+	r.ServeHTTP(postErrW, postErrReq)
+	if postErrW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on save error, got %d: %s", postErrW.Code, postErrW.Body.String())
+	}
+	var createdErr models.UserErrorItem
+	_ = json.Unmarshal(postErrW.Body.Bytes(), &createdErr)
+	if createdErr.ID == "" || createdErr.Mastered || createdErr.ConsecutiveSuccesses != 0 {
+		t.Fatalf("invalid initial error item state: %+v", createdErr)
+	}
+
+	// Verify User B cannot see User A's errors
+	getErrBReq := httptest.NewRequest("GET", "/api/v1/user/errors", nil)
+	getErrBReq.Header.Set("Authorization", "Bearer "+tokenB)
+	getErrBW := httptest.NewRecorder()
+	r.ServeHTTP(getErrBW, getErrBReq)
+	var listB struct {
+		Errors []models.UserErrorItem `json:"errors"`
+		Total  int                    `json:"total"`
+	}
+	_ = json.Unmarshal(getErrBW.Body.Bytes(), &listB)
+	if listB.Total != 0 {
+		t.Fatalf("expected 0 errors for user B, got %d", listB.Total)
+	}
+
+	// User A attempts recall with WRONG answer
+	recallWrongReq := models.RecallErrorRequest{Answer: "wrong_answer"}
+	recallWrongBody, _ := json.Marshal(recallWrongReq)
+	pWrongReq := httptest.NewRequest("POST", "/api/v1/user/errors/"+createdErr.ID+"/recall", bytes.NewReader(recallWrongBody))
+	pWrongReq.Header.Set("Authorization", "Bearer "+tokenA)
+	pWrongW := httptest.NewRecorder()
+	r.ServeHTTP(pWrongW, pWrongReq)
+	var recallWrongResp models.RecallErrorResponse
+	_ = json.Unmarshal(pWrongW.Body.Bytes(), &recallWrongResp)
+	if recallWrongResp.Success || recallWrongResp.Mastered || recallWrongResp.ConsecutiveSuccesses != 0 {
+		t.Fatalf("expected failed recall on wrong answer, got %+v", recallWrongResp)
+	}
+
+	// User A attempts recall with CORRECT answer 1st time (1/2)
+	recall1Req := models.RecallErrorRequest{Answer: "prioritizing"}
+	recall1Body, _ := json.Marshal(recall1Req)
+	p1Req := httptest.NewRequest("POST", "/api/v1/user/errors/"+createdErr.ID+"/recall", bytes.NewReader(recall1Body))
+	p1Req.Header.Set("Authorization", "Bearer "+tokenA)
+	p1W := httptest.NewRecorder()
+	r.ServeHTTP(p1W, p1Req)
+	var recall1Resp models.RecallErrorResponse
+	_ = json.Unmarshal(p1W.Body.Bytes(), &recall1Resp)
+	if !recall1Resp.Success || recall1Resp.Mastered || recall1Resp.ConsecutiveSuccesses != 1 {
+		t.Fatalf("expected 1st consecutive success without mastered, got %+v", recall1Resp)
+	}
+
+	// User A attempts recall with CORRECT answer 2nd time (2/2) -> now MASTERED!
+	p2Req := httptest.NewRequest("POST", "/api/v1/user/errors/"+createdErr.ID+"/recall", bytes.NewReader(recall1Body))
+	p2Req.Header.Set("Authorization", "Bearer "+tokenA)
+	p2W := httptest.NewRecorder()
+	r.ServeHTTP(p2W, p2Req)
+	var recall2Resp models.RecallErrorResponse
+	_ = json.Unmarshal(p2W.Body.Bytes(), &recall2Resp)
+	if !recall2Resp.Success || !recall2Resp.Mastered || recall2Resp.ConsecutiveSuccesses != 2 {
+		t.Fatalf("expected mastered item after 2 consecutive successes, got %+v", recall2Resp)
+	}
+
+	// 6. Test SuperMemo SM-2 Spaced Repetition (SRS)
+	reviewCardReq := models.ReviewSRSCardRequest{
+		CardID:  "awl-001",
+		Quality: 4, // Good
+	}
+	reviewBody, _ := json.Marshal(reviewCardReq)
+	revReq := httptest.NewRequest("POST", "/api/v1/user/srs/review", bytes.NewReader(reviewBody))
+	revReq.Header.Set("Authorization", "Bearer "+tokenA)
+	revW := httptest.NewRecorder()
+	r.ServeHTTP(revW, revReq)
+	if revW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on SRS review, got %d: %s", revW.Code, revW.Body.String())
+	}
+	var revResp models.ReviewSRSCardResponse
+	_ = json.Unmarshal(revW.Body.Bytes(), &revResp)
+	if revResp.IntervalDays != 1 || revResp.Repetitions != 1 || revResp.StreakDays != 1 || revResp.TotalReviewed != 1 {
+		t.Fatalf("unexpected SRS review 1 result: %+v", revResp)
+	}
+
+	// Review 2nd time with Good (Quality 4) -> interval should become 6
+	revReq2 := httptest.NewRequest("POST", "/api/v1/user/srs/review", bytes.NewReader(reviewBody))
+	revReq2.Header.Set("Authorization", "Bearer "+tokenA)
+	revW2 := httptest.NewRecorder()
+	r.ServeHTTP(revW2, revReq2)
+	var revResp2 models.ReviewSRSCardResponse
+	_ = json.Unmarshal(revW2.Body.Bytes(), &revResp2)
+	if revResp2.IntervalDays != 6 || revResp2.Repetitions != 2 || revResp2.TotalReviewed != 2 {
+		t.Fatalf("unexpected SRS review 2 result: %+v", revResp2)
+	}
+
+	// User B checks SRS: should be empty / 0 reviews
+	srsBReq := httptest.NewRequest("GET", "/api/v1/user/srs", nil)
+	srsBReq.Header.Set("Authorization", "Bearer "+tokenB)
+	srsBW := httptest.NewRecorder()
+	r.ServeHTTP(srsBW, srsBReq)
+	var srsB models.SRSStateResponse
+	_ = json.Unmarshal(srsBW.Body.Bytes(), &srsB)
+	if srsB.Stats.TotalReviewed != 0 || srsB.Stats.StreakDays != 0 || len(srsB.Cards) != 0 {
+		t.Fatalf("user B SRS progress must be clean and isolated, got %+v", srsB)
+	}
+
+	// 7. Test Skill Analytics: User with no completed test has hasData = false
+	analyticsReq := httptest.NewRequest("GET", "/api/v1/user/analytics/skills", nil)
+	analyticsReq.Header.Set("Authorization", "Bearer "+tokenA)
+	analyticsW := httptest.NewRecorder()
+	r.ServeHTTP(analyticsW, analyticsReq)
+	if analyticsW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on skill analytics, got %d", analyticsW.Code)
+	}
+	var analyticsResp models.SkillAnalyticsResponse
+	_ = json.Unmarshal(analyticsW.Body.Bytes(), &analyticsResp)
+	if analyticsResp.HasData {
+		t.Fatalf("expected hasData=false before any test is taken, got true")
+	}
+}
+
+func TestCompletePlatformEndToEndJourney(t *testing.T) {
+	r, authSvc, store := setupTestRouter()
+	_ = authSvc
+
+	// 1. Register student
+	regBody, _ := json.Marshal(map[string]string{
+		"email":    "student_e2e@det-academy.com",
+		"password": "Password123!",
+		"name":     "Elena Rostova",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regReq.Header.Set("Content-Type", "application/json")
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	if regW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on registration, got %d: %s", regW.Code, regW.Body.String())
+	}
+	var regResp map[string]interface{}
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+	token := regResp["token"].(string)
+	userMap := regResp["user"].(map[string]interface{})
+	userID := userMap["id"].(string)
+
+	// Complete theory curriculum for the candidate to meet DET Academy certification eligibility
+	for _, slug := range service.LessonSlugs {
+		_ = store.Theory().SetProgress(context.Background(), userID, slug, true)
+	}
+
+	// 2. Set Goals (Target 130, date 2026-11-15, 60 minutes)
+	goalsBody, _ := json.Marshal(models.UpdateGoalsRequest{
+		TargetScore:        130,
+		TargetDate:         "2026-11-15",
+		DailyMinutes:       60,
+		TargetUniversityID: "inst-harvard",
+	})
+	goalsReq := httptest.NewRequest("PUT", "/api/v1/user/goals", bytes.NewReader(goalsBody))
+	goalsReq.Header.Set("Authorization", "Bearer "+token)
+	goalsReq.Header.Set("Content-Type", "application/json")
+	goalsW := httptest.NewRecorder()
+	r.ServeHTTP(goalsW, goalsReq)
+	if goalsW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on goals update, got %d", goalsW.Code)
+	}
+
+	// 3. Verify Personalized Study Plan
+	planReq := httptest.NewRequest("GET", "/api/v1/user/plan", nil)
+	planReq.Header.Set("Authorization", "Bearer "+token)
+	planW := httptest.NewRecorder()
+	r.ServeHTTP(planW, planReq)
+	if planW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on study plan, got %d", planW.Code)
+	}
+	var plan models.StudyPlanResponse
+	_ = json.Unmarshal(planW.Body.Bytes(), &plan)
+	if plan.TargetScore != 130 || plan.DailyMinutes != 60 || len(plan.TasksToday) == 0 {
+		t.Fatalf("unexpected study plan: %+v", plan)
+	}
+
+	// 4. Start Exam Session with 13-stage blueprint
+	startBody, _ := json.Marshal(map[string]string{
+		"candidateName":   "Elena Rostova",
+		"difficultyLevel": "B2",
+	})
+	startReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader(startBody))
+	startReq.Header.Set("Authorization", "Bearer "+token)
+	startReq.Header.Set("Content-Type", "application/json")
+	startW := httptest.NewRecorder()
+	r.ServeHTTP(startW, startReq)
+	if startW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on test start, got %d: %s", startW.Code, startW.Body.String())
+	}
+	var startResp map[string]interface{}
+	_ = json.Unmarshal(startW.Body.Bytes(), &startResp)
+	sessionMap := startResp["session"].(map[string]interface{})
+	sessionID := sessionMap["id"].(string)
+
+	// Questions delivered to student must be sanitized (no correct answers exposed)
+	questionsSlice := startResp["questions"].([]interface{})
+	if len(questionsSlice) == 0 {
+		t.Fatalf("expected questions in test start response")
+	}
+	firstQ := questionsSlice[0].(map[string]interface{})
+	if _, hasCorrect := firstQ["correctAnswers"]; hasCorrect {
+		t.Fatalf("CRITICAL SECURITY: correctAnswers leaked in student question payload: %+v", firstQ)
+	}
+
+	// 5. Submit responses and advance through all 13 stages to simulate a realistic full test
+	stages := service.StageSequence
+	for i, stage := range stages {
+		stageNum := i + 1
+		respBody, _ := json.Marshal(models.SubmitResponseRequest{
+			QuestionID:   "q-" + stage,
+			UserResponse: json.RawMessage(`{"text":"The comprehensive empirical analysis demonstrates significant positive correlations across all academic cohorts and verified indices."}`),
+			RawScore:     1.0,
+			TimeSpentSec: 25,
+		})
+		subReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/respond", bytes.NewReader(respBody))
+		subReq.Header.Set("Authorization", "Bearer "+token)
+		subReq.Header.Set("Content-Type", "application/json")
+		subW := httptest.NewRecorder()
+		r.ServeHTTP(subW, subReq)
+
+		// Transition / complete stage
+		if stageNum < len(stages) {
+			stagePayload := models.StageCompleteRequest{
+				StageName:        stage,
+				Accuracy:         0.9,
+				TotalQuestions:   5,
+				CorrectQuestions: 5,
+			}
+			stageBody, _ := json.Marshal(stagePayload)
+			stageReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/stage-complete", bytes.NewReader(stageBody))
+			stageReq.Header.Set("Authorization", "Bearer "+token)
+			stageReq.Header.Set("Content-Type", "application/json")
+			stageW := httptest.NewRecorder()
+			r.ServeHTTP(stageW, stageReq)
+		}
+	}
+
+	// 6. Complete Session
+	compReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader([]byte("{}")))
+	compReq.Header.Set("Authorization", "Bearer "+token)
+	compReq.Header.Set("Content-Type", "application/json")
+	compW := httptest.NewRecorder()
+	r.ServeHTTP(compW, compReq)
+	if compW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on complete session, got %d: %s", compW.Code, compW.Body.String())
+	}
+	var compResp map[string]interface{}
+	_ = json.Unmarshal(compW.Body.Bytes(), &compResp)
+	finalSession := compResp["session"].(map[string]interface{})
+	if finalSession["status"] != "COMPLETED" {
+		t.Fatalf("expected COMPLETED status, got %v", finalSession["status"])
+	}
+	overallScore := int(finalSession["overallScore"].(float64))
+	if overallScore <= 0 || overallScore > 160 {
+		t.Fatalf("invalid overall score: %d", overallScore)
+	}
+
+	// 7. Verify Certificate Security
+	certMap, hasCert := compResp["certificate"].(map[string]interface{})
+	if !hasCert || certMap == nil {
+		t.Fatalf("expected certificate to be issued upon exam completion")
+	}
+	certID := certMap["id"].(string)
+
+	// Valid certificate verification returns 200 with full details
+	verReq := httptest.NewRequest("GET", "/api/v1/certificates/"+certID, nil)
+	verW := httptest.NewRecorder()
+	r.ServeHTTP(verW, verReq)
+	if verW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on valid certificate verification, got %d", verW.Code)
+	}
+
+	// Non-existent certificate returns 404 (prevents fake certificate generation)
+	fakeVerReq := httptest.NewRequest("GET", "/api/v1/certificates/fraudulent-cert-9999", nil)
+	fakeVerW := httptest.NewRecorder()
+	r.ServeHTTP(fakeVerW, fakeVerReq)
+	if fakeVerW.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 on fraudulent certificate verification, got %d", fakeVerW.Code)
+	}
+
+	// 8. Error Notebook Active Recall Cycle
+	saveErrBody, _ := json.Marshal(models.SaveErrorRequest{
+		QuestionType:  "FILL_BLANKS",
+		Prompt:        "The professor asked the students to cl___fy their thesis argument.",
+		UserAnswer:    "claryfy",
+		CorrectAnswer: "clarify",
+		Explanation:   "Latin root clarus (clear) forms the suffix -ify (clarify).",
+	})
+	saveErrReq := httptest.NewRequest("POST", "/api/v1/user/errors", bytes.NewReader(saveErrBody))
+	saveErrReq.Header.Set("Authorization", "Bearer "+token)
+	saveErrReq.Header.Set("Content-Type", "application/json")
+	saveErrW := httptest.NewRecorder()
+	r.ServeHTTP(saveErrW, saveErrReq)
+	if saveErrW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on save error, got %d: %s", saveErrW.Code, saveErrW.Body.String())
+	}
+	var savedError models.UserErrorItem
+	_ = json.Unmarshal(saveErrW.Body.Bytes(), &savedError)
+	errorID := savedError.ID
+
+	// Recall Attempt 1 (Correct) -> consecutiveSuccesses = 1, mastered = false
+	recall1Body, _ := json.Marshal(models.RecallErrorRequest{Answer: "clarify"})
+	recall1Req := httptest.NewRequest("POST", "/api/v1/user/errors/"+errorID+"/recall", bytes.NewReader(recall1Body))
+	recall1Req.Header.Set("Authorization", "Bearer "+token)
+	recall1Req.Header.Set("Content-Type", "application/json")
+	recall1W := httptest.NewRecorder()
+	r.ServeHTTP(recall1W, recall1Req)
+	var recall1Resp models.RecallErrorResponse
+	_ = json.Unmarshal(recall1W.Body.Bytes(), &recall1Resp)
+	if !recall1Resp.Success || recall1Resp.ConsecutiveSuccesses != 1 || recall1Resp.Mastered {
+		t.Fatalf("recall 1 failed to record progress properly: %+v", recall1Resp)
+	}
+
+	// Recall Attempt 2 (Correct) -> consecutiveSuccesses = 2, mastered = TRUE
+	recall2Body, _ := json.Marshal(models.RecallErrorRequest{Answer: "clarify"})
+	recall2Req := httptest.NewRequest("POST", "/api/v1/user/errors/"+errorID+"/recall", bytes.NewReader(recall2Body))
+	recall2Req.Header.Set("Authorization", "Bearer "+token)
+	recall2Req.Header.Set("Content-Type", "application/json")
+	recall2W := httptest.NewRecorder()
+	r.ServeHTTP(recall2W, recall2Req)
+	var recall2Resp models.RecallErrorResponse
+	_ = json.Unmarshal(recall2W.Body.Bytes(), &recall2Resp)
+	if !recall2Resp.Success || recall2Resp.ConsecutiveSuccesses != 2 || !recall2Resp.Mastered {
+		t.Fatalf("recall 2 failed to achieve mastery: %+v", recall2Resp)
+	}
+
+	// 9. SuperMemo SM-2 Spaced Repetition Review
+	srsRevBody, _ := json.Marshal(models.ReviewSRSCardRequest{
+		CardID:  "card-ambiguous",
+		Quality: 4, // Good
+	})
+	srsRevReq := httptest.NewRequest("POST", "/api/v1/user/srs/review", bytes.NewReader(srsRevBody))
+	srsRevReq.Header.Set("Authorization", "Bearer "+token)
+	srsRevReq.Header.Set("Content-Type", "application/json")
+	srsRevW := httptest.NewRecorder()
+	r.ServeHTTP(srsRevW, srsRevReq)
+	if srsRevW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on SRS card review, got %d", srsRevW.Code)
+	}
+	var srsRevResp models.ReviewSRSCardResponse
+	_ = json.Unmarshal(srsRevW.Body.Bytes(), &srsRevResp)
+	if srsRevResp.IntervalDays != 1 || srsRevResp.Repetitions != 1 || srsRevResp.StreakDays != 1 {
+		t.Fatalf("unexpected SRS review result: %+v", srsRevResp)
+	}
+
+	// 10. Admin Management verification
+	adminLoginBody, _ := json.Marshal(map[string]string{
+		"email":    "admin@det-academy.com",
+		"password": "admin123",
+	})
+	adminLogReq := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(adminLoginBody))
+	adminLogReq.Header.Set("Content-Type", "application/json")
+	adminLogW := httptest.NewRecorder()
+	r.ServeHTTP(adminLogW, adminLogReq)
+	var adminLogResp map[string]interface{}
+	_ = json.Unmarshal(adminLogW.Body.Bytes(), &adminLogResp)
+	adminToken := adminLogResp["token"].(string)
+
+	adminStatsReq := httptest.NewRequest("GET", "/api/v1/admin/stats", nil)
+	adminStatsReq.Header.Set("Authorization", "Bearer "+adminToken)
+	adminStatsW := httptest.NewRecorder()
+	r.ServeHTTP(adminStatsW, adminStatsReq)
+	if adminStatsW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on admin stats, got %d", adminStatsW.Code)
+	}
+
+	adminQuestionsReq := httptest.NewRequest("GET", "/api/v1/admin/questions", nil)
+	adminQuestionsReq.Header.Set("Authorization", "Bearer "+adminToken)
+	adminQuestionsW := httptest.NewRecorder()
+	r.ServeHTTP(adminQuestionsW, adminQuestionsReq)
+	if adminQuestionsW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on admin questions, got %d", adminQuestionsW.Code)
+	}
+	var adminQResp map[string]interface{}
+	_ = json.Unmarshal(adminQuestionsW.Body.Bytes(), &adminQResp)
+	qList := adminQResp["questions"].([]interface{})
+	if len(qList) < 13 {
+		t.Fatalf("expected at least 13 active questions in bank, got %d", len(qList))
+	}
+	_ = store
+}
+

@@ -1,21 +1,24 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalculatedScores } from '@/lib/scoring';
+import { api, EvaluationResult } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { Award, ArrowRight, RotateCcw, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Award, RotateCcw, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SubscoresRadarChart } from '@/components/analytics/SubscoresRadarChart';
+import { RubricFeedbackCard } from '@/components/audio/RubricFeedbackCard';
 
 interface TestResultModalProps {
   scores: CalculatedScores;
   candidateName: string;
   isEligibleForCert: boolean;
   certificateId?: string;
+  sessionId?: string;
   onRetake: () => void;
 }
 
@@ -24,18 +27,35 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
   candidateName,
   isEligibleForCert,
   certificateId,
+  sessionId,
   onRetake,
 }) => {
   const { locale } = useSettingsStore();
   const t = translations[locale].testResults;
 
-  React.useEffect(() => {
+  const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
+  const [loadingEvals, setLoadingEvals] = useState(false);
+
+  useEffect(() => {
     try {
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
     } catch {
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    setLoadingEvals(true);
+    api.getSessionEvaluations(sessionId)
+      .then((res) => {
+        if (res?.evaluations) {
+          setEvaluations(res.evaluations);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingEvals(false));
+  }, [sessionId]);
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
@@ -121,6 +141,32 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                   <div className="text-2xl font-black text-blue-400 font-mono">{scores.conversation}</div>
                 </div>
               </div>
+
+              {scores.reading && scores.listening && scores.writing && scores.speaking ? (
+                <div className="pt-3 border-t border-neutral-800">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-2">
+                    Individual Skills:
+                  </span>
+                  <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 block">Reading</span>
+                      <span className="font-bold font-mono text-white text-sm">{scores.reading}</span>
+                    </div>
+                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 block">Listening</span>
+                      <span className="font-bold font-mono text-white text-sm">{scores.listening}</span>
+                    </div>
+                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 block">Writing</span>
+                      <span className="font-bold font-mono text-white text-sm">{scores.writing}</span>
+                    </div>
+                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 block">Speaking</span>
+                      <span className="font-bold font-mono text-white text-sm">{scores.speaking}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -145,6 +191,32 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             </Button>
           </Link>
         </div>
+
+        {/* Speaking & Writing Studio Breakdown */}
+        {evaluations.length > 0 && (
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#D2F544]" />
+              <h3 className="text-lg sm:text-xl font-bold text-white">
+                Разбор устной и письменной речи (Speaking & Writing Studio)
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-400">
+              Серверная оценка по рубрикам Duolingo English Test: анализ лексического разнообразия (TTR), академического словаря, структуры и беглости речи.
+            </p>
+            <div className="space-y-4">
+              {evaluations.map((ev) => (
+                <RubricFeedbackCard key={ev.id} evaluation={ev} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loadingEvals && (
+          <div className="p-6 text-center text-xs text-neutral-400 border border-neutral-800 rounded-2xl mb-8">
+            Загрузка детального разбора ответов...
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-800">

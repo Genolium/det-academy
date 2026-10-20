@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Institution, api } from '@/lib/api';
 import { directusCms } from '@/lib/directus';
-import { PillBadge } from '@/components/ui/PillBadge';
-import { Search, MapPin, Globe, ExternalLink, Filter, GraduationCap, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, ExternalLink, Filter, GraduationCap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
@@ -138,69 +137,6 @@ export const InstitutionsMap: React.FC = () => {
     setFilteredInstitutions(result);
   }, [search, selectedCountry, selectedCategory, minScoreFilter, subscoreFilter, institutions]);
 
-  // 3. Initialize Leaflet Map safely in client
-  useEffect(() => {
-    if (typeof window === 'undefined' || !mapContainerRef.current) return;
-
-    // Load leaflet css dynamically if not already loaded
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-
-    let isSubscribed = true;
-
-    // Dynamically import Leaflet
-    import('leaflet').then((L) => {
-      if (!isSubscribed || !mapContainerRef.current) return;
-
-      // Clean existing map instance if any
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-
-      // Initialize map centered at global view (Europe / Atlantic view)
-      const map = L.map(mapContainerRef.current, {
-        center: [38.0, -20.0],
-        zoom: 3,
-        minZoom: 2,
-        maxZoom: 18,
-        scrollWheelZoom: false,
-      });
-
-      // OpenStreetMap Standard Tiles (100% Free, no API key required)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
-
-      mapInstanceRef.current = map;
-      updateMarkers(L, map, filteredInstitutions);
-    });
-
-    return () => {
-      isSubscribed = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, []);
-
-  // 4. Update markers on map when filteredInstitutions changes
-  useEffect(() => {
-    if (!mapInstanceRef.current || typeof window === 'undefined') return;
-
-    import('leaflet').then((L) => {
-      if (!mapInstanceRef.current) return;
-      updateMarkers(L, mapInstanceRef.current, filteredInstitutions);
-    });
-  }, [filteredInstitutions]);
-
   // Helper to draw markers with performance cap for viewport responsiveness
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMarkers = (L: any, map: any, list: Institution[]) => {
@@ -285,6 +221,69 @@ export const InstitutionsMap: React.FC = () => {
       markersRef.current.push(marker);
     });
   };
+
+  // 3. Initialize Leaflet Map safely in client
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mapContainerRef.current) return;
+
+    // Load leaflet css dynamically if not already loaded
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    let isSubscribed = true;
+
+    // Dynamically import Leaflet
+    import('leaflet').then((L) => {
+      if (!isSubscribed || !mapContainerRef.current) return;
+
+      // Clean existing map instance if any
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+
+      // Initialize map centered at global view (Europe / Atlantic view)
+      const map = L.map(mapContainerRef.current, {
+        center: [38.0, -20.0],
+        zoom: 3,
+        minZoom: 2,
+        maxZoom: 18,
+        scrollWheelZoom: false,
+      });
+
+      // OpenStreetMap Standard Tiles (100% Free, no API key required)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+      updateMarkers(L, map, filteredInstitutions);
+    });
+
+    return () => {
+      isSubscribed = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // 4. Update markers on map when filteredInstitutions changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || typeof window === 'undefined') return;
+
+    import('leaflet').then((L) => {
+      if (!mapInstanceRef.current) return;
+      updateMarkers(L, mapInstanceRef.current, filteredInstitutions);
+    });
+  }, [filteredInstitutions]);
 
   const handleFocusInstitution = (inst: Institution) => {
     setSelectedInstitution(inst);
@@ -395,7 +394,7 @@ export const InstitutionsMap: React.FC = () => {
           <div className="md:col-span-3">
             <select
               value={subscoreFilter}
-              onChange={(e) => setSubscoreFilter(e.target.value as any)}
+              onChange={(e) => setSubscoreFilter(e.target.value as 'ANY' | 'WRITING_120' | 'LITERACY_120' | 'ALL_115' | 'CONVERSATION_120')}
               className="w-full bg-emerald-50/70 border border-emerald-300 focus:border-emerald-600 rounded-2xl px-3 py-3 text-xs sm:text-sm font-bold text-emerald-900 outline-none cursor-pointer"
             >
               <option value="ANY">{t.subscoreAny}</option>

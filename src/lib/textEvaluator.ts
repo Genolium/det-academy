@@ -61,8 +61,37 @@ export function evaluateWriteAboutPhoto(
 ): TextRubricFeedback {
   const words = tokenizeWords(userText);
   const wordCount = words.length;
+
+  if (wordCount === 0) {
+    return {
+      score: 0.0,
+      wordCount: 0,
+      uniqueWordsCount: 0,
+      lexicalDiversityRatio: 0.0,
+      academicWordsUsed: [],
+      connectorsUsed: [],
+      relevanceKeywordsFound: [],
+      relevanceScore: 0.0,
+      recommendations: ['Ответ отсутствует. В официальном тесте DET за неотвеченные задания начисляется 0 баллов.'],
+    };
+  }
+
+  if (wordCount < 5) {
+    return {
+      score: 0.05,
+      wordCount,
+      uniqueWordsCount: new Set(words).size,
+      lexicalDiversityRatio: Math.round((new Set(words).size / wordCount) * 100) / 100,
+      academicWordsUsed: [],
+      connectorsUsed: [],
+      relevanceKeywordsFound: [],
+      relevanceScore: 0.05,
+      recommendations: ['Ответ слишком короткий (менее 5 слов) для оценки. Сформулируйте развернутый ответ.'],
+    };
+  }
+
   const uniqueWords = new Set(words);
-  const ttr = wordCount > 0 ? uniqueWords.size / wordCount : 0;
+  const ttr = uniqueWords.size / wordCount;
 
   // Extract reference keywords from alt text or list
   const referenceKeywords: string[] = [];
@@ -102,10 +131,10 @@ export function evaluateWriteAboutPhoto(
   const spatialMatches = spatialMarkers.filter((s) => lowerText.includes(s));
 
   const semanticHits = matchedKeywords.length + spatialMatches.length;
-  const relevanceScore = Math.min(1.0, Math.max(0.3, semanticHits / 3.0));
+  const relevanceScore = Math.min(1.0, Math.max(0.2, semanticHits / 3.0));
 
   // Word count score: DET recommends 25-45 words for 60 seconds
-  let volumeScore = 0.4;
+  let volumeScore = 0.3;
   if (wordCount >= 25 && wordCount <= 55) {
     volumeScore = 1.0;
   } else if (wordCount > 55) {
@@ -117,7 +146,7 @@ export function evaluateWriteAboutPhoto(
   }
 
   // Lexical diversity score (penalize excessive repetitions)
-  const diversityScore = Math.min(1.0, Math.max(0.4, ttr * 1.2));
+  const diversityScore = Math.min(1.0, Math.max(0.3, ttr * 1.2));
 
   // Weighted overall rubric score [0.0 .. 1.0]
   const finalScore = volumeScore * 0.4 + relevanceScore * 0.4 + diversityScore * 0.2;
@@ -134,7 +163,7 @@ export function evaluateWriteAboutPhoto(
   }
 
   return {
-    score: Math.min(1.0, Math.max(0.1, finalScore)),
+    score: Math.min(1.0, Math.max(0.05, finalScore)),
     wordCount,
     uniqueWordsCount: uniqueWords.size,
     lexicalDiversityRatio: Math.round(ttr * 100) / 100,
@@ -156,8 +185,37 @@ export function evaluateEssayWriting(
 ): TextRubricFeedback {
   const words = tokenizeWords(userText);
   const wordCount = words.length;
+
+  if (wordCount === 0) {
+    return {
+      score: 0.0,
+      wordCount: 0,
+      uniqueWordsCount: 0,
+      lexicalDiversityRatio: 0.0,
+      academicWordsUsed: [],
+      connectorsUsed: [],
+      relevanceKeywordsFound: [],
+      relevanceScore: 0.0,
+      recommendations: ['Ответ отсутствует. В официальном тесте DET за неотвеченные задания начисляется 0 баллов.'],
+    };
+  }
+
+  if (wordCount < 5) {
+    return {
+      score: 0.05,
+      wordCount,
+      uniqueWordsCount: new Set(words).size,
+      lexicalDiversityRatio: Math.round((new Set(words).size / wordCount) * 100) / 100,
+      academicWordsUsed: [],
+      connectorsUsed: [],
+      relevanceKeywordsFound: [],
+      relevanceScore: 0.05,
+      recommendations: ['Ответ слишком короткий (менее 5 слов) для оценки. Сформулируйте развернутый ответ.'],
+    };
+  }
+
   const uniqueWords = new Set(words);
-  const ttr = wordCount > 0 ? uniqueWords.size / wordCount : 0;
+  const ttr = uniqueWords.size / wordCount;
 
   // Academic words and connectors
   const academicFound = words.filter((w) => ACADEMIC_VOCABULARY.includes(w));
@@ -179,15 +237,15 @@ export function evaluateEssayWriting(
 
   // Relevance factor
   const relevanceScore = promptTopicKeywords.length > 0
-    ? Math.min(1.0, Math.max(0.4, (matchedKeywords.length / Math.min(promptTopicKeywords.length, 3)) + 0.3))
-    : 0.9;
+    ? Math.min(1.0, Math.max(0.2, (matchedKeywords.length / Math.min(promptTopicKeywords.length, 3)) + 0.2))
+    : 0.85;
 
   // Volume factor
   const volumeRatio = Math.min(1.2, wordCount / Math.max(1, minWordTarget));
-  const volumeScore = Math.min(1.0, Math.max(0.3, volumeRatio));
+  const volumeScore = Math.min(1.0, Math.max(0.2, volumeRatio));
 
   // Diversity & complexity factor
-  const diversityScore = Math.min(1.0, Math.max(0.4, ttr * 1.3));
+  const diversityScore = Math.min(1.0, Math.max(0.3, ttr * 1.3));
   const structureBonus = Math.min(0.2, connectorsFound.length * 0.05 + uniqueAcademic.length * 0.04);
 
   const finalScore = Math.min(1.0, volumeScore * 0.45 + relevanceScore * 0.25 + diversityScore * 0.2 + structureBonus);
@@ -204,7 +262,7 @@ export function evaluateEssayWriting(
   }
 
   return {
-    score: Math.min(1.0, Math.max(0.1, finalScore)),
+    score: Math.min(1.0, Math.max(0.05, finalScore)),
     wordCount,
     uniqueWordsCount: uniqueWords.size,
     lexicalDiversityRatio: Math.round(ttr * 100) / 100,

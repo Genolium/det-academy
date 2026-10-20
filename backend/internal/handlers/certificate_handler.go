@@ -41,7 +41,13 @@ func (h *CertificateHandler) IssueCertificate(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	cert, err := h.certService.IssueCertificate(r.Context(), req.TestSessionID)
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required to issue certificate")
+		return
+	}
+
+	cert, err := h.certService.IssueCertificate(r.Context(), req.TestSessionID, userID)
 	if err != nil {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return

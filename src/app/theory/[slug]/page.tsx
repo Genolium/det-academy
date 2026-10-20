@@ -44,7 +44,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           number: dLesson.number,
           titleRu: dLesson.title_ru,
           titleEn: dLesson.title_en,
-          category: dLesson.category as any,
+          category: dLesson.category as LessonGuide['category'],
           categoryLabelRu: dLesson.category_label_ru,
           categoryLabelEn: dLesson.category_label_en,
           format: dLesson.format,

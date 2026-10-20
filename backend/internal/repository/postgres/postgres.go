@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type PostgresStorage struct {
 	certificates *CertRepo
 	banners      *BannerRepo
 	institutions *InstitutionRepo
+	study        *StudyRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -52,6 +54,7 @@ func New(dbURL string) (*PostgresStorage, error) {
 		certificates: &CertRepo{db: db},
 		banners:      &BannerRepo{db: db},
 		institutions: &InstitutionRepo{db: db},
+		study:        &StudyRepo{db: db},
 	}
 
 	return s, nil
@@ -64,6 +67,7 @@ func (s *PostgresStorage) Sessions() repository.TestSessionRepository     { retu
 func (s *PostgresStorage) Certificates() repository.CertificateRepository { return s.certificates }
 func (s *PostgresStorage) Banners() repository.BannerRepository           { return s.banners }
 func (s *PostgresStorage) Institutions() repository.InstitutionRepository { return s.institutions }
+func (s *PostgresStorage) Study() repository.StudyRepository               { return s.study }
 func (s *PostgresStorage) Close() error                                   { return s.db.Close() }
 
 // --- Users ---
@@ -383,25 +387,27 @@ type SessionRepo struct{ db *sql.DB }
 
 func (r *SessionRepo) Create(ctx context.Context, s *models.TestSession) error {
 	query := `
-		INSERT INTO test_sessions (id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO test_sessions (id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, reading_score, listening_score, writing_score, speaking_score, deadline_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
-	_, err := r.db.ExecContext(ctx, query, s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel, s.CreatedAt)
+	_, err := r.db.ExecContext(ctx, query, s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel, s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore, s.DeadlineAt, s.CreatedAt)
 	return err
 }
 
 func (r *SessionRepo) GetByID(ctx context.Context, id string) (*models.TestSession, error) {
 	query := `
 		SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level,
-		       overall_score, literacy_score, comprehension_score, production_score, conversation_score,
-		       created_at, completed_at
+		       overall_score, reading_score, listening_score, writing_score, speaking_score,
+		       literacy_score, comprehension_score, production_score, conversation_score,
+		       deadline_at, created_at, completed_at
 		FROM test_sessions WHERE id = $1
 	`
 	var s models.TestSession
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel,
-		&s.OverallScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore,
-		&s.CreatedAt, &s.CompletedAt,
+		&s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore,
+		&s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore,
+		&s.DeadlineAt, &s.CreatedAt, &s.CompletedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -413,14 +419,16 @@ func (r *SessionRepo) Update(ctx context.Context, s *models.TestSession) error {
 	query := `
 		UPDATE test_sessions
 		SET status = $1, current_stage = $2, stage_name = $3, difficulty_level = $4,
-		    overall_score = $5, literacy_score = $6, comprehension_score = $7,
-		    production_score = $8, conversation_score = $9, completed_at = $10
-		WHERE id = $11
+		    overall_score = $5, reading_score = $6, listening_score = $7, writing_score = $8, speaking_score = $9,
+		    literacy_score = $10, comprehension_score = $11, production_score = $12, conversation_score = $13,
+		    deadline_at = $14, completed_at = $15
+		WHERE id = $16
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel,
-		s.OverallScore, s.LiteracyScore, s.ComprehensionScore,
-		s.ProductionScore, s.ConversationScore, s.CompletedAt, s.ID,
+		s.OverallScore, s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore,
+		s.LiteracyScore, s.ComprehensionScore, s.ProductionScore, s.ConversationScore,
+		s.DeadlineAt, s.CompletedAt, s.ID,
 	)
 	return err
 }
@@ -456,7 +464,7 @@ func (r *SessionRepo) GetSessionResponses(ctx context.Context, sessionID string)
 }
 
 func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error) {
-	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, literacy_score, comprehension_score, production_score, conversation_score, created_at, completed_at FROM test_sessions WHERE user_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions WHERE user_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -466,7 +474,7 @@ func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]mod
 	var sessions []models.TestSession
 	for rows.Next() {
 		var s models.TestSession
-		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.CreatedAt, &s.CompletedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)
@@ -475,7 +483,7 @@ func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]mod
 }
 
 func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestSession, error) {
-	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, literacy_score, comprehension_score, production_score, conversation_score, created_at, completed_at FROM test_sessions ORDER BY created_at DESC LIMIT $1`
+	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions ORDER BY created_at DESC LIMIT $1`
 	rows, err := r.db.QueryContext(ctx, query, limit)
 	if err != nil {
 		return nil, err
@@ -485,7 +493,7 @@ func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestS
 	var sessions []models.TestSession
 	for rows.Next() {
 		var s models.TestSession
-		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.CreatedAt, &s.CompletedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)
@@ -534,24 +542,114 @@ func (r *SessionRepo) GetStats(ctx context.Context) (int, int, float64, map[stri
 	return total, completed, avg, scoreDist, nil
 }
 
+func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
+	query := `
+		INSERT INTO evaluations (
+			id, response_id, session_id, question_id, question_type, status, score,
+			word_count, unique_words, lexical_diversity, academic_words, connectors,
+			relevance_score, cefr_level, speaking_duration, wpm, recommendations,
+			audio_url, transcript, created_at
+		) VALUES (
+			$1, NULLIF($2, '')::uuid, $3, $4, $5, $6, $7,
+			$8, $9, $10, $11, $12,
+			$13, $14, $15, $16, $17,
+			$18, $19, $20
+		)
+	`
+	academicJSON, _ := json.Marshal(eval.AcademicWords)
+	connectorsJSON, _ := json.Marshal(eval.Connectors)
+	recsJSON, _ := json.Marshal(eval.Recommendations)
+
+	_, err := r.db.ExecContext(ctx, query,
+		eval.ID, eval.ResponseID, eval.SessionID, eval.QuestionID, eval.QuestionType, eval.Status, eval.Score,
+		eval.WordCount, eval.UniqueWords, eval.LexicalDiversity, academicJSON, connectorsJSON,
+		eval.RelevanceScore, eval.CEFRLevel, eval.SpeakingDuration, eval.WPM, recsJSON,
+		eval.AudioURL, eval.Transcript, eval.CreatedAt,
+	)
+	return err
+}
+
+func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error) {
+	query := `
+		SELECT id, COALESCE(response_id::text, ''), session_id, question_id, question_type, status, score,
+		       word_count, unique_words, lexical_diversity, academic_words, connectors,
+		       relevance_score, cefr_level, speaking_duration, wpm, recommendations,
+		       audio_url, transcript, created_at
+		FROM evaluations WHERE session_id = $1 ORDER BY created_at ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var evals []models.EvaluationResult
+	for rows.Next() {
+		var e models.EvaluationResult
+		var academicJSON, connectorsJSON, recsJSON []byte
+		if err := rows.Scan(
+			&e.ID, &e.ResponseID, &e.SessionID, &e.QuestionID, &e.QuestionType, &e.Status, &e.Score,
+			&e.WordCount, &e.UniqueWords, &e.LexicalDiversity, &academicJSON, &connectorsJSON,
+			&e.RelevanceScore, &e.CEFRLevel, &e.SpeakingDuration, &e.WPM, &recsJSON,
+			&e.AudioURL, &e.Transcript, &e.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal(academicJSON, &e.AcademicWords)
+		_ = json.Unmarshal(connectorsJSON, &e.Connectors)
+		_ = json.Unmarshal(recsJSON, &e.Recommendations)
+		evals = append(evals, e)
+	}
+	return evals, nil
+}
+
+func (r *SessionRepo) SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error {
+	query := `
+		INSERT INTO media_assets (
+			id, user_id, session_id, question_id, file_type, file_path, url, file_size, duration_sec, created_at
+		) VALUES (
+			$1, $2, NULLIF($3, '')::uuid, $4, $5, $6, $7, $8, $9, $10
+		)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		asset.ID, asset.UserID, asset.SessionID, asset.QuestionID, asset.FileType, asset.FilePath, asset.URL, asset.FileSize, asset.DurationSec, asset.CreatedAt,
+	)
+	return err
+}
+
+func (r *SessionRepo) GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error) {
+	query := `
+		SELECT id, user_id, COALESCE(session_id::text, ''), question_id, file_type, file_path, url, file_size, duration_sec, created_at
+		FROM media_assets WHERE id = $1
+	`
+	var a models.MediaAsset
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&a.ID, &a.UserID, &a.SessionID, &a.QuestionID, &a.FileType, &a.FilePath, &a.URL, &a.FileSize, &a.DurationSec, &a.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
 // --- Certificates ---
 
 type CertRepo struct{ db *sql.DB }
 
 func (r *CertRepo) Create(ctx context.Context, c *models.Certificate) error {
 	query := `
-		INSERT INTO certificates (id, user_id, test_session_id, candidate_name, overall_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO certificates (id, user_id, test_session_id, candidate_name, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
-	_, err := r.db.ExecContext(ctx, query, c.ID, c.UserID, c.TestSessionID, c.CandidateName, c.OverallScore, c.LiteracyScore, c.ComprehensionScore, c.ProductionScore, c.ConversationScore, c.IssuedAt, c.PDFURL)
+	_, err := r.db.ExecContext(ctx, query, c.ID, c.UserID, c.TestSessionID, c.CandidateName, c.OverallScore, c.ReadingScore, c.ListeningScore, c.WritingScore, c.SpeakingScore, c.LiteracyScore, c.ComprehensionScore, c.ProductionScore, c.ConversationScore, c.IssuedAt, c.PDFURL)
 	return err
 }
 
 func (r *CertRepo) GetByID(ctx context.Context, id string) (*models.Certificate, error) {
-	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE id = $1`
+	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE id = $1`
 	var c models.Certificate
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL,
+		&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.ReadingScore, &c.ListeningScore, &c.WritingScore, &c.SpeakingScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL,
 	)
 	if err != nil {
 		return nil, err
@@ -561,7 +659,7 @@ func (r *CertRepo) GetByID(ctx context.Context, id string) (*models.Certificate,
 }
 
 func (r *CertRepo) GetByUserID(ctx context.Context, userID string) ([]models.Certificate, error) {
-	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE user_id = $1 ORDER BY issued_at DESC`
+	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE user_id = $1 ORDER BY issued_at DESC`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -571,7 +669,7 @@ func (r *CertRepo) GetByUserID(ctx context.Context, userID string) ([]models.Cer
 	var certs []models.Certificate
 	for rows.Next() {
 		var c models.Certificate
-		if err := rows.Scan(&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL); err != nil {
+		if err := rows.Scan(&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.ReadingScore, &c.ListeningScore, &c.WritingScore, &c.SpeakingScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL); err != nil {
 			return nil, err
 		}
 		c.IsVerified = true
@@ -581,10 +679,10 @@ func (r *CertRepo) GetByUserID(ctx context.Context, userID string) ([]models.Cer
 }
 
 func (r *CertRepo) GetBySessionID(ctx context.Context, sessionID string) (*models.Certificate, error) {
-	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE test_session_id = $1`
+	query := `SELECT id, user_id, test_session_id, candidate_name, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, issued_at, pdf_url FROM certificates WHERE test_session_id = $1`
 	var c models.Certificate
 	err := r.db.QueryRowContext(ctx, query, sessionID).Scan(
-		&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL,
+		&c.ID, &c.UserID, &c.TestSessionID, &c.CandidateName, &c.OverallScore, &c.ReadingScore, &c.ListeningScore, &c.WritingScore, &c.SpeakingScore, &c.LiteracyScore, &c.ComprehensionScore, &c.ProductionScore, &c.ConversationScore, &c.IssuedAt, &c.PDFURL,
 	)
 	if err != nil {
 		return nil, err
@@ -799,3 +897,197 @@ func (r *InstitutionRepo) Count(ctx context.Context) (int, error) {
 	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM institutions`).Scan(&count)
 	return count, err
 }
+
+// --- Study, Goals, Error Notebook and SRS ---
+
+type StudyRepo struct{ db *sql.DB }
+
+func (r *StudyRepo) GetGoals(ctx context.Context, userID string) (*models.UserGoal, error) {
+	query := `
+		SELECT user_id, target_score, target_date, daily_minutes, COALESCE(target_university_id, ''), updated_at
+		FROM user_goals
+		WHERE user_id = $1
+	`
+	var g models.UserGoal
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+		&g.UserID, &g.TargetScore, &g.TargetDate, &g.DailyMinutes, &g.TargetUniversityID, &g.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (r *StudyRepo) UpsertGoals(ctx context.Context, goal *models.UserGoal) error {
+	query := `
+		INSERT INTO user_goals (user_id, target_score, target_date, daily_minutes, target_university_id, updated_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		ON CONFLICT (user_id) DO UPDATE SET
+			target_score = EXCLUDED.target_score,
+			target_date = EXCLUDED.target_date,
+			daily_minutes = EXCLUDED.daily_minutes,
+			target_university_id = EXCLUDED.target_university_id,
+			updated_at = NOW()
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		goal.UserID, goal.TargetScore, goal.TargetDate, goal.DailyMinutes, goal.TargetUniversityID,
+	)
+	return err
+}
+
+func (r *StudyRepo) GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error) {
+	query := `
+		SELECT id, user_id, question_type, prompt, user_answer, correct_answer,
+		       COALESCE(explanation, ''), consecutive_successes, attempts_count,
+		       mastered, last_reviewed_at, created_at
+		FROM user_errors
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var errors []models.UserErrorItem
+	for rows.Next() {
+		var item models.UserErrorItem
+		if err := rows.Scan(
+			&item.ID, &item.UserID, &item.QuestionType, &item.Prompt, &item.UserAnswer, &item.CorrectAnswer,
+			&item.Explanation, &item.ConsecutiveSuccesses, &item.AttemptsCount,
+			&item.Mastered, &item.LastReviewedAt, &item.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		errors = append(errors, item)
+	}
+	if errors == nil {
+		errors = []models.UserErrorItem{}
+	}
+	return errors, rows.Err()
+}
+
+func (r *StudyRepo) GetErrorByID(ctx context.Context, userID, errorID string) (*models.UserErrorItem, error) {
+	query := `
+		SELECT id, user_id, question_type, prompt, user_answer, correct_answer,
+		       COALESCE(explanation, ''), consecutive_successes, attempts_count,
+		       mastered, last_reviewed_at, created_at
+		FROM user_errors
+		WHERE user_id = $1 AND id = $2
+	`
+	var item models.UserErrorItem
+	err := r.db.QueryRowContext(ctx, query, userID, errorID).Scan(
+		&item.ID, &item.UserID, &item.QuestionType, &item.Prompt, &item.UserAnswer, &item.CorrectAnswer,
+		&item.Explanation, &item.ConsecutiveSuccesses, &item.AttemptsCount,
+		&item.Mastered, &item.LastReviewedAt, &item.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *StudyRepo) SaveError(ctx context.Context, item *models.UserErrorItem) error {
+	query := `
+		INSERT INTO user_errors (
+			id, user_id, question_type, prompt, user_answer, correct_answer,
+			explanation, consecutive_successes, attempts_count, mastered, last_reviewed_at, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (id) DO UPDATE SET
+			user_answer = EXCLUDED.user_answer,
+			consecutive_successes = EXCLUDED.consecutive_successes,
+			attempts_count = EXCLUDED.attempts_count,
+			mastered = EXCLUDED.mastered,
+			last_reviewed_at = EXCLUDED.last_reviewed_at
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		item.ID, item.UserID, item.QuestionType, item.Prompt, item.UserAnswer, item.CorrectAnswer,
+		item.Explanation, item.ConsecutiveSuccesses, item.AttemptsCount, item.Mastered, item.LastReviewedAt, item.CreatedAt,
+	)
+	return err
+}
+
+func (r *StudyRepo) DeleteError(ctx context.Context, userID, errorID string) error {
+	query := `DELETE FROM user_errors WHERE user_id = $1 AND id = $2`
+	_, err := r.db.ExecContext(ctx, query, userID, errorID)
+	return err
+}
+
+func (r *StudyRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {
+	query := `
+		SELECT streak_days, COALESCE(last_studied_date, ''), total_reviewed
+		FROM user_srs_stats
+		WHERE user_id = $1
+	`
+	var stats models.SRSStats
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+		&stats.StreakDays, &stats.LastStudiedDate, &stats.TotalReviewed,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &models.SRSStats{StreakDays: 0, LastStudiedDate: "", TotalReviewed: 0}, nil
+		}
+		return nil, err
+	}
+	return &stats, nil
+}
+
+func (r *StudyRepo) SaveSRSStats(ctx context.Context, userID string, stats *models.SRSStats) error {
+	query := `
+		INSERT INTO user_srs_stats (user_id, streak_days, last_studied_date, total_reviewed, updated_at)
+		VALUES ($1, $2, $3, $4, NOW())
+		ON CONFLICT (user_id) DO UPDATE SET
+			streak_days = EXCLUDED.streak_days,
+			last_studied_date = EXCLUDED.last_studied_date,
+			total_reviewed = EXCLUDED.total_reviewed,
+			updated_at = NOW()
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		userID, stats.StreakDays, stats.LastStudiedDate, stats.TotalReviewed,
+	)
+	return err
+}
+
+func (r *StudyRepo) GetSRSCards(ctx context.Context, userID string) (map[string]models.SRSCardProgress, error) {
+	query := `
+		SELECT card_id, interval_days, repetitions, easiness_factor, due_date, last_reviewed_at
+		FROM user_srs_cards
+		WHERE user_id = $1
+	`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	cards := make(map[string]models.SRSCardProgress)
+	for rows.Next() {
+		var c models.SRSCardProgress
+		if err := rows.Scan(
+			&c.CardID, &c.IntervalDays, &c.Repetitions, &c.EasinessFactor, &c.DueDate, &c.LastReviewedAt,
+		); err != nil {
+			return nil, err
+		}
+		cards[c.CardID] = c
+	}
+	return cards, rows.Err()
+}
+
+func (r *StudyRepo) SaveSRSCard(ctx context.Context, userID string, card *models.SRSCardProgress) error {
+	query := `
+		INSERT INTO user_srs_cards (user_id, card_id, interval_days, repetitions, easiness_factor, due_date, last_reviewed_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (user_id, card_id) DO UPDATE SET
+			interval_days = EXCLUDED.interval_days,
+			repetitions = EXCLUDED.repetitions,
+			easiness_factor = EXCLUDED.easiness_factor,
+			due_date = EXCLUDED.due_date,
+			last_reviewed_at = EXCLUDED.last_reviewed_at
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		userID, card.CardID, card.IntervalDays, card.Repetitions, card.EasinessFactor, card.DueDate, card.LastReviewedAt,
+	)
+	return err
+}
+

@@ -5,6 +5,7 @@ import (
 	"det-academy-backend/internal/service"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -39,6 +40,30 @@ func (h *TestHandler) StartSession(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *TestHandler) GetMySessions(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	sessions, err := h.catService.GetUserSessions(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to get test sessions")
+		return
+	}
+
+	if sessions == nil {
+		sessions = []models.TestSession{}
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"success":  true,
+		"data":     sessions,
+		"sessions": sessions,
+	})
+}
+
 func (h *TestHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := chi.URLParam(r, "id")
 	if sessionID == "" {
@@ -46,13 +71,35 @@ func (h *TestHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.catService.GetSession(r.Context(), sessionID)
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	details, err := h.catService.GetSessionWithDetails(r.Context(), sessionID, userID)
 	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		RespondError(w, http.StatusNotFound, "session not found")
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, session)
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"session":         details.Session,
+		"questions":       details.Questions,
+		"responses":       details.Responses,
+		"blueprint":       details.Blueprint,
+		"id":              details.Session.ID,
+		"userId":          details.Session.UserID,
+		"status":          details.Session.Status,
+		"currentStage":    details.Session.CurrentStage,
+		"stageName":       details.Session.StageName,
+		"difficultyLevel": details.Session.DifficultyLevel,
+		"deadlineAt":      details.Session.DeadlineAt,
+	})
 }
 
 func (h *TestHandler) GetQuestions(w http.ResponseWriter, r *http.Request) {
@@ -80,14 +127,24 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
 	var req models.SubmitResponseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if err := h.catService.RecordQuestionResponse(r.Context(), sessionID, req); err != nil {
-		RespondError(w, http.StatusInternalServerError, "failed to record response")
+	if err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req); err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -101,14 +158,24 @@ func (h *TestHandler) CompleteStage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
 	var req models.StageCompleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	session, nextQuestions, err := h.catService.SubmitStageResult(r.Context(), sessionID, req)
+	session, nextQuestions, err := h.catService.SubmitStageResult(r.Context(), sessionID, userID, req)
 	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -126,17 +193,56 @@ func (h *TestHandler) CompleteSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
 	var req models.CompleteSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	result, err := h.catService.CompleteSession(r.Context(), sessionID, req)
+	result, err := h.catService.CompleteSession(r.Context(), sessionID, userID, req)
 	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	RespondJSON(w, http.StatusOK, result)
+}
+
+// GetSessionEvaluations retrieves all rubric evaluations and feedback for questions in a session.
+func (h *TestHandler) GetSessionEvaluations(w http.ResponseWriter, r *http.Request) {
+	sessionID := chi.URLParam(r, "id")
+	if sessionID == "" {
+		RespondError(w, http.StatusBadRequest, "session id is required")
+		return
+	}
+
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	evals, err := h.catService.GetSessionEvaluations(r.Context(), sessionID, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"evaluations": evals,
+	})
 }
