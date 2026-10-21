@@ -17,7 +17,7 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
   const { recordInteractiveListeningResult } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
-  const block = interactiveListeningBank[0];
+  const [block] = useState(() => interactiveListeningBank[Math.floor(Math.random() * interactiveListeningBank.length)]);
 
   // Phase: 'DIALOG' -> 'SCRIPT_PAUSE' (15s) -> 'SUMMARY' (75s)
   const [phase, setPhase] = useState<'DIALOG' | 'SCRIPT_PAUSE' | 'SUMMARY'>('DIALOG');

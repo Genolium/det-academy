@@ -28,6 +28,7 @@ export interface Translations {
     logout: string;
     login: string;
     freeMock: string;
+    arena: string;
   };
   hero: {
     badge: string;
@@ -419,6 +420,7 @@ export const translations: Record<Locale, Translations> = {
       logout: 'Выйти',
       login: 'Войти',
       freeMock: 'Пройти тест',
+      arena: 'Арена 1v1',
     },
     hero: {
       badge: `ПОДГОТОВКА К ЭКЗАМЕНУ ${YEAR}`,
@@ -808,6 +810,7 @@ export const translations: Record<Locale, Translations> = {
       logout: 'Logout',
       login: 'Sign In',
       freeMock: 'Take Test',
+      arena: '1v1 Arena',
     },
     hero: {
       badge: `EXAM PREPARATION ${YEAR}`,

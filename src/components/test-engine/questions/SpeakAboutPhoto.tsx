@@ -35,6 +35,7 @@ type WindowWithSpeech = Window & {
 
 interface SpeakAboutPhotoProps {
   onComplete: () => void;
+  isStandaloneDrill?: boolean;
 }
 
 export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) => {

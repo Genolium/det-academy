@@ -8,7 +8,23 @@
  * - Ad Banners (`ad_banners`)
  */
 
-const DIRECTUS_URL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055';
+function resolveDirectusUrl(): string {
+  if (typeof window !== 'undefined') {
+    // Prevent Mixed Content: never make http requests from an https page
+    if (window.location.protocol === 'https:') {
+      const customUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+      if (customUrl && customUrl.startsWith('https://')) {
+        return customUrl.replace(/\/+$/, '');
+      }
+      if (window.location.hostname.endsWith('det-academy.ru')) {
+        return 'https://directus.det-academy.ru';
+      }
+      return '/directus';
+    }
+  }
+  const fallback = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055';
+  return fallback.replace(/\/+$/, '');
+}
 
 export interface DirectusTheoryLesson {
   id: string;
@@ -74,15 +90,18 @@ export interface DirectusAdBanner {
 }
 
 class DirectusCmsClient {
-  private baseUrl: string;
-
-  constructor(url: string = DIRECTUS_URL) {
-    this.baseUrl = url.replace(/\/$/, '');
+  private getBaseUrl(): string {
+    return resolveDirectusUrl();
   }
 
   private async fetchCollection<T>(collection: string, queryParams: Record<string, string> = {}): Promise<T[]> {
     try {
-      const url = new URL(`${this.baseUrl}/items/${collection}`);
+      const baseUrl = this.getBaseUrl();
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:18055';
+      const endpoint = baseUrl.startsWith('http')
+        ? `${baseUrl}/items/${collection}`
+        : `${origin}${baseUrl}/items/${collection}`;
+      const url = new URL(endpoint);
       Object.entries(queryParams).forEach(([key, val]) => url.searchParams.append(key, val));
 
       const res = await fetch(url.toString(), {
@@ -115,7 +134,12 @@ class DirectusCmsClient {
    */
   async getTheoryLessonBySlug(slug: string): Promise<DirectusTheoryLesson | null> {
     try {
-      const res = await fetch(`${this.baseUrl}/items/theory_lessons?filter[slug][_eq]=${slug}`, {
+      const baseUrl = this.getBaseUrl();
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:18055';
+      const targetUrl = baseUrl.startsWith('http')
+        ? `${baseUrl}/items/theory_lessons?filter[slug][_eq]=${slug}`
+        : `${origin}${baseUrl}/items/theory_lessons?filter[slug][_eq]=${slug}`;
+      const res = await fetch(targetUrl, {
         next: { revalidate: 60 },
       });
       if (!res.ok) return null;

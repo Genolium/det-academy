@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { stringSimilarity } from '@/lib/scoring';
 import { translations } from '@/lib/translations';
+import { useErrorBankStore } from '@/store/useErrorBankStore';
 import { Button } from '@/components/ui/Button';
 import { Volume2, VolumeX, ArrowRight, Clock, AlertCircle } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const currentItem = listenTypeBank[0];
+  const [currentItem] = useState(() => listenTypeBank[Math.floor(Math.random() * listenTypeBank.length)]);
   const [typedText, setTypedText] = useState('');
   const [playCount, setPlayCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60); // 60 seconds
@@ -59,6 +60,15 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
 
     if (soundEnabled && similarity > 0.7) {
       sound.playSuccessChime();
+    } else {
+      try {
+        useErrorBankStore.getState().addError({
+          type: 'LISTEN_TYPE',
+          audioSentence: currentItem.audioSentence,
+          userTranscript: typedText.trim(),
+          similarityRatio: similarity,
+        });
+      } catch {}
     }
     onComplete();
   };

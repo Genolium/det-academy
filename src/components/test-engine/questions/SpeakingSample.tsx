@@ -35,6 +35,7 @@ type WindowWithSpeech = Window & {
 
 interface SpeakingSampleProps {
   onComplete: () => void;
+  isStandaloneDrill?: boolean;
 }
 
 export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) => {

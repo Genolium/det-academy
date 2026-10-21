@@ -119,6 +119,8 @@ interface SkillRadarChartProps {
   overallScore?: number | null;
   targetScore?: number;
   hasTakenTest?: boolean;
+  typingWpm?: number;
+  completedLessonsCount?: number;
 }
 
 export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Swords,
@@ -18,6 +18,12 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { useProgressStore } from '@/store/useProgressStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { LeagueBadge } from '@/components/ui/LeagueBadge';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { api, ArenaLeaderboardEntry } from '@/lib/api';
 
 type ArenaState = 'LOBBY' | 'SEARCHING' | 'COUNTDOWN' | 'DUELING' | 'RESULT';
 
@@ -46,10 +52,62 @@ const LEADERBOARD_PRESET = [
 ];
 
 export default function MultiplayerArenaPage() {
+  const { user, isAuthenticated } = useAuthStore();
+  const { locale } = useSettingsStore();
+  const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
+  const currentCandidateName = user?.name || candidateName || 'Candidate';
+
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [dbLeaderboard, setDbLeaderboard] = useState<ArenaLeaderboardEntry[]>([]);
   const [state, setState] = useState<ArenaState>('LOBBY');
-  const [userElo, setUserElo] = useState<number>(1420);
+  const [userElo, setUserElo] = useState<number>(pvpElo || 1420);
   const [countdown, setCountdown] = useState<number>(3);
   const [timeLeft, setTimeLeft] = useState<number>(60);
+
+  // Fetch real leaderboard from backend database
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .getArenaLeaderboard()
+      .then((res) => {
+        if (isMounted && res && res.leaderboard && res.leaderboard.length > 0) {
+          setDbLeaderboard(res.leaderboard);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const leaderboard = useMemo(() => {
+    if (dbLeaderboard.length > 0) {
+      return dbLeaderboard.map((item) => {
+        const isCurrentUser = user && (item.userId === user.id || item.name === user.name);
+        return {
+          rank: item.rank,
+          name: isCurrentUser ? `${item.name} (${locale === 'ru' ? 'Вы' : 'You'})` : item.name,
+          elo: isCurrentUser ? userElo : item.elo,
+          league: item.league,
+          winRate: item.winRate,
+        };
+      });
+    }
+    return LEADERBOARD_PRESET.map((p) => {
+      if (p.rank === 4) {
+        return {
+          ...p,
+          name: `${currentCandidateName} (${locale === 'ru' ? 'Вы' : 'You'})`,
+          elo: userElo,
+        };
+      }
+      return p;
+    });
+  }, [dbLeaderboard, user, userElo, currentCandidateName, locale]);
+
+  useEffect(() => {
+    if (pvpElo) setUserElo(pvpElo);
+  }, [pvpElo]);
 
   // Match details
   const [challenge, setChallenge] = useState<Challenge>({
@@ -99,7 +157,7 @@ export default function MultiplayerArenaPage() {
           JSON.stringify({
             type: 'join_queue',
             payload: {
-              playerName: 'Ilya Vasiunin',
+              playerName: currentCandidateName,
               playerElo: userElo,
             },
           })
@@ -134,6 +192,8 @@ export default function MultiplayerArenaPage() {
             setWon(msg.payload.won);
             setDeltaElo(msg.payload.deltaElo);
             setUserElo(msg.payload.yourElo);
+            setPvpElo(msg.payload.yourElo);
+            recordDailyActivity();
             setState('RESULT');
             if (timerRef.current) clearInterval(timerRef.current);
           }
@@ -273,9 +333,13 @@ export default function MultiplayerArenaPage() {
     } else {
       // Local fallback calculation
       const isWinner = accuracy >= 0.75;
+      const delta = isWinner ? 32 : -18;
+      const newElo = Math.max(100, userElo + delta);
       setWon(isWinner);
-      setDeltaElo(isWinner ? 32 : -18);
-      setUserElo((prev) => prev + (isWinner ? 32 : -18));
+      setDeltaElo(delta);
+      setUserElo(newElo);
+      setPvpElo(newElo);
+      recordDailyActivity();
       setState('RESULT');
     }
   };
@@ -289,6 +353,39 @@ export default function MultiplayerArenaPage() {
   const userProgressPct = Math.round(
     (inputs.filter((x) => x.trim().length > 0).length / challenge.blanks.length) * 100
   );
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen py-20 ambient-glow flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-[#111315] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <Swords className="w-8 h-8" />
+          </div>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <PillBadge variant="mint" prefixHash>
+              DET PvP Arena
+            </PillBadge>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-3">
+            {locale === 'ru' ? 'Вход на PvP Арену' : 'DET PvP Arena Access'}
+          </h1>
+          <p className="text-sm text-neutral-400 leading-relaxed mb-8">
+            {locale === 'ru'
+              ? 'Дуэли в реальном времени, рейтинг ELO и официальная таблица лидеров доступны только авторизованным студентам.'
+              : 'Real-time duels, ELO rating, and the live global leaderboard require an authenticated account.'}
+          </p>
+          <button
+            onClick={() => setAuthModalOpen(true)}
+            className="w-full py-3.5 px-6 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-sm uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Shield className="w-4 h-4 text-[#0C2418]" />
+            <span>{locale === 'ru' ? 'Войти в аккаунт' : 'Log in to Enter Arena'}</span>
+          </button>
+        </div>
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070809] text-white py-10 px-4 sm:px-6 lg:px-8">
@@ -313,7 +410,19 @@ export default function MultiplayerArenaPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Daily Streak */}
+            <div
+              className="px-3 py-1.5 rounded-2xl bg-orange-500/10 border border-orange-500/25 flex items-center gap-1.5 text-orange-400 text-xs font-black"
+              title="Ежедневный ударный режим активности"
+            >
+              <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+              <span>{streakDays} дн. ударный режим</span>
+            </div>
+
+            {/* League Badge */}
+            <LeagueBadge elo={userElo} size="md" />
+
             <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right">
               <span className="text-[10px] uppercase font-bold text-neutral-400 block">Ваш рейтинг ELO</span>
               <span className="text-xl font-black text-[#D2F544] flex items-center gap-1">
@@ -381,11 +490,11 @@ export default function MultiplayerArenaPage() {
               </div>
 
               <div className="space-y-2">
-                {LEADERBOARD_PRESET.map((p) => (
+                {leaderboard.map((p) => (
                   <div
                     key={p.rank}
                     className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
-                      p.name.includes('(Вы)')
+                      p.rank === 4
                         ? 'bg-[#D2F544]/10 border-[#D2F544]/30 text-white'
                         : 'bg-neutral-900/40 border-neutral-800/80 text-neutral-300'
                     }`}

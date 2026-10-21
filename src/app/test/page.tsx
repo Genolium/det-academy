@@ -42,10 +42,10 @@ export default function TestLobbyPage() {
     { title: 'Write About the Photo', timing: locale === 'ru' ? '3 фото по 60с' : '3 photos x 60s', status: 'Active' },
     { title: 'Interactive Writing', timing: locale === 'ru' ? '5 мин + 3 мин follow-up' : '5 min + 3 min follow-up', status: 'Active' },
     { title: 'Writing Sample', timing: locale === 'ru' ? '5 минут (100+ слов)' : '5 minutes (100+ words)', status: 'Active' },
-    { title: 'Speak About the Photo', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Coming Soon' },
+    { title: 'Speak About the Photo', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
     { title: 'Read / Listen, Then Speak', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Coming Soon' },
     { title: 'Interactive Speaking', timing: locale === 'ru' ? '35с на вопрос' : '35s per prompt', status: 'Coming Soon' },
-    { title: 'Speaking Sample', timing: locale === 'ru' ? '3 минуты' : '3 minutes', status: 'Coming Soon' },
+    { title: 'Speaking Sample', timing: locale === 'ru' ? '3 минуты' : '3 minutes', status: 'Active' },
   ];
 
   return (

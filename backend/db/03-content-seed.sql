@@ -1,19 +1,30 @@
--- Directus Collections Registration and Public Read Permissions
-INSERT INTO directus_collections (collection, icon, note)
-VALUES 
-    ('theory_lessons', 'menu_book', 'Theory Lessons and Guides'),
-    ('questions', 'quiz', 'Adaptive Question Bank'),
-    ('institutions', 'school', 'Universities & Acceptance'),
-    ('ad_banners', 'campaign', 'Ad Banners')
-ON CONFLICT (collection) DO NOTHING;
+-- Directus Collections Registration and Public Read Permissions (conditional for safe fresh init)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'directus_collections') THEN
+        EXECUTE $directus_col$
+            INSERT INTO directus_collections (collection, icon, note)
+            VALUES
+                ('theory_lessons', 'menu_book', 'Theory Lessons and Guides'),
+                ('questions', 'quiz', 'Adaptive Question Bank'),
+                ('institutions', 'school', 'Universities & Acceptance'),
+                ('ad_banners', 'campaign', 'Ad Banners')
+            ON CONFLICT (collection) DO NOTHING;
+        $directus_col$;
+    END IF;
 
-INSERT INTO directus_permissions (collection, action, permissions, validation, presets, fields, policy)
-VALUES
-    ('theory_lessons', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
-    ('questions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
-    ('institutions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
-    ('ad_banners', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17')
-ON CONFLICT DO NOTHING;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'directus_permissions') THEN
+        EXECUTE $directus_perm$
+            INSERT INTO directus_permissions (collection, action, permissions, validation, presets, fields, policy)
+            VALUES
+                ('theory_lessons', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
+                ('questions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
+                ('institutions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
+                ('ad_banners', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17')
+            ON CONFLICT DO NOTHING;
+        $directus_perm$;
+    END IF;
+END $$;
 
 -- Seed Theory Lessons
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
