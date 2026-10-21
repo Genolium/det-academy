@@ -628,6 +628,7 @@ type EvaluationJob struct {
 	AudioPath        string    `json:"-"`
 	AudioMIME        string    `json:"audioMime,omitempty"`
 	ClientTranscript string    `json:"-"`
+	Mode             string    `json:"mode"`
 	Status           string    `json:"status"`
 	Attempts         int       `json:"attempts"`
 	MaxAttempts      int       `json:"maxAttempts"`

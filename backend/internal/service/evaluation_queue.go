@@ -23,6 +23,7 @@ type EvaluationQueue struct {
 	transcriber           ai.Transcriber
 	provider              ai.Provider
 	allowClientTranscript bool
+	requireNeural         bool
 }
 
 func NewEvaluationQueue(
@@ -38,6 +39,7 @@ func NewEvaluationQueue(
 		transcriber:           transcriber,
 		provider:              provider,
 		allowClientTranscript: os.Getenv("ALLOW_CLIENT_TRANSCRIPT") == "true",
+		requireNeural:         os.Getenv("REQUIRE_NEURAL_EVALUATION") == "true",
 	}
 }
 
@@ -75,6 +77,11 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 	}
 	if evaluation == nil {
 		q.fail(ctx, job, errors.New("evaluation not found"))
+		return
+	}
+
+	if job.Mode == "writing" {
+		q.processWritingJob(ctx, job, evaluation)
 		return
 	}
 
@@ -128,34 +135,112 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 	result.RetryCount = job.Attempts
 	result.CreatedAt = evaluation.CreatedAt
 
-	if q.provider != nil {
-		enrichment, enrichErr := q.provider.Enrich(ctx, ai.EnrichInput{
+	if evaluator, ok := q.provider.(ai.Evaluator); ok {
+		neural, neuralErr := evaluator.Evaluate(ctx, ai.EnrichInput{
 			QuestionType: questionType,
-			Prompt:       evaluation.Transcript,
+			Prompt:       questionPromptText(questionType, nil, job.QuestionID),
 			Response:     transcript,
 			Transcript:   transcript,
-			Score:        result.Score,
-			CEFR:         result.CEFRLevel,
 		})
-		if enrichErr == nil {
-			result.Feedback = enrichment.Feedback
-			result.Provider = enrichment.Provider
-			result.EvaluatorVersion = enrichment.Model
-			for _, span := range enrichment.Evidence {
-				result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
-					Start: span.Start, End: span.End, Text: span.Text,
-					Label: span.Label, Suggestion: span.Suggestion,
-				})
-			}
-		} else {
-			result.LastError = enrichErr.Error()
+		if neuralErr != nil {
+			evaluation.FeedbackStatus = "retryable_failed"
+			evaluation.LastError = neuralErr.Error()
+			_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
+			q.fail(ctx, job, neuralErr)
+			return
 		}
+		result.Score = neural.Score
+		result.CEFRLevel = neural.CEFR
+		result.Feedback = neural.Feedback
+		result.Provider = neural.Provider
+		result.EvaluatorVersion = neural.Model
+		result.EvidenceSpans = nil
+		for _, span := range neural.Evidence {
+			result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
+				Start: span.Start, End: span.End, Text: span.Text,
+				Label: span.Label, Suggestion: span.Suggestion,
+			})
+		}
+	} else if q.requireNeural {
+		evaluation.Status = "INSUFFICIENT"
+		evaluation.Score = 0
+		evaluation.FeedbackStatus = "unsupported"
+		evaluation.LastError = "neural evaluator is required but not configured"
+		_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
+		_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
+		return
 	}
 
 	if err := q.sessionRepo.UpdateEvaluation(ctx, &result); err != nil {
 		q.fail(ctx, job, err)
 		return
 	}
+	_ = q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6)
+	_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
+}
+
+func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.EvaluationJob, evaluation *models.EvaluationResult) {
+	evaluation.FeedbackStatus = "evaluating"
+	_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
+
+	questionType := "WRITING_SAMPLE"
+	var prompt string
+	var keywords []string
+	if question, err := q.questionRepo.GetByID(ctx, job.QuestionID); err == nil && question != nil {
+		questionType = question.Type
+		prompt = questionPromptText(question.Type, question.ContentPayload, job.QuestionID)
+		keywords = extractContextKeywords(question.ContentPayload)
+	}
+	responseText := strings.TrimSpace(job.ClientTranscript)
+
+	var result models.EvaluationResult
+	if evaluator, ok := q.provider.(ai.Evaluator); ok {
+		neural, err := evaluator.Evaluate(ctx, ai.EnrichInput{
+			QuestionType: questionType,
+			Prompt:       prompt,
+			Response:     responseText,
+		})
+		if err != nil {
+			evaluation.FeedbackStatus = "retryable_failed"
+			evaluation.LastError = err.Error()
+			_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
+			q.fail(ctx, job, err)
+			return
+		}
+		result = models.EvaluationResult{
+			ID: evaluation.ID, SessionID: job.SessionID, QuestionID: job.QuestionID,
+			QuestionType: questionType, Status: "COMPLETED", Score: neural.Score,
+			CEFRLevel: neural.CEFR, Feedback: neural.Feedback, Provider: neural.Provider,
+			EvaluatorVersion: neural.Model, FeedbackStatus: "completed", CreatedAt: evaluation.CreatedAt,
+		}
+		for _, span := range neural.Evidence {
+			result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
+				Start: span.Start, End: span.End, Text: span.Text,
+				Label: span.Label, Suggestion: span.Suggestion,
+			})
+		}
+	} else if q.requireNeural {
+		evaluation.Status = "INSUFFICIENT"
+		evaluation.Score = 0
+		evaluation.FeedbackStatus = "unsupported"
+		evaluation.LastError = "neural evaluator is required but not configured"
+		_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
+		_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
+		return
+	} else {
+		result = q.evaluator.EvaluateWriting(job.SessionID, job.QuestionID, questionType, responseText, keywords)
+		result.ID = evaluation.ID
+		result.Provider = "rule-based"
+		result.EvaluatorVersion = "2026.1"
+		result.FeedbackStatus = "completed"
+		result.RetryCount = job.Attempts
+	}
+
+	if err := q.sessionRepo.UpdateEvaluation(ctx, &result); err != nil {
+		q.fail(ctx, job, err)
+		return
+	}
+	_ = q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6)
 	_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
 }
 
@@ -181,6 +266,7 @@ func (q *EvaluationQueue) EnqueueAudioEvaluation(
 		AudioPath:        audioPath,
 		AudioMIME:        audioMIME,
 		ClientTranscript: clientTranscript,
+		Mode:             "speaking",
 		Status:           "queued",
 		Attempts:         0,
 		MaxAttempts:      3,
@@ -192,4 +278,25 @@ func (q *EvaluationQueue) EnqueueAudioEvaluation(
 
 func (q *EvaluationQueue) PendingForSession(ctx context.Context, sessionID string) (int, error) {
 	return q.sessionRepo.CountPendingEvaluationJobs(ctx, sessionID)
+}
+
+func (q *EvaluationQueue) EnqueueWritingEvaluation(
+	ctx context.Context,
+	sessionID, questionID, evaluationID, text string,
+) error {
+	now := time.Now().UTC()
+	return q.sessionRepo.CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID:               uuid.New().String(),
+		SessionID:        sessionID,
+		QuestionID:       questionID,
+		EvaluationID:     evaluationID,
+		ClientTranscript: text,
+		Mode:             "writing",
+		Status:           "queued",
+		Attempts:         0,
+		MaxAttempts:      3,
+		NextAttemptAt:    now,
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	})
 }

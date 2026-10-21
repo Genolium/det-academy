@@ -733,11 +733,24 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			}
 		case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
 			userText, _, _, _ := extractUserText(req.UserResponse)
-			keywords := extractContextKeywords(q.ContentPayload)
-			eval := s.evaluator.EvaluateWriting(sessionID, req.QuestionID, q.Type, userText, keywords)
-			_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
-			calculatedScore = eval.Score
-			isCorrect = eval.Score >= 0.6
+			if s.evaluationQueue != nil {
+				eval := models.EvaluationResult{
+					ID: uuid.New().String(), SessionID: sessionID, QuestionID: req.QuestionID,
+					QuestionType: q.Type, Status: "PENDING", FeedbackStatus: "queued",
+					Provider: "pending", EvaluatorVersion: "2026.1", CreatedAt: time.Now().UTC(),
+				}
+				if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err == nil {
+					_ = s.evaluationQueue.EnqueueWritingEvaluation(ctx, sessionID, req.QuestionID, eval.ID, userText)
+				}
+				calculatedScore = 0
+				isCorrect = false
+			} else {
+				keywords := extractContextKeywords(q.ContentPayload)
+				eval := s.evaluator.EvaluateWriting(sessionID, req.QuestionID, q.Type, userText, keywords)
+				_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+				calculatedScore = eval.Score
+				isCorrect = eval.Score >= 0.6
+			}
 		case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
 			_, transcript, audioURL, durationSec := extractUserText(req.UserResponse)
 			keywords := extractContextKeywords(q.ContentPayload)

@@ -184,6 +184,7 @@ CREATE TABLE IF NOT EXISTS evaluation_jobs (
     audio_path TEXT DEFAULT '',
     audio_mime VARCHAR(100) DEFAULT '',
     client_transcript TEXT DEFAULT '',
+    mode VARCHAR(20) NOT NULL DEFAULT 'speaking',
     status VARCHAR(30) NOT NULL DEFAULT 'queued',
     attempts INT NOT NULL DEFAULT 0,
     max_attempts INT NOT NULL DEFAULT 3,

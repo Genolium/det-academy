@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
 
@@ -132,5 +133,56 @@ func TestCompleteSessionRejectsPendingEvaluations(t *testing.T) {
 	_, err := cat.CompleteSession(ctx, session.ID, session.UserID, models.CompleteSessionRequest{})
 	if !errors.Is(err, ErrEvaluationPending) {
 		t.Fatalf("expected ErrEvaluationPending, got %v", err)
+	}
+}
+
+type fakeNeuralProvider struct{}
+
+func (fakeNeuralProvider) Name() string    { return "fake-neural" }
+func (fakeNeuralProvider) Version() string { return "test-v1" }
+func (fakeNeuralProvider) Enrich(ctx context.Context, input ai.EnrichInput) (ai.Enrichment, error) {
+	return ai.Enrichment{Feedback: "ok", Provider: "fake-neural", Model: "test-v1"}, nil
+}
+func (fakeNeuralProvider) Evaluate(ctx context.Context, input ai.EnrichInput) (ai.Evaluation, error) {
+	return ai.Evaluation{
+		Score: 0.8, CEFR: "B2", Feedback: "Clear, but add evidence.",
+		Provider: "fake-neural", Model: "test-v1",
+		Evidence: []ai.Evidence{{Start: 0, End: 4, Text: "test", Label: "vague_claim"}},
+	}, nil
+}
+
+func TestEvaluationQueueUsesNeuralWritingEvaluator(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS", StageName: "WRITING_SAMPLE", CurrentStage: 12, DifficultyLevel: "B1"}
+	_ = store.Sessions().Create(ctx, session)
+	_ = store.Sessions().RecordResponse(ctx, &models.QuestionResponse{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		UserResponse: []byte(`{"text":"A short response."}`), RawScore: 0,
+		CreatedAt: time.Now().UTC(),
+	})
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		QuestionType: "WRITING_SAMPLE", Status: "PENDING", FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+	_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		EvaluationID: evaluation.ID, Mode: "writing", ClientTranscript: "A short response.",
+		Status: "queued", MaxAttempts: 3, NextAttemptAt: time.Now().Add(-time.Second),
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	})
+
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, fakeNeuralProvider{})
+	claimed, _ := store.Sessions().ClaimEvaluationJob(ctx)
+	queue.processJob(ctx, claimed)
+
+	evaluations, _ := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if len(evaluations) != 1 || evaluations[0].Provider != "fake-neural" || evaluations[0].Score != 0.8 {
+		t.Fatalf("expected neural evaluation, got %+v", evaluations)
+	}
+	responses, _ := store.Sessions().GetSessionResponses(ctx, session.ID)
+	if len(responses) != 1 || responses[0].RawScore != 0.8 {
+		t.Fatalf("expected response score to be updated, got %+v", responses)
 	}
 }

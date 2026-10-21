@@ -1684,6 +1684,21 @@ func (r *sessionMemoryRepo) RecordResponse(ctx context.Context, resp *models.Que
 	return nil
 }
 
+func (r *sessionMemoryRepo) UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	items := r.s.responses[sessionID]
+	for index := range items {
+		if items[index].QuestionID == questionID {
+			items[index].RawScore = rawScore
+			items[index].IsCorrect = &isCorrect
+			r.s.responses[sessionID] = items
+			return nil
+		}
+	}
+	return errors.New("response not found")
+}
+
 func (r *sessionMemoryRepo) GetSessionResponses(ctx context.Context, sessionID string) ([]models.QuestionResponse, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()

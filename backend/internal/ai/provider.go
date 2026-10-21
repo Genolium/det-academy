@@ -39,10 +39,23 @@ type EnrichInput struct {
 	CEFR         string
 }
 
+type Evaluation struct {
+	Score    float64    `json:"score"`
+	CEFR     string     `json:"cefr"`
+	Feedback string     `json:"feedback"`
+	Evidence []Evidence `json:"evidence"`
+	Provider string     `json:"provider"`
+	Model    string     `json:"model"`
+}
+
 type Provider interface {
 	Name() string
 	Version() string
 	Enrich(ctx context.Context, input EnrichInput) (Enrichment, error)
+}
+
+type Evaluator interface {
+	Evaluate(ctx context.Context, input EnrichInput) (Evaluation, error)
 }
 
 type Transcriber interface {
@@ -142,6 +155,78 @@ Use only evidence present in the learner response. Do not change the numeric sco
 		Evidence: parsed.Evidence,
 		Provider: p.Name(),
 		Model:    p.Model,
+	}, nil
+}
+
+func (p *OpenAICompatible) Evaluate(ctx context.Context, input EnrichInput) (Evaluation, error) {
+	system := `You are a calibrated DET rubric evaluator. Return strict JSON:
+{"score": 0..1, "cefr": "Pre-A1|A1|A2|B1|B2|C1|C2", "feedback": string,
+ "evidence": [{"start": number, "end": number, "text": string, "label": string, "suggestion": string}]}.
+Judge task completion, organization, grammar, vocabulary and fluency. Use only the response.
+Never reward silence, empty text or off-topic content.`
+	user := fmt.Sprintf("Task: %s\nPrompt: %s\nResponse: %s\nTranscript: %s",
+		input.QuestionType, input.Prompt, input.Response, input.Transcript)
+	payload := map[string]interface{}{
+		"model": p.Model,
+		"messages": []map[string]string{
+			{"role": "system", "content": system},
+			{"role": "user", "content": user},
+		},
+		"temperature":     0.1,
+		"response_format": map[string]string{"type": "json_object"},
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, "POST", p.BaseURL+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return Evaluation{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if p.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+p.APIKey)
+	}
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return Evaluation{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		payload, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return Evaluation{}, fmt.Errorf("ai evaluator returned %d: %s", resp.StatusCode, string(payload))
+	}
+	var completion struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&completion); err != nil {
+		return Evaluation{}, err
+	}
+	if len(completion.Choices) == 0 {
+		return Evaluation{}, errors.New("ai evaluator returned no choices")
+	}
+	var parsed struct {
+		Score    float64    `json:"score"`
+		CEFR     string     `json:"cefr"`
+		Feedback string     `json:"feedback"`
+		Evidence []Evidence `json:"evidence"`
+	}
+	if err := json.Unmarshal([]byte(completion.Choices[0].Message.Content), &parsed); err != nil {
+		return Evaluation{}, fmt.Errorf("invalid ai evaluation json: %w", err)
+	}
+	if parsed.Score < 0 {
+		parsed.Score = 0
+	}
+	if parsed.Score > 1 {
+		parsed.Score = 1
+	}
+	if parsed.CEFR == "" {
+		parsed.CEFR = "B1"
+	}
+	return Evaluation{
+		Score: parsed.Score, CEFR: parsed.CEFR, Feedback: parsed.Feedback,
+		Evidence: parsed.Evidence, Provider: p.Name(), Model: p.Model,
 	}, nil
 }
 

@@ -72,6 +72,7 @@ type TestSessionRepository interface {
 	CompleteEvaluationJob(ctx context.Context, jobID string) error
 	FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error
 	CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error)
+	UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
 	GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error)
 }

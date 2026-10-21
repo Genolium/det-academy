@@ -628,6 +628,14 @@ func (r *SessionRepo) RecordResponse(ctx context.Context, resp *models.QuestionR
 	return err
 }
 
+func (r *SessionRepo) UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE question_responses SET raw_score = $1, is_correct = $2
+		WHERE session_id = $3 AND question_id = $4
+	`, rawScore, isCorrect, sessionID, questionID)
+	return err
+}
+
 func (r *SessionRepo) GetSessionResponses(ctx context.Context, sessionID string) ([]models.QuestionResponse, error) {
 	query := `SELECT id, session_id, question_id, user_response, is_correct, raw_score, time_spent_sec, created_at FROM question_responses WHERE session_id = $1`
 	rows, err := r.db.QueryContext(ctx, query, sessionID)
@@ -815,13 +823,13 @@ func (r *SessionRepo) UpdateEvaluation(ctx context.Context, eval *models.Evaluat
 func (r *SessionRepo) CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error {
 	query := `
 		INSERT INTO evaluation_jobs
-			(id, session_id, question_id, evaluation_id, audio_path, audio_mime, client_transcript,
+			(id, session_id, question_id, evaluation_id, audio_path, audio_mime, client_transcript, mode,
 			 status, attempts, max_attempts, next_attempt_at, last_error, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		job.ID, job.SessionID, job.QuestionID, job.EvaluationID, job.AudioPath, job.AudioMIME,
-		job.ClientTranscript, job.Status, job.Attempts, job.MaxAttempts, job.NextAttemptAt,
+		job.ClientTranscript, job.Mode, job.Status, job.Attempts, job.MaxAttempts, job.NextAttemptAt,
 		job.LastError, job.CreatedAt, job.UpdatedAt,
 	)
 	return err
@@ -842,13 +850,13 @@ func (r *SessionRepo) ClaimEvaluationJob(ctx context.Context) (*models.Evaluatio
 		FROM claimed
 		WHERE j.id = claimed.id
 		RETURNING j.id, j.session_id, j.question_id, j.evaluation_id, j.audio_path, j.audio_mime,
-		          j.client_transcript, j.status, j.attempts, j.max_attempts,
+		          j.client_transcript, j.mode, j.status, j.attempts, j.max_attempts,
 		          j.next_attempt_at, j.last_error, j.created_at, j.updated_at
 	`
 	var job models.EvaluationJob
 	err := r.db.QueryRowContext(ctx, query).Scan(
 		&job.ID, &job.SessionID, &job.QuestionID, &job.EvaluationID, &job.AudioPath,
-		&job.AudioMIME, &job.ClientTranscript, &job.Status, &job.Attempts, &job.MaxAttempts,
+		&job.AudioMIME, &job.ClientTranscript, &job.Mode, &job.Status, &job.Attempts, &job.MaxAttempts,
 		&job.NextAttemptAt, &job.LastError, &job.CreatedAt, &job.UpdatedAt,
 	)
 	if err != nil {

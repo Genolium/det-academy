@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -6,6 +6,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AdBanner } from '@/components/layout/AdBanner';
 import { CookieConsent } from '@/components/ui/CookieConsent';
+import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,7 +22,6 @@ export const metadata: Metadata = {
   title: 'DET Academy | Интерактивная платформа подготовки к Duolingo English Test',
   description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Диагностика, персональный план, тренажёры, пробные тесты и разбор ошибок.`,
   manifest: '/manifest.webmanifest',
-  themeColor: '#D2F544',
   icons: {
     icon: [
       { url: '/logo.svg', type: 'image/svg+xml' },
@@ -30,6 +30,10 @@ export const metadata: Metadata = {
     shortcut: '/logo.svg',
     apple: '/apple-touch-icon.png',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#D2F544',
 };
 
 export default function RootLayout({
@@ -45,6 +49,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <CookieConsent />
+        <ServiceWorkerRegister />
         {/* Google Identity Services SDK for Real One-Tap & OAuth Popup */}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </body>

@@ -1,0 +1,25 @@
+{
+  "rubric": "writing_0_5",
+  "items": [
+    {"id": "c1", "human": 1, "model": 1},
+    {"id": "c2", "human": 2, "model": 2},
+    {"id": "c3", "human": 2, "model": 1},
+    {"id": "c4", "human": 3, "model": 3},
+    {"id": "c5", "human": 3, "model": 2},
+    {"id": "c6", "human": 3, "model": 3},
+    {"id": "c7", "human": 4, "model": 4},
+    {"id": "c8", "human": 4, "model": 3},
+    {"id": "c9", "human": 4, "model": 4},
+    {"id": "c10", "human": 5, "model": 5},
+    {"id": "c11", "human": 5, "model": 4},
+    {"id": "c12", "human": 2, "model": 2},
+    {"id": "c13", "human": 1, "model": 2},
+    {"id": "c14", "human": 3, "model": 4},
+    {"id": "c15", "human": 4, "model": 5},
+    {"id": "c16", "human": 5, "model": 5},
+    {"id": "c17", "human": 0, "model": 0},
+    {"id": "c18", "human": 1, "model": 1},
+    {"id": "c19", "human": 3, "model": 3},
+    {"id": "c20", "human": 4, "model": 4}
+  ]
+}

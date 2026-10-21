@@ -1,0 +1,1 @@
+ALTER TABLE evaluation_jobs ADD COLUMN IF NOT EXISTS mode VARCHAR(20) NOT NULL DEFAULT 'speaking';

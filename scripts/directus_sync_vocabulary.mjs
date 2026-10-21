@@ -32,7 +32,7 @@ async function request(path, options = {}) {
 }
 
 const fields = [
-  { field: 'id', type: 'string', schema: { is_primary_key: true, length: 100 } },
+  { field: 'external_id', type: 'string', schema: { is_nullable: false, length: 100 } },
   { field: 'word', type: 'string', schema: { is_nullable: false } },
   { field: 'ipa', type: 'string' },
   { field: 'pos', type: 'string' },
@@ -49,15 +49,15 @@ const fields = [
 ];
 
 async function ensureCollection() {
-  const existing = await request('/collections/vocabulary_entries');
+  const existing = await request('/collections/vocabulary_publication');
   if (existing.response.ok) {
-    console.log('collection vocabulary_entries already exists');
+    console.log('collection vocabulary_publication already exists');
     return;
   }
   const created = await request('/collections', {
     method: 'POST',
     body: JSON.stringify({
-      collection: 'vocabulary_entries',
+      collection: 'vocabulary_publication',
       meta: { icon: 'menu_book', note: 'Published academic vocabulary' },
       schema: {},
     }),
@@ -65,14 +65,14 @@ async function ensureCollection() {
   if (!created.response.ok) {
     throw new Error(`failed to create collection: ${JSON.stringify(created.body)}`);
   }
-  console.log('created collection vocabulary_entries');
+  console.log('created collection vocabulary_publication');
 }
 
 async function ensureFields() {
   for (const field of fields) {
-    const existing = await request(`/fields/vocabulary_entries/${field.field}`);
+    const existing = await request(`/fields/vocabulary_publication/${field.field}`);
     if (existing.response.ok) continue;
-    const created = await request('/fields/vocabulary_entries', {
+    const created = await request('/fields/vocabulary_publication', {
       method: 'POST',
       body: JSON.stringify(field),
     });
@@ -90,15 +90,22 @@ async function ensurePublicRead() {
     return;
   }
   const publicRole = (roles.body?.data || []).find((role) => role.name === 'Public' || role.name === 'public');
-  if (!publicRole) {
-    console.warn('Public role not found; configure read permission manually for status=published');
+  const policies = await request('/policies?limit=100');
+  const publicPolicy = (policies.body?.data || []).find(
+    (policy) => policy.name === '$t:public_label' || policy.name === 'Public' || policy.name === 'public'
+  );
+  const target = publicRole?.id || publicPolicy?.id;
+  if (!target) {
+    console.warn('Public role/policy not found; configure read permission manually for status=published');
     return;
   }
   const payload = {
-    role: publicRole.id,
-    collection: 'vocabulary_entries',
+    ...(publicRole ? { role: publicRole.id } : { policy: publicPolicy.id }),
+    collection: 'vocabulary_publication',
     action: 'read',
     permissions: { status: { _eq: 'published' } },
+    validation: null,
+    presets: null,
     fields: ['*'],
   };
   const created = await request('/permissions', { method: 'POST', body: JSON.stringify(payload) });
