@@ -1030,3 +1030,57 @@ npx playwright test   # 10 passed
 - Directus schema sync for vocabulary (current admin UI writes the app DB directly).
 - Backups/restore drill, Sentry/metrics, branch protection, full-stack E2E.
 - Rate limits/CSRF/email verification/refresh tokens.
+
+---
+
+## 10. Итерация 5: STT, evaluation queue и AI-провайдер (21 октября 2026)
+
+### 10.1. Что сделано
+
+- Добавлен `ai` package: `Provider`/`Transcriber`, OpenAI-compatible chat completions и `/audio/transcriptions`.
+- Добавлены поля evaluation: `transcript_source`, `provider`, `evaluator_version`, `feedback_status`, `feedback`, `evidence_spans`, `retry_count`, `last_error`.
+- Добавлена таблица `evaluation_jobs` и очередь `EvaluationQueue` с claim через `FOR UPDATE SKIP LOCKED`.
+- Состояния: `queued → processing/transcribing → evaluating → completed`, а также `retryable_failed` / `permanently_failed` / `unsupported`.
+- Аудио-ответ создаёт pending evaluation и job; worker транскрибирует серверным STT, оценивает и обогащает AI-провайдером.
+- Без STT и без `ALLOW_CLIENT_TRANSCRIPT=true` speaking получает `unsupported` и 0, а не выдуманный балл.
+- `CompleteSession` возвращает `409 evaluation_pending`, пока обязательные оценки не завершены.
+- Frontend опрашивает evaluations и показывает статус, feedback и evidence spans.
+- Rule-based evaluator проставляет provider/version/evidence spans.
+- Исправлен `correctIndex`: распределение теперь 1/2/3, а не 19×0.
+- Исправлен `ct-1` (`in` + `novative` вместо `inphotovoltaic`).
+- Transcript в Interactive Listening скрыт в exam mode.
+- Убраны ложные «1,500 слов», «60 минут», «official» в ключевых текстах.
+- Убран тяжёлый JSON-импорт из `SkillRadarChart` и неиспользуемый из `UniversityMatchWidget`.
+- Добавлен `scripts/lint_content.py` и шаг в CI.
+
+### 10.2. Переменные
+
+```text
+AI_BASE_URL=https://api.openai.com/v1   # или http://localhost:11434/v1 для Ollama
+AI_API_KEY=...
+AI_MODEL=gpt-4o-mini
+AI_STT_ENABLED=true
+AI_STT_MODEL=whisper-1
+ALLOW_CLIENT_TRANSCRIPT=false           # только dev/test
+```
+
+### 10.3. Проверки
+
+```bash
+npx tsc --noEmit
+npm run lint          # 0 errors, 125 warnings
+npm run build
+(cd backend && go test ./... -count=1)
+TEST_DATABASE_URL=... go test ./tests -run TestPostgresTrustedCompletionIntegrity
+npx playwright test   # 10 passed
+python3 scripts/lint_content.py
+```
+
+### 10.4. Осталось
+
+- Phase B: диагностика, daily queue, SRS recall, weekly report.
+- Directus schema/permission sync (сейчас admin UI пишет в app DB).
+- Email verification, refresh/revocation, rate limits, CSRF.
+- Backups/restore drill, Sentry, metrics, alerts.
+- Полный full-stack E2E против реального backend.
+- Mobile/PWA и accessibility.

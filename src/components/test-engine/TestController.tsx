@@ -81,6 +81,7 @@ function writeStoredAttempt(attempt: StoredAttempt | null) {
 }
 
 function isPermanentClientError(err: unknown): boolean {
+  if (err instanceof ApiError && err.status === 409) return false;
   return err instanceof ApiError && err.status >= 400 && err.status < 500;
 }
 

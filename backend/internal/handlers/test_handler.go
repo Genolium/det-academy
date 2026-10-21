@@ -4,6 +4,7 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/service"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -210,6 +211,13 @@ func (h *TestHandler) CompleteSession(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.catService.CompleteSession(r.Context(), sessionID, userID, req)
 	if err != nil {
+		if errors.Is(err, service.ErrEvaluationPending) {
+			RespondJSON(w, http.StatusConflict, map[string]interface{}{
+				"error": "evaluation_pending",
+				"code":  "evaluation_pending",
+			})
+			return
+		}
 		if strings.Contains(err.Error(), "access denied") {
 			RespondError(w, http.StatusForbidden, err.Error())
 			return

@@ -16,7 +16,6 @@ import {
   MapPin,
   ShieldCheck,
 } from 'lucide-react';
-import institutionsData from '@/data/duolingoInstitutions.json';
 
 interface UniversityMatchWidgetProps {
   currentPredictedScore?: number;

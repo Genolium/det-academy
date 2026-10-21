@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"det-academy-backend/internal/models"
+	"time"
 )
 
 type UserRepository interface {
@@ -55,6 +56,12 @@ type TestSessionRepository interface {
 	GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error)
 	SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error
 	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
+	UpdateEvaluation(ctx context.Context, eval *models.EvaluationResult) error
+	CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error
+	ClaimEvaluationJob(ctx context.Context) (*models.EvaluationJob, error)
+	CompleteEvaluationJob(ctx context.Context, jobID string) error
+	FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error
+	CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error)
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
 	GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error)
 }

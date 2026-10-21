@@ -24,7 +24,8 @@ type MemoryStorage struct {
 	sessions          map[string]*models.TestSession
 	responses         map[string][]models.QuestionResponse
 	evaluations       map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
-	mediaAssets       map[string]*models.MediaAsset        // assetID -> *MediaAsset
+	evaluationJobs    map[string]*models.EvaluationJob
+	mediaAssets       map[string]*models.MediaAsset // assetID -> *MediaAsset
 	certificates      map[string]*models.Certificate
 	banners           map[string]*models.AdBanner
 	institutions      map[string]*models.Institution
@@ -51,6 +52,7 @@ func New() *MemoryStorage {
 		sessions:          make(map[string]*models.TestSession),
 		responses:         make(map[string][]models.QuestionResponse),
 		evaluations:       make(map[string][]models.EvaluationResult),
+		evaluationJobs:    make(map[string]*models.EvaluationJob),
 		mediaAssets:       make(map[string]*models.MediaAsset),
 		certificates:      make(map[string]*models.Certificate),
 		banners:           make(map[string]*models.AdBanner),
@@ -1692,6 +1694,82 @@ func (r *sessionMemoryRepo) GetStats(ctx context.Context) (int, int, float64, ma
 	}
 
 	return total, completed, avg, scoreDist, nil
+}
+
+func (r *sessionMemoryRepo) UpdateEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	items := r.s.evaluations[eval.SessionID]
+	for index := range items {
+		if items[index].ID == eval.ID {
+			items[index] = *eval
+			r.s.evaluations[eval.SessionID] = items
+			return nil
+		}
+	}
+	r.s.evaluations[eval.SessionID] = append(items, *eval)
+	return nil
+}
+
+func (r *sessionMemoryRepo) CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.evaluationJobs[job.ID] = job
+	return nil
+}
+
+func (r *sessionMemoryRepo) ClaimEvaluationJob(ctx context.Context) (*models.EvaluationJob, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	now := time.Now().UTC()
+	for _, job := range r.s.evaluationJobs {
+		if (job.Status == "queued" || job.Status == "retryable_failed") && !job.NextAttemptAt.After(now) {
+			job.Status = "processing"
+			job.Attempts++
+			job.UpdatedAt = now
+			copyJob := *job
+			return &copyJob, nil
+		}
+	}
+	return nil, errors.New("no evaluation jobs")
+}
+
+func (r *sessionMemoryRepo) CompleteEvaluationJob(ctx context.Context, jobID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if job, ok := r.s.evaluationJobs[jobID]; ok {
+		job.Status = "completed"
+		job.UpdatedAt = time.Now().UTC()
+	}
+	return nil
+}
+
+func (r *sessionMemoryRepo) FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if job, ok := r.s.evaluationJobs[jobID]; ok {
+		job.LastError = lastError
+		job.NextAttemptAt = retryAt
+		job.UpdatedAt = time.Now().UTC()
+		if job.Attempts >= job.MaxAttempts {
+			job.Status = "permanently_failed"
+		} else {
+			job.Status = "retryable_failed"
+		}
+	}
+	return nil
+}
+
+func (r *sessionMemoryRepo) CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	count := 0
+	for _, job := range r.s.evaluationJobs {
+		if job.SessionID == sessionID && (job.Status == "queued" || job.Status == "processing" || job.Status == "retryable_failed") {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (r *sessionMemoryRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {

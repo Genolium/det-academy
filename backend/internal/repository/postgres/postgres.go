@@ -688,23 +688,39 @@ func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.Evaluatio
 			id, response_id, session_id, question_id, question_type, status, score,
 			word_count, unique_words, lexical_diversity, academic_words, connectors,
 			relevance_score, cefr_level, speaking_duration, wpm, recommendations,
-			audio_url, transcript, created_at
+			audio_url, transcript, transcript_source, provider, evaluator_version,
+			feedback_status, feedback, evidence_spans, retry_count, last_error, created_at
 		) VALUES (
 			$1, NULLIF($2, '')::uuid, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11, $12,
 			$13, $14, $15, $16, $17,
-			$18, $19, $20
+			$18, $19, $20, $21, $22,
+			$23, $24, $25, $26, $27, $28
 		)
+		ON CONFLICT (id) DO UPDATE SET
+			status = EXCLUDED.status,
+			score = EXCLUDED.score,
+			transcript = EXCLUDED.transcript,
+			transcript_source = EXCLUDED.transcript_source,
+			provider = EXCLUDED.provider,
+			evaluator_version = EXCLUDED.evaluator_version,
+			feedback_status = EXCLUDED.feedback_status,
+			feedback = EXCLUDED.feedback,
+			evidence_spans = EXCLUDED.evidence_spans,
+			retry_count = EXCLUDED.retry_count,
+			last_error = EXCLUDED.last_error
 	`
 	academicJSON, _ := json.Marshal(eval.AcademicWords)
 	connectorsJSON, _ := json.Marshal(eval.Connectors)
 	recsJSON, _ := json.Marshal(eval.Recommendations)
+	evidenceJSON, _ := json.Marshal(eval.EvidenceSpans)
 
 	_, err := r.db.ExecContext(ctx, query,
 		eval.ID, eval.ResponseID, eval.SessionID, eval.QuestionID, eval.QuestionType, eval.Status, eval.Score,
 		eval.WordCount, eval.UniqueWords, eval.LexicalDiversity, academicJSON, connectorsJSON,
 		eval.RelevanceScore, eval.CEFRLevel, eval.SpeakingDuration, eval.WPM, recsJSON,
-		eval.AudioURL, eval.Transcript, eval.CreatedAt,
+		eval.AudioURL, eval.Transcript, eval.TranscriptSource, eval.Provider, eval.EvaluatorVersion,
+		eval.FeedbackStatus, eval.Feedback, evidenceJSON, eval.RetryCount, eval.LastError, eval.CreatedAt,
 	)
 	return err
 }
@@ -714,7 +730,8 @@ func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID strin
 		SELECT id, COALESCE(response_id::text, ''), session_id, question_id, question_type, status, score,
 		       word_count, unique_words, lexical_diversity, academic_words, connectors,
 		       relevance_score, cefr_level, speaking_duration, wpm, recommendations,
-		       audio_url, transcript, created_at
+		       audio_url, transcript, transcript_source, provider, evaluator_version,
+		       feedback_status, feedback, evidence_spans, retry_count, last_error, created_at
 		FROM evaluations WHERE session_id = $1 ORDER BY created_at ASC
 	`
 	rows, err := r.db.QueryContext(ctx, query, sessionID)
@@ -726,21 +743,99 @@ func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID strin
 	var evals []models.EvaluationResult
 	for rows.Next() {
 		var e models.EvaluationResult
-		var academicJSON, connectorsJSON, recsJSON []byte
+		var academicJSON, connectorsJSON, recsJSON, evidenceJSON []byte
 		if err := rows.Scan(
 			&e.ID, &e.ResponseID, &e.SessionID, &e.QuestionID, &e.QuestionType, &e.Status, &e.Score,
 			&e.WordCount, &e.UniqueWords, &e.LexicalDiversity, &academicJSON, &connectorsJSON,
 			&e.RelevanceScore, &e.CEFRLevel, &e.SpeakingDuration, &e.WPM, &recsJSON,
-			&e.AudioURL, &e.Transcript, &e.CreatedAt,
+			&e.AudioURL, &e.Transcript, &e.TranscriptSource, &e.Provider, &e.EvaluatorVersion,
+			&e.FeedbackStatus, &e.Feedback, &evidenceJSON, &e.RetryCount, &e.LastError, &e.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal(academicJSON, &e.AcademicWords)
 		_ = json.Unmarshal(connectorsJSON, &e.Connectors)
 		_ = json.Unmarshal(recsJSON, &e.Recommendations)
+		_ = json.Unmarshal(evidenceJSON, &e.EvidenceSpans)
 		evals = append(evals, e)
 	}
 	return evals, nil
+}
+
+func (r *SessionRepo) UpdateEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
+	return r.SaveEvaluation(ctx, eval)
+}
+
+func (r *SessionRepo) CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error {
+	query := `
+		INSERT INTO evaluation_jobs
+			(id, session_id, question_id, evaluation_id, audio_path, audio_mime, client_transcript,
+			 status, attempts, max_attempts, next_attempt_at, last_error, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		job.ID, job.SessionID, job.QuestionID, job.EvaluationID, job.AudioPath, job.AudioMIME,
+		job.ClientTranscript, job.Status, job.Attempts, job.MaxAttempts, job.NextAttemptAt,
+		job.LastError, job.CreatedAt, job.UpdatedAt,
+	)
+	return err
+}
+
+func (r *SessionRepo) ClaimEvaluationJob(ctx context.Context) (*models.EvaluationJob, error) {
+	query := `
+		WITH claimed AS (
+			SELECT id FROM evaluation_jobs
+			WHERE status IN ('queued', 'retryable_failed')
+			  AND next_attempt_at <= NOW()
+			ORDER BY created_at ASC
+			FOR UPDATE SKIP LOCKED
+			LIMIT 1
+		)
+		UPDATE evaluation_jobs j
+		SET status = 'processing', attempts = attempts + 1, updated_at = NOW()
+		FROM claimed
+		WHERE j.id = claimed.id
+		RETURNING j.id, j.session_id, j.question_id, j.evaluation_id, j.audio_path, j.audio_mime,
+		          j.client_transcript, j.status, j.attempts, j.max_attempts,
+		          j.next_attempt_at, j.last_error, j.created_at, j.updated_at
+	`
+	var job models.EvaluationJob
+	err := r.db.QueryRowContext(ctx, query).Scan(
+		&job.ID, &job.SessionID, &job.QuestionID, &job.EvaluationID, &job.AudioPath,
+		&job.AudioMIME, &job.ClientTranscript, &job.Status, &job.Attempts, &job.MaxAttempts,
+		&job.NextAttemptAt, &job.LastError, &job.CreatedAt, &job.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
+}
+
+func (r *SessionRepo) CompleteEvaluationJob(ctx context.Context, jobID string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE evaluation_jobs SET status = 'completed', updated_at = NOW() WHERE id = $1`, jobID)
+	return err
+}
+
+func (r *SessionRepo) FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error {
+	query := `
+		UPDATE evaluation_jobs
+		SET status = CASE WHEN attempts >= max_attempts THEN 'permanently_failed' ELSE 'retryable_failed' END,
+		    next_attempt_at = $2,
+		    last_error = $3,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query, jobID, retryAt, lastError)
+	return err
+}
+
+func (r *SessionRepo) CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM evaluation_jobs
+		WHERE session_id = $1 AND status IN ('queued', 'processing', 'retryable_failed')
+	`, sessionID).Scan(&count)
+	return count, err
 }
 
 func (r *SessionRepo) SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error {

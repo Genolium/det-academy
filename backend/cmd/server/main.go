@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/config"
 	"det-academy-backend/internal/handlers"
 	"det-academy-backend/internal/repository"
@@ -106,6 +107,17 @@ func main() {
 		store.Banners(),
 		store.Institutions(),
 	)
+	aiProvider := ai.NewFromEnv()
+	var transcriber ai.Transcriber
+	if aiProvider != nil && os.Getenv("AI_STT_ENABLED") == "true" {
+		transcriber = aiProvider
+	}
+	evaluationQueue := service.NewEvaluationQueue(store.Sessions(), store.Questions(), transcriber, aiProvider)
+	catService.SetEvaluationQueue(evaluationQueue)
+	queueCtx, queueCancel := context.WithCancel(context.Background())
+	defer queueCancel()
+	go evaluationQueue.Run(queueCtx)
+
 	studyService := service.NewStudyService(store, theoryService, catService)
 	vocabularyService := service.NewVocabularyService(store.Vocabulary())
 

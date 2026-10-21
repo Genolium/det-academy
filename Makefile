@@ -1,4 +1,4 @@
-.PHONY: install typecheck lint build test-backend test-postgres test-e2e test-all
+.PHONY: install typecheck lint content-lint build test-backend test-postgres test-e2e test-all
 
 install:
 	npm ci
@@ -9,6 +9,9 @@ typecheck:
 
 lint:
 	npm run lint
+
+content-lint:
+	python3 scripts/lint_content.py
 
 build:
 	npm run build

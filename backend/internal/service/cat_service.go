@@ -64,13 +64,14 @@ const (
 )
 
 type CATService struct {
-	sessionRepo   repository.TestSessionRepository
-	questionRepo  repository.QuestionRepository
-	theoryRepo    repository.TheoryRepository
-	certRepo      repository.CertificateRepository
-	theoryService *TheoryService
-	evaluator     *Evaluator
-	studyRepo     repository.StudyRepository
+	sessionRepo     repository.TestSessionRepository
+	questionRepo    repository.QuestionRepository
+	theoryRepo      repository.TheoryRepository
+	certRepo        repository.CertificateRepository
+	theoryService   *TheoryService
+	evaluator       *Evaluator
+	studyRepo       repository.StudyRepository
+	evaluationQueue *EvaluationQueue
 }
 
 func NewCATService(
@@ -93,6 +94,10 @@ func NewCATService(
 		service.studyRepo = studyRepos[0]
 	}
 	return service
+}
+
+func (s *CATService) SetEvaluationQueue(queue *EvaluationQueue) {
+	s.evaluationQueue = queue
 }
 
 // sanitizeContentPayload removes answer-bearing fields that some question
@@ -997,15 +1002,41 @@ func (s *CATService) RecordAudioResponse(
 		}
 	}
 
-	eval := s.evaluator.EvaluateSpeaking(sessionID, questionID, qType, transcript, durationSec, keywords)
-	eval.AudioURL = audioURL
-	_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+	var eval models.EvaluationResult
+	if s.evaluationQueue != nil {
+		eval = models.EvaluationResult{
+			ID:               uuid.New().String(),
+			SessionID:        sessionID,
+			QuestionID:       questionID,
+			QuestionType:     qType,
+			Status:           "PENDING",
+			Score:            0,
+			SpeakingDuration: durationSec,
+			AudioURL:         audioURL,
+			TranscriptSource: "none",
+			Provider:         "pending",
+			EvaluatorVersion: "2026.1",
+			FeedbackStatus:   "queued",
+			CreatedAt:        time.Now().UTC(),
+		}
+		if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err != nil {
+			return nil, fmt.Errorf("failed to save evaluation: %w", err)
+		}
+		if err := s.evaluationQueue.EnqueueAudioEvaluation(ctx, sessionID, questionID, eval.ID, asset.FilePath, asset.FileType, transcript); err != nil {
+			return nil, fmt.Errorf("failed to enqueue evaluation: %w", err)
+		}
+	} else {
+		eval = s.evaluator.EvaluateSpeaking(sessionID, questionID, qType, transcript, durationSec, keywords)
+		eval.AudioURL = audioURL
+		eval.TranscriptSource = "client"
+		_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+	}
 
 	userResponseJSON, _ := json.Marshal(map[string]interface{}{
-		"audioUrl":    audioURL,
-		"transcript":  transcript,
-		"durationSec": durationSec,
-		"fileSize":    fileSize,
+		"audioUrl":         audioURL,
+		"durationSec":      durationSec,
+		"fileSize":         fileSize,
+		"transcriptSource": eval.TranscriptSource,
 	})
 
 	isCorrect := eval.Score >= 0.6
@@ -1413,6 +1444,12 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 	if session.StageName != "COMPLETED" {
 		return nil, errors.New("cannot complete session before all stages are finished")
+	}
+	if s.evaluationQueue != nil {
+		pending, pendingErr := s.evaluationQueue.PendingForSession(ctx, sessionID)
+		if pendingErr == nil && pending > 0 {
+			return nil, ErrEvaluationPending
+		}
 	}
 
 	// Verify that the session has actual recorded question responses

@@ -206,6 +206,20 @@ export interface EvaluationResult {
   recommendations: string[];
   audioUrl?: string;
   transcript?: string;
+  transcriptSource?: string;
+  provider?: string;
+  evaluatorVersion?: string;
+  feedbackStatus?: string;
+  feedback?: string;
+  evidenceSpans?: Array<{
+    start: number;
+    end: number;
+    text: string;
+    label: string;
+    suggestion?: string;
+  }>;
+  retryCount?: number;
+  lastError?: string;
   createdAt: string;
 }
 
@@ -749,6 +763,12 @@ class ApiClient {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data.code === 'evaluation_pending') {
+        throw new ApiError(
+          'Оценка Speaking/Writing ещё идёт. Результат появится после завершения проверки.',
+          res.status
+        );
+      }
       throw new ApiError(data.error || 'Failed to finalize test session on backend', res.status);
     }
     return res.json();

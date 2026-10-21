@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronDown, CheckCircle2, AlertTriangle, Sparkles, Building2, Layers, Compass } from 'lucide-react';
-import institutionsData from '@/data/duolingoInstitutions.json';
 
 export interface Subscores {
   literacy: number;
@@ -136,22 +135,6 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
   const targetUni = useMemo(() => {
     const found = POPULAR_UNIVERSITIES.find((u) => u.id === selectedUniId);
     if (found) return found;
-
-    const scraped = (institutionsData as Array<{ id?: string; accountId?: string; name?: string; country?: string }>).find(
-      (u) => u.id === selectedUniId || u.accountId === selectedUniId
-    );
-    if (scraped) {
-      return {
-        id: scraped.id || 'custom',
-        name: scraped.name || 'Target Institution',
-        country: scraped.country || 'Global',
-        minScore: 120,
-        minLiteracy: 115,
-        minComprehension: 115,
-        minConversation: 110,
-        minProduction: 115,
-      };
-    }
 
     return POPULAR_UNIVERSITIES[0];
   }, [selectedUniId]);

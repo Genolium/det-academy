@@ -362,7 +362,7 @@ function DashboardContent() {
                 className="bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Запустить симулятор теста (60 мин)</span>
+                <span>Запустить полный mock (~46 мин)</span>
               </Link>
               <Link
                 href="/practice/typing"
@@ -980,7 +980,7 @@ function DashboardContent() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] text-xs font-black transition-all shadow-md"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Пройти первый тест (60 минут)</span>
+                <span>Пройти первый mock (~46 минут)</span>
               </Link>
             </div>
           ) : (

@@ -185,8 +185,9 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
               <span className="text-xs text-[#D2F544] font-bold uppercase block">
                 {currentTurn.speaker}
               </span>
-              <p className="text-sm font-medium italic text-neutral-200">
-                &ldquo;{currentTurn.speakerAudioText}&rdquo;
+              <p className="text-sm font-medium text-neutral-400">
+                Прослушайте реплику и выберите подходящий ответ. Текст реплики скрыт в
+                экзаменационном режиме.
               </p>
             </div>
           </div>

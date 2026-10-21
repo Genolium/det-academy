@@ -163,7 +163,33 @@ CREATE TABLE IF NOT EXISTS evaluations (
     recommendations JSONB NOT NULL DEFAULT '[]',
     audio_url TEXT DEFAULT '',
     transcript TEXT DEFAULT '',
+    transcript_source VARCHAR(20) DEFAULT 'none',
+    provider VARCHAR(50) DEFAULT '',
+    evaluator_version VARCHAR(30) DEFAULT '',
+    feedback_status VARCHAR(30) DEFAULT 'completed',
+    feedback TEXT DEFAULT '',
+    evidence_spans JSONB NOT NULL DEFAULT '[]',
+    retry_count INT NOT NULL DEFAULT 0,
+    last_error TEXT DEFAULT '',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Async evaluation jobs (STT + rubric + optional AI enrichment)
+CREATE TABLE IF NOT EXISTS evaluation_jobs (
+    id UUID PRIMARY KEY,
+    session_id UUID NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
+    question_id VARCHAR(100) NOT NULL,
+    evaluation_id UUID NOT NULL REFERENCES evaluations(id) ON DELETE CASCADE,
+    audio_path TEXT DEFAULT '',
+    audio_mime VARCHAR(100) DEFAULT '',
+    client_transcript TEXT DEFAULT '',
+    status VARCHAR(30) NOT NULL DEFAULT 'queued',
+    attempts INT NOT NULL DEFAULT 0,
+    max_attempts INT NOT NULL DEFAULT 3,
+    next_attempt_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_error TEXT DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Certificates
@@ -314,6 +340,7 @@ CREATE INDEX IF NOT EXISTS idx_question_responses_session ON question_responses(
 CREATE UNIQUE INDEX IF NOT EXISTS idx_question_responses_session_question ON question_responses(session_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_session ON media_assets(session_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_session ON evaluations(session_id);
+CREATE INDEX IF NOT EXISTS idx_evaluation_jobs_status ON evaluation_jobs(status, next_attempt_at);
 CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events(session_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_session_questions_session ON session_questions(session_id, stage_name, position);
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);

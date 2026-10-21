@@ -550,6 +550,14 @@ type MediaAsset struct {
 
 // Rubric & NLP Evaluation Models
 
+type EvidenceSpan struct {
+	Start      int    `json:"start"`
+	End        int    `json:"end"`
+	Text       string `json:"text"`
+	Label      string `json:"label"`
+	Suggestion string `json:"suggestion,omitempty"`
+}
+
 type EvaluationResult struct {
 	ID               string    `json:"id"`
 	ResponseID       string    `json:"responseId,omitempty"`
@@ -570,7 +578,32 @@ type EvaluationResult struct {
 	Recommendations  []string  `json:"recommendations"`
 	AudioURL         string    `json:"audioUrl,omitempty"`
 	Transcript       string    `json:"transcript,omitempty"`
+	TranscriptSource string    `json:"transcriptSource,omitempty"`
+	Provider         string    `json:"provider,omitempty"`
+	EvaluatorVersion string    `json:"evaluatorVersion,omitempty"`
+	FeedbackStatus   string    `json:"feedbackStatus,omitempty"`
+	Feedback         string    `json:"feedback,omitempty"`
+	EvidenceSpans    []EvidenceSpan `json:"evidenceSpans,omitempty"`
+	RetryCount       int       `json:"retryCount,omitempty"`
+	LastError        string    `json:"lastError,omitempty"`
 	CreatedAt        time.Time `json:"createdAt"`
+}
+
+type EvaluationJob struct {
+	ID            string    `json:"id"`
+	SessionID     string    `json:"sessionId"`
+	QuestionID    string    `json:"questionId"`
+	EvaluationID  string    `json:"evaluationId"`
+	AudioPath     string    `json:"-"`
+	AudioMIME     string    `json:"audioMime,omitempty"`
+	ClientTranscript string `json:"-"`
+	Status        string    `json:"status"`
+	Attempts      int       `json:"attempts"`
+	MaxAttempts   int       `json:"maxAttempts"`
+	NextAttemptAt time.Time `json:"nextAttemptAt"`
+	LastError     string    `json:"lastError,omitempty"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 // Stage D: User Goals, Personalized Study Plan, SRS, and Error Notebook

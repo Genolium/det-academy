@@ -167,6 +167,36 @@ export const RubricFeedbackCard: React.FC<RubricFeedbackCardProps> = ({
         </div>
       )}
 
+      {/* AI/Серверный feedback */}
+      {evaluation.feedbackStatus && evaluation.feedbackStatus !== 'completed' && (
+        <div className="my-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+          Статус проверки: <strong>{evaluation.feedbackStatus}</strong>
+          {evaluation.transcriptSource === 'none' && ' · серверное распознавание речи ещё не завершено'}
+        </div>
+      )}
+      {evaluation.feedback && (
+        <div className="my-4 rounded-xl border border-[#D2F544]/30 bg-[#D2F544]/10 p-3 text-xs text-neutral-200 leading-relaxed">
+          <span className="block text-[10px] font-black uppercase tracking-wider text-[#D2F544] mb-1">
+            Комментарий проверки
+          </span>
+          {evaluation.feedback}
+        </div>
+      )}
+      {evaluation.evidenceSpans && evaluation.evidenceSpans.length > 0 && (
+        <div className="my-4 space-y-2">
+          <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+            Evidence spans
+          </span>
+          {evaluation.evidenceSpans.map((span, index) => (
+            <div key={index} className="rounded-xl border border-neutral-800 bg-neutral-950 p-3 text-xs">
+              <p className="text-neutral-200">&ldquo;{span.text}&rdquo;</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-amber-400">{span.label}</p>
+              {span.suggestion && <p className="mt-1 text-neutral-400">{span.suggestion}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Actionable Recommendations */}
       {evaluation.recommendations && evaluation.recommendations.length > 0 && (
         <div className="mt-4 pt-4 border-t border-neutral-800">

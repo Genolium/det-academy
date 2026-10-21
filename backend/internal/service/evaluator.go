@@ -85,6 +85,34 @@ func SplitSentences(text string) []string {
 }
 
 // EvaluateWriting assesses written responses (WRITE_PHOTO, INTERACTIVE_WRITING, WRITING_SAMPLE).
+func buildEvidenceSpans(text string) []models.EvidenceSpan {
+	spans := []models.EvidenceSpan{}
+	lower := strings.ToLower(text)
+	counts := map[string]int{}
+	for _, word := range TokenizeWords(text) {
+		if len(word) < 4 {
+			continue
+		}
+		counts[strings.ToLower(word)]++
+	}
+	for word, count := range counts {
+		if count < 3 {
+			continue
+		}
+		offset := strings.Index(lower, word)
+		if offset >= 0 {
+			spans = append(spans, models.EvidenceSpan{
+				Start:      offset,
+				End:        offset + len(word),
+				Text:       text[offset : offset+len(word)],
+				Label:      "repeated_word",
+				Suggestion: "Разнообразьте лексику: слово повторяется несколько раз.",
+			})
+		}
+	}
+	return spans
+}
+
 func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userText string, contextKeywords []string) models.EvaluationResult {
 	words := TokenizeWords(userText)
 	wordCount := len(words)
@@ -105,6 +133,10 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		RelevanceScore:   0.0,
 		CEFRLevel:        "Pre-A1",
 		Recommendations:  []string{},
+		Provider:         "rule-based",
+		EvaluatorVersion: "2026.1",
+		FeedbackStatus:   "completed",
+		EvidenceSpans:    []models.EvidenceSpan{},
 		CreatedAt:        now,
 	}
 
@@ -468,6 +500,7 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 	result.RelevanceScore = math.Round(relevanceScore*100) / 100
 	result.Score = math.Round(math.Min(1.0, math.Max(0.05, finalScore))*100) / 100
 	result.CEFRLevel = DetermineCEFR(result.Score)
+	result.EvidenceSpans = buildEvidenceSpans(transcript)
 
 	return result
 }

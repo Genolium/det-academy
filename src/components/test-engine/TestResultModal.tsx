@@ -102,18 +102,37 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
       );
   }, [sessionId]);
 
+  const pendingEvaluations = evaluations.some((item) =>
+    ['queued', 'transcribing', 'evaluating', 'retryable_failed'].includes(
+      item.feedbackStatus || ''
+    )
+  );
+
   useEffect(() => {
     if (!sessionId) return;
-    setLoadingEvals(true);
-    api.getSessionEvaluations(sessionId)
-      .then((res) => {
-        if (res?.evaluations) {
-          setEvaluations(res.evaluations);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingEvals(false));
+    let cancelled = false;
+    const load = (showLoader: boolean) => {
+      if (showLoader) setLoadingEvals(true);
+      api
+        .getSessionEvaluations(sessionId)
+        .then((res) => {
+          if (!cancelled && res?.evaluations) {
+            setEvaluations(res.evaluations);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled && showLoader) setLoadingEvals(false);
+        });
+    };
+    load(true);
+    const timer = setInterval(() => load(false), 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [sessionId]);
+
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
@@ -300,6 +319,12 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
         </div>
 
         {/* Speaking & Writing Studio Breakdown */}
+        {pendingEvaluations && (
+          <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+            Серверная проверка Speaking/Writing ещё идёт. Результат и evidence появятся
+            автоматически.
+          </div>
+        )}
         {evaluations.length > 0 && (
           <div className="space-y-4 mb-8">
             <div className="flex items-center gap-2">
