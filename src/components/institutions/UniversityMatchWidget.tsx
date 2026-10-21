@@ -300,6 +300,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
         <div className="w-full md:w-64 flex items-center gap-3">
           <input
             type="range"
+            aria-label="Целевой балл"
             min={95}
             max={155}
             step={5}

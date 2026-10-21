@@ -22,6 +22,9 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: python3 scripts/lint_content.py
+      - run: python3 scripts/review_content.py
+      - run: python3 scripts/calibration_validate.py --production --allow-fixture
+      - run: node scripts/preflight_external.mjs || true
       - run: npm run build
 
   backend:
@@ -73,6 +76,47 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+
+
+  fullstack:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: det_academy_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d det_academy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: backend/go.sum
+      - name: Prepare database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d det_academy_test -f backend/db/init.sql
+          for f in backend/db/migrations/*.sql; do psql -h localhost -U postgres -d det_academy_test -f "$f"; done
+          psql -h localhost -U postgres -d det_academy_test -f backend/db/03-content-seed.sql
+          psql -h localhost -U postgres -d det_academy_test -f backend/db/04-vocabulary-seed.sql
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run full-stack E2E
+        env:
+          FULLSTACK_DATABASE_URL: postgres://postgres:postgres@localhost:5432/det_academy_test?sslmode=disable
+        run: bash scripts/run_fullstack_e2e.sh
 
   security:
     runs-on: ubuntu-latest

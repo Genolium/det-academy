@@ -184,6 +184,7 @@ function DashboardContent() {
               <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />
               <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Цель:</span>
               <select
+                aria-label="Целевой балл DET"
                 value={targetScore}
                 onChange={(e) => setTargetScore(Number(e.target.value))}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
@@ -202,6 +203,7 @@ function DashboardContent() {
               <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Дата:</span>
               <input
                 type="date"
+                aria-label="Дата экзамена"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
@@ -212,6 +214,7 @@ function DashboardContent() {
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Flame className="w-3.5 h-3.5 text-amber-400 mr-1.5 shrink-0" />
               <select
+                aria-label="Время занятий в день"
                 value={dailyMinutes}
                 onChange={(e) => setDailyMinutes(Number(e.target.value))}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"

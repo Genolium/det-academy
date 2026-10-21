@@ -1,5 +1,5 @@
 const CACHE_NAME = 'det-academy-v1';
-const STATIC_ASSETS = ['/', '/manifest.webmanifest'];
+const STATIC_ASSETS = ['/', '/manifest.webmanifest', '/offline.html'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -21,6 +21,15 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match('/offline.html').then((cached) => cached || caches.match('/'))
+      )
+    );
+    return;
+  }
 
   const isStatic =
     url.pathname.startsWith('/_next/static/') ||

@@ -142,6 +142,7 @@ export const DuolingoRegistry: React.FC = () => {
           <div className="flex flex-wrap sm:flex-nowrap gap-3">
             {/* Country Selector */}
             <select
+              aria-label="Страна"
               value={selectedCountry}
               onChange={(e) => handleCountryChange(e.target.value)}
               className="px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
@@ -156,6 +157,7 @@ export const DuolingoRegistry: React.FC = () => {
 
             {/* Level Filter */}
             <select
+              aria-label="Тип программы"
               value={selectedType}
               onChange={(e) => handleTypeChange(e.target.value)}
               className="px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
@@ -308,6 +310,7 @@ export const DuolingoRegistry: React.FC = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-6">
           <button
+            aria-label="Предыдущая страница"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="p-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
@@ -320,6 +323,7 @@ export const DuolingoRegistry: React.FC = () => {
           </span>
 
           <button
+            aria-label="Следующая страница"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="p-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"

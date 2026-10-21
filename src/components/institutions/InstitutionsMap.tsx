@@ -501,6 +501,7 @@ export const InstitutionsMap: React.FC = () => {
           {/* Country filter */}
           <div className="md:col-span-2">
             <select
+              aria-label="Страна"
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
               className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
@@ -516,6 +517,7 @@ export const InstitutionsMap: React.FC = () => {
           {/* Min Score filter */}
           <div className="md:col-span-3">
             <select
+              aria-label="Минимальный балл"
               value={minScoreFilter}
               onChange={(e) => setMinScoreFilter(Number(e.target.value))}
               className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
@@ -531,6 +533,7 @@ export const InstitutionsMap: React.FC = () => {
           {/* Subscores Faceted Filter */}
           <div className="md:col-span-3">
             <select
+              aria-label="Фильтр по сабскорам"
               value={subscoreFilter}
               onChange={(e) => setSubscoreFilter(e.target.value as SubscoreFilter)}
               className="w-full bg-emerald-50/70 border border-emerald-300 focus:border-emerald-600 rounded-2xl px-3 py-3 text-xs sm:text-sm font-bold text-emerald-900 outline-none cursor-pointer"

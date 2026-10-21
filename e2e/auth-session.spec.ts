@@ -25,13 +25,14 @@ test.describe('client auth session adapter', () => {
     await mockApi(page);
     await page.goto('/');
 
-    const storage = await page.evaluate(() => ({
-      canonical: localStorage.getItem('det_auth_token'),
-      legacy: localStorage.getItem('det_token'),
-    }));
-
-    expect(storage.canonical).toBe('legacy-token-value');
-    expect(storage.legacy).toBeNull();
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          canonical: localStorage.getItem('det_auth_token'),
+          legacy: localStorage.getItem('det_token'),
+        }))
+      )
+      .toEqual({ canonical: 'legacy-token-value', legacy: null });
   });
 
   test('switching users does not reveal the previous user\'s error notebook', async ({ page }) => {

@@ -300,6 +300,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             <div className="relative">
               <Building2 className="w-4 h-4 text-purple-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <select
+                aria-label="Целевой университет"
                 value={selectedUniId}
                 onChange={(e) => setSelectedUniId(e.target.value)}
                 className="w-full pl-9 pr-8 py-2.5 bg-neutral-900 border border-neutral-800 rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer appearance-none"

@@ -360,6 +360,7 @@ export const TypingEngine: React.FC = () => {
           <input
             ref={inputRef}
             type="text"
+            aria-label="Поле ввода текста"
             value={currentInput}
             onChange={handleInputChange}
             className="opacity-0 absolute inset-0 cursor-default"

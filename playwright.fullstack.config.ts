@@ -23,6 +23,7 @@ export default defineConfig({
     timeout: 180_000,
     env: {
       NEXT_PUBLIC_API_URL: 'http://localhost:18081',
+      NEXT_DIST_DIR: '.next-fullstack',
     },
   },
 });

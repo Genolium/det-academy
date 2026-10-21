@@ -368,6 +368,7 @@ function ProfileContent() {
                   <form onSubmit={handleSaveName} className="flex items-center gap-2">
                     <input
                       type="text"
+                      aria-label="Ваше имя"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       placeholder="Ваше имя"
@@ -558,6 +559,7 @@ function ProfileContent() {
                   </label>
                   <input
                     type="password"
+                    aria-label="Текущий пароль"
                     required
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
@@ -573,6 +575,7 @@ function ProfileContent() {
                 </label>
                 <input
                   type="password"
+                  aria-label="Новый пароль"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -587,6 +590,7 @@ function ProfileContent() {
                 </label>
                 <input
                   type="password"
+                  aria-label="Подтверждение нового пароля"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
