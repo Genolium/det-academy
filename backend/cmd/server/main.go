@@ -74,6 +74,16 @@ func main() {
 		store = memory.New()
 	} else {
 		log.Println("[Storage] Connected to PostgreSQL successfully")
+		if os.Getenv("RUN_MIGRATIONS") != "false" {
+			migrationsDir := postgres.MigrationsDir()
+			if migrationsDir == "" {
+				log.Fatalf("[Migrations] no migrations directory found; set MIGRATIONS_DIR")
+			}
+			if err := pgStore.RunMigrations(migrationsDir); err != nil {
+				log.Fatalf("[Migrations] failed: %v", err)
+			}
+			log.Printf("[Migrations] applied from %s", migrationsDir)
+		}
 		store = pgStore
 	}
 	defer store.Close()

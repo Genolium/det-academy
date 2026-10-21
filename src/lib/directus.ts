@@ -10,14 +10,17 @@
 
 function resolveDirectusUrl(): string {
   if (typeof window !== 'undefined') {
+    // The production Directus subdomain historically served the apex
+    // certificate. Use the same-origin nginx /directus proxy instead; it is
+    // covered by the apex certificate and avoids a browser TLS warning.
+    if (window.location.hostname.endsWith('det-academy.ru')) {
+      return '/directus';
+    }
     // Prevent Mixed Content: never make http requests from an https page
     if (window.location.protocol === 'https:') {
       const customUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
-      if (customUrl && customUrl.startsWith('https://')) {
+      if (customUrl && customUrl.startsWith('https://') && !customUrl.includes('directus.det-academy.ru')) {
         return customUrl.replace(/\/+$/, '');
-      }
-      if (window.location.hostname.endsWith('det-academy.ru')) {
-        return 'https://directus.det-academy.ru';
       }
       return '/directus';
     }

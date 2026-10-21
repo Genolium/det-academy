@@ -36,6 +36,7 @@ services:
       DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-det_academy}?sslmode=disable"
       JWT_SECRET: "${JWT_SECRET:?JWT_SECRET is required}"
       MEDIA_UPLOAD_DIR: "/data/media"
+      MIGRATIONS_DIR: "/app/db/migrations"
       ALLOWED_ORIGIN: "${ALLOWED_ORIGIN:-https://det-academy.ru,https://www.det-academy.ru}"
       REQUIRE_EMAIL_VERIFICATION: "${REQUIRE_EMAIL_VERIFICATION:-true}"
       PUBLIC_APP_URL: "${PUBLIC_APP_URL:-https://det-academy.ru}"

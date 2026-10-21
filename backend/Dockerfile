@@ -27,6 +27,10 @@ RUN apk --no-cache add ca-certificates tzdata curl
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /app/bin/server /app/server
+COPY --from=builder /app/db/migrations /app/db/migrations
+COPY --from=builder /app/db/init.sql /app/db/init.sql
+
+ENV MIGRATIONS_DIR=/app/db/migrations
 
 USER appuser
 
