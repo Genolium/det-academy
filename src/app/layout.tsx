@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer';
 import { AdBanner } from '@/components/layout/AdBanner';
 import { CookieConsent } from '@/components/ui/CookieConsent';
 import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister';
+import { OfflineIndicator } from '@/components/system/OfflineIndicator';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -44,11 +45,15 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-[#D2F544] focus:px-4 focus:py-2 focus:text-sm focus:font-black focus:text-[#0C2418]">
+          Перейти к основному содержимому
+        </a>
         <AdBanner placement="HEADER" />
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>
         <Footer />
         <CookieConsent />
+        <OfflineIndicator />
         <ServiceWorkerRegister />
         {/* Google Identity Services SDK for Real One-Tap & OAuth Popup */}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />

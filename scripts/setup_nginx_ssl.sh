@@ -58,9 +58,23 @@ sudo certbot --nginx \
     --email "$EMAIL" \
     --redirect
 
-# 6. Apply full production SSL configuration with WebSocket & tuning
+# Directus is a separate hostname and must not reuse the apex certificate.
+sudo certbot --nginx \
+    -d "directus.$DOMAIN" \
+    --agree-tos \
+    --no-eff-email \
+    --email "$EMAIL" \
+    --redirect
+
+# 6. Apply full production SSL configuration with WebSocket & tuning.
+# Ubuntu 24.04 ships nginx 1.24, so the legacy listen syntax is required.
 echo "✨ 6. Installing fine-tuned production Nginx SSL configuration..."
-sudo cp "$REPO_ROOT/nginx/det-academy.ru.conf" /etc/nginx/sites-available/det-academy.ru
+NGINX_VERSION="$(nginx -v 2>&1 | sed -n 's#.*nginx/\([0-9.]*\).*#\1#p')"
+if [[ -n "$NGINX_VERSION" ]] && [[ "$(printf '%s\n' "$NGINX_VERSION" 1.25.1 | sort -V | head -n1)" == "1.25.1" ]]; then
+    sudo cp "$REPO_ROOT/nginx/det-academy.ru.modern.conf" /etc/nginx/sites-available/det-academy.ru
+else
+    sudo cp "$REPO_ROOT/nginx/det-academy.ru.conf" /etc/nginx/sites-available/det-academy.ru
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 

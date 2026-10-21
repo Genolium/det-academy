@@ -13,6 +13,7 @@ import (
 	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/config"
 	"det-academy-backend/internal/handlers"
+	"det-academy-backend/internal/observability"
 	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/repository/memory"
 	"det-academy-backend/internal/repository/postgres"
@@ -53,6 +54,10 @@ func corsOrigins() []string {
 func main() {
 	cfg := config.Load()
 	log.Printf("Starting DET Academy Backend Server on port %s...", cfg.Port)
+	if err := observability.Init(os.Getenv("SENTRY_DSN"), cfg.Env, os.Getenv("SENTRY_RELEASE")); err != nil {
+		log.Printf("[Sentry] disabled: %v", err)
+	}
+	defer observability.Flush(2 * time.Second)
 
 	// Initialize Storage: Try Postgres, fallback to Memory (strictly disallow fallback in production)
 	var store repository.Storage
@@ -152,6 +157,7 @@ func main() {
 	r.Use(chiMiddleware.RequestSize(30 << 20))
 	r.Use(handlers.MetricsMiddleware)
 	r.Use(chiMiddleware.Recoverer)
+	r.Use(observability.Middleware)
 	r.Use(chiMiddleware.Timeout(60 * time.Second))
 
 	// CORS configuration: Allow explicit trusted origins with credentials

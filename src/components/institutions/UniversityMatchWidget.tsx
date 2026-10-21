@@ -385,9 +385,9 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-black text-white hover:text-[#D2F544] transition-colors">
+                    <h3 className="text-sm font-black text-white hover:text-[#D2F544] transition-colors">
                       {uni.name}
-                    </h4>
+                    </h3>
                   </div>
 
                   <div className="text-right shrink-0">

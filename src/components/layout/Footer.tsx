@@ -50,7 +50,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 2 */}
           <div className="space-y-3">
-            <h4 className="text-white text-xs font-bold uppercase tracking-wider">{t.modulesTitle}</h4>
+            <h2 className="text-white text-xs font-bold uppercase tracking-wider">{t.modulesTitle}</h2>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/theory" className="hover:text-white transition-colors flex items-center gap-1">
@@ -89,7 +89,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 3 */}
           <div className="space-y-3">
-            <h4 className="text-white text-xs font-bold uppercase tracking-wider">{t.examTitle}</h4>
+            <h2 className="text-white text-xs font-bold uppercase tracking-wider">{t.examTitle}</h2>
             <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 text-xs space-y-2">
               <div className="flex justify-between">
                 <span>{t.scoreScaleLabel}</span>
@@ -107,7 +107,7 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-neutral-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
+        <div className="border-t border-neutral-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-4">
           <p>© {new Date().getFullYear()} DET Academy. {t.rights}</p>
           <p className="text-[11px] max-w-xl text-center sm:text-right">{t.disclaimer}</p>
         </div>

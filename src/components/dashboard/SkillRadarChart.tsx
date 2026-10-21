@@ -473,7 +473,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                 <span className="text-xs font-bold text-neutral-400">
                   {radarMode === 'subscores' ? 'Статус соответствия вузу:' : 'Диагностика готовности:'}
                 </span>
-                <h4 className="text-base font-black text-white mt-0.5">
+                <h3 className="text-base font-black text-white mt-0.5">
                   {!hasTakenTest ? (
                     <span className="text-amber-400 flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" /> Требуется прохождение теста
@@ -487,7 +487,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                       <AlertTriangle className="w-4 h-4" /> Дефицит по {totalDeficit} из 4 показателей
                     </span>
                   )}
-                </h4>
+                </h3>
                 {weakestModality && (
                   <p className="text-[11px] text-amber-300/90 mt-1">
                     Главное слабое звено: <strong>{weakestModality.name}</strong> ({weakestModality.current} баллов).

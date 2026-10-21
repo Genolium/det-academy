@@ -123,6 +123,9 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path.endsWith('/auth/logout')) {
       return json(route, 200, { status: 'ok' });
     }
+    if (path.endsWith('/auth/refresh')) {
+      return json(route, 401, { error: 'no refresh session' });
+    }
     if (path.endsWith('/theory/progress')) {
       return json(route, 200, {
         completedLessons: [],

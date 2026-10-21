@@ -41,5 +41,10 @@ for _ in $(seq 1 60); do
 done
 curl -fsS "http://localhost:$API_PORT/api/v1/ready" >/dev/null
 
+if lsof -ti tcp:"$FRONTEND_PORT" >/dev/null 2>&1; then
+  echo "Port $FRONTEND_PORT is already in use; stop the stale frontend before running this script." >&2
+  exit 1
+fi
+
 cd "$ROOT"
 npx playwright test -c playwright.fullstack.config.ts --reporter=list

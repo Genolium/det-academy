@@ -263,9 +263,9 @@ export const AdminDashboard: React.FC = () => {
               <PillBadge variant="dark" prefixHash className="mx-auto text-[#D2F544] border-neutral-800">
                 Admin CRM Panel
               </PillBadge>
-              <h2 className="text-2xl font-black uppercase text-white tracking-tight mt-2">
+              <h1 className="text-2xl font-black uppercase text-white tracking-tight mt-2">
                 Вход в Панель Управления
-              </h2>
+              </h1>
               <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
                 Доступ к CRM, банку вопросов и баннерной сети открыт для администраторов DET Academy.
               </p>

@@ -165,7 +165,7 @@ export const Navbar: React.FC = () => {
               <span className="font-extrabold text-base tracking-tight text-[#0E1012] flex items-center gap-1.5 leading-none">
                 DET <span className="bg-[#D2F544] text-[#0C2418] text-[10px] px-1.5 py-0.5 rounded-full font-black tracking-normal">ACADEMY</span>
               </span>
-              <span className="text-[9px] uppercase font-semibold text-neutral-400 tracking-wider mt-0.5">
+              <span className="text-[9px] uppercase font-semibold text-neutral-600 tracking-wider mt-0.5">
                 Prep Platform
               </span>
             </div>

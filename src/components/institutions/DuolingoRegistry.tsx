@@ -235,9 +235,9 @@ export const DuolingoRegistry: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-extrabold text-[#0E1012] text-base leading-snug group-hover:text-emerald-700 transition-colors">
+                  <h2 className="font-extrabold text-[#0E1012] text-base leading-snug group-hover:text-emerald-700 transition-colors">
                     {inst.name}
-                  </h3>
+                  </h2>
                 </div>
 
                 {/* Score Requirement & Eligibility Pill */}

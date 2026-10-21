@@ -479,7 +479,7 @@ function ProfileContent() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white">Профиль студента</h3>
+                <h2 className="text-sm font-bold text-white">Профиль студента</h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-[#D2F544] border border-[#D2F544]/30">
                   DET Candidate
                 </span>

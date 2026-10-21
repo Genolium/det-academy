@@ -17,12 +17,14 @@ export default defineConfig({
   },
   projects: [{ name: 'fullstack-chromium', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }],
   webServer: {
-    command: `npm run dev -- --port ${PORT}`,
+    command: `npm run build && npm run start -- --port ${PORT}`,
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    reuseExistingServer: false,
+    timeout: 300_000,
     env: {
-      NEXT_PUBLIC_API_URL: 'http://localhost:18081',
+      NEXT_PUBLIC_API_URL: '',
+      NEXT_PUBLIC_API_SAME_ORIGIN: 'true',
+      API_PROXY_TARGET: 'http://localhost:18081',
       NEXT_DIST_DIR: '.next-fullstack',
     },
   },

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api, ApiError, User } from '@/lib/api';
 import { hasAuthSession } from '@/lib/auth-session';
+import { cacheUser, clearOfflineData, getCachedUser } from '@/lib/offline-cache';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { useTestStore } from '@/store/useTestStore';
@@ -43,6 +44,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.login({ email, password });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      clearOfflineData({ clearPages: true });
+      cacheUser(resp.user);
       await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
@@ -61,6 +64,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.register({ email, password, name });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      clearOfflineData({ clearPages: true });
+      cacheUser(resp.user);
       await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
@@ -79,6 +84,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.oauthLogin(params);
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      clearOfflineData({ clearPages: true });
+      cacheUser(resp.user);
       await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
@@ -97,6 +104,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const updatedUser = await api.updateProfile(params);
       set({ user: updatedUser, isLoading: false });
+      cacheUser(updatedUser);
       if (updatedUser?.name) {
         useProgressStore.getState().setCandidateName(updatedUser.name);
       }
@@ -115,6 +123,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       useProgressStore.getState().resetProgressState();
       useErrorNotebookStore.getState().resetForUser();
+      clearOfflineData({ clearPages: true });
       useTestStore.getState().startNewSession();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('det_active_test_attempt_v2');
@@ -136,6 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await api.getMe();
       set({ user, isAuthenticated: true, isLoading: false });
+      cacheUser(user);
       if (user?.name) {
         useProgressStore.getState().setCandidateName(user.name);
       }
@@ -147,6 +157,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
           const refreshed = await api.refreshSession();
           set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
+          cacheUser(refreshed.user);
           useProgressStore.getState().syncWithBackend(refreshed.user.id);
           void useErrorNotebookStore.getState().loadForUser(refreshed.user.id);
           return;
@@ -154,10 +165,18 @@ export const useAuthStore = create<AuthState>((set) => ({
           await api.logout().catch(() => {});
           useProgressStore.getState().resetProgressState();
           useErrorNotebookStore.getState().resetForUser();
+          set({ user: null, isAuthenticated: false, isLoading: false });
+          return;
         }
       }
-      // A network/5xx failure must not destroy the local session token. The
-      // next check can retry once the API is reachable again.
+      // A network/5xx failure must not destroy the local session token. If a
+      // recent profile snapshot exists, keep the authenticated UI usable in
+      // offline mode; 401/refresh failures above deliberately skip this path.
+      const cached = getCachedUser();
+      if (cached) {
+        set({ user: cached, isAuthenticated: true, isLoading: false });
+        return;
+      }
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

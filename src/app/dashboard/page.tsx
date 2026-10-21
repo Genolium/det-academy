@@ -471,7 +471,7 @@ function DashboardContent() {
                   <Award className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-bold text-white">Отчёты DET Academy</h4>
+                  <h2 className="text-xs font-bold text-white">Отчёты DET Academy</h2>
                   <p className="text-[11px] text-neutral-400 mt-1">
                     Сертификат существует только после выдачи сервером. Локальные баллы и прогресс
                     теории не создают документ.

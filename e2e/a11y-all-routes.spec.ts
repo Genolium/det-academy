@@ -21,7 +21,7 @@ const routes = [
 ];
 
 for (const route of routes) {
-  test(`no critical accessibility violations on ${route}`, async ({ page }) => {
+  test(`no moderate or higher accessibility violations on ${route}`, async ({ page }) => {
     await page.addInitScript((attemptId) => {
       localStorage.setItem('det_auth_token', 'token-user-a');
       localStorage.setItem('det_cookie_consent', 'true');
@@ -34,7 +34,7 @@ for (const route of routes) {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(400);
     const results = await new AxeBuilder({ page }).analyze();
-    const critical = results.violations.filter((violation) => violation.impact === 'critical');
-    expect(critical, JSON.stringify(critical.map((v) => ({ id: v.id, nodes: v.nodes.length })), null, 2)).toEqual([]);
+    const blocking = results.violations.filter((violation) => ['critical', 'serious', 'moderate'].includes(violation.impact || ''));
+    expect(blocking, JSON.stringify(blocking.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, targets: v.nodes.slice(0, 5).map((node) => node.target) })), null, 2)).toEqual([]);
   });
 }

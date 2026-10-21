@@ -135,9 +135,9 @@ export default function TheoryCatalogPage() {
                     <div className="text-xs font-mono text-neutral-400 mb-1">
                       {t.lessonPrefix} {lesson.number < 10 ? `0${lesson.number}` : lesson.number}
                     </div>
-                    <h3 className="text-lg font-bold text-[#0E1012] group-hover:text-emerald-700 transition-colors line-clamp-2 mb-3">
+                    <h2 className="text-lg font-bold text-[#0E1012] group-hover:text-emerald-700 transition-colors line-clamp-2 mb-3">
                       {title}
-                    </h3>
+                    </h2>
                     <p className="text-xs text-neutral-500 mb-4 line-clamp-2">
                       {lesson.format}
                     </p>

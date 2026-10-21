@@ -79,3 +79,44 @@ body {
 .leaflet-control-attribution {
   display: none !important;
 }
+
+
+/*
+ * Muted text contrast guard.
+ * The product uses two surface families (near-white and near-black) with the
+ * same neutral utility classes. A single neutral value cannot satisfy WCAG AA
+ * on both, so resolve it from the nearest known surface.
+ */
+body .text-neutral-500 {
+  color: #525252;
+}
+
+[class*="bg-[#0E1012]"] .text-neutral-500,
+[class*="bg-[#0e1012]"] .text-neutral-500,
+[class*="bg-[#070809]"] .text-neutral-500,
+[class*="bg-[#111315]"] .text-neutral-500,
+[class*="bg-[#0a0a0a]"] .text-neutral-500,
+[class*="bg-[#0C2418]"] .text-neutral-500,
+[class*="bg-neutral-950"] .text-neutral-500,
+[class*="bg-neutral-900"] .text-neutral-500,
+[class*="bg-neutral-800"] .text-neutral-500 {
+  color: #a3a3a3;
+}
+
+[class*="bg-white"] .text-neutral-400,
+[class*="bg-white"] .text-neutral-500,
+[class*="bg-neutral-50"] .text-neutral-400,
+[class*="bg-neutral-50"] .text-neutral-500,
+[class*="bg-neutral-100"] .text-neutral-400,
+[class*="bg-neutral-100"] .text-neutral-500,
+[class*="bg-[#F8F9FA]"] .text-neutral-400,
+[class*="bg-[#F8F9FA]"] .text-neutral-500,
+[class*="bg-[#f8f9fa]"] .text-neutral-400,
+[class*="bg-[#f8f9fa]"] .text-neutral-500 {
+  color: #525252;
+}
+
+/* The comparison table header is dark even though its card is white. */
+.comparison-header .text-neutral-400 {
+  color: #d4d4d4;
+}

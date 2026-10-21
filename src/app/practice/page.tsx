@@ -273,9 +273,9 @@ export default function PracticeHubPage() {
                   </PillBadge>
                 </div>
 
-                <h3 className="text-lg font-black text-neutral-900 mb-2">
+                <h2 className="text-lg font-black text-neutral-900 mb-2">
                   {cat.title}
-                </h3>
+                </h2>
                 <p className="text-xs text-neutral-600 leading-relaxed mb-6">
                   {cat.description}
                 </p>

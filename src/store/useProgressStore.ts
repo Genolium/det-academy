@@ -27,13 +27,13 @@ export interface LeagueInfo {
 }
 
 export function getLeagueInfo(elo: number): LeagueInfo {
-  if (elo >= 2050) return { name: 'Grandmaster', nameRu: 'Грандмастер', color: 'text-rose-400 bg-rose-950/60 border-rose-800/60', badge: '👑', minElo: 2050, maxElo: 3000 };
-  if (elo >= 1900) return { name: 'Master', nameRu: 'Мастер', color: 'text-purple-400 bg-purple-950/60 border-purple-800/60', badge: '🔮', minElo: 1900, maxElo: 2049 };
-  if (elo >= 1750) return { name: 'Diamond', nameRu: 'Алмаз', color: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/60', badge: '💎', minElo: 1750, maxElo: 1899 };
-  if (elo >= 1600) return { name: 'Platinum', nameRu: 'Платина', color: 'text-teal-400 bg-teal-950/60 border-teal-800/60', badge: '🛡️', minElo: 1600, maxElo: 1749 };
-  if (elo >= 1400) return { name: 'Gold', nameRu: 'Золото', color: 'text-amber-400 bg-amber-950/60 border-amber-800/60', badge: '🥇', minElo: 1400, maxElo: 1599 };
-  if (elo >= 1200) return { name: 'Silver', nameRu: 'Серебро', color: 'text-slate-300 bg-slate-800/60 border-slate-700/60', badge: '🥈', minElo: 1200, maxElo: 1399 };
-  return { name: 'Bronze', nameRu: 'Бронза', color: 'text-orange-400 bg-orange-950/60 border-orange-800/60', badge: '🥉', minElo: 0, maxElo: 1199 };
+  if (elo >= 2050) return { name: 'Grandmaster', nameRu: 'Грандмастер', color: 'text-rose-100 bg-rose-900 border-rose-700', badge: '👑', minElo: 2050, maxElo: 3000 };
+  if (elo >= 1900) return { name: 'Master', nameRu: 'Мастер', color: 'text-purple-100 bg-purple-900 border-purple-700', badge: '🔮', minElo: 1900, maxElo: 2049 };
+  if (elo >= 1750) return { name: 'Diamond', nameRu: 'Алмаз', color: 'text-cyan-100 bg-cyan-900 border-cyan-700', badge: '💎', minElo: 1750, maxElo: 1899 };
+  if (elo >= 1600) return { name: 'Platinum', nameRu: 'Платина', color: 'text-teal-100 bg-teal-900 border-teal-700', badge: '🛡️', minElo: 1600, maxElo: 1749 };
+  if (elo >= 1400) return { name: 'Gold', nameRu: 'Золото', color: 'text-amber-100 bg-amber-900 border-amber-700', badge: '🥇', minElo: 1400, maxElo: 1599 };
+  if (elo >= 1200) return { name: 'Silver', nameRu: 'Серебро', color: 'text-slate-100 bg-slate-700 border-slate-600', badge: '🥈', minElo: 1200, maxElo: 1399 };
+  return { name: 'Bronze', nameRu: 'Бронза', color: 'text-orange-100 bg-orange-900 border-orange-700', badge: '🥉', minElo: 0, maxElo: 1199 };
 }
 
 interface ProgressState {

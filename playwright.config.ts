@@ -16,6 +16,8 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
     channel: 'chrome',
+    // Mocked tests must not race with the API-caching service worker.
+    serviceWorkers: 'block',
   },
   projects: [
     {

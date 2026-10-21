@@ -11,7 +11,14 @@
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit",
     "test:backend": "cd backend && go test ./...",
-    "test:e2e:fullstack": "playwright test -c playwright.fullstack.config.ts"
+    "test:e2e:fullstack": "playwright test -c playwright.fullstack.config.ts",
+    "preflight:external": "node --env-file-if-exists=.env scripts/preflight_external.mjs",
+    "preflight:directus": "node --env-file-if-exists=.env scripts/directus_preflight.mjs",
+    "preflight:edge": "node scripts/edge_preflight.mjs",
+    "calibration:test": "python3 scripts/test_calibration.py",
+    "calibration:report": "python3 scripts/calibration_report.py",
+    "calibration:gate": "python3 scripts/calibration_validate.py",
+    "nginx:validate": "bash scripts/validate_nginx_config.sh"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",

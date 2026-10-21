@@ -3,6 +3,8 @@ import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth-session';
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
     ? process.env.NEXT_PUBLIC_API_URL
+    : process.env.NEXT_PUBLIC_API_SAME_ORIGIN === 'true'
+    ? ''
     : typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     ? ''
     : 'http://localhost:18080';
@@ -480,6 +482,9 @@ class ApiClient {
       throw new Error(data.error || 'Registration failed');
     }
     const data: AuthResponse = await res.json();
+    if (!data?.token || !data?.user) {
+      throw new ApiError('Invalid registration response', 500);
+    }
     setAuthToken(data.token);
     return data;
   }
@@ -496,6 +501,9 @@ class ApiClient {
       throw new Error(data.error || 'Login failed');
     }
     const data: AuthResponse = await res.json();
+    if (!data?.token || !data?.user) {
+      throw new ApiError('Invalid authentication response', 500);
+    }
     setAuthToken(data.token);
     return data;
   }
@@ -541,6 +549,9 @@ class ApiClient {
       throw new Error(data.error || 'OAuth authentication failed');
     }
     const data: AuthResponse = await res.json();
+    if (!data?.token || !data?.user) {
+      throw new ApiError('Invalid authentication response', 500);
+    }
     setAuthToken(data.token);
     return data;
   }
@@ -580,6 +591,9 @@ class ApiClient {
       throw new ApiError('Session refresh failed', res.status);
     }
     const data: AuthResponse = await res.json();
+    if (!data?.token || !data?.user) {
+      throw new ApiError('Invalid authentication response', 500);
+    }
     setAuthToken(data.token);
     return data;
   }

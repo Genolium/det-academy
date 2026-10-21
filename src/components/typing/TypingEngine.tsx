@@ -271,7 +271,7 @@ export const TypingEngine: React.FC = () => {
               </span>
             </div>
             <div className="text-neutral-400 font-mono text-sm">
-              {t.accuracyLabel} <strong className="text-emerald-600">{accuracy}%</strong>
+              {t.accuracyLabel} <strong className="text-emerald-700">{accuracy}%</strong>
             </div>
           </div>
 
@@ -349,7 +349,7 @@ export const TypingEngine: React.FC = () => {
               }
 
               return (
-                <span key={wIdx} className="text-neutral-300">
+                <span key={wIdx} className="text-neutral-500">
                   {word}
                 </span>
               );

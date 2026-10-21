@@ -24,7 +24,7 @@ export const BentoGrid: React.FC = () => {
             {t.sectionTitle}
           </h2>
         </div>
-        <p className="text-sm text-neutral-500 max-w-md">
+        <p className="text-sm text-neutral-600 max-w-md">
           {t.sectionSubtitle}
         </p>
       </div>

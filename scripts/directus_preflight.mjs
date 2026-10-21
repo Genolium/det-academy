@@ -19,12 +19,19 @@ if (production && !base.startsWith('https://')) fail('production Directus must u
 if (!token && !(email && password)) fail('DIRECTUS_TOKEN or DIRECTUS_EMAIL/PASSWORD is required');
 
 async function request(path, options = {}) {
-  const response = await fetch(`${base}${path}`, { ...options, headers: { ...(options.headers || {}) } });
-  const text = await response.text();
-  let body = null;
-  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-  return { response, body };
+  try {
+    const response = await fetch(`${base}${path}`, { ...options, headers: { ...(options.headers || {}) } });
+    const text = await response.text();
+    let body = null;
+    try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+    return { response, body };
+  } catch (error) {
+    fail(`network/TLS error for ${base}${path}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
+
+const health = await request('/server/health');
+if (!health.response.ok) fail(`Directus health endpoint returned ${health.response.status}`);
 
 let accessToken = token;
 if (!accessToken) {
@@ -42,11 +49,18 @@ const headers = { Authorization: `Bearer ${accessToken}` };
 const collection = await request('/collections/vocabulary_publication', { headers });
 if (!collection.response.ok) fail('collection vocabulary_publication is missing');
 
-for (const field of ['word', 'status', 'external_id', 'collaborations']) {
-  if (field === 'collaborations') continue;
+for (const field of ['word', 'status', 'external_id']) {
   const result = await request(`/fields/vocabulary_publication/${field}`, { headers });
   if (!result.response.ok) fail(`field ${field} is missing`);
 }
+
+// A permission entry is not enough: verify that an anonymous client can
+// actually read a published row through the public API.
+const publicItems = await request('/items/vocabulary_publication?limit=1&filter[status][_eq]=published', {
+  headers: { 'Content-Type': 'application/json' },
+});
+if (!publicItems.response.ok) fail(`anonymous public read failed with ${publicItems.response.status}`);
+if (!Array.isArray(publicItems.body?.data)) fail('anonymous public read returned an invalid payload');
 
 const permissions = await request('/permissions?limit=200', { headers });
 if (!permissions.response.ok) fail('cannot read Directus permissions');
@@ -61,4 +75,5 @@ console.log(JSON.stringify({
   production,
   collection: 'vocabulary_publication',
   publicRead,
+  publicItems: publicItems.body.data.length,
 }, null, 2));

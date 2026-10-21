@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockApi } from './mocks';
 
+test.use({ serviceWorkers: 'allow' });
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('det_cookie_consent', 'true'));
   await mockApi(page);

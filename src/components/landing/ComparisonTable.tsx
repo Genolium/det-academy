@@ -45,7 +45,7 @@ export const ComparisonTable: React.FC = () => {
 
         {/* Comparison Grid */}
         <div className="overflow-hidden rounded-3xl border border-neutral-200 shadow-sm bg-white">
-          <div className="grid grid-cols-12 bg-neutral-900 text-white p-4 sm:p-6 font-bold text-xs sm:text-sm uppercase tracking-wider">
+          <div className="comparison-header grid grid-cols-12 bg-neutral-900 text-white p-4 sm:p-6 font-bold text-xs sm:text-sm uppercase tracking-wider">
             <div className="col-span-4 sm:col-span-4">{t.feature}</div>
             <div className="col-span-4 sm:col-span-4 text-[#D2F544] flex items-center gap-1.5">
               <span>{t.det}</span>

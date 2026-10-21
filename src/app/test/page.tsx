@@ -81,9 +81,9 @@ export default function TestLobbyPage() {
                 <PillBadge variant="lime" prefixHash className="mb-2">
                   {t.sessionBadge}
                 </PillBadge>
-                <h3 className="text-2xl font-black uppercase text-white">
+                <h2 className="text-2xl font-black uppercase text-white">
                   {t.sessionTitle}
-                </h3>
+                </h2>
               </div>
 
               <form onSubmit={handleStart} className="space-y-4">
@@ -128,12 +128,12 @@ export default function TestLobbyPage() {
 
             {/* Catalog of Tasks Statuses (7 cols) */}
             <BentoCard variant="light" className="md:col-span-7">
-              <h3 className="text-xl font-bold uppercase text-[#0E1012] mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold uppercase text-[#0E1012] mb-4 flex items-center justify-between">
                 <span>{t.compositionTitle}</span>
                 <span className="text-xs font-mono text-neutral-400 font-normal">{t.mvpStatusLabel}</span>
-              </h3>
+              </h2>
 
-              <div className="divide-y divide-neutral-100 max-h-[460px] overflow-y-auto pr-2">
+              <div className="divide-y divide-neutral-100 max-h-[460px] overflow-y-auto pr-2" tabIndex={0} role="region" aria-label="Список активных механик">
                 {activeMechanics.map((item, idx) => (
                   <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
                     <div>

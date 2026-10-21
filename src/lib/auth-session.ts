@@ -45,6 +45,25 @@ export function migrateLegacyAuthStorage(): void {
   }
 }
 
+/**
+ * Reads the user id from the access token without trusting it for authorization.
+ * It is only used to scope browser-local offline caches to the current user.
+ */
+export function getAuthUserId(): string | null {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(normalized + '='.repeat((4 - (normalized.length % 4)) % 4)));
+    const id = decoded?.userId ?? decoded?.user_id ?? decoded?.sub;
+    return typeof id === 'string' && id ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 export function getAuthToken(): string | null {
   const storage = getStorage();
   if (!storage) return null;
@@ -58,7 +77,7 @@ export function getAuthToken(): string | null {
 
 export function setAuthToken(token: string): void {
   const storage = getStorage();
-  if (!storage) return;
+  if (!storage || typeof token !== 'string' || !token.trim()) return;
   try {
     storage.setItem(SESSION_TOKEN_KEY, token);
     for (const legacyKey of LEGACY_TOKEN_KEYS) {

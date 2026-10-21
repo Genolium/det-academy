@@ -23,6 +23,7 @@ jobs:
       - run: npm run lint
       - run: python3 scripts/lint_content.py
       - run: python3 scripts/review_content.py
+      - run: python3 scripts/test_calibration.py
       - run: python3 scripts/calibration_validate.py --production --allow-fixture
       - run: node scripts/preflight_external.mjs || true
       - run: npm run build
@@ -77,6 +78,20 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
+
+  workflow-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint GitHub Actions workflow
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest -color
+
+  nginx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production and modern nginx configs
+        run: bash scripts/validate_nginx_config.sh
 
   fullstack:
     runs-on: ubuntu-latest
