@@ -1144,3 +1144,18 @@ npx playwright test   # 11 passed
 - Добавлен `scripts/directus_sync_vocabulary.mjs` для идемпотентной схемы коллекции и public read permission.
 - Добавлен PWA manifest.
 - Проверки: Go tests, tsc, build, 11 Playwright tests.
+
+---
+
+## 14. Итерация 9: email verification и refresh tokens (21 октября 2026)
+
+- Добавлены `email_verified`, verification token hash и expiry.
+- `POST /auth/verify-email` подтверждает email; `POST /auth/resend-verification` отправляет письмо повторно.
+- Письма уходят через Resend при `RESEND_API_KEY`, иначе ссылка логируется (dev).
+- `REQUIRE_EMAIL_VERIFICATION=true` блокирует password login до подтверждения.
+- Добавлена страница `/auth/verify-email` и баннер на dashboard с повторной отправкой.
+- Добавлены rotating refresh tokens (`det_refresh` HttpOnly cookie, 30 дней) и `POST /auth/refresh`.
+- Access token сокращён до 24 часов; `checkAuth` автоматически обновляет сессию через refresh cookie.
+- Logout, смена пароля и роли отзывают refresh tokens и инкрементируют `token_version`.
+- Добавлены тесты `TestEmailVerificationFlow`, `TestRefreshTokenRotation`, `TestLogoutRevokesExistingToken`.
+- Проверки: Go tests, tsc, build, 11 Playwright tests.

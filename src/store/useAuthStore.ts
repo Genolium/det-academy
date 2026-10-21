@@ -143,9 +143,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       void useErrorNotebookStore.getState().loadForUser(user.id);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        await api.logout().catch(() => {});
-        useProgressStore.getState().resetProgressState();
-        useErrorNotebookStore.getState().resetForUser();
+        // Access token expired: try the rotating HttpOnly refresh cookie once.
+        try {
+          const refreshed = await api.refreshSession();
+          set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
+          useProgressStore.getState().syncWithBackend(refreshed.user.id);
+          void useErrorNotebookStore.getState().loadForUser(refreshed.user.id);
+          return;
+        } catch {
+          await api.logout().catch(() => {});
+          useProgressStore.getState().resetProgressState();
+          useErrorNotebookStore.getState().resetForUser();
+        }
       }
       // A network/5xx failure must not destroy the local session token. The
       // next check can retry once the API is reachable again.

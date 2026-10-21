@@ -10,8 +10,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"det-academy-backend/internal/models"
+	"det-academy-backend/internal/repository/memory"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -148,5 +152,45 @@ func TestVerifyGoogleTokenChecksAudienceAndVerifiedEmail(t *testing.T) {
 	}
 	if uid != "google-user-1" || email != "student@example.com" {
 		t.Fatalf("unexpected google claims: uid=%s email=%s", uid, email)
+	}
+}
+
+type captureSender struct{ link string }
+
+func (s *captureSender) SendVerification(ctx context.Context, to, link string) error {
+	s.link = link
+	return nil
+}
+
+func TestEmailVerificationFlow(t *testing.T) {
+	store := memory.New()
+	sender := &captureSender{}
+	service := NewAuthService(store.Users(), "test-secret", store.OAuthTransactions())
+	service.emailSender = sender
+	service.publicAppURL = "https://det-academy.test"
+
+	user, _, err := service.Register(context.Background(), models.RegisterRequest{
+		Email: "verify@example.com", Password: "strongPassword123!", Name: "Verify", Locale: "ru",
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if user.EmailVerified {
+		t.Fatal("new user must start unverified")
+	}
+	if sender.link == "" {
+		t.Fatal("expected verification link")
+	}
+	const prefix = "https://det-academy.test/auth/verify-email?token="
+	if !strings.HasPrefix(sender.link, prefix) {
+		t.Fatalf("unexpected link: %s", sender.link)
+	}
+	token := strings.TrimPrefix(sender.link, prefix)
+	verified, err := service.VerifyEmail(context.Background(), token)
+	if err != nil {
+		t.Fatalf("verify: %v", err)
+	}
+	if !verified.EmailVerified {
+		t.Fatal("expected email to be verified")
 	}
 }

@@ -40,6 +40,7 @@ type MemoryStorage struct {
 	sessionQuestions  map[string][]models.SessionQuestion // sessionID -> assignments
 	vocabulary        map[string]models.VocabularyEntry   // entryID -> entry
 	oauthTransactions map[string]models.OAuthTransaction  // stateHash -> transaction
+	refreshTokens     map[string]models.RefreshToken
 	sessionLockMu     sync.Mutex
 	sessionLocks      map[string]*sync.Mutex
 }
@@ -69,6 +70,7 @@ func New() *MemoryStorage {
 		sessionQuestions:  make(map[string][]models.SessionQuestion),
 		vocabulary:        make(map[string]models.VocabularyEntry),
 		oauthTransactions: make(map[string]models.OAuthTransaction),
+		refreshTokens:     make(map[string]models.RefreshToken),
 		sessionLocks:      make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
@@ -91,6 +93,9 @@ func (s *MemoryStorage) Vocabulary() repository.VocabularyRepository {
 }
 func (s *MemoryStorage) OAuthTransactions() repository.OAuthTransactionRepository {
 	return &oauthTransactionMemoryRepo{s: s}
+}
+func (s *MemoryStorage) RefreshTokens() repository.RefreshTokenRepository {
+	return &refreshTokenMemoryRepo{s: s}
 }
 func (s *MemoryStorage) Ping(ctx context.Context) error { return nil }
 func (s *MemoryStorage) Close() error                   { return nil }
@@ -1303,6 +1308,33 @@ func (r *userMemoryRepo) UpdateRole(ctx context.Context, id, role string) error 
 	return nil
 }
 
+func (r *userMemoryRepo) SetEmailVerification(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	user, ok := r.s.users[userID]
+	if !ok {
+		return errors.New("user not found")
+	}
+	user.EmailVerificationTokenHash = tokenHash
+	user.EmailVerificationExpires = &expiresAt
+	return nil
+}
+
+func (r *userMemoryRepo) MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for _, user := range r.s.users {
+		if user.EmailVerificationTokenHash == tokenHash && user.EmailVerificationExpires != nil && user.EmailVerificationExpires.After(time.Now()) {
+			user.EmailVerified = true
+			user.EmailVerificationTokenHash = ""
+			user.EmailVerificationExpires = nil
+			copyUser := *user
+			return &copyUser, nil
+		}
+	}
+	return nil, errors.New("verification token is invalid or expired")
+}
+
 func (r *userMemoryRepo) IncrementTokenVersion(ctx context.Context, id string) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -2314,6 +2346,54 @@ func (r *oauthTransactionMemoryRepo) CleanupExpired(ctx context.Context) error {
 	for key, transaction := range r.s.oauthTransactions {
 		if time.Now().After(transaction.ExpiresAt.Add(time.Hour)) {
 			delete(r.s.oauthTransactions, key)
+		}
+	}
+	return nil
+}
+
+// --- Refresh tokens ---
+
+type refreshTokenMemoryRepo struct{ s *MemoryStorage }
+
+func (r *refreshTokenMemoryRepo) Create(ctx context.Context, token *models.RefreshToken) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.refreshTokens[token.TokenHash] = *token
+	return nil
+}
+
+func (r *refreshTokenMemoryRepo) GetActiveByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	token, ok := r.s.refreshTokens[tokenHash]
+	if !ok || token.RevokedAt != nil || token.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("refresh token is invalid")
+	}
+	copyToken := token
+	return &copyToken, nil
+}
+
+func (r *refreshTokenMemoryRepo) Revoke(ctx context.Context, tokenHash string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	token, ok := r.s.refreshTokens[tokenHash]
+	if !ok {
+		return nil
+	}
+	now := time.Now().UTC()
+	token.RevokedAt = &now
+	r.s.refreshTokens[tokenHash] = token
+	return nil
+}
+
+func (r *refreshTokenMemoryRepo) RevokeAllForUser(ctx context.Context, userID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	now := time.Now().UTC()
+	for hash, token := range r.s.refreshTokens {
+		if token.UserID == userID {
+			token.RevokedAt = &now
+			r.s.refreshTokens[hash] = token
 		}
 	}
 	return nil

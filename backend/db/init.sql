@@ -270,6 +270,16 @@ CREATE TABLE IF NOT EXISTS user_errors (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Rotating refresh tokens (HttpOnly cookie transport)
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(128) NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Daily study plan task completions
 CREATE TABLE IF NOT EXISTS study_plan_task_completions (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

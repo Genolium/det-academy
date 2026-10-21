@@ -13,6 +13,7 @@ export interface User {
   name: string;
   role: 'student' | 'editor' | 'admin';
   avatarUrl?: string;
+  emailVerified?: boolean;
   locale: string;
   createdAt: string;
 }
@@ -567,6 +568,46 @@ class ApiClient {
       throw new ApiError('Not authenticated', res.status);
     }
     return res.json();
+  }
+
+  async refreshSession(): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Session refresh failed', res.status);
+    }
+    const data: AuthResponse = await res.json();
+    setAuthToken(data.token);
+    return data;
+  }
+
+  async verifyEmail(token: string): Promise<{ status: string; user: User }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Ссылка подтверждения недействительна', res.status);
+    }
+    return res.json();
+  }
+
+  async resendVerification(): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/resend-verification`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Не удалось отправить письмо', res.status);
+    }
   }
 
   async logout(): Promise<void> {

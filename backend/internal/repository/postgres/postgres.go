@@ -27,6 +27,7 @@ type PostgresStorage struct {
 	study             *StudyRepo
 	vocabulary        *VocabularyRepo
 	oauthTransactions *OAuthTransactionRepo
+	refreshTokens     *RefreshTokenRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -59,6 +60,7 @@ func New(dbURL string) (*PostgresStorage, error) {
 		study:             &StudyRepo{db: db},
 		vocabulary:        &VocabularyRepo{db: db},
 		oauthTransactions: &OAuthTransactionRepo{db: db},
+		refreshTokens:     &RefreshTokenRepo{db: db},
 	}
 
 	return s, nil
@@ -76,6 +78,10 @@ func (s *PostgresStorage) Vocabulary() repository.VocabularyRepository    { retu
 func (s *PostgresStorage) OAuthTransactions() repository.OAuthTransactionRepository {
 	return s.oauthTransactions
 }
+
+func (s *PostgresStorage) RefreshTokens() repository.RefreshTokenRepository {
+	return s.refreshTokens
+}
 func (s *PostgresStorage) Ping(ctx context.Context) error { return s.db.PingContext(ctx) }
 func (s *PostgresStorage) Close() error                   { return s.db.Close() }
 
@@ -85,8 +91,8 @@ type UserRepo struct{ db *sql.DB }
 
 func (r *UserRepo) Create(ctx context.Context, u *models.User) error {
 	query := `
-		INSERT INTO users (id, email, password_hash, name, role, avatar_url, locale, token_version, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO users (id, email, password_hash, name, role, avatar_url, locale, token_version, email_verified, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 	now := time.Now().UTC()
 	u.CreatedAt = now
@@ -95,15 +101,15 @@ func (r *UserRepo) Create(ctx context.Context, u *models.User) error {
 	if role == "" {
 		role = "student"
 	}
-	_, err := r.db.ExecContext(ctx, query, u.ID, u.Email, u.PasswordHash, u.Name, role, u.AvatarURL, u.Locale, u.TokenVersion, u.CreatedAt, u.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, query, u.ID, u.Email, u.PasswordHash, u.Name, role, u.AvatarURL, u.Locale, u.TokenVersion, u.EmailVerified, u.CreatedAt, u.UpdatedAt)
 	return err
 }
 
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE id = $1`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -112,10 +118,10 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 }
 
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE email = $1`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -145,6 +151,32 @@ func (r *UserRepo) UpdateRole(ctx context.Context, id, role string) error {
 func (r *UserRepo) IncrementTokenVersion(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = $1`, id)
 	return err
+}
+
+func (r *UserRepo) SetEmailVerification(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE users
+		SET email_verification_token_hash = $1, email_verification_expires = $2, updated_at = NOW()
+		WHERE id = $3
+	`, tokenHash, expiresAt, userID)
+	return err
+}
+
+func (r *UserRepo) MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error) {
+	query := `
+		UPDATE users
+		SET email_verified = TRUE, email_verification_token_hash = '', email_verification_expires = NULL, updated_at = NOW()
+		WHERE email_verification_token_hash = $1 AND email_verification_expires > NOW()
+		RETURNING id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at
+	`
+	var u models.User
+	if err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
+		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale,
+		&u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
 
 func (r *UserRepo) Delete(ctx context.Context, id string) error {
@@ -242,7 +274,7 @@ func (r *UserRepo) ListAll(ctx context.Context, page, limit int, search, role st
 	if limit < 1 || limit > 100 {
 		limit = 50
 	}
-	query := fmt.Sprintf("SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d", whereSQL, argIdx, argIdx+1)
+	query := fmt.Sprintf("SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d", whereSQL, argIdx, argIdx+1)
 	args = append(args, limit, (page-1)*limit)
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -252,7 +284,7 @@ func (r *UserRepo) ListAll(ctx context.Context, page, limit int, search, role st
 
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		users = append(users, u)
@@ -1544,4 +1576,39 @@ func envOrDefaultMode(mode string) string {
 		return "full"
 	}
 	return mode
+}
+
+// --- Refresh tokens ---
+
+type RefreshTokenRepo struct{ db *sql.DB }
+
+func (r *RefreshTokenRepo) Create(ctx context.Context, token *models.RefreshToken) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, token.ID, token.UserID, token.TokenHash, token.ExpiresAt, token.CreatedAt)
+	return err
+}
+
+func (r *RefreshTokenRepo) GetActiveByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	var token models.RefreshToken
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
+		FROM refresh_tokens
+		WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()
+	`, tokenHash).Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &token.RevokedAt, &token.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
+func (r *RefreshTokenRepo) Revoke(ctx context.Context, tokenHash string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1`, tokenHash)
+	return err
+}
+
+func (r *RefreshTokenRepo) RevokeAllForUser(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL`, userID)
+	return err
 }

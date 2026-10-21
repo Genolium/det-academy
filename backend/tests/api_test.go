@@ -25,6 +25,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	jwtSecret := "test-secret-key-123456"
 
 	authService := service.NewAuthService(store.Users(), jwtSecret, store.OAuthTransactions())
+	authService.SetRefreshTokenRepo(store.RefreshTokens())
 	theoryService := service.NewTheoryService(store.Theory())
 	catService := service.NewCATService(
 		store.Sessions(),
@@ -78,6 +79,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
+			r.Post("/verify-email", authHandler.VerifyEmail)
+			r.Post("/refresh", authHandler.Refresh)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
 		})
 
@@ -998,6 +1001,49 @@ func TestLogoutRevokesExistingToken(t *testing.T) {
 	r.ServeHTTP(meAgainW, meAgain)
 	if meAgainW.Code != http.StatusUnauthorized {
 		t.Fatalf("expected revoked token to be rejected, got %d", meAgainW.Code)
+	}
+}
+
+func TestRefreshTokenRotation(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email: "refresh@det-academy.com", Password: "strongPassword123!", Name: "Refresh", Locale: "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	if regW.Code != http.StatusCreated {
+		t.Fatalf("register: %d %s", regW.Code, regW.Body.String())
+	}
+	var refreshCookie *http.Cookie
+	for _, cookie := range regW.Result().Cookies() {
+		if cookie.Name == "det_refresh" {
+			refreshCookie = cookie
+		}
+	}
+	if refreshCookie == nil || refreshCookie.Value == "" {
+		t.Fatal("expected det_refresh cookie")
+	}
+
+	refreshReq := httptest.NewRequest("POST", "/api/v1/auth/refresh", nil)
+	refreshReq.AddCookie(refreshCookie)
+	refreshW := httptest.NewRecorder()
+	r.ServeHTTP(refreshW, refreshReq)
+	if refreshW.Code != http.StatusOK {
+		t.Fatalf("refresh: %d %s", refreshW.Code, refreshW.Body.String())
+	}
+	var refreshed models.AuthResponse
+	_ = json.Unmarshal(refreshW.Body.Bytes(), &refreshed)
+	if refreshed.Token == "" {
+		t.Fatal("expected new access token")
+	}
+
+	replayReq := httptest.NewRequest("POST", "/api/v1/auth/refresh", nil)
+	replayReq.AddCookie(refreshCookie)
+	replayW := httptest.NewRecorder()
+	r.ServeHTTP(replayW, replayReq)
+	if replayW.Code != http.StatusUnauthorized {
+		t.Fatalf("expected refresh replay to fail, got %d", replayW.Code)
 	}
 }
 

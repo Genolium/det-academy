@@ -14,6 +14,8 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
 	UpdateRole(ctx context.Context, id, role string) error
 	IncrementTokenVersion(ctx context.Context, id string) error
+	SetEmailVerification(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error
+	MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error)
 	Delete(ctx context.Context, id string) error
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
 
@@ -22,6 +24,13 @@ type UserRepository interface {
 	GetSocialAccountByProviderUID(ctx context.Context, provider, providerUID string) (*models.SocialAccount, error)
 	LinkSocialAccount(ctx context.Context, sa *models.SocialAccount) error
 	UnlinkSocialAccount(ctx context.Context, userID, provider string) error
+}
+
+type RefreshTokenRepository interface {
+	Create(ctx context.Context, token *models.RefreshToken) error
+	GetActiveByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
+	Revoke(ctx context.Context, tokenHash string) error
+	RevokeAllForUser(ctx context.Context, userID string) error
 }
 
 type TheoryRepository interface {
@@ -143,6 +152,7 @@ type Storage interface {
 	Study() StudyRepository
 	Vocabulary() VocabularyRepository
 	OAuthTransactions() OAuthTransactionRepository
+	RefreshTokens() RefreshTokenRepository
 	Ping(ctx context.Context) error
 	Close() error
 }

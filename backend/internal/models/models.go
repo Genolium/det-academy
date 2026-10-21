@@ -6,16 +6,19 @@ import (
 )
 
 type User struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	Name         string    `json:"name"`
-	Role         string    `json:"role"` // "student", "editor", "admin"
-	AvatarURL    string    `json:"avatarUrl"`
-	Locale       string    `json:"locale"`
-	TokenVersion int       `json:"-"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID                         string     `json:"id"`
+	Email                      string     `json:"email"`
+	PasswordHash               string     `json:"-"`
+	Name                       string     `json:"name"`
+	Role                       string     `json:"role"` // "student", "editor", "admin"
+	AvatarURL                  string     `json:"avatarUrl"`
+	Locale                     string     `json:"locale"`
+	TokenVersion               int        `json:"-"`
+	EmailVerified              bool       `json:"emailVerified"`
+	EmailVerificationTokenHash string     `json:"-"`
+	EmailVerificationExpires   *time.Time `json:"-"`
+	CreatedAt                  time.Time  `json:"createdAt"`
+	UpdatedAt                  time.Time  `json:"updatedAt"`
 }
 
 type TheoryProgress struct {
@@ -518,6 +521,15 @@ type CreateInstitutionRequest struct {
 }
 
 // Social Accounts & Identity Linking DTOs
+
+type RefreshToken struct {
+	ID        string     `json:"id"`
+	UserID    string     `json:"userId"`
+	TokenHash string     `json:"-"`
+	ExpiresAt time.Time  `json:"expiresAt"`
+	RevokedAt *time.Time `json:"revokedAt,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
+}
 
 type SocialAccount struct {
 	ID             string    `json:"id"`

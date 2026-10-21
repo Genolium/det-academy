@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rsa"
+	"det-academy-backend/internal/email"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
 	"encoding/base64"
@@ -48,6 +49,11 @@ type AuthService struct {
 	appleTeamID        string
 	appleKeyID         string
 	applePrivateKey    string
+
+	emailSender              email.Sender
+	publicAppURL             string
+	requireEmailVerification bool
+	refreshRepo              repository.RefreshTokenRepository
 }
 
 func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthRepos ...repository.OAuthTransactionRepository) *AuthService {
@@ -76,22 +82,25 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthR
 		env = os.Getenv("NODE_ENV")
 	}
 	service := &AuthService{
-		userRepo:           userRepo,
-		jwtSecret:          []byte(jwtSecret),
-		httpClient:         &http.Client{Timeout: 10 * time.Second},
-		googleClientID:     googleClientID,
-		appleClientID:      appleClientID,
-		googleTokenInfoURL: tokenInfoURL,
-		googleUserInfoURL:  userInfoURL,
-		appleJWKSURL:       appleJWKSURL,
-		isProduction:       env == "production",
-		appleKeys:          make(map[string]*rsa.PublicKey),
-		googleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		googleTokenURL:     envOr("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
-		appleTokenURL:      envOr("APPLE_TOKEN_URL", "https://appleid.apple.com/auth/token"),
-		appleTeamID:        os.Getenv("APPLE_TEAM_ID"),
-		appleKeyID:         os.Getenv("APPLE_KEY_ID"),
-		applePrivateKey:    strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
+		userRepo:                 userRepo,
+		jwtSecret:                []byte(jwtSecret),
+		httpClient:               &http.Client{Timeout: 10 * time.Second},
+		googleClientID:           googleClientID,
+		appleClientID:            appleClientID,
+		googleTokenInfoURL:       tokenInfoURL,
+		googleUserInfoURL:        userInfoURL,
+		appleJWKSURL:             appleJWKSURL,
+		isProduction:             env == "production",
+		appleKeys:                make(map[string]*rsa.PublicKey),
+		googleClientSecret:       os.Getenv("GOOGLE_CLIENT_SECRET"),
+		googleTokenURL:           envOr("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
+		appleTokenURL:            envOr("APPLE_TOKEN_URL", "https://appleid.apple.com/auth/token"),
+		appleTeamID:              os.Getenv("APPLE_TEAM_ID"),
+		appleKeyID:               os.Getenv("APPLE_KEY_ID"),
+		applePrivateKey:          strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
+		emailSender:              email.NewFromEnv(),
+		publicAppURL:             email.PublicAppURL(),
+		requireEmailVerification: os.Getenv("REQUIRE_EMAIL_VERIFICATION") == "true",
 	}
 	if len(oauthRepos) > 0 {
 		service.oauthRepo = oauthRepos[0]
@@ -150,6 +159,9 @@ func (s *AuthService) Register(ctx context.Context, req models.RegisterRequest) 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, "", fmt.Errorf("failed to create user: %w", err)
 	}
+	if err := s.sendVerificationEmail(ctx, user); err != nil {
+		log.Printf("[Auth] failed to send verification email: %v", err)
+	}
 
 	token, err := s.GenerateToken(user)
 	if err != nil {
@@ -171,6 +183,9 @@ func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*mode
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, "", errors.New("invalid email or password")
+	}
+	if s.requireEmailVerification && !user.EmailVerified {
+		return nil, "", ErrEmailNotVerified
 	}
 
 	token, err := s.GenerateToken(user)
@@ -968,15 +983,16 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 
 	// 4. User does not exist -> Create new OAuth user
 	newUser := &models.User{
-		ID:           uuid.New().String(),
-		Email:        resolvedEmail,
-		PasswordHash: "", // OAuth accounts do not have local passwords initially
-		Name:         resolvedName,
-		Role:         "student",
-		AvatarURL:    resolvedAvatar,
-		Locale:       "ru",
-		CreatedAt:    time.Now().UTC(),
-		UpdatedAt:    time.Now().UTC(),
+		ID:            uuid.New().String(),
+		Email:         resolvedEmail,
+		PasswordHash:  "", // OAuth accounts do not have local passwords initially
+		EmailVerified: resolvedEmail != "",
+		Name:          resolvedName,
+		Role:          "student",
+		AvatarURL:     resolvedAvatar,
+		Locale:        "ru",
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 
 	if err := s.userRepo.Create(ctx, newUser); err != nil {
@@ -1234,6 +1250,42 @@ func min(a, b int) int {
 	return b
 }
 
+var ErrEmailNotVerified = errors.New("email is not verified")
+
+func (s *AuthService) sendVerificationEmail(ctx context.Context, user *models.User) error {
+	if user.EmailVerified || user.Email == "" {
+		return nil
+	}
+	token, err := randomHex(32)
+	if err != nil {
+		return err
+	}
+	expires := time.Now().UTC().Add(24 * time.Hour)
+	if err := s.userRepo.SetEmailVerification(ctx, user.ID, hashState(token), expires); err != nil {
+		return err
+	}
+	link := s.publicAppURL + "/auth/verify-email?token=" + token
+	return s.emailSender.SendVerification(ctx, user.Email, link)
+}
+
+func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*models.User, error) {
+	if strings.TrimSpace(token) == "" {
+		return nil, errors.New("verification token is required")
+	}
+	return s.userRepo.MarkEmailVerified(ctx, hashState(strings.TrimSpace(token)))
+}
+
+func (s *AuthService) ResendVerification(ctx context.Context, userID string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+	if user.EmailVerified {
+		return nil
+	}
+	return s.sendVerificationEmail(ctx, user)
+}
+
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	role := user.Role
 	if role == "" {
@@ -1247,7 +1299,7 @@ func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 		Role:         role,
 		TokenVersion: user.TokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7 days
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // short-lived access token
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "det-academy",
 		},
@@ -1284,7 +1336,60 @@ func (s *AuthService) ValidateToken(tokenString string) (*JWTClaims, error) {
 }
 
 func (s *AuthService) RevokeUserTokens(ctx context.Context, userID string) error {
+	if s.refreshRepo != nil {
+		_ = s.refreshRepo.RevokeAllForUser(ctx, userID)
+	}
 	return s.userRepo.IncrementTokenVersion(ctx, userID)
+}
+
+func (s *AuthService) SetRefreshTokenRepo(repo repository.RefreshTokenRepository) {
+	s.refreshRepo = repo
+}
+
+func (s *AuthService) IssueRefreshToken(ctx context.Context, userID string) (string, error) {
+	if s.refreshRepo == nil {
+		return "", errors.New("refresh token store is not configured")
+	}
+	raw, err := randomHex(32)
+	if err != nil {
+		return "", err
+	}
+	token := &models.RefreshToken{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		TokenHash: hashState(raw),
+		ExpiresAt: time.Now().UTC().Add(30 * 24 * time.Hour),
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := s.refreshRepo.Create(ctx, token); err != nil {
+		return "", err
+	}
+	return raw, nil
+}
+
+func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*models.User, string, string, error) {
+	if s.refreshRepo == nil || strings.TrimSpace(rawToken) == "" {
+		return nil, "", "", errors.New("refresh token is invalid")
+	}
+	hash := hashState(strings.TrimSpace(rawToken))
+	stored, err := s.refreshRepo.GetActiveByHash(ctx, hash)
+	if err != nil {
+		return nil, "", "", errors.New("refresh token is invalid or expired")
+	}
+	_ = s.refreshRepo.Revoke(ctx, hash)
+	user, err := s.userRepo.GetByID(ctx, stored.UserID)
+	if err != nil {
+		return nil, "", "", errors.New("user not found")
+	}
+	access, err := s.GenerateToken(user)
+	if err != nil {
+		return nil, "", "", err
+	}
+	refresh, err := s.IssueRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, "", "", err
+	}
+	return user, access, refresh, nil
 }
 
 func (s *AuthService) GetUserByID(ctx context.Context, id string) (*models.User, error) {

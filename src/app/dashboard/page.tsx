@@ -10,6 +10,7 @@ import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
 import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget';
 import { WeeklyReportCard } from '@/components/dashboard/WeeklyReportCard';
+import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
 import {
   GraduationCap,
   Sparkles,
@@ -540,6 +541,10 @@ function DashboardContent() {
           targetScore={targetScore}
           hasTakenTest={hasTakenTest}
         />
+
+        {user && user.emailVerified === false && (
+          <EmailVerificationBanner email={user.email} />
+        )}
 
         {/* Weekly report */}
         <WeeklyReportCard />

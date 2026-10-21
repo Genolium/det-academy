@@ -75,6 +75,7 @@ func main() {
 
 	// Initialize Services
 	authService := service.NewAuthService(store.Users(), cfg.JWTSecret, store.OAuthTransactions())
+	authService.SetRefreshTokenRepo(store.RefreshTokens())
 	if err := authService.EnsureBootstrapAdmin(
 		context.Background(),
 		os.Getenv("BOOTSTRAP_ADMIN_EMAIL"),
@@ -202,11 +203,14 @@ func main() {
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
+			r.Post("/verify-email", authHandler.VerifyEmail)
+			r.Post("/refresh", authHandler.Refresh)
 
 			// Protected auth endpoints
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
 			r.With(handlers.AuthMiddleware(authService)).Patch("/profile", authHandler.UpdateProfile)
 			r.With(handlers.AuthMiddleware(authService)).Get("/providers", authHandler.GetLinkedProviders)
+			r.With(handlers.AuthMiddleware(authService)).Post("/resend-verification", authHandler.ResendVerification)
 			r.With(handlers.AuthMiddleware(authService)).Post("/providers/link", authHandler.LinkProvider)
 			r.With(handlers.AuthMiddleware(authService)).Delete("/providers/{provider}", authHandler.UnlinkProvider)
 			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)
