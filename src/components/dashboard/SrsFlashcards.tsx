@@ -34,6 +34,8 @@ export const SrsFlashcards: React.FC = () => {
     totalReviewed: 0,
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [recallChoice, setRecallChoice] = useState<string | null>(null);
+  const [recallChecked, setRecallChecked] = useState(false);
 
   const storageKey = user?.id ? `det_srs_progress_${user.id}` : 'det_srs_progress_guest';
 
@@ -148,6 +150,22 @@ export const SrsFlashcards: React.FC = () => {
   }, [queueMode, dueCards, newCards, allCards]);
 
   const currentWord = activeList[currentIndex] || activeList[0] || null;
+
+  useEffect(() => {
+    setRecallChoice(null);
+    setRecallChecked(false);
+    setIsFlipped(false);
+  }, [currentIndex, queueMode]);
+
+  const recallOptions = useMemo(() => {
+    if (!currentWord) return [];
+    const pool = vocabData
+      .filter((entry) => entry.id !== currentWord.id && entry.definitionEn)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((entry) => entry.definitionEn);
+    return [currentWord.definitionEn, ...pool].sort(() => Math.random() - 0.5);
+  }, [currentWord?.id]);
 
   const cardProgress = currentWord
     ? storage.cards[currentWord.id] || {
@@ -403,6 +421,43 @@ export const SrsFlashcards: React.FC = () => {
       ) : currentWord && cardProgress ? (
         /* Interactive 3D Flip Flashcard */
         <div className="max-w-xl mx-auto">
+          {!isFlipped && (
+            <div className="mb-4 rounded-2xl border border-neutral-800 bg-[#0E1012] p-4 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+                Recall check: выберите правильное определение
+              </p>
+              {recallOptions.map((option, index) => {
+                const selected = recallChoice === option;
+                const correct = option === currentWord.definitionEn;
+                return (
+                  <button
+                    key={index}
+                    disabled={recallChecked}
+                    onClick={() => {
+                      setRecallChoice(option);
+                      setRecallChecked(true);
+                    }}
+                    className={`w-full text-left rounded-xl border px-3 py-2 text-xs transition-colors ${
+                      recallChecked && correct
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200'
+                        : recallChecked && selected && !correct
+                        ? 'border-red-500/50 bg-red-500/10 text-red-200'
+                        : 'border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+              {recallChecked && (
+                <p className="text-[11px] text-neutral-400">
+                  {recallChoice === currentWord.definitionEn
+                    ? 'Верно. Теперь оцените, насколько легко вспомнили слово.'
+                    : 'Пока неверно. Посмотрите определение на карточке и повторите позже.'}
+                </p>
+              )}
+            </div>
+          )}
           <div
             onClick={() => setIsFlipped(!isFlipped)}
             className={`cursor-pointer min-h-[290px] rounded-3xl p-6 sm:p-8 border transition-all duration-300 flex flex-col justify-between relative shadow-2xl select-none ${
@@ -496,7 +551,7 @@ export const SrsFlashcards: React.FC = () => {
                 className="px-2 py-3 rounded-2xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
                 <div className="text-sm font-black">Снова</div>
-                <div className="text-[10px] text-rose-400/80">1 день</div>
+                <div className="text-[10px] text-rose-400/80">сброс</div>
               </button>
 
               <button
@@ -504,7 +559,7 @@ export const SrsFlashcards: React.FC = () => {
                 className="px-2 py-3 rounded-2xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 text-amber-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
                 <div className="text-sm font-black">Трудно</div>
-                <div className="text-[10px] text-amber-400/80">3 дня</div>
+                <div className="text-[10px] text-amber-400/80">короче</div>
               </button>
 
               <button
@@ -512,7 +567,7 @@ export const SrsFlashcards: React.FC = () => {
                 className="px-2 py-3 rounded-2xl bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
                 <div className="text-sm font-black">Хорошо</div>
-                <div className="text-[10px] text-blue-400/80">6 дней</div>
+                <div className="text-[10px] text-blue-400/80">стандарт</div>
               </button>
 
               <button
@@ -520,7 +575,7 @@ export const SrsFlashcards: React.FC = () => {
                 className="px-2 py-3 rounded-2xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
                 <div className="text-sm font-black">Легко</div>
-                <div className="text-[10px] text-emerald-400/80">10+ дней</div>
+                <div className="text-[10px] text-emerald-400/80">дольше</div>
               </button>
             </div>
           )}

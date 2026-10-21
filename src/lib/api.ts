@@ -252,6 +252,22 @@ export interface DailyTask {
   completed: boolean;
 }
 
+export interface WeeklyReport {
+  weekStart: string;
+  weekEnd: string;
+  studyDays: number;
+  sessions: number;
+  mockTests: number;
+  srsReviews: number;
+  errorsAdded: number;
+  errorsMastered: number;
+  currentEstimate: number;
+  rangeLow: number;
+  rangeHigh: number;
+  weakestSkill: string;
+  recommendations: string[];
+}
+
 export interface StudyPlanResponse {
   targetScore: number;
   targetDate: string;
@@ -669,7 +685,7 @@ class ApiClient {
     return res.json();
   }
 
-  async startTestSession(params: { candidateName?: string; difficultyLevel?: string }): Promise<{
+  async startTestSession(params: { candidateName?: string; difficultyLevel?: string; mode?: 'full' | 'diagnostic' }): Promise<{
     session: BackendTestSession;
     questions: BackendQuestion[];
   }> {
@@ -1105,6 +1121,17 @@ class ApiClient {
     });
     if (!res.ok) {
       throw new Error('Failed to get study plan');
+    }
+    return res.json();
+  }
+
+  async getUserWeeklyReport(): Promise<WeeklyReport> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/report/weekly`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to get weekly report', res.status);
     }
     return res.json();
   }

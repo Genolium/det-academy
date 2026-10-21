@@ -100,6 +100,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
   let completionCalls = 0;
   const completionBodies: unknown[] = [];
   const responseBodies: unknown[] = [];
+  const startSessionBodies: unknown[] = [];
 
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
@@ -132,6 +133,23 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (path.endsWith('/test/sessions/me')) {
       return json(route, 200, { sessions: [] });
+    }
+    if (path.endsWith('/user/report/weekly')) {
+      return json(route, 200, {
+        weekStart: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
+        weekEnd: new Date().toISOString().slice(0, 10),
+        studyDays: 3,
+        sessions: 2,
+        mockTests: 1,
+        srsReviews: 12,
+        errorsAdded: 4,
+        errorsMastered: 1,
+        currentEstimate: 0,
+        rangeLow: 0,
+        rangeHigh: 0,
+        weakestSkill: '',
+        recommendations: ['Продолжайте текущий план'],
+      });
     }
     if (path.endsWith('/user/plan')) {
       return json(route, 200, {
@@ -239,6 +257,10 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         createdAt: new Date().toISOString(),
       });
     }
+    if (path.endsWith('/test/sessions') && method === 'POST') {
+      if (request.postData()) startSessionBodies.push(request.postDataJSON());
+      return json(route, 201, { session: session(), questions: [] });
+    }
     if (/\/test\/sessions\/[^/]+$/.test(path) && method === 'GET') {
       return json(route, 200, {
         session: options.resumeCompleted
@@ -286,6 +308,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     getCompletionCalls: () => completionCalls,
     getCompletionBodies: () => completionBodies,
     getResponseBodies: () => responseBodies,
+    getStartSessionBodies: () => startSessionBodies,
   };
 }
 

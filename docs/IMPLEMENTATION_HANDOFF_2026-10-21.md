@@ -1084,3 +1084,38 @@ python3 scripts/lint_content.py
 - Backups/restore drill, Sentry, metrics, alerts.
 - Полный full-stack E2E против реального backend.
 - Mobile/PWA и accessibility.
+
+---
+
+## 11. Итерация 6: диагностика, weekly report и SRS recall (21 октября 2026)
+
+### 11.1. Что сделано
+
+- `StartSession` поддерживает `mode=full|diagnostic`; диагностика использует короткий blueprint (6 Read & Select и по 1–3 задания на остальные этапы).
+- Добавлена страница `/diagnostic`: цель, объяснение ограничений, запуск серверной диагностики.
+- `WeeklyReport` API `GET /user/report/weekly`: дни занятий, сессии, mock tests, SRS reviews, ошибки, текущий диапазон, слабый навык и рекомендации.
+- Dashboard показывает недельный отчёт.
+- Study plan исправлен: `currentEstimate` — последняя подтверждённая попытка, а не лучшая; валидные slug’и теории; speaking/writing ведут в `/practice`, а не в полный mock.
+- SRS добавлен recall-check: перед переворотом карточки пользователь выбирает правильное определение из четырёх.
+- Убраны ложные подписи интервалов SRS («3 дня»/«6 дней» при фактическом алгоритме).
+- Weekly report и diagnostic покрыты API/E2E тестами.
+
+### 11.2. Проверки
+
+```bash
+npx tsc --noEmit
+npm run lint          # 0 errors, 126 warnings
+npm run build
+(cd backend && go test ./... -count=1)
+npx playwright test   # 11 passed
+```
+
+### 11.3. Осталось
+
+- Daily queue и task completion persistence.
+- SRS due queue snapshot, чтобы карточки не пропускались после оценки.
+- Weekly report по mastery/learning events, а не только по сессиям.
+- Directus schema/permissions.
+- Auth: email verification, refresh/revocation, rate limits, CSRF.
+- Backups/restore drill, Sentry/metrics/alerts.
+- Mobile/PWA/a11y.

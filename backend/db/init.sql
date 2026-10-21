@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS test_sessions (
     current_stage INT NOT NULL DEFAULT 1,
     stage_name VARCHAR(50) NOT NULL DEFAULT 'READ_SELECT',
     difficulty_level VARCHAR(10) NOT NULL DEFAULT 'B1',
+    mode VARCHAR(20) NOT NULL DEFAULT 'full',
     overall_score INT,
     reading_score INT,
     listening_score INT,

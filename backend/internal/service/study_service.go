@@ -126,15 +126,8 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	if len(completedSessions) > 0 {
 		latest := completedSessions[0]
+		// Use the latest confirmed attempt, not the best historical score.
 		currentEstimate = intVal(latest.OverallScore)
-
-		// Find best overall score
-		for _, cs := range completedSessions {
-			score := intVal(cs.OverallScore)
-			if score > currentEstimate {
-				currentEstimate = score
-			}
-		}
 
 		// Analyze lowest modality
 		modalities := []struct {
@@ -155,9 +148,26 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		}
 	}
 
-	// Theory progress
+	// Theory progress against the actual published lesson slugs.
+	allLessonSlugs := []string{
+		"rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
+		"listen-and-select", "fill-in-the-blanks", "read-and-complete",
+		"listen-and-type", "read-aloud", "interactive-reading",
+		"interactive-listening", "write-about-photo", "interactive-writing",
+		"writing-sample", "speak-about-photo", "read-listen-speak", "speaking-sample",
+	}
 	theoryProgress, _ := s.storage.Theory().GetUserProgress(ctx, userID)
-	theoryPct := float64(len(theoryProgress)) / 16.0
+	validLessons := map[string]bool{}
+	for _, slug := range allLessonSlugs {
+		validLessons[slug] = true
+	}
+	completedValid := 0
+	for _, slug := range theoryProgress {
+		if validLessons[slug] {
+			completedValid++
+		}
+	}
+	theoryPct := float64(completedValid) / float64(len(allLessonSlugs))
 	if theoryPct > 1.0 {
 		theoryPct = 1.0
 	}
@@ -233,7 +243,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 			Type:        "practice_drill",
 			Title:       "Интенсив: Устная речь (Speaking)",
 			Description: "Отработайте упражнения Interactive Speaking и Speak About Photo для роста беглости (WPM) и диверсификации лексики",
-			ActionURL:   "/test",
+			ActionURL:   "/practice",
 			Priority:    "HIGH",
 			Completed:   false,
 		})
@@ -243,7 +253,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 			Type:        "practice_drill",
 			Title:       "Интенсив: Академическое письмо (Writing)",
 			Description: "Напишите развернутый Writing Sample с использованием академических коннекторов и академического вокабуляра",
-			ActionURL:   "/test",
+			ActionURL:   "/practice",
 			Priority:    "HIGH",
 			Completed:   false,
 		})
@@ -273,13 +283,6 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	completedSlugs := make(map[string]bool)
 	for _, sl := range theoryProgress {
 		completedSlugs[sl] = true
-	}
-	// Default 16 lesson slugs in sequence
-	allLessonSlugs := []string{
-		"exam-regulations", "computer-adaptive-test", "read-and-select", "fill-in-the-blanks",
-		"read-and-complete", "listen-and-type", "interactive-reading", "interactive-listening",
-		"write-about-the-photo", "speak-about-the-photo", "read-then-speak", "interactive-speaking",
-		"writing-sample", "speaking-sample", "academic-vocabulary-c1", "typing-speed-strategy",
 	}
 	var nextLessonSlug string
 	for _, sl := range allLessonSlugs {
@@ -778,4 +781,101 @@ func (s *StudyService) GetSkillAnalytics(ctx context.Context, userID string) (*m
 		Recommendations: recs,
 		History:         history,
 	}, nil
+}
+
+func (s *StudyService) GetWeeklyReport(ctx context.Context, userID string) (*models.WeeklyReport, error) {
+	now := time.Now().UTC()
+	weekStart := now.AddDate(0, 0, -6)
+	report := &models.WeeklyReport{
+		WeekStart:       weekStart.Format("2006-01-02"),
+		WeekEnd:         now.Format("2006-01-02"),
+		Recommendations: []string{},
+	}
+
+	dates, _ := s.storage.Study().GetActivityDates(ctx, userID, 7)
+	for _, date := range dates {
+		parsed, err := time.Parse("2006-01-02", date)
+		if err == nil && !parsed.Before(weekStart) {
+			report.StudyDays++
+		}
+	}
+
+	sessions, _ := s.catService.GetUserSessions(ctx, userID)
+	for _, session := range sessions {
+		if session.CompletedAt == nil || session.CompletedAt.Before(weekStart) {
+			continue
+		}
+		report.Sessions++
+		if session.OverallScore != nil && *session.OverallScore > 0 {
+			report.MockTests++
+			report.CurrentEstimate = *session.OverallScore
+		}
+	}
+	if report.CurrentEstimate > 0 {
+		report.RangeLow = int(math.Max(10, float64(report.CurrentEstimate-10)))
+		report.RangeHigh = int(math.Min(160, float64(report.CurrentEstimate+10)))
+	}
+
+	errorsList, _ := s.storage.Study().GetErrors(ctx, userID)
+	for _, item := range errorsList {
+		if item.CreatedAt.After(weekStart) {
+			report.ErrorsAdded++
+		}
+		if item.Mastered && item.LastReviewedAt != nil && item.LastReviewedAt.After(weekStart) {
+			report.ErrorsMastered++
+		}
+	}
+
+	cards, _ := s.storage.Study().GetSRSCards(ctx, userID)
+	for _, card := range cards {
+		if !card.LastReviewedAt.IsZero() && card.LastReviewedAt.After(weekStart) {
+			report.SRSReviews++
+		}
+	}
+
+	if report.CurrentEstimate > 0 {
+		// Weakest skill from the most recent completed session.
+		for _, session := range sessions {
+			if session.CompletedAt == nil || session.CompletedAt.Before(weekStart) || session.OverallScore == nil {
+				continue
+			}
+			type skill struct {
+				name  string
+				value int
+			}
+			skills := []skill{
+				{"Speaking", intVal(session.SpeakingScore)},
+				{"Writing", intVal(session.WritingScore)},
+				{"Reading", intVal(session.ReadingScore)},
+				{"Listening", intVal(session.ListeningScore)},
+			}
+			lowest := 161
+			for _, item := range skills {
+				if item.value > 0 && item.value < lowest {
+					lowest = item.value
+					report.WeakestSkill = item.name
+				}
+			}
+			break
+		}
+	}
+
+	if report.WeakestSkill != "" {
+		report.Recommendations = append(report.Recommendations,
+			"Следующая неделя: 2 короткие сессии на "+report.WeakestSkill+" и один полный mock.")
+	}
+	if report.ErrorsAdded > report.ErrorsMastered {
+		report.Recommendations = append(report.Recommendations,
+			"В тетради ошибок больше новых записей, чем освоенных. Закройте 5 повторений в SRS.")
+	}
+	if report.StudyDays < 3 {
+		report.Recommendations = append(report.Recommendations,
+			"Регулярность важнее длины сессии: запланируйте 3 занятия по 15–20 минут.")
+	}
+	if len(report.Recommendations) == 0 {
+		report.Recommendations = append(report.Recommendations,
+			"Продолжайте текущий план и пройдите контрольный mock в конце недели.")
+	}
+
+	return report, nil
 }

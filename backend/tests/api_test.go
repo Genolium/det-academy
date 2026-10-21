@@ -86,6 +86,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Get("/goals", studyHandler.GetGoals)
 			r.Put("/goals", studyHandler.UpdateGoals)
 			r.Get("/plan", studyHandler.GetStudyPlan)
+			r.Get("/report/weekly", studyHandler.GetWeeklyReport)
 			r.Get("/analytics/skills", studyHandler.GetSkillAnalytics)
 			r.Get("/errors", studyHandler.GetErrors)
 			r.Post("/errors", studyHandler.SaveError)
@@ -856,6 +857,71 @@ func TestAdminVocabularyPublishing(t *testing.T) {
 		if item.ID == entry.ID {
 			t.Fatal("archived entry must not be returned by the public API")
 		}
+	}
+}
+
+func TestWeeklyReport(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email: "weekly@det-academy.com", Password: "strongPassword123!", Name: "Weekly User", Locale: "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	activityReq := httptest.NewRequest("POST", "/api/v1/user/activity", bytes.NewReader([]byte(`{"source":"test"}`)))
+	activityReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	activityW := httptest.NewRecorder()
+	r.ServeHTTP(activityW, activityReq)
+
+	reportReq := httptest.NewRequest("GET", "/api/v1/user/report/weekly", nil)
+	reportReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	reportW := httptest.NewRecorder()
+	r.ServeHTTP(reportW, reportReq)
+	if reportW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on weekly report, got %d: %s", reportW.Code, reportW.Body.String())
+	}
+	var report models.WeeklyReport
+	_ = json.Unmarshal(reportW.Body.Bytes(), &report)
+	if report.StudyDays != 1 {
+		t.Fatalf("expected 1 study day, got %d", report.StudyDays)
+	}
+	if len(report.Recommendations) == 0 {
+		t.Fatal("expected at least one recommendation")
+	}
+}
+
+func TestDiagnosticSessionUsesShortBlueprint(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email: "diagnostic@det-academy.com", Password: "strongPassword123!", Name: "Diag", Locale: "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	body, _ := json.Marshal(models.StartSessionRequest{CandidateName: "Diag", DifficultyLevel: "B1", Mode: "diagnostic"})
+	req := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+regResp.Token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+	var payload struct {
+		Session   models.TestSession `json:"session"`
+		Questions []models.Question  `json:"questions"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &payload)
+	if payload.Session.Mode != "diagnostic" {
+		t.Fatalf("expected diagnostic mode, got %s", payload.Session.Mode)
+	}
+	if len(payload.Questions) > 6 {
+		t.Fatalf("expected short diagnostic set, got %d questions", len(payload.Questions))
 	}
 }
 

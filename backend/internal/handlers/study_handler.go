@@ -254,3 +254,17 @@ func (h *StudyHandler) ReviewSRSCard(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(w, http.StatusOK, res)
 }
+
+func (h *StudyHandler) GetWeeklyReport(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	report, err := h.studyService.GetWeeklyReport(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, report)
+}

@@ -9,6 +9,7 @@ import { lessonsData, LessonGuide } from '@/data/theoryContent';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
 import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget';
+import { WeeklyReportCard } from '@/components/dashboard/WeeklyReportCard';
 import {
   GraduationCap,
   Sparkles,
@@ -358,11 +359,18 @@ function DashboardContent() {
             {/* Quick Actions Footer */}
             <div className="flex flex-wrap items-center gap-3 pt-6 mt-6 border-t border-neutral-800/80">
               <Link
-                href="/test"
+                href="/diagnostic"
                 className="bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Запустить полный mock (~46 мин)</span>
+                <span>Пройти диагностику (~20 мин)</span>
+              </Link>
+              <Link
+                href="/test"
+                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Полный mock (~46 мин)</span>
               </Link>
               <Link
                 href="/practice/typing"
@@ -508,6 +516,9 @@ function DashboardContent() {
           targetScore={targetScore}
           hasTakenTest={hasTakenTest}
         />
+
+        {/* Weekly report */}
+        <WeeklyReportCard />
 
         {/* Weak Spots & Error Notebook */}
         <ErrorNotebookWidget />

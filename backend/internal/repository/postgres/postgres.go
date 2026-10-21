@@ -397,16 +397,17 @@ type SessionRepo struct{ db *sql.DB }
 
 func (r *SessionRepo) Create(ctx context.Context, s *models.TestSession) error {
 	query := `
-		INSERT INTO test_sessions (id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, reading_score, listening_score, writing_score, speaking_score, deadline_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		INSERT INTO test_sessions (id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, mode, reading_score, listening_score, writing_score, speaking_score, deadline_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
-	_, err := r.db.ExecContext(ctx, query, s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel, s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore, s.DeadlineAt, s.CreatedAt)
+	_, err := r.db.ExecContext(ctx, query, s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel, envOrDefaultMode(s.Mode), s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore, s.DeadlineAt, s.CreatedAt)
 	return err
 }
 
 func (r *SessionRepo) GetByID(ctx context.Context, id string) (*models.TestSession, error) {
 	query := `
 		SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level,
+		       COALESCE(mode, 'full'),
 		       overall_score, reading_score, listening_score, writing_score, speaking_score,
 		       literacy_score, comprehension_score, production_score, conversation_score,
 		       deadline_at, created_at, completed_at
@@ -415,6 +416,7 @@ func (r *SessionRepo) GetByID(ctx context.Context, id string) (*models.TestSessi
 	var s models.TestSession
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel,
+		&s.Mode,
 		&s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore,
 		&s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore,
 		&s.DeadlineAt, &s.CreatedAt, &s.CompletedAt,
@@ -604,7 +606,7 @@ func (r *SessionRepo) GetSessionResponses(ctx context.Context, sessionID string)
 }
 
 func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error) {
-	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions WHERE user_id = $1 ORDER BY created_at DESC`
+	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, COALESCE(mode, 'full'), overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions WHERE user_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -614,7 +616,7 @@ func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]mod
 	var sessions []models.TestSession
 	for rows.Next() {
 		var s models.TestSession
-		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.Mode, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)
@@ -623,7 +625,7 @@ func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]mod
 }
 
 func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestSession, error) {
-	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions ORDER BY created_at DESC LIMIT $1`
+	query := `SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, COALESCE(mode, 'full'), overall_score, reading_score, listening_score, writing_score, speaking_score, literacy_score, comprehension_score, production_score, conversation_score, deadline_at, created_at, completed_at FROM test_sessions ORDER BY created_at DESC LIMIT $1`
 	rows, err := r.db.QueryContext(ctx, query, limit)
 	if err != nil {
 		return nil, err
@@ -633,7 +635,7 @@ func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestS
 	var sessions []models.TestSession
 	for rows.Next() {
 		var s models.TestSession
-		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel, &s.Mode, &s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore, &s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore, &s.DeadlineAt, &s.CreatedAt, &s.CompletedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)
@@ -1492,4 +1494,11 @@ func (r *OAuthTransactionRepo) Consume(ctx context.Context, stateHash, provider 
 func (r *OAuthTransactionRepo) CleanupExpired(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM oauth_transactions WHERE expires_at < NOW() - INTERVAL '1 hour'`)
 	return err
+}
+
+func envOrDefaultMode(mode string) string {
+	if mode == "" {
+		return "full"
+	}
+	return mode
 }

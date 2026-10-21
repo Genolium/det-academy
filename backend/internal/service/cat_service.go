@@ -150,12 +150,19 @@ func sanitizeQuestionsForStudent(questions []models.Question) []models.Question 
 }
 
 // StartSession creates a new CAT session
-func (s *CATService) StartSession(ctx context.Context, userID, candidateName, initialDifficulty string) (*models.TestSession, []models.Question, error) {
+func (s *CATService) StartSession(ctx context.Context, userID, candidateName, initialDifficulty string, modes ...string) (*models.TestSession, []models.Question, error) {
 	if initialDifficulty == "" {
 		initialDifficulty = "B1"
 	}
 	if candidateName == "" {
 		candidateName = "Candidate"
+	}
+	mode := "full"
+	if len(modes) > 0 && modes[0] != "" {
+		mode = modes[0]
+	}
+	if mode != "diagnostic" {
+		mode = "full"
 	}
 	if userID == "" {
 		return nil, nil, errors.New("authorization required to start test session")
@@ -176,6 +183,7 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 		CurrentStage:    1,
 		StageName:       initialStage,
 		DifficultyLevel: initialDifficulty,
+		Mode:            mode,
 		DeadlineAt:      &deadline,
 	}
 
@@ -184,7 +192,7 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	}
 
 	// Fetch a deterministic blueprint-sized initial question set.
-	questions, err := s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+	questions, err := s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch initial questions: %w", err)
 	}
@@ -206,11 +214,23 @@ func stageItemCount(stageName string) int {
 	return 1
 }
 
+var DiagnosticItemCount = map[string]int{
+	"READ_SELECT": 6, "FILL_BLANKS": 3, "C_TEST": 1, "LISTEN_TYPE": 1,
+	"INTERACTIVE_READING": 1, "INTERACTIVE_LISTENING": 1, "WRITE_PHOTO": 1,
+	"INTERACTIVE_WRITING": 1, "SPEAK_PHOTO": 1, "READ_THEN_SPEAK": 1,
+	"INTERACTIVE_SPEAKING": 1, "WRITING_SAMPLE": 1, "SPEAKING_SAMPLE": 1,
+}
+
 // stageQuestions returns a deterministic, blueprint-sized question set for a
 // stage. If the exact difficulty band has too few items, it falls back to the
 // full type pool instead of silently shrinking the stage.
-func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty string) ([]models.Question, error) {
+func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty string, modes ...string) ([]models.Question, error) {
 	count := stageItemCount(stageName)
+	if len(modes) > 0 && modes[0] == "diagnostic" {
+		if diagnosticCount, ok := DiagnosticItemCount[stageName]; ok {
+			count = diagnosticCount
+		}
+	}
 	questions, err := s.questionRepo.ListByTypeAndDifficulty(ctx, stageName, difficulty)
 	if err != nil {
 		return nil, err
@@ -290,7 +310,7 @@ func (s *CATService) GetSessionWithDetails(ctx context.Context, sessionID, userI
 			questions, _ = s.questionsForAssignments(ctx, assignments)
 		}
 		if len(questions) == 0 {
-			questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+			questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
 			_ = s.assignSessionQuestions(ctx, session, questions)
 		}
 	}
@@ -470,7 +490,7 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 
 	var nextQuestions []models.Question
 	if session.StageName != "COMPLETED" {
-		nextQuestions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+		nextQuestions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
 		_ = s.assignSessionQuestions(ctx, session, nextQuestions)
 	}
 

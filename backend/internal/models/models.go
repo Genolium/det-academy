@@ -173,6 +173,7 @@ type TestSession struct {
 	CurrentStage       int        `json:"currentStage"`
 	StageName          string     `json:"stageName"`
 	DifficultyLevel    string     `json:"difficultyLevel"` // A2, B1, B2, C1
+	Mode               string     `json:"mode"`            // full, diagnostic
 	OverallScore       *int       `json:"overallScore,omitempty"`
 	ReadingScore       *int       `json:"readingScore,omitempty"`
 	ListeningScore     *int       `json:"listeningScore,omitempty"`
@@ -215,6 +216,22 @@ type Certificate struct {
 	IssuedAt           time.Time `json:"issuedAt"`
 	PDFURL             string    `json:"pdfUrl"`
 	IsVerified         bool      `json:"isVerified"`
+}
+
+type WeeklyReport struct {
+	WeekStart       string   `json:"weekStart"`
+	WeekEnd         string   `json:"weekEnd"`
+	StudyDays       int      `json:"studyDays"`
+	Sessions        int      `json:"sessions"`
+	MockTests       int      `json:"mockTests"`
+	SRSReviews      int      `json:"srsReviews"`
+	ErrorsAdded     int      `json:"errorsAdded"`
+	ErrorsMastered  int      `json:"errorsMastered"`
+	CurrentEstimate int      `json:"currentEstimate"`
+	RangeLow        int      `json:"rangeLow"`
+	RangeHigh       int      `json:"rangeHigh"`
+	WeakestSkill    string   `json:"weakestSkill"`
+	Recommendations []string `json:"recommendations"`
 }
 
 type AdBanner struct {
@@ -329,6 +346,7 @@ type TheoryProgressResponse struct {
 type StartSessionRequest struct {
 	CandidateName   string `json:"candidateName,omitempty"`
 	DifficultyLevel string `json:"difficultyLevel,omitempty"` // Default B1
+	Mode            string `json:"mode,omitempty"`            // full, diagnostic
 }
 
 type SubmitResponseRequest struct {
@@ -559,51 +577,51 @@ type EvidenceSpan struct {
 }
 
 type EvaluationResult struct {
-	ID               string    `json:"id"`
-	ResponseID       string    `json:"responseId,omitempty"`
-	SessionID        string    `json:"sessionId"`
-	QuestionID       string    `json:"questionId"`
-	QuestionType     string    `json:"questionType"`
-	Status           string    `json:"status"` // "COMPLETED", "EMPTY", "INSUFFICIENT", "FAILED"
-	Score            float64   `json:"score"`  // 0.0 - 1.0 calibrated ratio
-	WordCount        int       `json:"wordCount"`
-	UniqueWords      int       `json:"uniqueWords"`
-	LexicalDiversity float64   `json:"lexicalDiversity"` // TTR
-	AcademicWords    []string  `json:"academicWords"`
-	Connectors       []string  `json:"connectors"`
-	RelevanceScore   float64   `json:"relevanceScore"`
-	CEFRLevel        string    `json:"cefrLevel"` // "A1", "A2", "B1", "B2", "C1", "C2"
-	SpeakingDuration float64   `json:"speakingDuration,omitempty"`
-	WPM              float64   `json:"wpm,omitempty"`
-	Recommendations  []string  `json:"recommendations"`
-	AudioURL         string    `json:"audioUrl,omitempty"`
-	Transcript       string    `json:"transcript,omitempty"`
-	TranscriptSource string    `json:"transcriptSource,omitempty"`
-	Provider         string    `json:"provider,omitempty"`
-	EvaluatorVersion string    `json:"evaluatorVersion,omitempty"`
-	FeedbackStatus   string    `json:"feedbackStatus,omitempty"`
-	Feedback         string    `json:"feedback,omitempty"`
+	ID               string         `json:"id"`
+	ResponseID       string         `json:"responseId,omitempty"`
+	SessionID        string         `json:"sessionId"`
+	QuestionID       string         `json:"questionId"`
+	QuestionType     string         `json:"questionType"`
+	Status           string         `json:"status"` // "COMPLETED", "EMPTY", "INSUFFICIENT", "FAILED"
+	Score            float64        `json:"score"`  // 0.0 - 1.0 calibrated ratio
+	WordCount        int            `json:"wordCount"`
+	UniqueWords      int            `json:"uniqueWords"`
+	LexicalDiversity float64        `json:"lexicalDiversity"` // TTR
+	AcademicWords    []string       `json:"academicWords"`
+	Connectors       []string       `json:"connectors"`
+	RelevanceScore   float64        `json:"relevanceScore"`
+	CEFRLevel        string         `json:"cefrLevel"` // "A1", "A2", "B1", "B2", "C1", "C2"
+	SpeakingDuration float64        `json:"speakingDuration,omitempty"`
+	WPM              float64        `json:"wpm,omitempty"`
+	Recommendations  []string       `json:"recommendations"`
+	AudioURL         string         `json:"audioUrl,omitempty"`
+	Transcript       string         `json:"transcript,omitempty"`
+	TranscriptSource string         `json:"transcriptSource,omitempty"`
+	Provider         string         `json:"provider,omitempty"`
+	EvaluatorVersion string         `json:"evaluatorVersion,omitempty"`
+	FeedbackStatus   string         `json:"feedbackStatus,omitempty"`
+	Feedback         string         `json:"feedback,omitempty"`
 	EvidenceSpans    []EvidenceSpan `json:"evidenceSpans,omitempty"`
-	RetryCount       int       `json:"retryCount,omitempty"`
-	LastError        string    `json:"lastError,omitempty"`
-	CreatedAt        time.Time `json:"createdAt"`
+	RetryCount       int            `json:"retryCount,omitempty"`
+	LastError        string         `json:"lastError,omitempty"`
+	CreatedAt        time.Time      `json:"createdAt"`
 }
 
 type EvaluationJob struct {
-	ID            string    `json:"id"`
-	SessionID     string    `json:"sessionId"`
-	QuestionID    string    `json:"questionId"`
-	EvaluationID  string    `json:"evaluationId"`
-	AudioPath     string    `json:"-"`
-	AudioMIME     string    `json:"audioMime,omitempty"`
-	ClientTranscript string `json:"-"`
-	Status        string    `json:"status"`
-	Attempts      int       `json:"attempts"`
-	MaxAttempts   int       `json:"maxAttempts"`
-	NextAttemptAt time.Time `json:"nextAttemptAt"`
-	LastError     string    `json:"lastError,omitempty"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID               string    `json:"id"`
+	SessionID        string    `json:"sessionId"`
+	QuestionID       string    `json:"questionId"`
+	EvaluationID     string    `json:"evaluationId"`
+	AudioPath        string    `json:"-"`
+	AudioMIME        string    `json:"audioMime,omitempty"`
+	ClientTranscript string    `json:"-"`
+	Status           string    `json:"status"`
+	Attempts         int       `json:"attempts"`
+	MaxAttempts      int       `json:"maxAttempts"`
+	NextAttemptAt    time.Time `json:"nextAttemptAt"`
+	LastError        string    `json:"lastError,omitempty"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 // Stage D: User Goals, Personalized Study Plan, SRS, and Error Notebook

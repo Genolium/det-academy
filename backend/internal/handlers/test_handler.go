@@ -29,7 +29,7 @@ func (h *TestHandler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, questions, err := h.catService.StartSession(r.Context(), userID, req.CandidateName, req.DifficultyLevel)
+	session, questions, err := h.catService.StartSession(r.Context(), userID, req.CandidateName, req.DifficultyLevel, req.Mode)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
