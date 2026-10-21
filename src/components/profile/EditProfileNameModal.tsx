@@ -73,7 +73,7 @@ export const EditProfileNameModal: React.FC<EditProfileNameModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white">
+      <div role="dialog" aria-modal="true" aria-labelledby="rename-profile-title" className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
@@ -86,13 +86,13 @@ export const EditProfileNameModal: React.FC<EditProfileNameModalProps> = ({
             <User className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-black tracking-tight">Переименовать профиль</h3>
+            <h3 id="rename-profile-title" className="text-lg font-black tracking-tight">Переименовать профиль</h3>
             <p className="text-xs text-neutral-400">Личные данные и сертификаты</p>
           </div>
         </div>
 
         {error && (
-          <div className="p-3.5 bg-red-950/60 border border-red-800/80 rounded-2xl text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
+          <div role="alert" className="p-3.5 bg-red-950/60 border border-red-800/80 rounded-2xl text-red-300 text-xs flex items-center gap-2.5 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
             <span>{error}</span>
           </div>
@@ -107,10 +107,11 @@ export const EditProfileNameModal: React.FC<EditProfileNameModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+            <label htmlFor="rename-profile-name" className="block text-xs font-semibold text-neutral-300 mb-1.5">
               Имя и фамилия студента
             </label>
             <input
+              id="rename-profile-name"
               type="text"
               required
               autoFocus

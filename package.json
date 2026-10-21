@@ -18,7 +18,8 @@
     "calibration:test": "python3 scripts/test_calibration.py",
     "calibration:report": "python3 scripts/calibration_report.py",
     "calibration:gate": "python3 scripts/calibration_validate.py",
-    "nginx:validate": "bash scripts/validate_nginx_config.sh"
+    "nginx:validate": "bash scripts/validate_nginx_config.sh",
+    "test:contracts": "bash scripts/external_contract_test.sh"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",

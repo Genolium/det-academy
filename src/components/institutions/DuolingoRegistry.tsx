@@ -145,7 +145,7 @@ export const DuolingoRegistry: React.FC = () => {
               aria-label="Страна"
               value={selectedCountry}
               onChange={(e) => handleCountryChange(e.target.value)}
-              className="px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
+              className="w-full sm:w-auto max-w-full px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
             >
               <option value="All">🌍 Все страны ({institutionsData.length})</option>
               {countries.map(({ country, count }) => (
@@ -160,7 +160,7 @@ export const DuolingoRegistry: React.FC = () => {
               aria-label="Тип программы"
               value={selectedType}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
+              className="w-full sm:w-auto max-w-full px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
             >
               <option value="ALL">🎓 Все программы</option>
               <option value="UNDERGRADUATE">Бакалавриат (Undergraduate)</option>

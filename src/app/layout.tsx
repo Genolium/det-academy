@@ -8,6 +8,7 @@ import { AdBanner } from '@/components/layout/AdBanner';
 import { CookieConsent } from '@/components/ui/CookieConsent';
 import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister';
 import { OfflineIndicator } from '@/components/system/OfflineIndicator';
+import { ErrorReporter } from '@/components/system/ErrorReporter';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -54,6 +55,7 @@ export default function RootLayout({
         <Footer />
         <CookieConsent />
         <OfflineIndicator />
+        <ErrorReporter />
         <ServiceWorkerRegister />
         {/* Google Identity Services SDK for Real One-Tap & OAuth Popup */}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />

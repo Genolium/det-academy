@@ -114,7 +114,7 @@ export const DemoWidget: React.FC = () => {
   const progressPercent = ((5.0 - timeLeft) / 5.0) * 100;
 
   return (
-    <section className="py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6">
+    <section className="w-full overflow-hidden py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6">
       <div className="bg-[#111315] text-white rounded-3xl p-6 sm:p-10 border border-neutral-800 shadow-2xl relative overflow-hidden">
         {/* Glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#D2F544]/10 rounded-full blur-3xl pointer-events-none" />

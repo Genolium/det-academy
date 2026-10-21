@@ -120,3 +120,28 @@ body .text-neutral-500 {
 .comparison-header .text-neutral-400 {
   color: #d4d4d4;
 }
+
+/* Respect the user's reduced-motion preference for all animated UI. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keep keyboard focus visible when the OS forces its own color palette. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .navbar-glass,
+  .navbar-glass-scrolled {
+    background: Canvas;
+  }
+}

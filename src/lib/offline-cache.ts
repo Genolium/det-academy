@@ -40,6 +40,10 @@ export function clearOfflineData(options: { clearPages?: boolean } = {}): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(USER_CACHE_KEY);
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith('det_srs_outbox_v1_')) localStorage.removeItem(key);
+    }
   } catch {
     // Ignore unavailable storage.
   }

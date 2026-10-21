@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import vocabData from '@/data/academicVocabulary.json';
 import { useAuthStore } from '@/store/useAuthStore';
-import { hasAuthSession } from '@/lib/auth-session';
+import { getAuthCacheUserId, hasAuthSession } from '@/lib/auth-session';
 import { api, SRSStateResponse, SRSCardProgress } from '@/lib/api';
+import { flushSRSOutbox, submitOrQueueSRSReview } from '@/lib/srs-outbox';
 import { Sparkles, RotateCw, Volume2, CheckCircle2, Flame, Award, ArrowRight, BookOpen, Layers } from 'lucide-react';
 
 interface FlashcardProgress {
@@ -37,7 +38,8 @@ export const SrsFlashcards: React.FC = () => {
   const [recallChoice, setRecallChoice] = useState<string | null>(null);
   const [recallChecked, setRecallChecked] = useState(false);
 
-  const storageKey = user?.id ? `det_srs_progress_${user.id}` : 'det_srs_progress_guest';
+  const cacheUserId = user?.id || getAuthCacheUserId();
+  const storageKey = cacheUserId ? `det_srs_progress_${cacheUserId}` : 'det_srs_progress_guest';
 
   // Load progress from backend (if logged in) or fallback to user-scoped localStorage
   useEffect(() => {
@@ -45,6 +47,7 @@ export const SrsFlashcards: React.FC = () => {
 
     async function loadSRS() {
       if (hasAuthSession()) {
+        if (cacheUserId) await flushSRSOutbox(cacheUserId);
         try {
           const resp: SRSStateResponse = await api.getUserSRSState();
           if (resp && isMounted) {
@@ -93,10 +96,15 @@ export const SrsFlashcards: React.FC = () => {
     }
 
     loadSRS();
+    const onOnline = () => {
+      if (cacheUserId) void flushSRSOutbox(cacheUserId);
+    };
+    window.addEventListener('online', onOnline);
     return () => {
       isMounted = false;
+      window.removeEventListener('online', onOnline);
     };
-  }, [storageKey]);
+  }, [storageKey, cacheUserId]);
 
   const saveStorage = useCallback((newStorage: SrsStorage) => {
     setStorage(newStorage);
@@ -275,10 +283,8 @@ export const SrsFlashcards: React.FC = () => {
 
     // Sync with backend if authenticated
     if (hasAuthSession()) {
-      try {
-        await api.reviewSRSCard(currentWord.id, quality);
-      } catch {
-        // ignore background sync error
+      if (cacheUserId) {
+        await submitOrQueueSRSReview(cacheUserId, currentWord.id, quality);
       }
     }
 

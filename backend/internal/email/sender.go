@@ -24,9 +24,10 @@ func (LogSender) SendVerification(ctx context.Context, to, link string) error {
 }
 
 type ResendSender struct {
-	APIKey string
-	From   string
-	Client *http.Client
+	APIKey  string
+	From    string
+	BaseURL string
+	Client  *http.Client
 }
 
 func (s *ResendSender) SendVerification(ctx context.Context, to, link string) error {
@@ -40,7 +41,11 @@ func (s *ResendSender) SendVerification(ctx context.Context, to, link string) er
 		),
 	}
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.resend.com/emails", bytes.NewReader(body))
+	baseURL := strings.TrimRight(s.BaseURL, "/")
+	if baseURL == "" {
+		baseURL = "https://api.resend.com"
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/emails", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -63,7 +68,11 @@ func NewFromEnv() Sender {
 		if from == "" {
 			from = "DET Academy <noreply@det-academy.ru>"
 		}
-		return &ResendSender{APIKey: apiKey, From: from, Client: &http.Client{Timeout: 10 * time.Second}}
+		baseURL := strings.TrimSpace(os.Getenv("RESEND_BASE_URL"))
+		if baseURL == "" {
+			baseURL = "https://api.resend.com"
+		}
+		return &ResendSender{APIKey: apiKey, From: from, BaseURL: baseURL, Client: &http.Client{Timeout: 10 * time.Second}}
 	}
 	return LogSender{}
 }

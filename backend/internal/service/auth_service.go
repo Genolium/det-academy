@@ -279,7 +279,7 @@ func (s *AuthService) exchangeYandexOAuth(ctx context.Context, code string) (str
 		data.Set("client_id", clientID)
 		data.Set("client_secret", clientSecret)
 
-		req, err := http.NewRequestWithContext(ctx, "POST", "https://oauth.yandex.ru/token", strings.NewReader(data.Encode()))
+		req, err := http.NewRequestWithContext(ctx, "POST", envOr("YANDEX_TOKEN_URL", "https://oauth.yandex.ru/token"), strings.NewReader(data.Encode()))
 		if err == nil {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			resp, err := client.Do(req)
@@ -301,7 +301,7 @@ func (s *AuthService) exchangeYandexOAuth(ctx context.Context, code string) (str
 	}
 
 	// Fetch user profile from Yandex Login API
-	infoReq, err := http.NewRequestWithContext(ctx, "GET", "https://login.yandex.ru/info?format=json", nil)
+	infoReq, err := http.NewRequestWithContext(ctx, "GET", envOr("YANDEX_USERINFO_URL", "https://login.yandex.ru/info?format=json"), nil)
 	if err != nil {
 		return "", "", "", "", err
 	}
@@ -410,7 +410,7 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://id.vk.ru/oauth2/auth", strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", envOr("VK_TOKEN_URL", "https://id.vk.ru/oauth2/auth"), strings.NewReader(data.Encode()))
 	if err == nil {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		resp, err := client.Do(req)
@@ -466,7 +466,7 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 		userData.Set("client_id", clientID)
 		userData.Set("access_token", accessToken)
 
-		userReq, err := http.NewRequestWithContext(ctx, "POST", "https://id.vk.ru/oauth2/user_info", strings.NewReader(userData.Encode()))
+		userReq, err := http.NewRequestWithContext(ctx, "POST", envOr("VK_USERINFO_URL", "https://id.vk.ru/oauth2/user_info"), strings.NewReader(userData.Encode()))
 		if err == nil {
 			userReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			userReq.Header.Set("Authorization", "Bearer "+accessToken)
@@ -526,7 +526,7 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 
 	// 3. Fallback to classic users.get if access token is classic VK token
 	if uid == "" || uid == "<nil>" || uid == "0" {
-		apiURL := fmt.Sprintf("https://api.vk.com/method/users.get?v=5.131&fields=photo_200&access_token=%s", url.QueryEscape(accessToken))
+		apiURL := fmt.Sprintf("%s/method/users.get?v=5.131&fields=photo_200&access_token=%s", strings.TrimRight(envOr("VK_API_URL", "https://api.vk.com"), "/"), url.QueryEscape(accessToken))
 		reqAPI, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 		if err == nil {
 			resp, err := client.Do(reqAPI)

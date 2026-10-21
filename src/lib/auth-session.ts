@@ -64,6 +64,14 @@ export function getAuthUserId(): string | null {
   }
 }
 
+/**
+ * Stable non-secret namespace for browser-local caches when a token exists but
+ * its payload is not a decodable JWT (for example, a test or legacy token).
+ */
+export function getAuthCacheUserId(): string | null {
+  return getAuthUserId() || (getAuthToken() ? `token-${getAuthToken()!.slice(-16)}` : null);
+}
+
 export function getAuthToken(): string | null {
   const storage = getStorage();
   if (!storage) return null;

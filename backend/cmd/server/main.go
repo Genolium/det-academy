@@ -201,6 +201,7 @@ func main() {
 
 		// Auth routes
 		r.Get("/metrics", handlers.MetricsHandler)
+		r.With(handlers.RateLimitMiddleware(30, time.Minute)).Post("/client-errors", handlers.ClientError)
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Use(handlers.RateLimitMiddleware(60, time.Minute))

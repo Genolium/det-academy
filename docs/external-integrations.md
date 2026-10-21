@@ -30,7 +30,13 @@ Exit codes: `0` all configured, `2` missing (BLOCKED), `1` missing with
 - The evaluation queue has tests for missing STT and provider failures.
 - The backend Sentry middleware is a safe no-op without `SENTRY_DSN` and captures
   panics when a DSN is configured.
-- Email delivery and real OAuth redirects are **not** verified.
+- The frontend global error reporter posts bounded reports to
+  `/api/v1/client-errors`; the backend forwards them to Sentry.
+- Local contract tests cover Google/Apple token validation, VK/Yandex exchange,
+  OpenAI-compatible evaluation/STT, Resend email delivery and Sentry capture:
+  `npm run test:contracts`.
+- Real provider delivery, real OAuth redirects and real email inboxes are **not**
+  verified without credentials.
 
 ## What requires a decision or credentials
 

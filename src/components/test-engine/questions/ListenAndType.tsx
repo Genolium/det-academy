@@ -171,7 +171,11 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
           </button>
         </div>
 
+        <label htmlFor="listen-type-answer" className="sr-only">
+          Type the statement that you hear
+        </label>
         <textarea
+          id="listen-type-answer"
           rows={3}
           value={typedText}
           onChange={(e) => setTypedText(e.target.value)}
@@ -182,6 +186,15 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
           className="w-full bg-neutral-950 border border-neutral-700 rounded-2xl p-4 text-base text-white focus:outline-none focus:border-[#D2F544] font-mono"
           placeholder="Type exactly what you hear..."
         />
+
+        <details className="mt-4 text-left">
+          <summary className="cursor-pointer text-xs font-semibold text-neutral-400 hover:text-white">
+            Показать транскрипт (для доступности)
+          </summary>
+          <p className="mt-2 rounded-xl border border-neutral-700 bg-neutral-950 p-3 text-sm text-neutral-200">
+            {currentItem.audioSentence}
+          </p>
+        </details>
       </div>
 
       <div className="flex justify-end">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore } from '@/store/useProgressStore';
@@ -20,11 +20,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const { login, register, oauthLogin, isLoading, error, clearError } = useAuthStore();
   const { setCandidateName, syncWithBackend } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const focusable = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) || []
+      ).filter((element) => element.offsetParent !== null);
+    const first = focusable()[0];
+    first?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = focusable();
+      if (elements.length === 0) return;
+      const firstElement = elements[0];
+      const lastElement = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      returnFocusRef.current?.focus();
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -84,7 +126,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
+      >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -106,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 id="auth-modal-title" className="text-xl font-bold text-white tracking-tight">
               {isRegister ? t.registerTitle : t.loginTitle}
             </h2>
             <p className="text-xs text-neutral-400">
@@ -144,13 +192,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-950/80 border border-red-800 text-red-300 text-xs rounded-xl">
+          <div role="alert" className="mb-4 p-3 bg-red-950/80 border border-red-800 text-red-300 text-xs rounded-xl">
             {error}
           </div>
         )}
 
         {notice && (
-          <div className="mb-4 p-3 bg-blue-950/80 border border-blue-800 text-blue-300 text-xs rounded-xl flex items-start gap-2 animate-in fade-in duration-150">
+          <div role="status" aria-live="polite" className="mb-4 p-3 bg-blue-950/80 border border-blue-800 text-blue-300 text-xs rounded-xl flex items-start gap-2 animate-in fade-in duration-150">
             <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
             <div className="flex-1 leading-relaxed">{notice}</div>
             <button
@@ -168,12 +216,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
-              <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+              <label htmlFor="auth-name" className="block text-xs font-semibold text-neutral-300 mb-1.5">
                 {t.nameLabel}
               </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
                 <input
+                  id="auth-name"
                   type="text"
                   required
                   placeholder={t.namePlaceholder}
@@ -186,12 +235,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+            <label htmlFor="auth-email" className="block text-xs font-semibold text-neutral-300 mb-1.5">
               {t.emailLabel}
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
               <input
+                id="auth-email"
                 type="email"
                 required
                 placeholder={t.emailPlaceholder}
@@ -203,12 +253,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+            <label htmlFor="auth-password" className="block text-xs font-semibold text-neutral-300 mb-1.5">
               {t.passwordLabel}
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
               <input
+                id="auth-password"
                 type="password"
                 required
                 placeholder="••••••••"

@@ -45,3 +45,14 @@ func Middleware(next http.Handler) http.Handler {
 func Flush(timeout time.Duration) {
 	sentry.Flush(timeout)
 }
+
+func CaptureClientError(message, stack, url, userAgent string) {
+	hub := sentry.CurrentHub().Clone()
+	hub.WithScope(func(scope *sentry.Scope) {
+		scope.SetTag("source", "frontend")
+		scope.SetExtra("stack", stack)
+		scope.SetExtra("url", url)
+		scope.SetExtra("user_agent", userAgent)
+		hub.CaptureMessage(message)
+	})
+}

@@ -72,10 +72,10 @@ export default function InstitutionsPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-center gap-3 mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
           <button
             onClick={() => setActiveTab('registry')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'registry'
                 ? 'bg-[#0E1012] text-white shadow-lg shadow-neutral-900/20'
                 : 'bg-white text-neutral-600 hover:text-[#0E1012] border border-neutral-200 hover:border-neutral-300'
@@ -87,7 +87,7 @@ export default function InstitutionsPage() {
 
           <button
             onClick={() => setActiveTab('map')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'map'
                 ? 'bg-[#0E1012] text-white shadow-lg shadow-neutral-900/20'
                 : 'bg-white text-neutral-600 hover:text-[#0E1012] border border-neutral-200 hover:border-neutral-300'
