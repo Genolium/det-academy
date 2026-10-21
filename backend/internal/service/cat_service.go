@@ -89,12 +89,51 @@ func NewCATService(
 	}
 }
 
+// sanitizeContentPayload removes answer-bearing fields that some question
+// payloads used to expose next to the public prompt.
+func sanitizeContentPayload(questionType string, raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 {
+		return raw
+	}
+	var payload map[string]interface{}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return raw
+	}
+	switch questionType {
+	case "FILL_BLANKS":
+		delete(payload, "fullWord")
+	case "INTERACTIVE_READING":
+		if gap, ok := payload["gapSentence"].(map[string]interface{}); ok {
+			delete(gap, "correct")
+		}
+		for _, key := range []string{"titleQuestion", "mainIdeaQuestion"} {
+			if question, ok := payload[key].(map[string]interface{}); ok {
+				delete(question, "correctIndex")
+			}
+		}
+	case "INTERACTIVE_LISTENING":
+		if turns, ok := payload["turns"].([]interface{}); ok {
+			for _, turn := range turns {
+				if turnMap, ok := turn.(map[string]interface{}); ok {
+					delete(turnMap, "correctIndex")
+				}
+			}
+		}
+	}
+	sanitized, err := json.Marshal(payload)
+	if err != nil {
+		return raw
+	}
+	return sanitized
+}
+
 // sanitizeQuestionsForStudent strips sensitive correct answers before delivering questions to students
 func sanitizeQuestionsForStudent(questions []models.Question) []models.Question {
 	sanitized := make([]models.Question, len(questions))
 	for i := range questions {
 		sanitized[i] = questions[i]
 		sanitized[i].CorrectAnswers = nil
+		sanitized[i].ContentPayload = sanitizeContentPayload(questions[i].Type, questions[i].ContentPayload)
 	}
 	return sanitized
 }
@@ -284,8 +323,34 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 		return nil, nil, errors.New("session is not in progress")
 	}
 
+	// Prefer server-verified responses for difficulty adaptation. A client
+	// accuracy hint is used only when the stage produced no recorded answers.
+	stageAccuracy := math.Max(0, math.Min(1, req.Accuracy))
+	stageTypes := QuestionTypesForStage(session.StageName)
+	if len(stageTypes) > 0 {
+		if responses, err := s.sessionRepo.GetSessionResponses(ctx, sessionID); err == nil {
+			sum, count := 0.0, 0
+			for _, response := range responses {
+				qType := deduceQuestionTypeFromID(response.QuestionID)
+				if q, qErr := s.questionRepo.GetByID(ctx, response.QuestionID); qErr == nil && q != nil {
+					qType = q.Type
+				}
+				for _, stageType := range stageTypes {
+					if qType == stageType {
+						sum += math.Max(0, math.Min(1, response.RawScore))
+						count++
+						break
+					}
+				}
+			}
+			if count > 0 {
+				stageAccuracy = sum / float64(count)
+			}
+		}
+	}
+
 	// Adjust difficulty based on IRT
-	nextDiff := ComputeNextDifficulty(session.DifficultyLevel, req.Accuracy)
+	nextDiff := ComputeNextDifficulty(session.DifficultyLevel, stageAccuracy)
 	session.DifficultyLevel = nextDiff
 
 	// Advance stage
@@ -319,16 +384,21 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 }
 
 // RecordQuestionResponse records and grades an individual question answer on the server
-func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, userID string, req models.SubmitResponseRequest) error {
+func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, userID string, req models.SubmitResponseRequest) (bool, float64, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
-		return errors.New("session not found")
+		return false, 0, errors.New("session not found")
 	}
 	if session.UserID != userID {
-		return errors.New("access denied: session does not belong to user")
+		return false, 0, errors.New("access denied: session does not belong to user")
 	}
-	if session.Status == "COMPLETED" {
-		return errors.New("session is already completed and cannot be modified")
+	if session.Status == "COMPLETED" || session.StageName == "COMPLETED" {
+		return false, 0, errors.New("session is already completed and cannot be modified")
+	}
+	// The server owns time. A short grace period absorbs network latency, but
+	// a background tab or a changed client clock cannot extend the stage.
+	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(10*time.Second)) {
+		return false, 0, errors.New("stage deadline exceeded: answer was not accepted")
 	}
 
 	trimmedResponse := strings.TrimSpace(string(req.UserResponse))
@@ -344,7 +414,7 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			RawScore:     0.0,
 			TimeSpentSec: req.TimeSpentSec,
 		}
-		return s.sessionRepo.RecordResponse(ctx, resp)
+		return false, 0, s.sessionRepo.RecordResponse(ctx, resp)
 	}
 
 	var calculatedScore float64
@@ -380,9 +450,18 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			}
 		case "FILL_BLANKS":
 			var ca struct {
-				Answer string `json:"answer"`
+				Answer         string `json:"answer"`
+				FullWord       string `json:"fullWord"`
+				MissingLetters string `json:"missingLetters"`
 			}
 			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
+				expected := ca.MissingLetters
+				if expected == "" {
+					expected = ca.Answer
+				}
+				if expected == "" {
+					expected = ca.FullWord
+				}
 				var userText string
 				var userObj struct {
 					Answer string `json:"answer"`
@@ -394,24 +473,30 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 				} else {
 					userText = strings.Trim(trimmedResponse, `"'`)
 				}
-				if strings.EqualFold(strings.TrimSpace(userText), strings.TrimSpace(ca.Answer)) {
-					isCorrect = true
+				userText = strings.TrimSpace(userText)
+				calculatedScore = 0
+				if expected != "" && strings.EqualFold(userText, strings.TrimSpace(expected)) {
 					calculatedScore = 1.0
-				} else {
-					isCorrect = false
-					calculatedScore = 0.0
+				} else if ca.FullWord != "" && strings.EqualFold(userText, strings.TrimSpace(ca.FullWord)) {
+					calculatedScore = 1.0
 				}
+				isCorrect = calculatedScore >= 0.99
 			}
 		case "LISTEN_TYPE":
 			var ca struct {
-				Text string `json:"text"`
+				Text             string `json:"text"`
+				ExpectedSentence string `json:"expectedSentence"`
 			}
 			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
+				expected := ca.ExpectedSentence
+				if expected == "" {
+					expected = ca.Text
+				}
 				var userText string
 				if err := json.Unmarshal(req.UserResponse, &userText); err != nil {
 					userText = strings.Trim(trimmedResponse, `"'`)
 				}
-				sim := StringSimilarity(userText, ca.Text)
+				sim := StringSimilarity(userText, expected)
 				calculatedScore = sim
 				isCorrect = sim >= 0.85
 			}
@@ -430,6 +515,76 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 					}
 					calculatedScore = float64(matched) / float64(len(ca.Answers))
 					isCorrect = calculatedScore >= 0.7
+				}
+			}
+		case "INTERACTIVE_READING":
+			var ca struct {
+				GapCorrect                string `json:"gapCorrect"`
+				SentenceCorrectIndex      *int   `json:"sentenceCorrectIndex"`
+				MainIdeaCorrectIndex      *int   `json:"mainIdeaCorrectIndex"`
+				TitleCorrectIndex         *int   `json:"titleCorrectIndex"`
+				HighlightCorrectSubstring string `json:"highlightCorrectSubstring"`
+				HighlightCorrect          string `json:"highlightCorrect"`
+			}
+			var ur struct {
+				Gap               string `json:"gap"`
+				SentenceIndex     *int   `json:"sentenceIndex"`
+				HighlightSentence string `json:"highlightSentence"`
+				MainIdeaIndex     *int   `json:"mainIdeaIndex"`
+				TitleIndex        *int   `json:"titleIndex"`
+			}
+			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
+				if err := json.Unmarshal(req.UserResponse, &ur); err == nil {
+					const subtaskCount = 5
+					correct := 0
+					if strings.EqualFold(strings.TrimSpace(ur.Gap), strings.TrimSpace(ca.GapCorrect)) && ur.Gap != "" {
+						correct++
+					}
+					if ur.SentenceIndex != nil && ca.SentenceCorrectIndex != nil && *ur.SentenceIndex == *ca.SentenceCorrectIndex {
+						correct++
+					}
+					if ur.MainIdeaIndex != nil && ca.MainIdeaCorrectIndex != nil && *ur.MainIdeaIndex == *ca.MainIdeaCorrectIndex {
+						correct++
+					}
+					if ur.TitleIndex != nil && ca.TitleCorrectIndex != nil && *ur.TitleIndex == *ca.TitleCorrectIndex {
+						correct++
+					}
+					normalizeSentence := func(value string) string {
+						value = strings.ToLower(strings.TrimSpace(value))
+						value = strings.Trim(value, `".!?`)
+						return strings.Join(strings.Fields(value), " ")
+					}
+					highlightExpected := ca.HighlightCorrectSubstring
+					if highlightExpected == "" {
+						highlightExpected = ca.HighlightCorrect
+					}
+					highlightCorrect := normalizeSentence(highlightExpected)
+					highlightUser := normalizeSentence(ur.HighlightSentence)
+					if highlightUser != "" && highlightCorrect != "" &&
+						(strings.Contains(highlightCorrect, highlightUser) || strings.Contains(highlightUser, highlightCorrect)) {
+						correct++
+					}
+					calculatedScore = float64(correct) / float64(subtaskCount)
+					isCorrect = calculatedScore >= 0.75
+				}
+			}
+		case "INTERACTIVE_LISTENING":
+			var ca struct {
+				TurnsAnswers []int `json:"turnsAnswers"`
+			}
+			var ur struct {
+				Turns []int `json:"turns"`
+			}
+			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil && len(ca.TurnsAnswers) > 0 {
+				if err := json.Unmarshal(req.UserResponse, &ur); err == nil {
+					matched := 0
+					for i, expected := range ca.TurnsAnswers {
+						if i < len(ur.Turns) && ur.Turns[i] == expected {
+							matched++
+						}
+					}
+					calculatedScore = float64(matched) / float64(len(ca.TurnsAnswers))
+					isCorrect = calculatedScore >= 0.75
 				}
 			}
 		case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
@@ -483,7 +638,7 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 		TimeSpentSec: req.TimeSpentSec,
 	}
 
-	return s.sessionRepo.RecordResponse(ctx, resp)
+	return isCorrect, calculatedScore, s.sessionRepo.RecordResponse(ctx, resp)
 }
 
 // RecordAudioResponse records uploaded audio speech, evaluates it, and stores the response.
@@ -729,6 +884,40 @@ func RoundToDetScale(score float64) int {
 
 // MapQuestionTypeToSkill maps a question type to one of the four fundamental DET skills:
 // "reading", "listening", "writing", "speaking"
+// QuestionTypesForStage returns the server question types belonging to a stage.
+func QuestionTypesForStage(stage string) []string {
+	switch stage {
+	case "READ_SELECT":
+		return []string{"READ_SELECT"}
+	case "FILL_BLANKS":
+		return []string{"FILL_BLANKS"}
+	case "C_TEST":
+		return []string{"C_TEST"}
+	case "LISTEN_TYPE":
+		return []string{"LISTEN_TYPE"}
+	case "INTERACTIVE_READING":
+		return []string{"INTERACTIVE_READING"}
+	case "INTERACTIVE_LISTENING":
+		return []string{"INTERACTIVE_LISTENING"}
+	case "WRITE_PHOTO":
+		return []string{"WRITE_PHOTO"}
+	case "INTERACTIVE_WRITING":
+		return []string{"INTERACTIVE_WRITING"}
+	case "SPEAK_PHOTO":
+		return []string{"SPEAK_PHOTO"}
+	case "READ_THEN_SPEAK":
+		return []string{"READ_THEN_SPEAK"}
+	case "INTERACTIVE_SPEAKING":
+		return []string{"INTERACTIVE_SPEAKING"}
+	case "WRITING_SAMPLE":
+		return []string{"WRITING_SAMPLE"}
+	case "SPEAKING_SAMPLE":
+		return []string{"SPEAKING_SAMPLE"}
+	default:
+		return nil
+	}
+}
+
 func MapQuestionTypeToSkill(qType string) string {
 	switch qType {
 	case "READ_SELECT", "FILL_BLANKS", "C_TEST", "INTERACTIVE_READING":
@@ -778,57 +967,6 @@ func deduceQuestionTypeFromID(id string) string {
 	}
 }
 
-// ComputeFinalScores calculates overall and 8 subscores (4 individual skills + 4 integrated subscores)
-// in accordance with official Duolingo English Test scoring specifications.
-func ComputeFinalScores(req models.CompleteSessionRequest) models.CalculatedScores {
-	ratioToTheta := func(ratio float64) float64 {
-		clampedRatio := math.Max(0.05, math.Min(0.95, ratio))
-		return math.Log(clampedRatio/(1.0-clampedRatio)) / 1.2
-	}
-
-	readingRatio := (req.ReadSelectAccuracy + req.FillBlanksAccuracy + req.CTestAccuracy + req.InteractiveReadingScore) / 4.0
-	if readingRatio <= 0 {
-		readingRatio = 0.5
-	}
-	listeningRatio := (req.ListenTypeAccuracy + req.InteractiveListeningScore) / 2.0
-	if listeningRatio <= 0 {
-		listeningRatio = 0.5
-	}
-	writingRatio := req.WritingScore
-	if writingRatio <= 0 {
-		writingRatio = 0.5
-	}
-	speakingRatio := req.SpeakingScore
-	if speakingRatio <= 0 {
-		speakingRatio = (listeningRatio + writingRatio) / 2.0
-	}
-
-	reading := ThetaToDetScore(ratioToTheta(readingRatio))
-	listening := ThetaToDetScore(ratioToTheta(listeningRatio))
-	writing := ThetaToDetScore(ratioToTheta(writingRatio))
-	speaking := ThetaToDetScore(ratioToTheta(speakingRatio))
-
-	literacy := RoundToDetScale(float64(reading+writing) / 2.0)
-	comprehension := RoundToDetScale(float64(reading+listening) / 2.0)
-	production := RoundToDetScale(float64(writing+speaking) / 2.0)
-	conversation := RoundToDetScale(float64(listening+speaking) / 2.0)
-
-	overall := RoundToDetScale(float64(reading+listening+writing+speaking) / 4.0)
-
-	return models.CalculatedScores{
-		Overall:       overall,
-		Reading:       reading,
-		Listening:     listening,
-		Writing:       writing,
-		Speaking:      speaking,
-		Literacy:      literacy,
-		Comprehension: comprehension,
-		Production:    production,
-		Conversation:  conversation,
-	}
-}
-
-
 // completedSessionResponse rebuilds the canonical response for an already
 // finalized attempt. It never recalculates or mutates scores.
 func (s *CATService) completedSessionResponse(ctx context.Context, session *models.TestSession) (*models.SessionCompleteResponse, error) {
@@ -850,6 +988,31 @@ func (s *CATService) completedSessionResponse(ctx context.Context, session *mode
 		Production:    intValue(session.ProductionScore),
 		Conversation:  intValue(session.ConversationScore),
 	}
+
+	notMeasured := []string{}
+	for _, skill := range []struct {
+		name  string
+		value int
+	}{
+		{"reading", scores.Reading},
+		{"listening", scores.Listening},
+		{"writing", scores.Writing},
+		{"speaking", scores.Speaking},
+	} {
+		if skill.value <= 0 {
+			notMeasured = append(notMeasured, skill.name)
+		}
+	}
+	scores.Completeness = float64(4-len(notMeasured)) / 4.0
+	if scores.Overall > 0 && len(notMeasured) == 0 {
+		scores.Confidence = "low"
+		scores.RangeLow = int(math.Max(10, float64(scores.Overall-10)))
+		scores.RangeHigh = int(math.Min(160, float64(scores.Overall+10)))
+	} else {
+		scores.Confidence = "low"
+		notMeasured = append(notMeasured, "overall")
+	}
+	scores.NotMeasured = notMeasured
 
 	cert, _ := s.certRepo.GetBySessionID(ctx, session.ID)
 	eligible := cert != nil
@@ -891,14 +1054,9 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 		return nil, errors.New("cannot complete session: no question responses recorded")
 	}
 
-	// Calculate average recorded accuracy from real responses
-	var totalScore float64
-	for _, r := range responses {
-		totalScore += r.RawScore
-	}
-	avgAccuracy := totalScore / float64(len(responses))
-
-	// Aggregate verified question responses by skill category
+	// Aggregate server-verified question responses by skill. There is no
+	// fallback to a client ratio or to another skill's average: a skipped
+	// skill stays not measured.
 	type skillStats struct {
 		sum   float64
 		count int
@@ -918,56 +1076,113 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 			qType = deduceQuestionTypeFromID(r.QuestionID)
 		}
 		skill := MapQuestionTypeToSkill(qType)
-		stats[skill].sum += r.RawScore
-		stats[skill].count++
-	}
-
-	getSkillRatio := func(skill string, clientReqRatio float64) float64 {
 		st := stats[skill]
-		if st.count > 0 {
-			return st.sum / float64(st.count)
+		if st == nil {
+			st = &skillStats{}
+			stats[skill] = st
 		}
-		if clientReqRatio > 0 && clientReqRatio <= 1.0 {
-			return math.Min(clientReqRatio, avgAccuracy+0.25)
-		}
-		return math.Max(0.05, avgAccuracy)
+		st.sum += math.Max(0, math.Min(1, r.RawScore))
+		st.count++
 	}
-
-	readingClientRatio := (req.ReadSelectAccuracy + req.FillBlanksAccuracy + req.CTestAccuracy + req.InteractiveReadingScore) / 4.0
-	listeningClientRatio := (req.ListenTypeAccuracy + req.InteractiveListeningScore) / 2.0
-
-	readingRatio := getSkillRatio("reading", readingClientRatio)
-	listeningRatio := getSkillRatio("listening", listeningClientRatio)
-	writingRatio := getSkillRatio("writing", req.WritingScore)
-	speakingRatio := getSkillRatio("speaking", req.SpeakingScore)
 
 	ratioToTheta := func(ratio float64) float64 {
-		clampedRatio := math.Max(0.05, math.Min(0.95, ratio))
+		clampedRatio := math.Max(0.02, math.Min(0.98, ratio))
 		return math.Log(clampedRatio/(1.0-clampedRatio)) / 1.2
 	}
 
-	readingScore := ThetaToDetScore(ratioToTheta(readingRatio))
-	listeningScore := ThetaToDetScore(ratioToTheta(listeningRatio))
-	writingScore := ThetaToDetScore(ratioToTheta(writingRatio))
-	speakingScore := ThetaToDetScore(ratioToTheta(speakingRatio))
+	ratio := func(skill string) (float64, bool) {
+		st := stats[skill]
+		if st == nil || st.count == 0 {
+			return 0, false
+		}
+		return st.sum / float64(st.count), true
+	}
+	scoreFor := func(skill string) int {
+		value, measured := ratio(skill)
+		if !measured {
+			return 0
+		}
+		return ThetaToDetScore(ratioToTheta(value))
+	}
 
-	literacy := RoundToDetScale(float64(readingScore+writingScore) / 2.0)
-	comprehension := RoundToDetScale(float64(readingScore+listeningScore) / 2.0)
-	production := RoundToDetScale(float64(writingScore+speakingScore) / 2.0)
-	conversation := RoundToDetScale(float64(listeningScore+speakingScore) / 2.0)
+	readingScore := scoreFor("reading")
+	listeningScore := scoreFor("listening")
+	writingScore := scoreFor("writing")
+	speakingScore := scoreFor("speaking")
 
-	overall := RoundToDetScale(float64(readingScore+listeningScore+writingScore+speakingScore) / 4.0)
+	_, readingMeasured := ratio("reading")
+	_, listeningMeasured := ratio("listening")
+	_, writingMeasured := ratio("writing")
+	_, speakingMeasured := ratio("speaking")
+
+	notMeasured := []string{}
+	for _, skill := range []string{"reading", "listening", "writing", "speaking"} {
+		if _, measured := ratio(skill); !measured {
+			notMeasured = append(notMeasured, skill)
+		}
+	}
+	completeness := float64(4-len(notMeasured)) / 4.0
+
+	literacy := 0
+	if readingMeasured && writingMeasured {
+		literacy = RoundToDetScale(float64(readingScore+writingScore) / 2.0)
+	}
+	comprehension := 0
+	if readingMeasured && listeningMeasured {
+		comprehension = RoundToDetScale(float64(readingScore+listeningScore) / 2.0)
+	}
+	production := 0
+	if writingMeasured && speakingMeasured {
+		production = RoundToDetScale(float64(writingScore+speakingScore) / 2.0)
+	}
+	conversation := 0
+	if listeningMeasured && speakingMeasured {
+		conversation = RoundToDetScale(float64(listeningScore+speakingScore) / 2.0)
+	}
+
+	overall := 0
+	if len(notMeasured) == 0 {
+		overall = RoundToDetScale(float64(readingScore+listeningScore+writingScore+speakingScore) / 4.0)
+	} else {
+		notMeasured = append(notMeasured, "overall")
+	}
+
+	confidence := "low"
+	if len(notMeasured) == 0 {
+		if len(responses) >= 20 {
+			confidence = "high"
+		} else if len(responses) >= 8 {
+			confidence = "medium"
+		}
+	}
+	rangeDelta := 20
+	if confidence == "high" {
+		rangeDelta = 5
+	} else if confidence == "medium" {
+		rangeDelta = 10
+	}
+	rangeLow, rangeHigh := 0, 0
+	if overall > 0 {
+		rangeLow = int(math.Max(10, float64(overall-rangeDelta)))
+		rangeHigh = int(math.Min(160, float64(overall+rangeDelta)))
+	}
 
 	scores := models.CalculatedScores{
-		Overall:       overall,
-		Reading:       readingScore,
-		Listening:     listeningScore,
-		Writing:       writingScore,
-		Speaking:      speakingScore,
-		Literacy:      literacy,
-		Comprehension: comprehension,
-		Production:    production,
-		Conversation:  conversation,
+		Overall:           overall,
+		Reading:           readingScore,
+		Listening:         listeningScore,
+		Writing:           writingScore,
+		Speaking:          speakingScore,
+		Literacy:          literacy,
+		Comprehension:     comprehension,
+		Production:        production,
+		Conversation:      conversation,
+		Completeness:      completeness,
+		Confidence:        confidence,
+		RangeLow:          rangeLow,
+		RangeHigh:         rangeHigh,
+		NotMeasured:       notMeasured,
+		AnsweredQuestions: len(responses),
 	}
 
 	now := time.Now()
@@ -1022,7 +1237,12 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 			IsVerified:         true,
 		}
 
-		_ = s.certRepo.Create(ctx, cert)
+		if err := s.certRepo.Create(ctx, cert); err != nil {
+			// A concurrent finalization may have created the same certificate.
+			if existing, getErr := s.certRepo.GetBySessionID(ctx, session.ID); getErr == nil {
+				cert = existing
+			}
+		}
 	}
 
 	return &models.SessionCompleteResponse{

@@ -36,9 +36,9 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
     isSubmittedRef.current = true;
     const textToSubmit = essayRef.current;
 
-    if (backendSessionId) {
+    if (backendSessionId && serverQ) {
       api.submitQuestionResponse(backendSessionId, {
-        questionId: serverQ?.id || 'ws-1',
+        questionId: serverQ.id,
         userResponse: { text: textToSubmit },
         rawScore: 0,
         timeSpentSec: Math.max(1, 300 - timeLeft),
@@ -118,6 +118,10 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
           </div>
 
           <textarea
+            autoCorrect="off"
+            autoCapitalize="none"
+            autoComplete="off"
+            spellCheck={false}
             rows={10}
             value={essayText}
             onChange={(e) => setEssayText(e.target.value)}

@@ -75,10 +75,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
     const spokenText = transcriptRef.current;
 
     // Upload audio blob to backend if session exists
-    if (backendSessionId && recordedBlob && recordedBlob.size > 0) {
+    if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
       const formData = new FormData();
       formData.append('audio', recordedBlob, 'speak_about_photo.webm');
-      formData.append('questionId', serverQ?.id || 'sp-1');
+      formData.append('questionId', serverQ.id);
       if (spokenText) {
         formData.append('transcript', spokenText);
       }

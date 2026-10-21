@@ -339,6 +339,15 @@ type CalculatedScores struct {
 	Comprehension int `json:"comprehension"`
 	Production    int `json:"production"`
 	Conversation  int `json:"conversation"`
+
+	// Honesty metadata. A skill without recorded server-verified responses is
+	// reported as not measured instead of borrowing a score from another skill.
+	Completeness      float64  `json:"completeness"`
+	Confidence        string   `json:"confidence"`
+	RangeLow          int      `json:"rangeLow"`
+	RangeHigh         int      `json:"rangeHigh"`
+	NotMeasured       []string `json:"notMeasured,omitempty"`
+	AnsweredQuestions int      `json:"answeredQuestions"`
 }
 
 type SessionDetailsResponse struct {
@@ -566,6 +575,15 @@ type SRSCardProgress struct {
 	EasinessFactor float64   `json:"easinessFactor"`
 	DueDate        string    `json:"dueDate"` // YYYY-MM-DD
 	LastReviewedAt time.Time `json:"lastReviewedAt"`
+}
+
+type UserStreak struct {
+	StreakDays     int    `json:"streakDays"`
+	LastActiveDate string `json:"lastActiveDate"`
+}
+
+type RecordActivityRequest struct {
+	Source string `json:"source"`
 }
 
 type SRSStats struct {

@@ -138,10 +138,10 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       const recordedBlob = await audioRecorder.stopRecording();
       const fullTranscript = updated.filter(Boolean).join('; ');
 
-      if (backendSessionId && recordedBlob && recordedBlob.size > 0) {
+      if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
         const formData = new FormData();
         formData.append('audio', recordedBlob, 'interactive_speaking.webm');
-        formData.append('questionId', serverQ?.id || 'is-1');
+        formData.append('questionId', serverQ.id);
         if (fullTranscript) {
           formData.append('transcript', fullTranscript);
         }

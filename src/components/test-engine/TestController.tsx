@@ -7,6 +7,7 @@ import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { api, ApiError } from '@/lib/api';
+import { clearResponseOutbox, flushResponseOutbox } from '@/lib/response-outbox';
 import { ReadAndSelect } from './questions/ReadAndSelect';
 import { FillInTheBlanks } from './questions/FillInTheBlanks';
 import { ReadAndComplete } from './questions/ReadAndComplete';
@@ -23,7 +24,7 @@ import { SpeakingSample } from './questions/SpeakingSample';
 import { TestResultModal } from './TestResultModal';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { AlertTriangle, Loader2, RefreshCw, ShieldAlert, WifiOff } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, RefreshCw, ShieldAlert, WifiOff } from 'lucide-react';
 
 const STAGES_SEQUENCE: StageName[] = [
   'READ_SELECT',
@@ -107,6 +108,7 @@ export const TestController: React.FC = () => {
     certificateId,
     certificateEligible,
     backendSessionId,
+    deadlineAt,
   } = useTestStore();
 
   const { addTestResult } = useProgressStore();
@@ -117,22 +119,7 @@ export const TestController: React.FC = () => {
   const [isFinalStageComplete, setIsFinalStageComplete] = useState(false);
   const [stageSyncError, setStageSyncError] = useState<string | null>(null);
   const [lastStageAction, setLastStageAction] = useState<'advance' | 'finalize' | null>(null);
-
-  const buildCompletionPayload = useCallback(() => {
-    const state = useTestStore.getState();
-    const ratio = (correct: number, total: number) => (total > 0 ? correct / total : 0);
-    return {
-      readSelectAccuracy: ratio(state.readSelectCorrect, state.readSelectTotal),
-      fillBlanksAccuracy: ratio(state.fillBlanksCorrect, state.fillBlanksTotal),
-      cTestAccuracy: ratio(state.cTestCorrect, state.cTestTotal),
-      listenTypeAccuracy: ratio(state.listenTypeSimilaritySum, state.listenTypeTotal),
-      interactiveReadingScore: state.interactiveReadingScore,
-      interactiveListeningScore: state.interactiveListeningScore,
-      // The server owns writing/speaking evaluation from recorded responses.
-      writingScore: 0,
-      speakingScore: 0,
-    };
-  }, []);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   const finalizeAttempt = useCallback(
     async (sessionId: string) => {
@@ -149,7 +136,15 @@ export const TestController: React.FC = () => {
       writeStoredAttempt({ sessionId, finalizing: true, updatedAt: Date.now() });
 
       try {
-        const resp = await api.completeTestSession(sessionId, buildCompletionPayload());
+        const remaining = await flushResponseOutbox(sessionId);
+        if (remaining > 0) {
+          setAttemptStatus(
+            'pending_sync',
+            'Часть ответов ещё не сохранена на сервере. Результат не будет выставлен до полной синхронизации.'
+          );
+          return;
+        }
+        const resp = await api.completeTestSession(sessionId);
         if (!resp?.scores) {
           throw new Error('Сервер не вернул подтверждённый результат. Баллы не начислены.');
         }
@@ -162,26 +157,31 @@ export const TestController: React.FC = () => {
           completedAt: resp.session?.completedAt,
         });
 
-        addTestResult({
-          id: resp.session?.id || sessionId,
-          date: new Date(resp.session?.completedAt || Date.now()).toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }),
-          overallScore: resp.scores.overall,
-          reading: resp.scores.reading,
-          listening: resp.scores.listening,
-          writing: resp.scores.writing,
-          speaking: resp.scores.speaking,
-          literacy: resp.scores.literacy,
-          comprehension: resp.scores.comprehension,
-          production: resp.scores.production,
-          conversation: resp.scores.conversation,
-          candidateName: resp.session?.candidateName || candidateName || 'Candidate',
-        });
+        // An incomplete attempt stays visible in the result modal but is not
+        // written into the scored history as if it were a real overall score.
+        if (resp.scores.overall > 0) {
+          addTestResult({
+            id: resp.session?.id || sessionId,
+            date: new Date(resp.session?.completedAt || Date.now()).toLocaleDateString('ru-RU', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            }),
+            overallScore: resp.scores.overall,
+            reading: resp.scores.reading,
+            listening: resp.scores.listening,
+            writing: resp.scores.writing,
+            speaking: resp.scores.speaking,
+            literacy: resp.scores.literacy,
+            comprehension: resp.scores.comprehension,
+            production: resp.scores.production,
+            conversation: resp.scores.conversation,
+            candidateName: resp.session?.candidateName || candidateName || 'Candidate',
+          });
+        }
 
         writeStoredAttempt(null);
+        clearResponseOutbox(sessionId);
         setStageSyncError(null);
       } catch (err) {
         const message = errorMessage(
@@ -195,7 +195,7 @@ export const TestController: React.FC = () => {
         }
       }
     },
-    [addTestResult, applyServerCompletion, buildCompletionPayload, candidateName, setAttemptStatus]
+    [addTestResult, applyServerCompletion, candidateName, setAttemptStatus]
   );
 
   const startServerSession = useCallback(async () => {
@@ -245,6 +245,7 @@ export const TestController: React.FC = () => {
       if (session.status === 'COMPLETED' || session.stageName === 'COMPLETED') {
         // The completion endpoint is idempotent and returns the immutable
         // result plus certificate metadata for an already finished attempt.
+        clearResponseOutbox(stored.sessionId);
         setIsFinalStageComplete(true);
         setLastStageAction('finalize');
         await finalizeAttempt(stored.sessionId);
@@ -259,6 +260,7 @@ export const TestController: React.FC = () => {
         questions: resp.questions || [],
       });
       setIsFinalStageComplete(false);
+      void flushResponseOutbox(session.id);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
         writeStoredAttempt(null);
@@ -302,32 +304,19 @@ export const TestController: React.FC = () => {
     setLastStageAction('advance');
 
     try {
-      const state = useTestStore.getState();
-      let accuracy = 0.5;
-      let totalQuestions = 1;
-      let correctQuestions = 0;
-
-      if (currentStage === 'READ_SELECT') {
-        totalQuestions = state.readSelectTotal;
-        correctQuestions = state.readSelectCorrect;
-      } else if (currentStage === 'FILL_BLANKS') {
-        totalQuestions = state.fillBlanksTotal;
-        correctQuestions = state.fillBlanksCorrect;
-      } else if (currentStage === 'C_TEST') {
-        totalQuestions = state.cTestTotal;
-        correctQuestions = state.cTestCorrect;
-      } else if (currentStage === 'LISTEN_TYPE') {
-        totalQuestions = state.listenTypeTotal;
-        correctQuestions = Math.round(state.listenTypeSimilaritySum);
-      } else if (currentStage === 'INTERACTIVE_READING') {
-        accuracy = state.interactiveReadingScore;
-      } else if (currentStage === 'INTERACTIVE_LISTENING') {
-        accuracy = state.interactiveListeningScore;
+      const remaining = await flushResponseOutbox(sessionId);
+      if (remaining > 0) {
+        setStageSyncError(
+          'Часть ответов не сохранена на сервере. Этап не будет завершён до синхронизации.'
+        );
+        return;
       }
 
-      if (totalQuestions > 0) {
-        accuracy = correctQuestions / totalQuestions;
-      }
+      // The server derives stage accuracy from recorded responses. No client
+      // score is sent into the final grading path.
+      const accuracy = 0;
+      const totalQuestions = 0;
+      const correctQuestions = 0;
 
       const resp = await api.completeStage(sessionId, {
         stageName: currentStage,
@@ -384,6 +373,19 @@ export const TestController: React.FC = () => {
     setStageSyncError(null);
     await startServerSession();
   };
+
+  useEffect(() => {
+    if (!deadlineAt) {
+      setSecondsLeft(null);
+      return;
+    }
+    const tick = () => {
+      setSecondsLeft(Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000)));
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [deadlineAt]);
 
   if (attemptStatus === 'starting') {
     return (
@@ -494,6 +496,20 @@ export const TestController: React.FC = () => {
           <div className="text-xs font-mono text-neutral-400">
             {t.stepLabel} {Math.max(1, currentStageIndex + 1)} / {STAGES_SEQUENCE.length}
           </div>
+          {secondsLeft !== null && (
+            <div
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs font-bold ${
+                secondsLeft <= 60
+                  ? 'border-red-500/50 bg-red-500/10 text-red-300 animate-pulse'
+                  : 'border-neutral-700 bg-neutral-900 text-[#D2F544]'
+              }`}
+              title="Серверный дедлайн этапа"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              {Math.floor(secondsLeft / 60)}:
+              {(secondsLeft % 60).toString().padStart(2, '0')}
+            </div>
+          )}
         </div>
       </div>
 

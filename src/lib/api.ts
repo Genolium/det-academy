@@ -130,6 +130,12 @@ export interface SessionCompleteResponse {
     comprehension: number;
     production: number;
     conversation: number;
+    completeness: number;
+    confidence: 'low' | 'medium' | 'high' | string;
+    rangeLow: number;
+    rangeHigh: number;
+    notMeasured?: string[];
+    answeredQuestions: number;
   };
   certificateEligible: boolean;
   certificate?: {
@@ -618,13 +624,24 @@ class ApiClient {
     userResponse: unknown;
     rawScore: number;
     timeSpentSec: number;
-  }): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
+  }): Promise<{ status: string; isCorrect?: boolean; rawScore?: number }> {
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new ApiError('Не удалось сохранить ответ на сервере', 0);
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Не удалось сохранить ответ на сервере', res.status);
+    }
+    const data = await res.json().catch(() => ({ status: 'recorded' }));
+    return data as { status: string; isCorrect?: boolean; rawScore?: number };
   }
 
   async completeStage(sessionId: string, payload: {
@@ -1017,6 +1034,30 @@ class ApiClient {
     if (!res.ok) {
       throw new Error('Failed to delete error item');
     }
+  }
+
+  async getUserStreak(): Promise<{ streakDays: number; lastActiveDate: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/streak`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to get user streak', res.status);
+    }
+    return res.json();
+  }
+
+  async recordUserActivity(source: string): Promise<{ streakDays: number; lastActiveDate: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/activity`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ source }),
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to record user activity', res.status);
+    }
+    return res.json();
   }
 
   async getUserSRSState(): Promise<SRSStateResponse> {

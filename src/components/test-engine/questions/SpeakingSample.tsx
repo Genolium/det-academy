@@ -74,10 +74,10 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     const recordedBlob = await audioRecorder.stopRecording();
     const spokenText = transcriptRef.current;
 
-    if (backendSessionId && recordedBlob && recordedBlob.size > 0) {
+    if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
       const formData = new FormData();
       formData.append('audio', recordedBlob, 'speaking_sample.webm');
-      formData.append('questionId', serverQ?.id || 'ss-1');
+      formData.append('questionId', serverQ.id);
       if (spokenText) {
         formData.append('transcript', spokenText);
       }

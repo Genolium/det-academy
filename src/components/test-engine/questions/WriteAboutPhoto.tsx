@@ -1,30 +1,50 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { writePhotoBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { api } from '@/lib/api';
+import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, Clock, Image as ImageIcon } from 'lucide-react';
-import { evaluateWriteAboutPhoto } from '@/lib/textEvaluator';
+import { ArrowRight, Clock } from 'lucide-react';
 
 interface WriteAboutPhotoProps {
   onComplete: () => void;
 }
 
 export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) => {
-  const { recordWritePhotoResult, backendSessionId } = useTestStore();
+  const { serverQuestions, backendSessionId } = useTestStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const [photoIndex, setPhotoIndex] = useState(0);
-  const [texts, setTexts] = useState<string[]>(['', '', '']);
-  const [currentText, setCurrentText] = useState('');
-  const [timeLeft, setTimeLeft] = useState(60); // 60s per photo
+  const photos = React.useMemo(
+    () =>
+      serverQuestions
+        .filter((question) => question.type === 'WRITE_PHOTO')
+        .map((question) => {
+          const payload = question.contentPayload as {
+            imageUrl?: string;
+            altText?: string;
+            prompt?: string;
+          };
+          return {
+            id: question.id,
+            imageUrl: payload.imageUrl || '',
+            altText: payload.altText || 'Write about the photo',
+            prompt: payload.prompt || '',
+            timeLimitSec: question.timeLimitSec || 60,
+          };
+        })
+        .filter((item) => item.imageUrl),
+    [serverQuestions]
+  );
 
-  const currentPhoto = writePhotoBank[photoIndex];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [texts, setTexts] = useState<string[]>([]);
+  const [currentText, setCurrentText] = useState('');
+  const [timeLeft, setTimeLeft] = useState(photos[0]?.timeLimitSec || 60);
+
+  const currentPhoto = photos[photoIndex];
 
   const currentTextRef = useRef(currentText);
   useEffect(() => {
@@ -39,20 +59,19 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
     updatedTexts[photoIndex] = textToSubmit;
     setTexts(updatedTexts);
 
-    if (backendSessionId) {
-      api.submitQuestionResponse(backendSessionId, {
-        questionId: `wp-${photoIndex + 1}`,
+    if (backendSessionId && currentPhoto) {
+      void submitOrQueueResponse(backendSessionId, {
+        questionId: currentPhoto.id,
         userResponse: { text: textToSubmit },
         rawScore: 0,
-        timeSpentSec: Math.max(1, 60 - timeLeft),
-      }).catch(() => {});
+        timeSpentSec: Math.max(1, (currentPhoto.timeLimitSec || 60) - timeLeft),
+      });
     }
 
-    if (photoIndex + 1 < writePhotoBank.length) {
+    if (photoIndex + 1 < photos.length) {
       setPhotoIndex((p) => p + 1);
     } else {
       isAdvancingRef.current = true;
-      recordWritePhotoResult(updatedTexts);
       onComplete();
     }
   };
@@ -64,9 +83,10 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
 
   // 60-second deadline-based timer per photo
   useEffect(() => {
-    setTimeLeft(60);
+    const limit = currentPhoto?.timeLimitSec || 60;
+    setTimeLeft(limit);
     setCurrentText('');
-    const deadline = Date.now() + 60 * 1000;
+    const deadline = Date.now() + limit * 1000;
 
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -78,16 +98,27 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
     }, 250);
 
     return () => clearInterval(timer);
-  }, [photoIndex]);
+  }, [photoIndex, currentPhoto?.timeLimitSec]);
 
   const wordCount = currentText.trim().split(/\s+/).filter(Boolean).length;
+
+  if (photos.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-3">
+        <h2 className="text-xl font-bold text-white">Сервер не выдал задания Write About the Photo</h2>
+        <p className="text-sm text-neutral-400">
+          Этап нельзя начать без серверных вопросов. Обновите страницу или перезапустите попытку.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       {/* Header */}
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
         <span className="uppercase font-bold tracking-wider text-white">
-          Write About the Photo • {t.photoStep} {photoIndex + 1} / {writePhotoBank.length}
+          Write About the Photo • {t.photoStep} {photoIndex + 1} / {photos.length}
         </span>
         <div className="flex items-center gap-1.5 text-[#D2F544] font-bold text-sm bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
           <Clock className="w-4 h-4" />
@@ -97,7 +128,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
       <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden mb-8">
         <div
           className="h-full bg-[#D2F544] transition-all duration-1000 ease-linear"
-          style={{ width: `${(timeLeft / 60) * 100}%` }}
+          style={{ width: `${(timeLeft / (currentPhoto?.timeLimitSec || 60)) * 100}%` }}
         />
       </div>
 
@@ -130,33 +161,23 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
               value={currentText}
               onChange={(e) => setCurrentText(e.target.value)}
               placeholder="This image depicts... In the background... They appear to be..."
-              className="w-full bg-neutral-900 border-2 border-neutral-700 focus:border-[#D2F544] rounded-2xl p-4 text-white text-sm outline-none leading-relaxed"
+              className="w-full bg-neutral-900 border-2 border-neutral-700 focus:border-[#D2F544] rounded-2xl p-4 text-white text-base outline-none leading-relaxed"
               autoFocus
+              autoCorrect="off"
+              autoCapitalize="none"
+              autoComplete="off"
+              spellCheck={false}
             />
 
-            {/* Live Rubric Quality Meter */}
-            {wordCount >= 5 && (
-              <div className="mt-3 p-3 bg-neutral-900/90 rounded-2xl border border-neutral-800 text-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-neutral-400 font-bold uppercase tracking-wider">
-                    Оценка соответствия контексту
-                  </span>
-                  <span className="font-mono font-bold text-xs text-[#D2F544]">
-                    {Math.round(evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).relevanceScore * 100)}%
-                  </span>
-                </div>
-                {evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).recommendations.length > 0 && (
-                  <p className="text-[11px] text-amber-300/90">
-                    💡 {evaluateWriteAboutPhoto(currentText, { altText: currentPhoto.altText }).recommendations[0]}
-                  </p>
-                )}
-              </div>
-            )}
+            <div className="mt-3 p-3 bg-neutral-900/90 rounded-2xl border border-neutral-800 text-[11px] text-neutral-400">
+              Ответ будет оценён сервером по рубрикам после отправки. Черновой балл на клиенте
+              не показывается.
+            </div>
           </div>
 
           <div className="flex justify-end pt-4">
             <Button variant="primary" size="md" onClick={handleNextPhoto} icon={<ArrowRight className="w-4 h-4" />}>
-              {photoIndex + 1 === writePhotoBank.length ? t.finishPhotoTestBtn : t.nextPhotoBtn}
+              {photoIndex + 1 === photos.length ? t.finishPhotoTestBtn : t.nextPhotoBtn}
             </Button>
           </div>
         </div>

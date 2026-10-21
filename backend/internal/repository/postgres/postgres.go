@@ -61,13 +61,13 @@ func New(dbURL string) (*PostgresStorage, error) {
 }
 
 func (s *PostgresStorage) Users() repository.UserRepository               { return s.users }
-func (s *PostgresStorage) Theory() repository.TheoryRepository             { return s.theory }
+func (s *PostgresStorage) Theory() repository.TheoryRepository            { return s.theory }
 func (s *PostgresStorage) Questions() repository.QuestionRepository       { return s.questions }
 func (s *PostgresStorage) Sessions() repository.TestSessionRepository     { return s.sessions }
 func (s *PostgresStorage) Certificates() repository.CertificateRepository { return s.certificates }
 func (s *PostgresStorage) Banners() repository.BannerRepository           { return s.banners }
 func (s *PostgresStorage) Institutions() repository.InstitutionRepository { return s.institutions }
-func (s *PostgresStorage) Study() repository.StudyRepository               { return s.study }
+func (s *PostgresStorage) Study() repository.StudyRepository              { return s.study }
 func (s *PostgresStorage) Close() error                                   { return s.db.Close() }
 
 // --- Users ---
@@ -437,6 +437,11 @@ func (r *SessionRepo) RecordResponse(ctx context.Context, resp *models.QuestionR
 	query := `
 		INSERT INTO question_responses (id, session_id, question_id, user_response, is_correct, raw_score, time_spent_sec, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (session_id, question_id) DO UPDATE SET
+			user_response = EXCLUDED.user_response,
+			is_correct = EXCLUDED.is_correct,
+			raw_score = EXCLUDED.raw_score,
+			time_spent_sec = EXCLUDED.time_spent_sec
 	`
 	_, err := r.db.ExecContext(ctx, query, resp.ID, resp.SessionID, resp.QuestionID, resp.UserResponse, resp.IsCorrect, resp.RawScore, resp.TimeSpentSec, resp.CreatedAt)
 	return err
@@ -1014,6 +1019,40 @@ func (r *StudyRepo) DeleteError(ctx context.Context, userID, errorID string) err
 	return err
 }
 
+func (r *StudyRepo) RecordActivity(ctx context.Context, userID, activityDate, source string) error {
+	query := `
+		INSERT INTO user_activity (user_id, activity_date, source)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, activity_date) DO UPDATE SET source = EXCLUDED.source
+	`
+	_, err := r.db.ExecContext(ctx, query, userID, activityDate, source)
+	return err
+}
+
+func (r *StudyRepo) GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error) {
+	query := `
+		SELECT activity_date::text
+		FROM user_activity
+		WHERE user_id = $1
+		ORDER BY activity_date DESC
+		LIMIT $2
+	`
+	rows, err := r.db.QueryContext(ctx, query, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	dates := []string{}
+	for rows.Next() {
+		var date string
+		if err := rows.Scan(&date); err != nil {
+			return nil, err
+		}
+		dates = append(dates, date)
+	}
+	return dates, rows.Err()
+}
+
 func (r *StudyRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {
 	query := `
 		SELECT streak_days, COALESCE(last_studied_date, ''), total_reviewed
@@ -1090,4 +1129,3 @@ func (r *StudyRepo) SaveSRSCard(ctx context.Context, userID string, card *models
 	)
 	return err
 }
-

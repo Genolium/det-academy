@@ -87,6 +87,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Post("/errors", studyHandler.SaveError)
 			r.Post("/errors/{id}/recall", studyHandler.RecallError)
 			r.Delete("/errors/{id}", studyHandler.DeleteError)
+			r.Get("/streak", studyHandler.GetStreak)
+			r.Post("/activity", studyHandler.RecordActivity)
 			r.Get("/srs", studyHandler.GetSRSState)
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
 		})
@@ -163,6 +165,56 @@ func TestHealthCheck(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
+	}
+}
+
+func submitTestAnswer(t *testing.T, r http.Handler, token, sessionID, questionID string, payload string) {
+	t.Helper()
+	body, _ := json.Marshal(models.SubmitResponseRequest{
+		QuestionID:   questionID,
+		UserResponse: json.RawMessage(payload),
+		TimeSpentSec: 20,
+	})
+	req := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/respond", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to submit answer for %s: %d %s", questionID, w.Code, w.Body.String())
+	}
+}
+
+func stageAnswer(stage string) (string, string) {
+	switch stage {
+	case "READ_SELECT":
+		return "q-rs-01", `{"isReal":true}`
+	case "FILL_BLANKS":
+		return "q-fb-01", `{"answer":"ergy"}`
+	case "C_TEST":
+		return "q-ct-01", `{"answers":["orporate","nimize","eated"]}`
+	case "LISTEN_TYPE":
+		return "q-lt-01", `"The library provides free access to academic journals."`
+	case "INTERACTIVE_READING":
+		return "q-ir-01", `{"gap":"protection","highlightSentence":"Coral reefs provide vital coastal protection against severe storms","mainIdeaIndex":0,"titleIndex":0,"sentenceIndex":0}`
+	case "INTERACTIVE_LISTENING":
+		return "q-il-01", `{"turns":[0]}`
+	case "WRITE_PHOTO":
+		return "q-wp-01", `{"text":"A scientist in a white laboratory coat is carefully examining a test tube while colleagues record measurements in a modern research facility."}`
+	case "INTERACTIVE_WRITING":
+		return "q-iw-01", `{"part1":"University students should explore a broad range of general education courses because interdisciplinary knowledge improves critical thinking and long-term career adaptability.","part2":"Universities should provide academic advisors, manageable deadlines, and mental health support so students are not overwhelmed by courses outside their primary field."}`
+	case "SPEAK_PHOTO":
+		return "q-sp-01", `{"transcript":"In this photo a group of people is gathering in a park on a sunny afternoon. Some are talking while others are preparing food. The environment looks calm and welcoming.","durationSec":75}`
+	case "READ_THEN_SPEAK":
+		return "q-rts-01", `{"transcript":"A memorable journey I took was a train trip through the mountains. I traveled with my sister and we watched the landscape change from green valleys to snowy peaks. The experience was unforgettable because we met local families and learned about their traditions.","durationSec":80}`
+	case "INTERACTIVE_SPEAKING":
+		return "q-is-01", `{"transcript":"I would like to change my elective because the current schedule conflicts with my statistics laboratory, and the alternative course better supports my major requirements.","durationSec":30}`
+	case "WRITING_SAMPLE":
+		return "q-ws-01", `{"text":"Practical career skills and theoretical academic subjects both matter, but I believe a balanced education is most beneficial. Practical courses teach students how to communicate, collaborate, and solve real problems, while theoretical subjects develop the analytical habits that make those skills adaptable. A university that combines internships with rigorous seminars prepares graduates for long-term success."}`
+	case "SPEAKING_SAMPLE":
+		return "q-ss-01", `{"transcript":"I prefer living in a large city because it offers more educational and professional opportunities. Public transport makes it easier to attend classes and internships, and cultural events expose me to different perspectives. However, I also value quiet green spaces, so a well-designed city with accessible parks would be ideal for me.","durationSec":150}`
+	default:
+		return "q-rs-01", `{"isReal":true}`
 	}
 }
 
@@ -386,6 +438,12 @@ func TestTestSessionLifecycle(t *testing.T) {
 		t.Fatalf("expected 200 on submit response, got %d: %s", respW.Code, respW.Body.String())
 	}
 
+	// Record at least one server-verified answer for every skill so the overall
+	// score is measured. Skipped skills must not borrow another skill's score.
+	submitTestAnswer(t, r, token, sessionID, "q-lt-01", `"The library provides free access to academic journals."`)
+	submitTestAnswer(t, r, token, sessionID, "q-ws-01", `{"text":"Practical career skills and theoretical academic subjects both matter, but a balanced education is most beneficial. Practical courses teach students to communicate and solve real problems, while theoretical subjects develop analytical habits that make those skills adaptable."}`)
+	submitTestAnswer(t, r, token, sessionID, "q-ss-01", `{"transcript":"I prefer living in a large city because it offers more educational and professional opportunities. Public transport makes it easier to attend classes and internships, and cultural events expose me to different perspectives.","durationSec":150}`)
+
 	// 5. Complete session
 	compPayload := models.CompleteSessionRequest{
 		ReadSelectAccuracy:        0.9,
@@ -472,6 +530,142 @@ func getUserSessionsForTest(t *testing.T, r http.Handler, token string) []models
 		t.Fatalf("failed to decode sessions: %v", err)
 	}
 	return payload.Sessions
+}
+
+func TestCompletionDoesNotCreditSkippedSkills(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email:    "skip-skills@det-academy.com",
+		Password: "strongPassword123!",
+		Name:     "Skip Skills",
+		Locale:   "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	if regW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on register, got %d: %s", regW.Code, regW.Body.String())
+	}
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	startReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader([]byte(`{"candidateName":"Skip Skills","difficultyLevel":"B2"}`)))
+	startReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	startW := httptest.NewRecorder()
+	r.ServeHTTP(startW, startReq)
+	if startW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on start, got %d: %s", startW.Code, startW.Body.String())
+	}
+	var startResp models.SessionDetailsResponse
+	_ = json.Unmarshal(startW.Body.Bytes(), &startResp)
+	sessionID := startResp.Session.ID
+
+	// Only writing is answered. Reading, listening and speaking are skipped.
+	submitTestAnswer(t, r, regResp.Token, sessionID, "q-ws-01", `{"text":"A balanced education combines practical career skills with rigorous academic theory. Practical courses teach collaboration and problem solving, while seminars develop analytical habits that make graduates adaptable over time."}`)
+
+	compReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader([]byte("{}")))
+	compReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	compW := httptest.NewRecorder()
+	r.ServeHTTP(compW, compReq)
+	if compW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on complete, got %d: %s", compW.Code, compW.Body.String())
+	}
+	var result models.SessionCompleteResponse
+	_ = json.Unmarshal(compW.Body.Bytes(), &result)
+
+	if result.Scores.Overall != 0 {
+		t.Fatalf("expected no overall score when skills are missing, got %d", result.Scores.Overall)
+	}
+	if result.Scores.Completeness >= 1.0 {
+		t.Fatalf("expected incomplete attempt, got completeness %.2f", result.Scores.Completeness)
+	}
+	missing := strings.Join(result.Scores.NotMeasured, ",")
+	for _, skill := range []string{"reading", "listening", "speaking", "overall"} {
+		if !strings.Contains(missing, skill) {
+			t.Fatalf("expected %s to be not measured, got %s", skill, missing)
+		}
+	}
+	if result.CertificateEligible || result.Certificate != nil {
+		t.Fatalf("skipped attempt must not receive a certificate")
+	}
+	if result.Scores.AnsweredQuestions != 1 {
+		t.Fatalf("expected 1 answered question, got %d", result.Scores.AnsweredQuestions)
+	}
+}
+
+func TestQuestionPayloadsDoNotLeakAnswers(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	for _, questionType := range []string{"FILL_BLANKS", "INTERACTIVE_READING", "INTERACTIVE_LISTENING"} {
+		req := httptest.NewRequest("GET", "/api/v1/test/questions?type="+questionType, nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200 for %s, got %d", questionType, w.Code)
+		}
+		var questions []models.Question
+		if err := json.Unmarshal(w.Body.Bytes(), &questions); err != nil {
+			t.Fatalf("failed to decode %s questions: %v", questionType, err)
+		}
+		if len(questions) == 0 {
+			t.Fatalf("expected seeded %s questions", questionType)
+		}
+		payload := string(questions[0].ContentPayload)
+		for _, forbidden := range []string{`"fullWord"`, `"correct"`, `"correctIndex"`} {
+			if strings.Contains(payload, forbidden) {
+				t.Fatalf("%s payload leaks %s: %s", questionType, forbidden, payload)
+			}
+		}
+	}
+}
+
+func TestServerOwnedStreak(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email:    "streak@det-academy.com",
+		Password: "strongPassword123!",
+		Name:     "Streak User",
+		Locale:   "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	if regW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on register, got %d", regW.Code)
+	}
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	streakReq := httptest.NewRequest("GET", "/api/v1/user/streak", nil)
+	streakReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	streakW := httptest.NewRecorder()
+	r.ServeHTTP(streakW, streakReq)
+	if streakW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on empty streak, got %d: %s", streakW.Code, streakW.Body.String())
+	}
+	var empty models.UserStreak
+	_ = json.Unmarshal(streakW.Body.Bytes(), &empty)
+	if empty.StreakDays != 0 {
+		t.Fatalf("expected 0 initial streak, got %d", empty.StreakDays)
+	}
+
+	activityReq := httptest.NewRequest("POST", "/api/v1/user/activity", bytes.NewReader([]byte(`{"source":"test"}`)))
+	activityReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	activityW := httptest.NewRecorder()
+	r.ServeHTTP(activityW, activityReq)
+	if activityW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on activity, got %d: %s", activityW.Code, activityW.Body.String())
+	}
+	var streak models.UserStreak
+	_ = json.Unmarshal(activityW.Body.Bytes(), &streak)
+	if streak.StreakDays != 1 {
+		t.Fatalf("expected streak 1 after activity, got %d", streak.StreakDays)
+	}
+	if streak.LastActiveDate != time.Now().UTC().Format("2006-01-02") {
+		t.Fatalf("expected today's date, got %s", streak.LastActiveDate)
+	}
 }
 
 func TestInstitutionsCatalog(t *testing.T) {
@@ -1272,17 +1466,8 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 	stages := service.StageSequence
 	for i, stage := range stages {
 		stageNum := i + 1
-		respBody, _ := json.Marshal(models.SubmitResponseRequest{
-			QuestionID:   "q-" + stage,
-			UserResponse: json.RawMessage(`{"text":"The comprehensive empirical analysis demonstrates significant positive correlations across all academic cohorts and verified indices."}`),
-			RawScore:     1.0,
-			TimeSpentSec: 25,
-		})
-		subReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/respond", bytes.NewReader(respBody))
-		subReq.Header.Set("Authorization", "Bearer "+token)
-		subReq.Header.Set("Content-Type", "application/json")
-		subW := httptest.NewRecorder()
-		r.ServeHTTP(subW, subReq)
+		questionID, answerPayload := stageAnswer(stage)
+		submitTestAnswer(t, r, token, sessionID, questionID, answerPayload)
 
 		// Transition / complete stage
 		if stageNum < len(stages) {
@@ -1445,4 +1630,3 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 	}
 	_ = store
 }
-

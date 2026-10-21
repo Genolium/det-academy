@@ -14,14 +14,14 @@ import (
 )
 
 type MemoryStorage struct {
-	mu           sync.RWMutex
-	users        map[string]*models.User
-	usersByEmail map[string]*models.User
-	theory       map[string]map[string]bool // userID -> lessonSlug -> isCompleted
-	questions    map[string]*models.Question
-	sessions     map[string]*models.TestSession
-	responses    map[string][]models.QuestionResponse
-	evaluations  map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
+	mu             sync.RWMutex
+	users          map[string]*models.User
+	usersByEmail   map[string]*models.User
+	theory         map[string]map[string]bool // userID -> lessonSlug -> isCompleted
+	questions      map[string]*models.Question
+	sessions       map[string]*models.TestSession
+	responses      map[string][]models.QuestionResponse
+	evaluations    map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
 	mediaAssets    map[string]*models.MediaAsset        // assetID -> *MediaAsset
 	certificates   map[string]*models.Certificate
 	banners        map[string]*models.AdBanner
@@ -31,6 +31,7 @@ type MemoryStorage struct {
 	errors         map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
 	srsStats       map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards       map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
+	activity       map[string]map[string]bool                    // userID -> date -> active
 }
 
 func New() *MemoryStorage {
@@ -51,20 +52,23 @@ func New() *MemoryStorage {
 		errors:         make(map[string]map[string]*models.UserErrorItem),
 		srsStats:       make(map[string]*models.SRSStats),
 		srsCards:       make(map[string]map[string]*models.SRSCardProgress),
+		activity:       make(map[string]map[string]bool),
 	}
 	s.seedDefaultData()
 	return s
 }
 
 func (s *MemoryStorage) Users() repository.UserRepository               { return &userMemoryRepo{s: s} }
-func (s *MemoryStorage) Theory() repository.TheoryRepository             { return &theoryMemoryRepo{s: s} }
+func (s *MemoryStorage) Theory() repository.TheoryRepository            { return &theoryMemoryRepo{s: s} }
 func (s *MemoryStorage) Questions() repository.QuestionRepository       { return &questionMemoryRepo{s: s} }
 func (s *MemoryStorage) Sessions() repository.TestSessionRepository     { return &sessionMemoryRepo{s: s} }
 func (s *MemoryStorage) Certificates() repository.CertificateRepository { return &certMemoryRepo{s: s} }
 func (s *MemoryStorage) Banners() repository.BannerRepository           { return &bannerMemoryRepo{s: s} }
-func (s *MemoryStorage) Institutions() repository.InstitutionRepository { return &institutionMemoryRepo{s: s} }
-func (s *MemoryStorage) Study() repository.StudyRepository               { return &studyMemoryRepo{s: s} }
-func (s *MemoryStorage) Close() error                                   { return nil }
+func (s *MemoryStorage) Institutions() repository.InstitutionRepository {
+	return &institutionMemoryRepo{s: s}
+}
+func (s *MemoryStorage) Study() repository.StudyRepository { return &studyMemoryRepo{s: s} }
+func (s *MemoryStorage) Close() error                      { return nil }
 
 func (s *MemoryStorage) seedDefaultData() {
 	now := time.Now()
@@ -117,27 +121,27 @@ func (s *MemoryStorage) seedDefaultData() {
 	// Seed 12 completed lessons for Alex
 	alexLessons := map[string]bool{
 		"rules-and-technicalities": true,
-		"read-and-select":         true,
-		"fill-in-the-blanks":      true,
-		"read-and-complete":       true,
-		"listen-and-type":         true,
-		"interactive-reading":     true,
-		"interactive-listening":   true,
-		"write-about-the-photo":   true,
-		"speak-about-the-photo":   true,
-		"interactive-writing":     true,
-		"read-listen-speak":       true,
-		"interactive-speaking":    true,
+		"read-and-select":          true,
+		"fill-in-the-blanks":       true,
+		"read-and-complete":        true,
+		"listen-and-type":          true,
+		"interactive-reading":      true,
+		"interactive-listening":    true,
+		"write-about-the-photo":    true,
+		"speak-about-the-photo":    true,
+		"interactive-writing":      true,
+		"read-listen-speak":        true,
+		"interactive-speaking":     true,
 	}
 	s.theory[alex.ID] = alexLessons
 
 	// Seed completed lessons for Demo Student (5 of 12)
 	studentLessons := map[string]bool{
 		"rules-and-technicalities": true,
-		"read-and-select":         true,
-		"fill-in-the-blanks":      true,
-		"read-and-complete":       true,
-		"listen-and-type":         true,
+		"read-and-select":          true,
+		"fill-in-the-blanks":       true,
+		"read-and-complete":        true,
+		"listen-and-type":          true,
 	}
 	s.theory[student.ID] = studentLessons
 
@@ -1458,7 +1462,15 @@ func (r *sessionMemoryRepo) Update(ctx context.Context, session *models.TestSess
 func (r *sessionMemoryRepo) RecordResponse(ctx context.Context, resp *models.QuestionResponse) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
-	r.s.responses[resp.SessionID] = append(r.s.responses[resp.SessionID], *resp)
+	items := r.s.responses[resp.SessionID]
+	for i := range items {
+		if items[i].QuestionID == resp.QuestionID {
+			items[i] = *resp
+			r.s.responses[resp.SessionID] = items
+			return nil
+		}
+	}
+	r.s.responses[resp.SessionID] = append(items, *resp)
 	return nil
 }
 
@@ -1850,6 +1862,37 @@ func (r *studyMemoryRepo) DeleteError(ctx context.Context, userID, errorID strin
 	return nil
 }
 
+func (r *studyMemoryRepo) RecordActivity(ctx context.Context, userID, activityDate, source string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if r.s.activity[userID] == nil {
+		r.s.activity[userID] = map[string]bool{}
+	}
+	r.s.activity[userID][activityDate] = true
+	return nil
+}
+
+func (r *studyMemoryRepo) GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	dates := []string{}
+	for date := range r.s.activity[userID] {
+		dates = append(dates, date)
+	}
+	// newest first
+	for i := 0; i < len(dates); i++ {
+		for j := i + 1; j < len(dates); j++ {
+			if dates[j] > dates[i] {
+				dates[i], dates[j] = dates[j], dates[i]
+			}
+		}
+	}
+	if limit > 0 && len(dates) > limit {
+		dates = dates[:limit]
+	}
+	return dates, nil
+}
+
 func (r *studyMemoryRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
@@ -1893,4 +1936,3 @@ func (r *studyMemoryRepo) SaveSRSCard(ctx context.Context, userID string, card *
 	r.s.srsCards[userID][card.CardID] = &cp
 	return nil
 }
-

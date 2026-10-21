@@ -91,6 +91,10 @@ type StudyRepository interface {
 	SaveError(ctx context.Context, item *models.UserErrorItem) error
 	DeleteError(ctx context.Context, userID, errorID string) error
 
+	// Daily activity / streak
+	RecordActivity(ctx context.Context, userID, activityDate, source string) error
+	GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error)
+
 	// Spaced Repetition (SRS)
 	GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error)
 	SaveSRSStats(ctx context.Context, userID string, stats *models.SRSStats) error

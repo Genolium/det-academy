@@ -54,9 +54,9 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
       const finalP1 = part1Ref.current;
       const finalP2 = part2Ref.current;
 
-      if (backendSessionId) {
+      if (backendSessionId && serverQ) {
         api.submitQuestionResponse(backendSessionId, {
-          questionId: serverQ?.id || 'iw-1',
+          questionId: serverQ.id,
           userResponse: { part1: finalP1, part2: finalP2 },
           rawScore: 0,
           timeSpentSec: Math.max(1, 480 - timeLeft),
@@ -147,6 +147,10 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
           </div>
 
           <textarea
+            autoCorrect="off"
+            autoCapitalize="none"
+            autoComplete="off"
+            spellCheck={false}
             rows={8}
             value={part === 1 ? part1Text : part2Text}
             onChange={(e) => (part === 1 ? setPart1Text(e.target.value) : setPart2Text(e.target.value))}

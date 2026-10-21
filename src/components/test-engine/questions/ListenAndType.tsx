@@ -1,74 +1,82 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { listenTypeBank } from '@/data/questionBank';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { sound } from '@/lib/sound';
-import { stringSimilarity } from '@/lib/scoring';
 import { translations } from '@/lib/translations';
-import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { Button } from '@/components/ui/Button';
-import { Volume2, VolumeX, ArrowRight, Clock, AlertCircle } from 'lucide-react';
+import { Volume2, ArrowRight, Clock } from 'lucide-react';
 
 interface ListenAndTypeProps {
   onComplete: () => void;
 }
 
 export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
-  const { recordListenTypeResult } = useTestStore();
+  const { serverQuestions, backendSessionId } = useTestStore();
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const [currentItem] = useState(() => listenTypeBank[Math.floor(Math.random() * listenTypeBank.length)]);
+  const currentItem = useMemo(() => {
+    const question = serverQuestions.find((item) => item.type === 'LISTEN_TYPE');
+    if (!question) return null;
+    const payload = question.contentPayload as {
+      audioSentence?: string;
+      playsAllowed?: number;
+    };
+    return {
+      id: question.id,
+      audioSentence: payload.audioSentence || '',
+      playsAllowed: Math.max(1, Number(payload.playsAllowed || 3)),
+      timeLimitSec: question.timeLimitSec || 60,
+    };
+  }, [serverQuestions]);
+
   const [typedText, setTypedText] = useState('');
   const [playCount, setPlayCount] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60); // 60 seconds
+  const [timeLeft, setTimeLeft] = useState(currentItem?.timeLimitSec || 60);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-
-  // Play audio helper (strictly max 3 times)
-  const playAudio = () => {
-    if (playCount >= 3 || isPlayingAudio) return;
-    setIsPlayingAudio(true);
-    setPlayCount((p) => p + 1);
-
-    sound.speakEnglish(currentItem.audioSentence, () => {
-      setIsPlayingAudio(false);
-    });
-  };
-
-  // 1st play starts automatically after 1 second
-  useEffect(() => {
-    const autoPlayTimer = setTimeout(() => {
-      playAudio();
-    }, 1000);
-
-    return () => clearTimeout(autoPlayTimer);
-  }, []);
-
+  const startedAtRef = useRef(Date.now());
   const typedRef = useRef(typedText);
+  const isSubmittedRef = useRef(false);
+
   useEffect(() => {
     typedRef.current = typedText;
   }, [typedText]);
-  const isSubmittedRef = useRef(false);
+
+  useEffect(() => {
+    setTimeLeft(currentItem?.timeLimitSec || 60);
+    startedAtRef.current = Date.now();
+  }, [currentItem?.id, currentItem?.timeLimitSec]);
+
+  const playAudio = () => {
+    if (!currentItem || playCount >= currentItem.playsAllowed || isPlayingAudio) return;
+    setIsPlayingAudio(true);
+    setPlayCount((p) => p + 1);
+    sound.speakEnglish(currentItem.audioSentence, () => setIsPlayingAudio(false));
+  };
+
+  useEffect(() => {
+    if (!currentItem) return;
+    const autoPlay = setTimeout(() => playAudio(), 1000);
+    return () => clearTimeout(autoPlay);
+  }, [currentItem?.id]);
 
   const handleSubmit = () => {
-    if (isSubmittedRef.current) return;
+    if (isSubmittedRef.current || !currentItem) return;
     isSubmittedRef.current = true;
-    const similarity = stringSimilarity(typedRef.current, currentItem.audioSentence);
-    recordListenTypeResult(similarity);
 
-    if (soundEnabled && similarity > 0.7) {
-      sound.playSuccessChime();
-    } else {
-      void useErrorNotebookStore.getState().addError({
-        type: 'LISTEN_TYPE',
-        prompt: `Dictation: "${currentItem.audioSentence}"`,
-        userAnswer: typedText.trim(),
-        correctAnswer: currentItem.audioSentence,
-        explanation: `Сходство с эталоном: ${Math.round(similarity * 100)}%.`,
+    if (backendSessionId) {
+      void submitOrQueueResponse(backendSessionId, {
+        questionId: currentItem.id,
+        userResponse: typedRef.current.trim(),
+        rawScore: 0,
+        timeSpentSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       });
     }
+
+    if (soundEnabled) sound.playSuccessChime();
     onComplete();
   };
 
@@ -77,9 +85,9 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     handleSubmitRef.current = handleSubmit;
   }, [handleSubmit]);
 
-  // 60-second deadline-based timer
   useEffect(() => {
-    const deadline = Date.now() + 60 * 1000;
+    if (!currentItem) return;
+    const deadline = Date.now() + (currentItem.timeLimitSec || 60) * 1000;
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
@@ -88,15 +96,28 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
         handleSubmitRef.current();
       }
     }, 250);
-
     return () => clearInterval(timer);
-  }, []);
+  }, [currentItem?.id, currentItem?.timeLimitSec]);
+
+  if (!currentItem) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-3">
+        <h2 className="text-xl font-bold text-white">Сервер не выдал задание Listen and Type</h2>
+        <p className="text-sm text-neutral-400">
+          Этап нельзя начать без серверного вопроса. Обновите страницу или перезапустите попытку.
+        </p>
+      </div>
+    );
+  }
+
+  const limit = currentItem.timeLimitSec || 60;
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
-      {/* Timer Bar */}
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
-        <span className="uppercase font-bold tracking-wider text-white">Listen and Type (Dictation)</span>
+        <span className="uppercase font-bold tracking-wider text-white">
+          Listen and Type (Dictation)
+        </span>
         <div className="flex items-center gap-1.5 text-[#D2F544] font-bold text-sm bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
           <Clock className="w-4 h-4" />
           <span>{timeLeft}s</span>
@@ -105,7 +126,7 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
       <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden mb-8">
         <div
           className="h-full bg-[#D2F544] transition-all duration-1000 ease-linear"
-          style={{ width: `${(timeLeft / 60) * 100}%` }}
+          style={{ width: `${(timeLeft / limit) * 100}%` }}
         />
       </div>
 
@@ -114,43 +135,46 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
           Type the statement that you hear into the box below.
         </h3>
 
-        {/* Big Audio Play Button */}
         <div className="mb-8">
           <button
             onClick={playAudio}
-            disabled={playCount >= 3 || isPlayingAudio}
+            disabled={playCount >= currentItem.playsAllowed || isPlayingAudio}
             className={`w-24 h-24 rounded-full flex flex-col items-center justify-center mx-auto transition-all ${
-              playCount < 3 && !isPlayingAudio
+              playCount < currentItem.playsAllowed && !isPlayingAudio
                 ? 'bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] shadow-lg hover:scale-105 active:scale-95 cursor-pointer'
                 : 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-60'
             }`}
           >
             <Volume2 className="w-8 h-8 mb-1" />
             <span className="text-[11px] font-black uppercase">
-              {isPlayingAudio ? t.playingAudio : `${t.playsRemaining} (${3 - playCount}/3)`}
+              {isPlayingAudio
+                ? t.playingAudio
+                : `${t.playsRemaining} (${currentItem.playsAllowed - playCount}/${currentItem.playsAllowed})`}
             </span>
           </button>
         </div>
 
-        {/* Text Area */}
         <textarea
           rows={3}
           value={typedText}
           onChange={(e) => setTypedText(e.target.value)}
-          placeholder="Type what you hear... Remember capital letter and punctuation (. or ?)."
-          className="w-full bg-neutral-900 border-2 border-neutral-700 focus:border-[#D2F544] rounded-2xl p-4 text-white placeholder-neutral-500 text-lg outline-none font-sans leading-relaxed"
-          autoFocus
+          autoCorrect="off"
+          autoCapitalize="none"
+          autoComplete="off"
+          spellCheck={false}
+          className="w-full bg-neutral-950 border border-neutral-700 rounded-2xl p-4 text-base text-white focus:outline-none focus:border-[#D2F544] font-mono"
+          placeholder="Type exactly what you hear..."
         />
-
-        <div className="flex items-center justify-center gap-2 text-xs text-neutral-400 mt-4">
-          <AlertCircle className="w-4 h-4 text-amber-400" />
-          <span>{t.dictationHint}</span>
-        </div>
       </div>
 
       <div className="flex justify-end">
-        <Button variant="primary" size="lg" onClick={handleSubmit} icon={<ArrowRight className="w-4 h-4" />}>
-          {t.submitBtn}
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={handleSubmit}
+          icon={<ArrowRight className="w-4 h-4" />}
+        >
+          {t.nextBtn}
         </Button>
       </div>
     </div>

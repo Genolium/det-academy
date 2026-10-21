@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { readSelectBank } from '@/data/questionBank';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
+import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
 import { Check, X } from 'lucide-react';
@@ -14,50 +13,61 @@ interface ReadAndSelectProps {
 }
 
 export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
-  const { recordReadSelectResult } = useTestStore();
+  const { serverQuestions, backendSessionId } = useTestStore();
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const [pool] = useState(() => [...readSelectBank].sort(() => 0.5 - Math.random()).slice(0, 15));
+  const pool = useMemo(
+    () =>
+      serverQuestions
+        .filter((question) => question.type === 'READ_SELECT')
+        .map((question) => ({
+          id: question.id,
+          word: String((question.contentPayload as { word?: unknown }).word || ''),
+          timeLimitSec: question.timeLimitSec || 5,
+        }))
+        .filter((item) => item.word.length > 0),
+    [serverQuestions]
+  );
+
   const [index, setIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(5.0);
-  const [correctCount, setCorrectCount] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(pool[0]?.timeLimitSec || 5);
   const isHandlingAnswer = useRef(false);
+  const startedAtRef = useRef(Date.now());
 
   const currentItem = pool[index];
 
+  useEffect(() => {
+    setTimeLeft(currentItem?.timeLimitSec || 5);
+    startedAtRef.current = Date.now();
+  }, [index, currentItem?.timeLimitSec]);
+
   const handleChoice = (choseYes: boolean) => {
-    if (isHandlingAnswer.current) return;
+    if (isHandlingAnswer.current || !currentItem) return;
     isHandlingAnswer.current = true;
 
-    const isCorrect = choseYes === currentItem.isReal;
-    if (isCorrect) {
-      if (soundEnabled) sound.playSuccessChime();
-      setCorrectCount((c) => c + 1);
-    } else {
-      if (soundEnabled) sound.playErrorBuzz();
-      void useErrorNotebookStore.getState().addError({
-        type: 'READ_SELECT',
-        prompt: `Read and Select: "${currentItem.word}"`,
-        userAnswer: choseYes ? 'Yes' : 'No',
-        correctAnswer: currentItem.isReal ? 'Yes' : 'No',
-        explanation: currentItem.isReal
-          ? `"${currentItem.word}" is an authentic academic English word.`
-          : `"${currentItem.word}" is an artificial pseudo-word (DET trap).`,
+    if (backendSessionId) {
+      void submitOrQueueResponse(backendSessionId, {
+        questionId: currentItem.id,
+        userResponse: { isReal: choseYes },
+        rawScore: 0,
+        timeSpentSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       });
+    }
+
+    if (soundEnabled) {
+      // Correctness is graded server-side. Keep a neutral click sound.
+      sound.playSuccessChime();
     }
 
     if (index + 1 < pool.length) {
       setIndex((i) => i + 1);
-      setTimeLeft(5.0);
       isHandlingAnswer.current = false;
     } else {
-      recordReadSelectResult(correctCount + (isCorrect ? 1 : 0), pool.length);
       onComplete();
     }
   };
 
-  // Keyboard hotkeys Y and N
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'y' || e.key === 'Y' || e.key === 'ArrowLeft') {
@@ -70,28 +80,41 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
-  // 5.0 second countdown
   useEffect(() => {
+    const limit = currentItem?.timeLimitSec || 5;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0.1) {
-          handleChoice(false); // timeout treated as No/pass
-          return 5.0;
+          handleChoice(false); // timeout is a skipped answer, not a free pass
+          return limit;
         }
         return Math.max(0, parseFloat((prev - 0.1).toFixed(1)));
       });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [index]);
+  }, [index, currentItem?.timeLimitSec]);
 
-  const progressPercent = ((5.0 - timeLeft) / 5.0) * 100;
+  if (pool.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-3">
+        <h2 className="text-xl font-bold text-white">Сервер не выдал задания Read & Select</h2>
+        <p className="text-sm text-neutral-400">
+          Этап нельзя начать без серверных вопросов. Обновите страницу или перезапустите попытку.
+        </p>
+      </div>
+    );
+  }
+
+  const limit = currentItem?.timeLimitSec || 5;
+  const progressPercent = ((limit - timeLeft) / limit) * 100;
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      {/* Timer Bar */}
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
-        <span>{t.wordStep} {index + 1} / {pool.length}</span>
+        <span>
+          {t.wordStep} {index + 1} / {pool.length}
+        </span>
         <span className="text-[#D2F544] font-bold">{timeLeft.toFixed(1)}s</span>
       </div>
       <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden mb-8">
@@ -101,7 +124,6 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
         />
       </div>
 
-      {/* Target Word Card */}
       <div className="bg-[#111315] border border-neutral-800 rounded-3xl p-12 text-center mb-8 shadow-2xl">
         <span className="text-xs uppercase tracking-widest text-neutral-500 font-bold block mb-4">
           Is this an actual English word?
@@ -111,7 +133,6 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Choice Buttons */}
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={() => handleChoice(true)}
@@ -127,8 +148,15 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
         </button>
       </div>
 
-      <div className="text-center text-xs text-neutral-400 mt-6">
-        {t.hotkeysHint}
+      <div className="text-center text-xs text-neutral-400 mt-6">{t.hotkeysHint}</div>
+
+      <div className="mt-6 text-center">
+        <button
+          onClick={onComplete}
+          className="text-[11px] text-neutral-500 hover:text-neutral-300 underline"
+        >
+          Пропустить оставшиеся слова
+        </button>
       </div>
     </div>
   );

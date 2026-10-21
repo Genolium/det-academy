@@ -221,6 +221,15 @@ CREATE TABLE IF NOT EXISTS user_errors (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Daily activity ledger (server-owned streak)
+CREATE TABLE IF NOT EXISTS user_activity (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    activity_date DATE NOT NULL,
+    source VARCHAR(50) NOT NULL DEFAULT 'app',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, activity_date)
+);
+
 -- User SRS Spaced Repetition Progress
 CREATE TABLE IF NOT EXISTS user_srs_stats (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -246,6 +255,7 @@ CREATE INDEX IF NOT EXISTS idx_theory_progress_user ON theory_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_questions_type_diff ON questions(type, difficulty_band, is_active);
 CREATE INDEX IF NOT EXISTS idx_test_sessions_user ON test_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_question_responses_session ON question_responses(session_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_question_responses_session_question ON question_responses(session_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_session ON media_assets(session_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_session ON evaluations(session_id);
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);
@@ -253,6 +263,7 @@ CREATE INDEX IF NOT EXISTS idx_ad_banners_placement ON ad_banners(placement, is_
 CREATE INDEX IF NOT EXISTS idx_institutions_country ON institutions(country, min_score);
 CREATE INDEX IF NOT EXISTS idx_user_errors_user ON user_errors(user_id, mastered);
 CREATE INDEX IF NOT EXISTS idx_user_srs_cards_due ON user_srs_cards(user_id, due_date);
+CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON user_activity(user_id, activity_date DESC);
 
 -- Seed Initial Questions Bank for 13 Modern DET Question Types
 INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)

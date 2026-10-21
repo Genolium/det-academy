@@ -139,7 +139,8 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req); err != nil {
+	isCorrect, rawScore, err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req)
+	if err != nil {
 		if strings.Contains(err.Error(), "access denied") {
 			RespondError(w, http.StatusForbidden, err.Error())
 			return
@@ -148,7 +149,11 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]string{"status": "recorded"})
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"status":    "recorded",
+		"isCorrect": isCorrect,
+		"rawScore":  rawScore,
+	})
 }
 
 func (h *TestHandler) CompleteStage(w http.ResponseWriter, r *http.Request) {

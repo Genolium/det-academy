@@ -36,13 +36,59 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [loadingEvals, setLoadingEvals] = useState(false);
 
+  const notMeasured = scores.notMeasured || [];
+  const overallMeasured = (scores.overall || 0) > 0 && !notMeasured.includes('overall');
+  const completeness = Math.round((scores.completeness ?? 1) * 100);
+  const rangeLow = scores.rangeLow ?? Math.max(10, (scores.overall || 0) - 10);
+  const rangeHigh = scores.rangeHigh ?? Math.min(160, (scores.overall || 0) + 10);
+  const confidenceLabel =
+    scores.confidence === 'high'
+      ? 'Высокая уверенность'
+      : scores.confidence === 'medium'
+      ? 'Средняя уверенность'
+      : 'Низкая уверенность';
+
+  const measuredSkills = [
+    { key: 'reading', label: 'Чтение', value: scores.reading || 0 },
+    { key: 'listening', label: 'Аудирование', value: scores.listening || 0 },
+    { key: 'writing', label: 'Письмо', value: scores.writing || 0 },
+    { key: 'speaking', label: 'Говорение', value: scores.speaking || 0 },
+  ].filter((skill) => skill.value > 0);
+  const weakestSkill = measuredSkills.length
+    ? measuredSkills.reduce((weakest, skill) => (skill.value < weakest.value ? skill : weakest))
+    : null;
+  const nextSteps: Record<string, { title: string; description: string; href: string }> = {
+    reading: {
+      title: 'Чтение: C-Test и Read & Select',
+      description: '15–20 минут в день на короткие тексты и разбор пропусков.',
+      href: '/practice',
+    },
+    listening: {
+      title: 'Аудирование: диктанты',
+      description: 'Один диктант в день с повторным прослушиванием и разбором ошибок.',
+      href: '/practice',
+    },
+    writing: {
+      title: 'Письмо: Writing Sample',
+      description: 'Два эссе в неделю по 100+ слов с проверкой структуры и лексики.',
+      href: '/practice',
+    },
+    speaking: {
+      title: 'Говорение: Speak About Photo',
+      description: 'Три коротких ответа в неделю по 60–90 секунд с записью и разбором.',
+      href: '/practice',
+    },
+  };
+  const recommended = weakestSkill ? nextSteps[weakestSkill.key] : null;
+
   useEffect(() => {
+    if (!overallMeasured) return;
     try {
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
     } catch {
       // ignore
     }
-  }, []);
+  }, [overallMeasured]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -84,30 +130,53 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
         <div className="bg-gradient-to-r from-neutral-900 to-neutral-950 p-8 rounded-3xl border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 text-center sm:text-left">
           <div>
             <span className="text-xs uppercase font-bold tracking-widest text-[#D2F544] block mb-1">
-              {t.overallLabel}
+              {overallMeasured ? t.overallLabel : 'Итоговая оценка'}
             </span>
             <span className="text-[10px] text-neutral-500 block mb-1">
               Тренировочная оценка DET Academy, не официальный балл Duolingo
             </span>
-            <div className="text-6xl sm:text-7xl font-black text-white font-mono tracking-tight">
-              {scores.overall}
-              <span className="text-2xl text-neutral-500 font-normal"> / 160</span>
-            </div>
-            <span className="text-xs text-neutral-400 mt-2 block">
-              {t.scaleNote} • {scores.overall - 5}–{scores.overall + 5}
-            </span>
+            {overallMeasured ? (
+              <>
+                <div className="text-6xl sm:text-7xl font-black text-white font-mono tracking-tight">
+                  {scores.overall}
+                  <span className="text-2xl text-neutral-500 font-normal"> / 160</span>
+                </div>
+                <span className="text-xs text-neutral-400 mt-2 block">
+                  {t.scaleNote} • диапазон {rangeLow}–{rangeHigh} • {confidenceLabel}
+                </span>
+              </>
+            ) : (
+              <>
+                <div className="text-4xl sm:text-5xl font-black text-amber-300 tracking-tight">
+                  Недостаточно данных
+                </div>
+                <span className="text-xs text-neutral-400 mt-2 block max-w-md">
+                  Итоговый балл не выставлен, потому что не все четыре навыка были измерены
+                  сервером. Завершено {completeness}% проверки.
+                </span>
+              </>
+            )}
           </div>
 
           <div className="bg-neutral-900/90 p-4 rounded-2xl border border-neutral-800 text-xs space-y-1.5 max-w-xs">
-            <div className="flex items-center gap-2 text-emerald-400 font-bold">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>
-                {scores.overall >= 120
-                  ? t.highScoreNote
-                  : scores.overall >= 105
-                  ? t.midScoreNote
-                  : t.lowScoreNote}
-              </span>
+            {overallMeasured ? (
+              <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>
+                  {scores.overall >= 120
+                    ? t.highScoreNote
+                    : scores.overall >= 105
+                    ? t.midScoreNote
+                    : t.lowScoreNote}
+                </span>
+              </div>
+            ) : (
+              <div className="text-amber-300 font-bold">
+                Пропущенные навыки: {notMeasured.filter((skill) => skill !== 'overall').join(', ') || '—'}
+              </div>
+            )}
+            <div className="text-neutral-500 pt-1">
+              Отвечено заданий: {scores.answeredQuestions ?? 0}
             </div>
           </div>
         </div>
@@ -116,7 +185,13 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
         <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8">
           <div className="flex flex-col md:flex-row items-center gap-8 justify-between">
             <div className="w-full md:w-1/2 flex justify-center">
-              <SubscoresRadarChart scores={scores} size={300} showDetails={false} />
+              {overallMeasured ? (
+                <SubscoresRadarChart scores={scores} size={300} showDetails={false} />
+              ) : (
+                <div className="text-center text-xs text-neutral-500 max-w-[240px]">
+                  Радар не строится: для него нужны все четыре измеренных навыка.
+                </div>
+              )}
             </div>
             <div className="w-full md:w-1/2 space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
@@ -126,50 +201,53 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                 <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
                   <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Literacy</span>
                   <span className="text-[10px] text-neutral-500 block mb-1">{t.literacySub}</span>
-                  <div className="text-2xl font-black text-[#D2F544] font-mono">{scores.literacy}</div>
+                  <div className="text-2xl font-black text-[#D2F544] font-mono">
+                    {scores.literacy > 0 ? scores.literacy : '—'}
+                  </div>
                 </div>
                 <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
                   <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Comprehension</span>
                   <span className="text-[10px] text-neutral-500 block mb-1">{t.comprehensionSub}</span>
-                  <div className="text-2xl font-black text-emerald-400 font-mono">{scores.comprehension}</div>
+                  <div className="text-2xl font-black text-emerald-400 font-mono">
+                    {scores.comprehension > 0 ? scores.comprehension : '—'}
+                  </div>
                 </div>
                 <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
                   <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Production</span>
                   <span className="text-[10px] text-neutral-500 block mb-1">{t.productionSub}</span>
-                  <div className="text-2xl font-black text-amber-400 font-mono">{scores.production}</div>
+                  <div className="text-2xl font-black text-amber-400 font-mono">
+                    {scores.production > 0 ? scores.production : '—'}
+                  </div>
                 </div>
                 <div className="bg-neutral-900 p-4 rounded-2xl border border-neutral-800 text-center">
                   <span className="text-xs uppercase font-bold text-neutral-400 block mb-1">Conversation</span>
                   <span className="text-[10px] text-neutral-500 block mb-1">{t.conversationSub}</span>
-                  <div className="text-2xl font-black text-blue-400 font-mono">{scores.conversation}</div>
+                  <div className="text-2xl font-black text-blue-400 font-mono">
+                    {scores.conversation > 0 ? scores.conversation : '—'}
+                  </div>
                 </div>
               </div>
 
-              {scores.reading && scores.listening && scores.writing && scores.speaking ? (
-                <div className="pt-3 border-t border-neutral-800">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-2">
-                    Individual Skills:
-                  </span>
-                  <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
-                      <span className="text-[10px] text-neutral-400 block">Reading</span>
-                      <span className="font-bold font-mono text-white text-sm">{scores.reading}</span>
+              <div className="pt-3 border-t border-neutral-800">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block mb-2">
+                  Individual Skills:
+                </span>
+                <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                  {([
+                    ['Reading', scores.reading],
+                    ['Listening', scores.listening],
+                    ['Writing', scores.writing],
+                    ['Speaking', scores.speaking],
+                  ] as const).map(([label, value]) => (
+                    <div key={label} className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
+                      <span className="text-[10px] text-neutral-400 block">{label}</span>
+                      <span className="font-bold font-mono text-white text-sm">
+                        {value && value > 0 ? value : '—'}
+                      </span>
                     </div>
-                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
-                      <span className="text-[10px] text-neutral-400 block">Listening</span>
-                      <span className="font-bold font-mono text-white text-sm">{scores.listening}</span>
-                    </div>
-                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
-                      <span className="text-[10px] text-neutral-400 block">Writing</span>
-                      <span className="font-bold font-mono text-white text-sm">{scores.writing}</span>
-                    </div>
-                    <div className="bg-neutral-900/90 p-2.5 rounded-xl border border-neutral-800">
-                      <span className="text-[10px] text-neutral-400 block">Speaking</span>
-                      <span className="font-bold font-mono text-white text-sm">{scores.speaking}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -231,6 +309,72 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             Загрузка детального разбора ответов...
           </div>
         )}
+
+        {/* Next steps */}
+        <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#D2F544]" />
+            <h3 className="text-base font-bold text-white">Что делать дальше</h3>
+          </div>
+          {overallMeasured ? (
+            <>
+              <p className="text-xs text-neutral-400">
+                Слабейший измеренный навык:{' '}
+                <strong className="text-white">{weakestSkill?.label || '—'}</strong>. Это не
+                приговор, а точка роста для следующей недели.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  href={recommended?.href || '/practice'}
+                  className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 hover:border-[#D2F544]/60 transition-colors"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#D2F544]">
+                    1. Главный фокус
+                  </span>
+                  <p className="mt-1 text-sm font-bold text-white">
+                    {recommended?.title || 'Практика'}
+                  </p>
+                  <p className="mt-1 text-[11px] text-neutral-400">
+                    {recommended?.description || 'Одна короткая сессия в день.'}
+                  </p>
+                </Link>
+                <Link
+                  href="/practice/flashcards"
+                  className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 hover:border-[#D2F544]/60 transition-colors"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#D2F544]">
+                    2. Словарь
+                  </span>
+                  <p className="mt-1 text-sm font-bold text-white">SRS 10–15 минут</p>
+                  <p className="mt-1 text-[11px] text-neutral-400">
+                    Повторяйте слова из слабого навыка и Academic Word List.
+                  </p>
+                </Link>
+                <Link
+                  href="/test/session"
+                  className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 hover:border-[#D2F544]/60 transition-colors"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#D2F544]">
+                    3. Контроль
+                  </span>
+                  <p className="mt-1 text-sm font-bold text-white">Полный mock через 7–10 дней</p>
+                  <p className="mt-1 text-[11px] text-neutral-400">
+                    Не каждый день: сначала закрепите слабый навык.
+                  </p>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-neutral-400">
+              Сначала пройдите пропущенные этапы без пропусков. Итоговый балл и рекомендации
+              появятся только после измерения всех четырёх навыков. Для тренировки используйте{' '}
+              <Link href="/practice" className="text-[#D2F544] underline">
+                свободные тренажёры
+              </Link>
+              .
+            </p>
+          )}
+        </div>
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-800">
