@@ -5,6 +5,10 @@ export const TEST_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111';
 export interface MockOptions {
   /** When true the resumed session is already finalized on the server. */
   resumeCompleted?: boolean;
+  sessionStage?: string;
+  sessionQuestions?: unknown[];
+  afterStage?: string;
+  nextQuestions?: unknown[];
   /** Responses returned by POST /test/sessions/:id/complete, in order. */
   completionResponses?: Array<
     | { status: number; body: unknown }
@@ -94,6 +98,8 @@ export const completedResult = {
 export async function mockApi(page: Page, options: MockOptions = {}) {
   const completionQueue = [...(options.completionResponses || [])];
   let completionCalls = 0;
+  const completionBodies: unknown[] = [];
+  const responseBodies: unknown[] = [];
 
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
@@ -143,6 +149,15 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (path.endsWith('/banners') || path.includes('/banners?')) {
       return json(route, 200, []);
+    }
+    if (path.endsWith('/user/streak') && method === 'GET') {
+      return json(route, 200, { streakDays: 0, lastActiveDate: '' });
+    }
+    if (path.endsWith('/user/activity') && method === 'POST') {
+      return json(route, 200, {
+        streakDays: 1,
+        lastActiveDate: new Date().toISOString().slice(0, 10),
+      });
     }
     if (path.endsWith('/user/srs') && method === 'GET') {
       return json(route, 200, {
@@ -204,20 +219,31 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (/\/test\/sessions\/[^/]+$/.test(path) && method === 'GET') {
       return json(route, 200, {
-        session: options.resumeCompleted ? completedResult.session : session(),
-        questions: [],
+        session: options.resumeCompleted
+          ? completedResult.session
+          : session({ stageName: options.sessionStage || 'SPEAKING_SAMPLE' }),
+        questions: options.sessionQuestions || [],
         responses: [],
         blueprint: { version: '1', totalStages: 13, stages: [] },
       });
     }
+    if (/\/test\/sessions\/[^/]+\/respond$/.test(path)) {
+      if (request.postData()) responseBodies.push(request.postDataJSON());
+      return json(route, 200, { status: 'recorded', isCorrect: true, rawScore: 1 });
+    }
     if (/\/test\/sessions\/[^/]+\/stage-complete$/.test(path)) {
       return json(route, 200, {
-        session: session({ stageName: 'COMPLETED', currentStage: 14, deadlineAt: null }),
-        nextQuestions: [],
+        session: session({
+          stageName: options.afterStage || 'COMPLETED',
+          currentStage: options.afterStage ? 2 : 14,
+          deadlineAt: null,
+        }),
+        nextQuestions: options.nextQuestions || [],
       });
     }
     if (/\/test\/sessions\/[^/]+\/complete$/.test(path)) {
       completionCalls += 1;
+      completionBodies.push(request.postData() ? request.postDataJSON() : {});
       const next = completionQueue.shift();
       if (next) {
         if ('delayMs' in next) {
@@ -236,8 +262,46 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
 
   return {
     getCompletionCalls: () => completionCalls,
+    getCompletionBodies: () => completionBodies,
+    getResponseBodies: () => responseBodies,
   };
 }
+
+export const incompleteResult = {
+  session: session({
+    status: 'COMPLETED',
+    stageName: 'COMPLETED',
+    currentStage: 14,
+    overallScore: 0,
+    readingScore: 0,
+    listeningScore: 0,
+    writingScore: 0,
+    speakingScore: 0,
+    literacyScore: 0,
+    comprehensionScore: 0,
+    productionScore: 0,
+    conversationScore: 0,
+    completedAt: new Date().toISOString(),
+  }),
+  scores: {
+    overall: 0,
+    reading: 0,
+    listening: 0,
+    writing: 0,
+    speaking: 0,
+    literacy: 0,
+    comprehension: 0,
+    production: 0,
+    conversation: 0,
+    completeness: 0.25,
+    confidence: 'low',
+    rangeLow: 0,
+    rangeHigh: 0,
+    notMeasured: ['reading', 'listening', 'speaking', 'overall'],
+    answeredQuestions: 1,
+  },
+  certificateEligible: false,
+};
 
 export const pendingSyncError = {
   status: 503,

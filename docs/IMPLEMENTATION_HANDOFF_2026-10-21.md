@@ -850,3 +850,61 @@ npx playwright test   # 7 passed
 ### 6.7. Решение по gate
 
 Критерии приёмки этапа 1 выполнены: локальный успешный результат удалён, фиктивные сертификаты не создаются, два error store объединены, auth-ключ один, offline/outage-сценарии покрыты браузерными тестами. Можно переходить к этапу 2 (OAuth hardening) без расширения геймификации и контента.
+
+---
+
+## 7. Итерация 2: честный скоринг, server-driven экзамен и UX (21 октября 2026)
+
+### 7.1. Что изменилось в поведении
+
+- Пропущенный навык больше не получает средний балл. Если навык не измерен, сервер возвращает `notMeasured`, `completeness`, `confidence` и `rangeLow/rangeHigh`; при неполном покрытии `overall = 0`.
+- Результат с неполными данными показывает «Недостаточно данных» вместо числа, процент завершённости, список пропущенных навыков и не пишется в историю как балл.
+- Клиент больше не отправляет `readSelectAccuracy`, `writingScore` и другие ratio-hints. `POST /complete` принимает пустое тело; итог считается только по сохранённым ответам.
+- Все объективные этапы используют серверные вопросы: Read & Select, Fill in the Blanks, C-Test, Listen and Type, Interactive Reading, Interactive Listening, Write About the Photo.
+- Из `contentPayload` удалены утечки ответов: `fullWord`, `gapSentence.correct`, `correctIndex`, `titleQuestion.correctIndex`, `mainIdeaQuestion.correctIndex`, `turns[].correctIndex`.
+- Добавлен outbox ответов: ответ сначала синхронизируется в localStorage, затем отправляется; при сбое повторяется перед stage-complete и complete.
+- Сервер отклоняет ответ после дедлайна этапа (с grace 10 секунд) и не принимает ответы в `COMPLETED`/`STAGE=COMPLETED`.
+- `question_responses` получил уникальность `(session_id, question_id)` и upsert; повторный `respond` обновляет ответ, а не дублирует.
+- Добавлен серверный ledger активности и streak (`/user/streak`, `/user/activity`). Фронтенд синхронизирует streak с сервером, локальное значение остаётся только офлайн-кэшем.
+- На экзамене появился постоянный серверный таймер этапа; cookie-баннер скрыт на `/test/session`.
+- Добавлены `autocorrect="off"`, `autocapitalize="none"`, `spellcheck=false`, `inputMode` и размеры полей 16px+ для мобильных/планшетных ответов.
+- Добавлен открытый каталог `/vocabulary`: Academic Word List, ловушки Read & Select и слова Fill in the Blanks.
+- В результате теста появился блок «Что делать дальше»: слабейший измеренный навык, SRS, следующий mock через 7–10 дней.
+
+### 7.2. Серверные инварианты
+
+- `CompleteSession` не читает клиентские баллы; агрегирует только `question_responses` по навыкам.
+- Нет fallback «средний балл» и нет переноса балла из другого навыка.
+- `certificateEligible` требует измеренного `overall >= 105` и завершённой теории.
+- Идемпотентность: повторный `complete` возвращает существующий result; конкурентные `complete` сходятся к одному сертификату.
+- `Postgres` интеграционный тест проверяет upsert ответа, два конкурентных `complete`, один сертификат и повторную идемпотентную финализацию.
+
+### 7.3. Тесты и команды
+
+```bash
+npx tsc --noEmit
+npm run lint                  # 0 errors, 120 warnings
+npm run build
+(cd backend && go test ./... -count=1)
+TEST_DATABASE_URL="postgres://postgres:postgres@localhost:15432/det_academy_test?sslmode=disable" \
+  (cd backend && go test ./tests -run TestPostgresTrustedCompletionIntegrity -count=1)
+npx playwright test           # 9 passed
+```
+
+Добавлены регрессии:
+
+- `TestCompletionDoesNotCreditSkippedSkills` — только writing, `overall = 0`, `notMeasured` содержит reading/listening/speaking/overall, сертификата нет.
+- `TestQuestionPayloadsDoNotLeakAnswers` — в публичных payload нет `fullWord`, `correct`, `correctIndex`.
+- `TestPostgresTrustedCompletionIntegrity` — реальный PostgreSQL, конкурентные complete, upsert ответа, один сертификат.
+- `test-completion.spec.ts` — outage/retry, double-click, incomplete result, resume, server-issued Read & Select → Fill in the Blanks.
+- `verify.spec.ts` — 404 vs outage vs existing report.
+- `auth-session.spec.ts` — миграция токена и изоляция пользователей.
+
+### 7.4. Оставшиеся риски
+
+- `Interactive Reading`/`Listening` используют первый серверный блок этапа; выборка нескольких блоков и полноценный blueprint — следующий шаг этапа 4.
+- `CompleteSession` всё ещё не оборачивает чтение/запись в одну транзакцию с `SELECT ... FOR UPDATE`; конкурентность проверена и сходится, но транзакционная блокировка остаётся желаемой для строгой сериализации.
+- `RecordQuestionResponse` не пишет отдельный timeout event; просроченный ответ просто отклоняется.
+- Серверный streak использует UTC-день; timezone policy пользователя ещё не реализована.
+- Каталог `/vocabulary` — статический срез локальных данных, не CMS-публикация.
+- Production OAuth/Apple JWKS, Directus и внешний speech pipeline по-прежнему не проверены end-to-end (этапы 2 и 5).
