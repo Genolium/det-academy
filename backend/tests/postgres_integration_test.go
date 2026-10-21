@@ -43,8 +43,8 @@ func TestPostgresTrustedCompletionIntegrity(t *testing.T) {
 	}
 
 	// Theory completion is required for certificate issuance.
-	for i := 1; i <= service.TotalTheoryLessons; i++ {
-		if err := store.Theory().SetProgress(ctx, userID, "lesson-"+uuid.NewString()[:6], true); err != nil {
+	for _, slug := range service.LessonSlugs {
+		if err := store.Theory().SetProgress(ctx, userID, slug, true); err != nil {
 			t.Fatalf("failed to seed theory progress: %v", err)
 		}
 	}

@@ -32,8 +32,8 @@ import { LeagueBadge } from '@/components/ui/LeagueBadge';
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { locale, setLocale } = useSettingsStore();
-  const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
-  const { syncWithBackend, streakDays, pvpElo } = useProgressStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const { streakDays, pvpElo } = useProgressStore();
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,9 +41,6 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-    syncWithBackend();
-
     // Catch OAuth redirect token in URL hash if popup redirected
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
@@ -76,7 +73,7 @@ export const Navbar: React.FC = () => {
         }
       }
     }
-  }, [checkAuth, syncWithBackend]);
+  }, []);
 
   // Modern scroll-state detection for sticky header elevation
   useEffect(() => {

@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20) DEFAULT 'student', -- 'student', 'editor', 'admin'
     avatar_url TEXT DEFAULT '',
     locale VARCHAR(10) DEFAULT 'ru',
+    token_version INT NOT NULL DEFAULT 0,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    email_verification_token_hash VARCHAR(128) DEFAULT '',
+    email_verification_expires TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -280,6 +284,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     revoked_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id, expires_at);
 
 -- Daily study plan task completions
 CREATE TABLE IF NOT EXISTS study_plan_task_completions (

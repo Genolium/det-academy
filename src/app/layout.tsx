@@ -9,6 +9,7 @@ import { CookieConsent } from '@/components/ui/CookieConsent';
 import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister';
 import { OfflineIndicator } from '@/components/system/OfflineIndicator';
 import { ErrorReporter } from '@/components/system/ErrorReporter';
+import { AuthBootstrap } from '@/components/system/AuthBootstrap';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -56,6 +57,7 @@ export default function RootLayout({
         <CookieConsent />
         <OfflineIndicator />
         <ErrorReporter />
+        <AuthBootstrap />
         <ServiceWorkerRegister />
         {/* Google Identity Services SDK for Real One-Tap & OAuth Popup */}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />

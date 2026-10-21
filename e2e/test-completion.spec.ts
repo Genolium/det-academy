@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { completedResult, incompleteResult, mockApi, pendingSyncError, TEST_ATTEMPT_ID } from './mocks';
+import { completedResult, incompleteResult, installFakeMedia, mockApi, pendingSyncError, TEST_ATTEMPT_ID } from './mocks';
 
 test.describe('trusted test completion', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.install();
+    await installFakeMedia(page);
     await page.addInitScript((attemptId) => {
       localStorage.setItem('det_auth_token', 'token-user-a');
       localStorage.removeItem('det_token');

@@ -355,3 +355,94 @@ export const pendingSyncError = {
   status: 503,
   body: { error: 'service unavailable' },
 };
+
+/**
+ * Installs a deterministic fake microphone and MediaRecorder for speaking
+ * tests. The recorder emits one non-empty blob when stopped.
+ */
+export async function installFakeMedia(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    type FakeWindow = Window & {
+      __mediaRecorderStartCount?: number;
+      webkitAudioContext?: typeof AudioContext;
+    };
+    const fakeWindow = window as unknown as FakeWindow;
+    fakeWindow.__mediaRecorderStartCount = 0;
+
+    class FakeMediaRecorder {
+      static isTypeSupported(): boolean {
+        return true;
+      }
+      state = 'inactive';
+      mimeType = 'audio/webm';
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      constructor(_stream: unknown, options?: { mimeType?: string }) {
+        if (options?.mimeType) this.mimeType = options.mimeType;
+      }
+      start(): void {
+        this.state = 'recording';
+        fakeWindow.__mediaRecorderStartCount = (fakeWindow.__mediaRecorderStartCount || 0) + 1;
+      }
+      stop(): void {
+        if (this.state === 'inactive') return;
+        this.state = 'inactive';
+        this.ondataavailable?.({ data: new Blob(['fake audio'], { type: this.mimeType }) });
+        this.onstop?.();
+      }
+    }
+
+    class FakeAudioContext {
+      state = 'running';
+      createAnalyser() {
+        return {
+          fftSize: 256,
+          smoothingTimeConstant: 0.8,
+          frequencyBinCount: 8,
+          getByteFrequencyData(data: Uint8Array) {
+            data.fill(0);
+          },
+        };
+      }
+      createMediaStreamSource() {
+        return { connect() {} };
+      }
+      close() {
+        this.state = 'closed';
+      }
+    }
+
+    const fakeStream = {
+      getTracks: () => [{ stop() {} }],
+    };
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: async () => fakeStream },
+    });
+    Object.defineProperty(window, 'MediaRecorder', {
+      configurable: true,
+      value: FakeMediaRecorder,
+    });
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    Object.defineProperty(window, 'webkitAudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+  });
+}
+
+export async function installDeniedMedia(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          throw new DOMException('Permission denied', 'NotAllowedError');
+        },
+      },
+    });
+  });
+}

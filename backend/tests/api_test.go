@@ -1426,6 +1426,24 @@ func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
 	_ = json.Unmarshal(startW.Body.Bytes(), &startRes)
 	sessionID := startRes.Session.ID
 
+	// Audio is only valid for an assigned speaking question in the current
+	// stage. Advance the attempt through the non-speaking stages first.
+	for _, stage := range service.StageSequence {
+		details := readIntegritySession(t, r, token1, sessionID)
+		if details["stageName"] == "SPEAK_PHOTO" {
+			break
+		}
+		if details["stageName"] != stage {
+			t.Fatalf("expected stage %s, got %v", stage, details["stageName"])
+		}
+		completeCurrentStage(t, r, token1, sessionID, stage)
+	}
+	speakingQuestionIDs := getCurrentQuestionIDs(t, r, token1, sessionID)
+	if len(speakingQuestionIDs) == 0 {
+		t.Fatal("expected assigned SPEAK_PHOTO question")
+	}
+	speakingQuestionID := speakingQuestionIDs[0]
+
 	// 3. Upload multipart audio
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -1438,7 +1456,7 @@ func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
 	audioData := []byte("FAKE_WEBM_AUDIO_DATA_FOR_SPEAKING_TEST_1234567890")
 	_, _ = part.Write(audioData)
 
-	_ = writer.WriteField("questionId", "sp-1")
+	_ = writer.WriteField("questionId", speakingQuestionID)
 	_ = writer.WriteField("transcript", "The photograph depicts a group of engineering students collaborating inside a modern technical laboratory. In the foreground, two researchers appear to be analyzing experimental data on high resolution monitors, demonstrating remarkable teamwork. Furthermore, the academic environment is equipped with sophisticated technological infrastructure. On the other hand, the individuals in the background are discussing project blueprints, illustrating a productive educational atmosphere.")
 	_ = writer.WriteField("durationSec", "45.0")
 	_ = writer.Close()
@@ -1515,8 +1533,8 @@ func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
 	if len(evalsRes.Evaluations) != 1 {
 		t.Fatalf("expected 1 evaluation, got %d", len(evalsRes.Evaluations))
 	}
-	if evalsRes.Evaluations[0].QuestionID != "sp-1" {
-		t.Fatalf("expected questionId sp-1, got %s", evalsRes.Evaluations[0].QuestionID)
+	if evalsRes.Evaluations[0].QuestionID != speakingQuestionID {
+		t.Fatalf("expected questionId %s, got %s", speakingQuestionID, evalsRes.Evaluations[0].QuestionID)
 	}
 
 	// 6. Security Check: Admin / User 2 attempts to upload audio to User 1's session -> must be rejected

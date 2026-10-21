@@ -76,6 +76,13 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
     const recordedBlob = await audioRecorder.stopRecording();
     const spokenText = transcriptRef.current;
 
+    if (!recordedBlob || recordedBlob.size === 0) {
+      isCompletedRef.current = false;
+      setIsSubmitting(false);
+      setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
+      return;
+    }
+
     // Upload audio blob to backend if session exists
     if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
       const formData = new FormData();

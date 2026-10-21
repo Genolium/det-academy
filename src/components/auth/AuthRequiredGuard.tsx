@@ -21,7 +21,7 @@ export const AuthRequiredGuard: React.FC<AuthRequiredGuardProps> = ({
   subtitle,
   badge = 'Private Educational Area',
 }) => {
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
 
@@ -30,8 +30,7 @@ export const AuthRequiredGuard: React.FC<AuthRequiredGuardProps> = ({
 
   useEffect(() => {
     setMounted(true);
-    checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   if (!mounted) {
     return (

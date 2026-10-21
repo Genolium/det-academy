@@ -76,6 +76,13 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     const recordedBlob = await audioRecorder.stopRecording();
     const spokenText = transcriptRef.current;
 
+    if (!recordedBlob || recordedBlob.size === 0) {
+      isCompletedRef.current = false;
+      setIsSubmitting(false);
+      setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
+      return;
+    }
+
     if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
       const formData = new FormData();
       formData.append('audio', recordedBlob, 'speaking_sample.webm');

@@ -76,6 +76,32 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
 
   const isAdvancingRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const recorderRef = useRef(audioRecorder);
+  const recordingStartedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    recorderRef.current = audioRecorder;
+  });
+
+  // One MediaRecorder for the whole conversation. Restarting it for every turn
+  // discarded all previous turns and left orphaned recorders behind.
+  useEffect(() => {
+    let active = true;
+    void recorderRef.current.startRecording().then((started) => {
+      if (!active) return;
+      if (started) {
+        recordingStartedAtRef.current = Date.now();
+      } else {
+        setMicError(recorderRef.current.error || 'Не удалось начать запись. Проверьте микрофон.');
+      }
+    });
+    return () => {
+      active = false;
+      if (!isAdvancingRef.current) {
+        void recorderRef.current.stopRecording();
+      }
+    };
+  }, []);
 
   // Text-To-Speech for Conversational Turn
   const playPromptAudio = (text: string) => {
@@ -91,9 +117,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
     }
   };
 
-  const startRecognition = async () => {
-    await audioRecorder.startRecording();
-
+  const startRecognition = () => {
     const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
     const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
 
@@ -137,17 +161,28 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
         } catch {}
       }
 
+      setIsSubmitting(true);
       const recordedBlob = await audioRecorder.stopRecording();
       const fullTranscript = updated.filter(Boolean).join('; ');
 
-      if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
+      if (!recordedBlob || recordedBlob.size === 0) {
+        setIsSubmitting(false);
+        isAdvancingRef.current = false;
+        setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
+        return;
+      }
+
+      if (backendSessionId && serverQ) {
         const formData = new FormData();
         formData.append('audio', recordedBlob, 'interactive_speaking.webm');
         formData.append('questionId', serverQ.id);
         if (fullTranscript) {
           formData.append('transcript', fullTranscript);
         }
-        formData.append('durationSec', '210');
+        const durationSec = recordingStartedAtRef.current
+          ? Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000))
+          : Math.max(1, audioRecorder.durationSec);
+        formData.append('durationSec', durationSec.toString());
 
         try {
           await api.uploadSpeakingAudio(backendSessionId, formData);
@@ -157,10 +192,10 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
           setSubmitError('Не удалось сохранить аудио на сервере. Проверьте соединение и повторите.');
           return;
         }
-
       }
 
-      recordSpeakingResult(fullTranscript || (recordedBlob ? 'Записан интерактивный диалог' : ''));
+      setIsSubmitting(false);
+      recordSpeakingResult(fullTranscript || 'Записан интерактивный диалог');
       onComplete();
     }
   };

@@ -8,16 +8,12 @@ import { useAuthStore } from '@/store/useAuthStore';
 const STATUSES = ['draft', 'reviewed', 'published', 'archived'] as const;
 
 export default function AdminVocabularyPage() {
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [entries, setEntries] = useState<VocabularyEntry[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-
-  useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') return;

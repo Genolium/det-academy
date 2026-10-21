@@ -188,10 +188,10 @@ const ELITE_INSTITUTIONS_BENCHMARKS: RankedInstitution[] = [
 ];
 
 export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
-  currentPredictedScore = 115,
+  currentPredictedScore = 0,
   className = '',
 }) => {
-  const [simulatedScore, setSimulatedScore] = useState<number>(currentPredictedScore || 115);
+  const [simulatedScore, setSimulatedScore] = useState<number>(currentPredictedScore > 0 ? currentPredictedScore : 95);
   const [activeTier, setActiveTier] = useState<'ALL' | 'IVY' | 'TOP100'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -199,35 +199,31 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
     const diff = simulatedScore - minScore;
     if (diff >= 10) {
       return {
-        label: 'Гарантированный проходной',
-        labelEn: 'High Match (Safe)',
-        probability: 95,
+        label: 'Выше ориентировочного порога',
+        labelEn: 'Above reference threshold',
         color: 'text-emerald-400 bg-emerald-950/80 border-emerald-800/80',
         badgeColor: 'bg-emerald-500',
       };
     }
     if (diff >= 0) {
       return {
-        label: 'Целевой балл (Конкурентный)',
-        labelEn: 'Target Match',
-        probability: 80,
+        label: 'На уровне ориентировочного порога',
+        labelEn: 'At reference threshold',
         color: 'text-[#D2F544] bg-[#D2F544]/10 border-[#D2F544]/30',
         badgeColor: 'bg-[#D2F544]',
       };
     }
     if (diff >= -10) {
       return {
-        label: `Дефицит ${Math.abs(diff)} баллов (Reach)`,
-        labelEn: 'Reach / Stretch',
-        probability: 50,
+        label: `Ниже порога на ${Math.abs(diff)} баллов`,
+        labelEn: 'Below reference threshold',
         color: 'text-amber-400 bg-amber-950/60 border-amber-800/60',
         badgeColor: 'bg-amber-400',
       };
     }
     return {
-      label: `Дефицит ${Math.abs(diff)} баллов (Высокий риск)`,
-      labelEn: 'High Risk',
-      probability: 25,
+      label: `Значительный дефицит: ${Math.abs(diff)} баллов`,
+      labelEn: 'Well below reference threshold',
       color: 'text-red-400 bg-red-950/60 border-red-800/60',
       badgeColor: 'bg-red-500',
     };
@@ -267,16 +263,19 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
             </span>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            Калькулятор шансов поступления в Ivy League & Top-100
+            Сравнение с ориентировочными порогами вузов
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Сопоставьте ваш текущий балл со стандартами приемных комиссий ведущих вузов мира.
+            Пороги собраны как ориентир. Это не вероятность поступления и не гарантия: проверяйте требования на официальном сайте вуза.
+          </p>
+          <p className="text-[11px] text-amber-300/90 mt-2">
+            Ориентировочные данные без подтверждённого источника и даты. Не используйте их как единственное основание для подачи документов.
           </p>
         </div>
 
         {/* Total matched badge */}
         <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right shrink-0">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Проходной в:</span>
+          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Выше ориентира:</span>
           <div className="text-lg font-black text-[#D2F544]">
             {eligibleCount} из {filteredUniversities.length} вузов
           </div>
@@ -292,7 +291,9 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
           <div>
             <span className="text-xs font-bold text-white block">Симуляция баллов экзамена DET</span>
             <span className="text-[11px] text-neutral-400">
-              Двигайте ползунок, чтобы увидеть, как меняются шансы поступления при росте балла
+              {currentPredictedScore > 0
+                ? 'Двигайте ползунок, чтобы увидеть, как меняется соответствие ориентировочным порогам'
+                : 'У вас пока нет подтверждённого mock-результата. Слайдер показывает сценарий, а не ваш балл.'}
             </span>
           </div>
         </div>
@@ -408,7 +409,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                 <div className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 ${match.color}`}>
                   <span className={`w-2 h-2 rounded-full ${match.badgeColor}`} />
                   <span>{match.label}</span>
-                  <span className="text-neutral-400 font-mono">({match.probability}%)</span>
+                  <span className="text-neutral-400 font-mono">({match.labelEn})</span>
                 </div>
 
                 {uni.websiteUrl && (

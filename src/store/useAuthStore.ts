@@ -31,6 +31,8 @@ interface AuthState {
   clearError: () => void;
 }
 
+let checkAuthPromise: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
@@ -135,49 +137,58 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   checkAuth: async () => {
     if (typeof window === 'undefined') return;
-    if (!hasAuthSession()) {
-      // The backend can still have an HttpOnly session cookie, so verify once
-      // instead of trusting the absence of a local token.
-      useProgressStore.getState().resetProgressState();
-    }
-
-    set({ isLoading: true });
-    try {
-      const user = await api.getMe();
-      set({ user, isAuthenticated: true, isLoading: false });
-      cacheUser(user);
-      if (user?.name) {
-        useProgressStore.getState().setCandidateName(user.name);
+    if (checkAuthPromise) return checkAuthPromise;
+    checkAuthPromise = (async () => {
+      if (typeof window === 'undefined') return;
+      if (!hasAuthSession()) {
+        // The backend can still have an HttpOnly session cookie, so verify once
+        // instead of trusting the absence of a local token.
+        useProgressStore.getState().resetProgressState();
       }
-      useProgressStore.getState().syncWithBackend(user.id);
-      void useErrorNotebookStore.getState().loadForUser(user.id);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        // Access token expired: try the rotating HttpOnly refresh cookie once.
-        try {
-          const refreshed = await api.refreshSession();
-          set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
-          cacheUser(refreshed.user);
-          useProgressStore.getState().syncWithBackend(refreshed.user.id);
-          void useErrorNotebookStore.getState().loadForUser(refreshed.user.id);
-          return;
-        } catch {
-          await api.logout().catch(() => {});
-          useProgressStore.getState().resetProgressState();
-          useErrorNotebookStore.getState().resetForUser();
-          set({ user: null, isAuthenticated: false, isLoading: false });
+
+      set({ isLoading: true });
+      try {
+        const user = await api.getMe();
+        set({ user, isAuthenticated: true, isLoading: false });
+        cacheUser(user);
+        if (user?.name) {
+          useProgressStore.getState().setCandidateName(user.name);
+        }
+        useProgressStore.getState().syncWithBackend(user.id);
+        void useErrorNotebookStore.getState().loadForUser(user.id);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          // Access token expired: try the rotating HttpOnly refresh cookie once.
+          try {
+            const refreshed = await api.refreshSession();
+            set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
+            cacheUser(refreshed.user);
+            useProgressStore.getState().syncWithBackend(refreshed.user.id);
+            void useErrorNotebookStore.getState().loadForUser(refreshed.user.id);
+            return;
+          } catch {
+            await api.logout().catch(() => {});
+            useProgressStore.getState().resetProgressState();
+            useErrorNotebookStore.getState().resetForUser();
+            set({ user: null, isAuthenticated: false, isLoading: false });
+            return;
+          }
+        }
+        // A network/5xx failure must not destroy the local session token. If a
+        // recent profile snapshot exists, keep the authenticated UI usable in
+        // offline mode; 401/refresh failures above deliberately skip this path.
+        const cached = getCachedUser();
+        if (cached) {
+          set({ user: cached, isAuthenticated: true, isLoading: false });
           return;
         }
+        set({ user: null, isAuthenticated: false, isLoading: false });
       }
-      // A network/5xx failure must not destroy the local session token. If a
-      // recent profile snapshot exists, keep the authenticated UI usable in
-      // offline mode; 401/refresh failures above deliberately skip this path.
-      const cached = getCachedUser();
-      if (cached) {
-        set({ user: cached, isAuthenticated: true, isLoading: false });
-        return;
-      }
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    })();
+    try {
+      await checkAuthPromise;
+    } finally {
+      checkAuthPromise = null;
     }
   },
 }));

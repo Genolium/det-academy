@@ -113,9 +113,9 @@ export default function InstitutionsPage() {
             <PillBadge variant="lime" prefixHash className="mx-auto">
               {t.ctaBadge}
             </PillBadge>
-            <h3 className="text-2xl sm:text-4xl font-black uppercase text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black uppercase text-white tracking-tight">
               {t.ctaTitle}
-            </h3>
+            </h2>
             <p className="text-sm text-neutral-400">
               {t.ctaDesc}
             </p>

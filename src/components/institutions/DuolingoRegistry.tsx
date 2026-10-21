@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import institutionsData from '@/data/duolingoInstitutions.json';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useProgressStore } from '@/store/useProgressStore';
 import {
   Search,
@@ -53,26 +52,50 @@ export const DuolingoRegistry: React.FC = () => {
   const { getBestMockScore, testResults } = useProgressStore();
   const bestScore = getBestMockScore();
 
+  const [institutions, setInstitutions] = useState<DuolingoInstitution[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [selectedType, setSelectedType] = useState('ALL');
-  const [matchMyScore, setMatchMyScore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/registry/duolingo')
+      .then((response) => {
+        if (!response.ok) throw new Error(`registry returned ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (!active) return;
+        setInstitutions(Array.isArray(data) ? data : []);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadError('Не удалось загрузить реестр вузов.');
+        setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Available countries sorted by frequency
   const countries = useMemo(() => {
     const counts: Record<string, number> = {};
-    (institutionsData as DuolingoInstitution[]).forEach((item) => {
+    institutions.forEach((item) => {
       counts[item.country] = (counts[item.country] || 0) + 1;
     });
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .map(([country, count]) => ({ country, count }));
-  }, []);
+  }, [institutions]);
 
   // Filtered dataset
   const filtered = useMemo(() => {
-    let result = institutionsData as DuolingoInstitution[];
+    let result = institutions;
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -92,15 +115,8 @@ export const DuolingoRegistry: React.FC = () => {
       result = result.filter((item) => item.programTypes.includes(selectedType));
     }
 
-    if (matchMyScore && bestScore > 0) {
-      result = result.filter((item) => {
-        const required = getVerifiedMinScore(item);
-        return required !== null && bestScore >= required;
-      });
-    }
-
     return result;
-  }, [search, selectedCountry, selectedType, matchMyScore, bestScore]);
+  }, [institutions, search, selectedCountry, selectedType]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
   const paginated = useMemo(() => {
@@ -122,6 +138,23 @@ export const DuolingoRegistry: React.FC = () => {
     setSearch(val);
     setCurrentPage(1);
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-3xl p-10 border border-neutral-200 shadow-sm text-center">
+        <div className="w-7 h-7 border-2 border-neutral-300 border-t-[#0E1012] rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm font-semibold text-neutral-600">Загрузка реестра вузов...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div role="alert" className="bg-red-50 rounded-3xl p-6 border border-red-200 text-sm font-semibold text-red-700">
+        {loadError}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -147,7 +180,7 @@ export const DuolingoRegistry: React.FC = () => {
               onChange={(e) => handleCountryChange(e.target.value)}
               className="w-full sm:w-auto max-w-full px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
             >
-              <option value="All">🌍 Все страны ({institutionsData.length})</option>
+              <option value="All">🌍 Все страны ({institutions.length})</option>
               {countries.map(({ country, count }) => (
                 <option key={country} value={country}>
                   {country} ({count})
@@ -173,22 +206,13 @@ export const DuolingoRegistry: React.FC = () => {
         {/* Score Matching Banner & Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-neutral-100">
           <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => {
-                setMatchMyScore(!matchMyScore);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                matchMyScore
-                  ? 'bg-[#0E1012] text-[#D2F544] shadow-md'
-                  : 'bg-neutral-100 hover:bg-neutral-200 text-[#0E1012]'
-              }`}
+            <div
+              className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-neutral-100 text-neutral-500 cursor-not-allowed"
+              title="В реестре пока нет подтверждённых требований по баллам"
             >
               <Target className="w-3.5 h-3.5" />
-              <span>
-                {matchMyScore ? '✓ Фильтр: Только подходящие под мой балл' : 'Фильтр: Подходит под мой балл'}
-              </span>
-            </button>
+              <span>Требования вузов пока не подтверждены</span>
+            </div>
 
             {bestScore > 0 ? (
               <span className="text-xs text-neutral-500">
@@ -202,7 +226,7 @@ export const DuolingoRegistry: React.FC = () => {
           </div>
 
           <div className="text-xs text-neutral-500">
-            Найдено вузов: <strong className="text-[#0E1012]">{filtered.length.toLocaleString('ru-RU')}</strong> из {institutionsData.length.toLocaleString('ru-RU')}
+            Найдено вузов: <strong className="text-[#0E1012]">{filtered.length.toLocaleString('ru-RU')}</strong> из {institutions.length.toLocaleString('ru-RU')}
           </div>
         </div>
       </div>

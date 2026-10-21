@@ -146,6 +146,10 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 			RespondError(w, http.StatusForbidden, err.Error())
 			return
 		}
+		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {
+			RespondError(w, http.StatusConflict, err.Error())
+			return
+		}
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -178,6 +182,10 @@ func (h *TestHandler) CompleteStage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "access denied") {
 			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrStageAlreadyCompleted) {
+			RespondError(w, http.StatusConflict, err.Error())
 			return
 		}
 		RespondError(w, http.StatusBadRequest, err.Error())

@@ -83,7 +83,7 @@ export async function submitOrQueueResponse(
 function isPermanentRejection(err: unknown): boolean {
   if (!(err instanceof ApiError)) return false;
   if (err.status >= 500 || err.status === 0) return false;
-  if (err.status === 408 || err.status === 429) return false;
+  if (err.status === 401 || err.status === 408 || err.status === 429) return false;
   return err.status >= 400 && err.status < 500;
 }
 

@@ -53,14 +53,17 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, us
 	if session.Status != "COMPLETED" || session.OverallScore == nil {
 		return nil, errors.New("cannot issue certificate for incomplete session")
 	}
+	if session.Mode != "full" {
+		return nil, errors.New("certificates are only available for full mock tests")
+	}
 
 	if *session.OverallScore < 105 {
 		return nil, errors.New("score must be at least 105 to receive a certificate")
 	}
 
 	completedLessons, err := s.theoryRepo.GetUserProgress(ctx, session.UserID)
-	if err != nil || len(completedLessons) < TotalTheoryLessons {
-		return nil, errors.New("all 12 theory lessons must be completed to receive a certificate")
+	if err != nil || len(ValidCompletedLessons(completedLessons)) < TotalTheoryLessons {
+		return nil, errors.New("all 16 theory lessons must be completed to receive a certificate")
 	}
 
 	// Check if already issued
@@ -69,6 +72,10 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, us
 		return existing, nil
 	}
 
+	if session.ReadingScore == nil || session.ListeningScore == nil || session.WritingScore == nil || session.SpeakingScore == nil ||
+		session.LiteracyScore == nil || session.ComprehensionScore == nil || session.ProductionScore == nil || session.ConversationScore == nil {
+		return nil, errors.New("cannot issue certificate: session is missing one or more skill scores")
+	}
 	certID := "det-cert-" + session.ID[:8]
 	cert := &models.Certificate{
 		ID:                 certID,
@@ -76,6 +83,10 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, us
 		TestSessionID:      session.ID,
 		CandidateName:      session.CandidateName,
 		OverallScore:       *session.OverallScore,
+		ReadingScore:       *session.ReadingScore,
+		ListeningScore:     *session.ListeningScore,
+		WritingScore:       *session.WritingScore,
+		SpeakingScore:      *session.SpeakingScore,
 		LiteracyScore:      *session.LiteracyScore,
 		ComprehensionScore: *session.ComprehensionScore,
 		ProductionScore:    *session.ProductionScore,

@@ -35,7 +35,7 @@ import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isAuthenticated, logout, checkAuth, updateProfile } = useAuthStore();
+  const { user, isAuthenticated, logout, updateProfile } = useAuthStore();
   const { completedLessons, bestTypingWpm, testResults, candidateName, setCandidateName } = useProgressStore();
 
   const [providerData, setProviderData] = useState<LinkedProvidersResponse | null>(null);
@@ -80,11 +80,6 @@ function ProfileContent() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
-
-  // Check auth and redirect if not logged in
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
 
   // Load linked providers
   const loadProviders = useCallback(async () => {
@@ -867,7 +862,7 @@ function ProfileContent() {
 
         {/* Target Universities Match Widget */}
         <div className="pt-2">
-          <UniversityMatchWidget currentPredictedScore={bestScore || 115} />
+          <UniversityMatchWidget currentPredictedScore={bestScore || 0} />
         </div>
       </div>
       </div>

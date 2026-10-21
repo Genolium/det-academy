@@ -54,7 +54,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 
 function DashboardContent() {
   const router = useRouter();
-  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const {
     completedLessons,
     testResults,
@@ -83,10 +83,10 @@ function DashboardContent() {
   const [subscoresViewMode, setSubscoresViewMode] = useState<'subscores' | 'modalities'>('subscores');
 
   useEffect(() => {
-    checkAuth();
-    syncWithBackend(user?.id);
-    loadErrorsForUser(user?.id);
-  }, [checkAuth, syncWithBackend, loadErrorsForUser, user?.id]);
+    if (!user?.id) return;
+    syncWithBackend(user.id);
+    loadErrorsForUser(user.id);
+  }, [syncWithBackend, loadErrorsForUser, user?.id]);
 
   const bestScore = getBestMockScore();
   const readiness = getReadinessPercentage();

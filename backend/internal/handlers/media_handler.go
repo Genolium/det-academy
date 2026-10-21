@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -159,6 +160,10 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset)
 	if err != nil {
 		_ = os.Remove(targetPath)
+		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {
+			RespondError(w, http.StatusConflict, err.Error())
+			return
+		}
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}

@@ -16,6 +16,9 @@ import (
 )
 
 // Stages in sequence matching official modern DET 13-stage exam structure
+var ErrQuestionAlreadyAnswered = errors.New("question has already been answered")
+var ErrStageAlreadyCompleted = errors.New("stage has already been completed")
+
 var StageSequence = []string{
 	"READ_SELECT",
 	"FILL_BLANKS",
@@ -261,13 +264,20 @@ func (s *CATService) assignSessionQuestions(ctx context.Context, session *models
 		if limit <= 0 {
 			limit = 120
 		}
+		// The stage is the authoritative clock. Per-item deadlines derived from
+		// a single assignment timestamp would expire every item at once and
+		// reject legitimate answers after the first few seconds.
+		deadlineAt := now.Add(time.Duration(limit) * time.Second)
+		if session.DeadlineAt != nil {
+			deadlineAt = *session.DeadlineAt
+		}
 		assignments = append(assignments, models.SessionQuestion{
 			SessionID:  session.ID,
 			QuestionID: question.ID,
 			StageName:  session.StageName,
 			Position:   index,
 			IssuedAt:   now,
-			DeadlineAt: now.Add(time.Duration(limit) * time.Second),
+			DeadlineAt: deadlineAt,
 		})
 	}
 	return s.sessionRepo.AssignQuestions(ctx, assignments)
@@ -294,6 +304,28 @@ func (s *CATService) GetSession(ctx context.Context, sessionID, userID string) (
 		return nil, errors.New("access denied: session does not belong to user")
 	}
 	return session, nil
+}
+
+func isSpeakingQuestionType(questionType string) bool {
+	switch questionType {
+	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+		return true
+	default:
+		return false
+	}
+}
+
+// sanitizeResponsesForStudent removes grading metadata from an active attempt.
+// Correctness and raw scores are returned only through the review endpoint after
+// the session is completed.
+func sanitizeResponsesForStudent(responses []models.QuestionResponse) []models.QuestionResponse {
+	sanitized := make([]models.QuestionResponse, 0, len(responses))
+	for _, response := range responses {
+		response.IsCorrect = nil
+		response.RawScore = 0
+		sanitized = append(sanitized, response)
+	}
+	return sanitized
 }
 
 // GetSessionWithDetails retrieves active session with sanitized questions, recorded responses, and blueprint
@@ -323,7 +355,7 @@ func (s *CATService) GetSessionWithDetails(ctx context.Context, sessionID, userI
 	return &models.SessionDetailsResponse{
 		Session:   *session,
 		Questions: sanitizeQuestionsForStudent(questions),
-		Responses: responses,
+		Responses: sanitizeResponsesForStudent(responses),
 		Blueprint: models.GetDefaultExamBlueprint(),
 	}, nil
 }
@@ -415,6 +447,17 @@ func ComputeNextDifficulty(currentDiff string, accuracy float64) string {
 
 // SubmitStageResult completes a stage, adjusts CAT difficulty using IRT, and advances to next stage
 func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID string, req models.StageCompleteRequest) (*models.TestSession, []models.Question, error) {
+	var session *models.TestSession
+	var questions []models.Question
+	err := s.sessionRepo.WithSessionLock(ctx, sessionID, func() error {
+		var innerErr error
+		session, questions, innerErr = s.submitStageResultLocked(ctx, sessionID, userID, req)
+		return innerErr
+	})
+	return session, questions, err
+}
+
+func (s *CATService) submitStageResultLocked(ctx context.Context, sessionID, userID string, req models.StageCompleteRequest) (*models.TestSession, []models.Question, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, nil, errors.New("session not found")
@@ -425,6 +468,12 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 
 	if session.Status != "IN_PROGRESS" {
 		return nil, nil, errors.New("session is not in progress")
+	}
+	if req.StageName == "" {
+		return nil, nil, errors.New("stageName is required")
+	}
+	if req.StageName != session.StageName {
+		return nil, nil, ErrStageAlreadyCompleted
 	}
 
 	// Prefer server-verified responses for difficulty adaptation. A client
@@ -512,6 +561,17 @@ func (s *CATService) recordEvent(ctx context.Context, session *models.TestSessio
 
 // RecordQuestionResponse records and grades an individual question answer on the server
 func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, userID string, req models.SubmitResponseRequest) (bool, float64, error) {
+	var isCorrect bool
+	var score float64
+	err := s.sessionRepo.WithSessionLock(ctx, sessionID, func() error {
+		var innerErr error
+		isCorrect, score, innerErr = s.recordQuestionResponseLocked(ctx, sessionID, userID, req)
+		return innerErr
+	})
+	return isCorrect, score, err
+}
+
+func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID, userID string, req models.SubmitResponseRequest) (bool, float64, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return false, 0, errors.New("session not found")
@@ -543,6 +603,16 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			"itemDeadlineAt": assignment.DeadlineAt,
 		})
 		return false, 0, errors.New("item deadline exceeded: answer was not accepted")
+	}
+
+	// First write wins. The client may retry a response after a lost network
+	// acknowledgement, but it must never be able to replace the graded answer.
+	if existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID); existingErr == nil {
+		for _, existing := range existingResponses {
+			if existing.QuestionID == req.QuestionID {
+				return false, 0, ErrQuestionAlreadyAnswered
+			}
+		}
 	}
 
 	trimmedResponse := strings.TrimSpace(string(req.UserResponse))
@@ -1011,6 +1081,18 @@ func (s *CATService) GetSessionReview(ctx context.Context, sessionID, userID str
 func (s *CATService) RecordAudioResponse(
 	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset,
 ) (*models.EvaluationResult, error) {
+	var evaluation *models.EvaluationResult
+	err := s.sessionRepo.WithSessionLock(ctx, sessionID, func() error {
+		var innerErr error
+		evaluation, innerErr = s.recordAudioResponseLocked(ctx, sessionID, userID, questionID, audioURL, transcript, durationSec, fileSize, asset)
+		return innerErr
+	})
+	return evaluation, err
+}
+
+func (s *CATService) recordAudioResponseLocked(
+	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset,
+) (*models.EvaluationResult, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, errors.New("session not found")
@@ -1018,22 +1100,46 @@ func (s *CATService) RecordAudioResponse(
 	if session.UserID != userID {
 		return nil, errors.New("access denied: session does not belong to user")
 	}
-	if session.Status == "COMPLETED" {
+	if session.Status == "COMPLETED" || session.StageName == "COMPLETED" {
 		return nil, errors.New("session is already completed and cannot be modified")
+	}
+	if questionID == "" {
+		return nil, errors.New("questionId is required for an audio response")
+	}
+	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(10*time.Second)) {
+		return nil, errors.New("stage deadline exceeded: audio was not accepted")
+	}
+	assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, questionID)
+	if err != nil {
+		return nil, errors.New("question was not issued for this attempt")
+	}
+	if assignment.StageName != session.StageName {
+		return nil, errors.New("question belongs to another stage")
+	}
+	if time.Now().After(assignment.DeadlineAt.Add(10 * time.Second)) {
+		return nil, errors.New("item deadline exceeded: audio was not accepted")
+	}
+	question, err := s.questionRepo.GetByID(ctx, questionID)
+	if err != nil || question == nil {
+		return nil, errors.New("question not found")
+	}
+	if !isSpeakingQuestionType(question.Type) {
+		return nil, errors.New("audio responses are only accepted for speaking questions")
+	}
+	if existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID); existingErr == nil {
+		for _, existing := range existingResponses {
+			if existing.QuestionID == questionID {
+				return nil, ErrQuestionAlreadyAnswered
+			}
+		}
 	}
 
 	if err := s.sessionRepo.SaveMediaAsset(ctx, asset); err != nil {
 		return nil, fmt.Errorf("failed to save media asset: %w", err)
 	}
 
-	qType := "SPEAKING_SAMPLE"
-	var keywords []string
-	if questionID != "" {
-		if q, err := s.questionRepo.GetByID(ctx, questionID); err == nil && q != nil {
-			qType = q.Type
-			keywords = extractContextKeywords(q.ContentPayload)
-		}
-	}
+	qType := question.Type
+	keywords := extractContextKeywords(question.ContentPayload)
 
 	var eval models.EvaluationResult
 	if s.evaluationQueue != nil {
@@ -1674,7 +1780,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Check certificate eligibility:
 	// Rule from MAIN.MD: theory_progress_percentage == 100% AND best_mock_test_score >= 105
 	isTheoryComplete := s.theoryService.IsTheoryCompleted(ctx, session.UserID)
-	eligible := isTheoryComplete && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
+	eligible := session.Mode == "full" && isTheoryComplete && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
 
 	var cert *models.Certificate
 	if eligible {

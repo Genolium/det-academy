@@ -4,6 +4,7 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/service"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -52,6 +53,10 @@ func (h *TheoryHandler) ToggleCompletion(w http.ResponseWriter, r *http.Request)
 
 	progress, err := h.theoryService.ToggleCompletion(r.Context(), userID, req.LessonSlug)
 	if err != nil {
+		if errors.Is(err, service.ErrUnknownTheoryLesson) {
+			RespondError(w, http.StatusBadRequest, "unknown theory lesson")
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, "failed to toggle lesson completion")
 		return
 	}

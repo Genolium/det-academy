@@ -198,7 +198,7 @@ type QuestionResponse struct {
 	QuestionID   string          `json:"questionId"`
 	UserResponse json.RawMessage `json:"userResponse"`
 	IsCorrect    *bool           `json:"isCorrect,omitempty"`
-	RawScore     float64         `json:"rawScore"`
+	RawScore     float64         `json:"rawScore,omitempty"`
 	TimeSpentSec int             `json:"timeSpentSec"`
 	CreatedAt    time.Time       `json:"createdAt"`
 }

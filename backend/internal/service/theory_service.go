@@ -4,9 +4,12 @@ import (
 	"context"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	"errors"
 )
 
 const TotalTheoryLessons = 16
+
+var ErrUnknownTheoryLesson = errors.New("unknown theory lesson")
 
 var LessonSlugs = []string{
 	"rules-and-technicalities",
@@ -27,6 +30,31 @@ var LessonSlugs = []string{
 	"speaking-sample",
 }
 
+func IsValidLessonSlug(slug string) bool {
+	for _, valid := range LessonSlugs {
+		if valid == slug {
+			return true
+		}
+	}
+	return false
+}
+
+func ValidCompletedLessons(completed []string) []string {
+	seen := make(map[string]struct{}, len(completed))
+	valid := make([]string, 0, len(completed))
+	for _, slug := range completed {
+		if !IsValidLessonSlug(slug) {
+			continue
+		}
+		if _, exists := seen[slug]; exists {
+			continue
+		}
+		seen[slug] = struct{}{}
+		valid = append(valid, slug)
+	}
+	return valid
+}
+
 type TheoryService struct {
 	theoryRepo repository.TheoryRepository
 }
@@ -44,23 +72,27 @@ func (s *TheoryService) GetProgress(ctx context.Context, userID string) (*models
 		completed = []string{}
 	}
 
+	valid := ValidCompletedLessons(completed)
 	percent := 0
-	if len(completed) > 0 {
-		percent = (len(completed) * 100) / TotalTheoryLessons
+	if len(valid) > 0 {
+		percent = (len(valid) * 100) / TotalTheoryLessons
 		if percent > 100 {
 			percent = 100
 		}
 	}
 
 	return &models.TheoryProgressResponse{
-		CompletedLessons: completed,
+		CompletedLessons: valid,
 		TotalLessons:     TotalTheoryLessons,
 		ProgressPercent:  percent,
-		IsAllCompleted:   len(completed) >= TotalTheoryLessons,
+		IsAllCompleted:   len(valid) >= TotalTheoryLessons,
 	}, nil
 }
 
 func (s *TheoryService) ToggleCompletion(ctx context.Context, userID, lessonSlug string) (*models.TheoryProgressResponse, error) {
+	if !IsValidLessonSlug(lessonSlug) {
+		return nil, ErrUnknownTheoryLesson
+	}
 	_, err := s.theoryRepo.ToggleProgress(ctx, userID, lessonSlug)
 	if err != nil {
 		return nil, err
@@ -73,5 +105,5 @@ func (s *TheoryService) IsTheoryCompleted(ctx context.Context, userID string) bo
 	if err != nil {
 		return false
 	}
-	return len(completed) >= TotalTheoryLessons
+	return len(ValidCompletedLessons(completed)) >= TotalTheoryLessons
 }

@@ -28,6 +28,13 @@ export default function TestLobbyPage() {
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
+    // The test engine resumes a stored attempt by default. Starting a new
+    // exam must clear that pointer first, otherwise a new click silently
+    // continues an abandoned diagnostic or mock.
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('det_active_test_attempt_v2');
+      localStorage.removeItem('det_active_test_session_id');
+    }
     startNewSession(candidateName.trim() || user?.name || 'Candidate');
     router.push('/test/session');
   };

@@ -766,14 +766,26 @@ class ApiClient {
     rawScore: number;
     timeSpentSec: number;
   }): Promise<{ status: string }> {
-    let res: Response;
-    try {
-      res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
+    const send = () =>
+      fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
         method: 'POST',
         headers: this.getHeaders(),
         credentials: 'include',
         body: JSON.stringify(payload),
       });
+    let res: Response;
+    try {
+      res = await send();
+      if (res.status === 401) {
+        // A long mock can outlive the access token. Refresh once and retry the
+        // same queued answer instead of treating it as a permanent rejection.
+        let refreshed = false;
+        try {
+          await this.refreshSession();
+          refreshed = true;
+        } catch {}
+        if (refreshed) res = await send();
+      }
     } catch {
       throw new ApiError('Не удалось сохранить ответ на сервере', 0);
     }

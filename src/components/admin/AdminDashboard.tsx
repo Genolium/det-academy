@@ -37,7 +37,7 @@ import {
 type Tab = 'overview' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions';
 
 export const AdminDashboard: React.FC = () => {
-  const { user, login, logout, checkAuth, isLoading } = useAuthStore();
+  const { user, login, logout, isLoading } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   // Quick Admin Login states (when accessing /admin unauthenticated)
@@ -60,11 +60,6 @@ export const AdminDashboard: React.FC = () => {
   // Filters
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
-
-  // Check auth on initial mount
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
 
   // New Banner Form Modal
   const [showNewBannerModal, setShowNewBannerModal] = useState(false);
