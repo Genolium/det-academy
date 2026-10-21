@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, BackendTestSession, StudyPlanResponse } from '@/lib/api';
+import { hasAuthSession } from '@/lib/auth-session';
 
 export interface TestResult {
   id: string;
@@ -58,7 +59,6 @@ interface ProgressState {
   resetProgressState: () => void;
   setBestTypingWpm: (wpm: number) => void;
   addTestResult: (result: TestResult) => void;
-  isEligibleForCertificate: () => boolean;
   getBestMockScore: () => number;
   getReadinessPercentage: () => number;
   recordDailyActivity: () => void;
@@ -180,7 +180,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     }
     set({ targetScore });
 
-    if (typeof window !== 'undefined' && localStorage.getItem('det_token')) {
+    if (hasAuthSession()) {
       try {
         await api.updateUserGoals({
           targetScore,
@@ -199,7 +199,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     }
     set({ targetDate });
 
-    if (typeof window !== 'undefined' && localStorage.getItem('det_token')) {
+    if (hasAuthSession()) {
       try {
         await api.updateUserGoals({
           targetScore: get().targetScore,
@@ -218,7 +218,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     }
     set({ dailyMinutes });
 
-    if (typeof window !== 'undefined' && localStorage.getItem('det_token')) {
+    if (hasAuthSession()) {
       try {
         await api.updateUserGoals({
           targetScore: get().targetScore,
@@ -231,7 +231,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   loadStudyPlan: async () => {
-    if (typeof window !== 'undefined' && localStorage.getItem('det_token')) {
+    if (hasAuthSession()) {
       try {
         const plan = await api.getUserStudyPlan();
         if (plan) {
@@ -415,7 +415,8 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
   addTestResult: (result) => {
     set((state) => {
-      const updated = [result, ...state.testResults];
+      const existing = state.testResults.filter((item) => item.id !== result.id);
+      const updated = [result, ...existing];
       if (typeof window !== 'undefined') {
         localStorage.setItem(
           getScopedKey('test_results', state.userId),
@@ -447,13 +448,6 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     const typingPart = Math.min(10, (bestTypingWpm / 50) * 10);
 
     return Math.round(theoryPart + testPart + typingPart);
-  },
-
-  isEligibleForCertificate: () => {
-    const { completedLessons, testResults } = get();
-    const theoryFinished = completedLessons.length >= TOTAL_LESSONS;
-    const testPassed = testResults.some((r) => r.overallScore >= 105);
-    return theoryFinished && testPassed;
   },
 
   recordDailyActivity: () => {

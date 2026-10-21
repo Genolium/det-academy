@@ -86,6 +86,9 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             <span className="text-xs uppercase font-bold tracking-widest text-[#D2F544] block mb-1">
               {t.overallLabel}
             </span>
+            <span className="text-[10px] text-neutral-500 block mb-1">
+              Тренировочная оценка DET Academy, не официальный балл Duolingo
+            </span>
             <div className="text-6xl sm:text-7xl font-black text-white font-mono tracking-tight">
               {scores.overall}
               <span className="text-2xl text-neutral-500 font-normal"> / 160</span>
@@ -185,11 +188,22 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             </div>
           </div>
 
-          <Link href={certificateId ? `/verify/${certificateId}` : '/verify/demo'}>
-            <Button variant={isEligibleForCert ? 'primary' : 'outline'} size="sm">
-              {t.openVerifyBtn}
-            </Button>
-          </Link>
+          {certificateId ? (
+            <Link href={`/verify/${encodeURIComponent(certificateId)}`}>
+              <Button variant="primary" size="sm">
+                {t.openVerifyBtn}
+              </Button>
+            </Link>
+          ) : (
+            <div className="text-right">
+              <Button variant="outline" size="sm" disabled>
+                Сертификат не выдан
+              </Button>
+              <p className="text-[10px] text-neutral-500 mt-1 max-w-[220px]">
+                Ссылка на проверку появляется только после выдачи сертификата сервером.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Speaking & Writing Studio Breakdown */}

@@ -828,8 +828,46 @@ func ComputeFinalScores(req models.CompleteSessionRequest) models.CalculatedScor
 	}
 }
 
+
+// completedSessionResponse rebuilds the canonical response for an already
+// finalized attempt. It never recalculates or mutates scores.
+func (s *CATService) completedSessionResponse(ctx context.Context, session *models.TestSession) (*models.SessionCompleteResponse, error) {
+	intValue := func(value *int) int {
+		if value == nil {
+			return 0
+		}
+		return *value
+	}
+
+	scores := models.CalculatedScores{
+		Overall:       intValue(session.OverallScore),
+		Reading:       intValue(session.ReadingScore),
+		Listening:     intValue(session.ListeningScore),
+		Writing:       intValue(session.WritingScore),
+		Speaking:      intValue(session.SpeakingScore),
+		Literacy:      intValue(session.LiteracyScore),
+		Comprehension: intValue(session.ComprehensionScore),
+		Production:    intValue(session.ProductionScore),
+		Conversation:  intValue(session.ConversationScore),
+	}
+
+	cert, _ := s.certRepo.GetBySessionID(ctx, session.ID)
+	eligible := cert != nil
+	if !eligible {
+		eligible = s.theoryService.IsTheoryCompleted(ctx, session.UserID) && scores.Overall >= 105
+	}
+
+	return &models.SessionCompleteResponse{
+		Session:             *session,
+		Scores:              scores,
+		CertificateEligible: eligible,
+		Certificate:         cert,
+	}, nil
+}
+
 // CompleteSession finishes test, calculates scores, updates session, and generates certificate if eligible.
-// Requires ownership verification, non-empty verified responses, and rejects already completed sessions.
+// Requires ownership verification and non-empty verified responses. Repeated
+// calls for a completed attempt return the existing immutable result.
 func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID string, req models.CompleteSessionRequest) (*models.SessionCompleteResponse, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
@@ -839,7 +877,9 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 		return nil, errors.New("access denied: session does not belong to user")
 	}
 	if session.Status == "COMPLETED" {
-		return nil, errors.New("session is already completed and cannot be recalculated")
+		// Finalization is idempotent: a lost response or a double click must
+		// return the immutable result instead of creating a second one.
+		return s.completedSessionResponse(ctx, session)
 	}
 
 	// Verify that the session has actual recorded question responses

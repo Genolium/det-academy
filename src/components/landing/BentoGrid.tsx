@@ -132,7 +132,7 @@ export const BentoGrid: React.FC = () => {
 
         {/* Certificate Module (6 cols) */}
         <BentoCard variant="light" className="md:col-span-6 flex flex-col justify-between group cursor-pointer border-2 border-neutral-200">
-          <Link href="/verify/det-cert-8f921a4" className="block h-full">
+          <Link href="/verify" className="block h-full">
             <div className="flex items-center justify-between mb-6">
               <PillBadge variant="slate" prefixHash>
                 #CREDENTIALS

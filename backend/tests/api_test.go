@@ -103,6 +103,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Group(func(r chi.Router) {
 				r.Use(handlers.AuthMiddleware(authService))
 				r.Post("/sessions", testHandler.StartSession)
+				r.Get("/sessions/me", testHandler.GetMySessions)
 				r.Get("/sessions/{id}", testHandler.GetSession)
 				r.Post("/sessions/{id}/respond", testHandler.RecordResponse)
 				r.Post("/sessions/{id}/stage-complete", testHandler.CompleteStage)
@@ -424,14 +425,53 @@ func TestTestSessionLifecycle(t *testing.T) {
 			compResult.Scores.Literacy, compResult.Scores.Comprehension, compResult.Scores.Production, compResult.Scores.Conversation)
 	}
 
-	// 6. Verify completing the already completed session again is rejected
+	// 6. Verify completing the already completed session again is idempotent:
+	// the same immutable result is returned and no second result is created.
 	compAgainReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader(compBody))
 	compAgainReq.Header.Set("Authorization", "Bearer "+token)
 	compAgainW := httptest.NewRecorder()
 	r.ServeHTTP(compAgainW, compAgainReq)
-	if compAgainW.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 when attempting to complete an already completed session, got %d", compAgainW.Code)
+	if compAgainW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on repeated completion, got %d: %s", compAgainW.Code, compAgainW.Body.String())
 	}
+	var repeatedResult models.SessionCompleteResponse
+	_ = json.Unmarshal(compAgainW.Body.Bytes(), &repeatedResult)
+	if repeatedResult.Session.ID != compResult.Session.ID || repeatedResult.Scores.Overall != compResult.Scores.Overall {
+		t.Fatalf(
+			"expected repeated completion to return the same result, got session %s overall %d, want session %s overall %d",
+			repeatedResult.Session.ID, repeatedResult.Scores.Overall,
+			compResult.Session.ID, compResult.Scores.Overall,
+		)
+	}
+
+	sessionsAfter := getUserSessionsForTest(t, r, token)
+	completedCount := 0
+	for _, session := range sessionsAfter {
+		if session.ID == sessionID && session.Status == "COMPLETED" {
+			completedCount++
+		}
+	}
+	if completedCount != 1 {
+		t.Fatalf("expected exactly one completed session after repeated completion, got %d", completedCount)
+	}
+}
+
+func getUserSessionsForTest(t *testing.T, r http.Handler, token string) []models.TestSession {
+	t.Helper()
+	req := httptest.NewRequest("GET", "/api/v1/test/sessions/me", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 when listing sessions, got %d: %s", w.Code, w.Body.String())
+	}
+	var payload struct {
+		Sessions []models.TestSession `json:"sessions"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("failed to decode sessions: %v", err)
+	}
+	return payload.Sessions
 }
 
 func TestInstitutionsCatalog(t *testing.T) {

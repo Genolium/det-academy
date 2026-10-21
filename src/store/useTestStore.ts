@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { CalculatedScores, computeFinalScores } from '@/lib/scoring';
-import { evaluateWriteAboutPhoto, evaluateEssayWriting } from '@/lib/textEvaluator';
+import { CalculatedScores } from '@/lib/scoring';
 import { updateTheta2PL, DIFFICULTY_THETA_MAP } from '@/lib/irtCatEngine';
 import { BackendQuestion } from '@/lib/api';
 
@@ -20,6 +19,25 @@ export type StageName =
   | 'SPEAKING_SAMPLE'
   | 'COMPLETED';
 
+export type AttemptStatus =
+  | 'starting'
+  | 'in_progress'
+  | 'submitting'
+  | 'pending_sync'
+  | 'pending_evaluation'
+  | 'completed'
+  | 'failed'
+  | 'expired';
+
+interface ServerAttemptContext {
+  sessionId: string;
+  stage: StageName;
+  difficultyLevel: 'A2' | 'B1' | 'B2' | 'C1';
+  deadlineAt: number | null;
+  questions: BackendQuestion[];
+  revision?: number;
+}
+
 interface TestSessionState {
   sessionId: string;
   backendSessionId: string | null;
@@ -30,7 +48,18 @@ interface TestSessionState {
   deadlineAt: number | null; // Milliseconds timestamp
   serverQuestions: BackendQuestion[];
 
-  // Metrics collection across stages
+  // Trusted-result state. Only the server may move an attempt to `completed`.
+  attemptStatus: AttemptStatus;
+  attemptError: string | null;
+  serverRevision: number;
+  lastConfirmedStage: StageName | null;
+  lastSyncedAt: number | null;
+  resultId: string | null;
+  certificateId: string | null;
+  certificateEligible: boolean | null;
+
+  // Metrics collected locally for the current attempt. They are hints for the
+  // server, never a source of a confirmed result.
   readSelectCorrect: number;
   readSelectTotal: number;
 
@@ -52,7 +81,6 @@ interface TestSessionState {
   speakingTexts: string[];
 
   finalScores: CalculatedScores | null;
-  writingScoreRatio: number;
 
   // Actions
   startNewSession: (candidateName?: string) => void;
@@ -61,7 +89,16 @@ interface TestSessionState {
   setBackendSessionId: (id: string | null) => void;
   setServerQuestions: (questions: BackendQuestion[]) => void;
   setDeadlineAt: (deadline: number | null) => void;
-  setFinalScores: (scores: CalculatedScores) => void;
+  hydrateServerAttempt: (context: ServerAttemptContext) => void;
+  setAttemptStatus: (status: AttemptStatus, error?: string | null) => void;
+  setAttemptError: (error: string | null) => void;
+  applyServerCompletion: (result: {
+    sessionId: string;
+    scores: CalculatedScores;
+    certificateId?: string;
+    certificateEligible: boolean;
+    completedAt?: string;
+  }) => void;
   recordReadSelectResult: (correct: number, total: number) => void;
   recordFillBlanksResult: (correct: number, total: number) => void;
   recordCTestResult: (correct: number, total: number) => void;
@@ -72,78 +109,99 @@ interface TestSessionState {
   recordInteractiveWritingResult: (part1: string, part2: string) => void;
   recordWritingSampleResult: (text: string) => void;
   recordSpeakingResult: (text: string) => void;
-  finishTestAndCalculateScores: () => CalculatedScores;
 }
 
-export const useTestStore = create<TestSessionState>((set, get) => ({
+const INITIAL_ATTEMPT = {
   sessionId: '',
-  backendSessionId: null,
-  candidateName: 'Candidate',
-  currentStage: 'READ_SELECT',
-  difficultyLevel: 'B1',
+  backendSessionId: null as string | null,
+  currentStage: 'READ_SELECT' as StageName,
+  difficultyLevel: 'B1' as const,
   thetaAbility: 0.0,
-  deadlineAt: null,
-  serverQuestions: [],
-
+  deadlineAt: null as number | null,
+  serverQuestions: [] as BackendQuestion[],
+  attemptStatus: 'starting' as AttemptStatus,
+  attemptError: null as string | null,
+  serverRevision: 0,
+  lastConfirmedStage: null as StageName | null,
+  lastSyncedAt: null as number | null,
+  resultId: null as string | null,
+  certificateId: null as string | null,
+  certificateEligible: null as boolean | null,
   readSelectCorrect: 0,
   readSelectTotal: 0,
-
   fillBlanksCorrect: 0,
   fillBlanksTotal: 0,
-
   cTestCorrect: 0,
   cTestTotal: 0,
-
   listenTypeSimilaritySum: 0,
   listenTypeTotal: 0,
-
   interactiveReadingScore: 0,
   interactiveListeningScore: 0,
-
-  writePhotoTexts: [],
+  writePhotoTexts: [] as string[],
   interactiveWritingTexts: { part1: '', part2: '' },
   writingSampleText: '',
-  speakingTexts: [],
+  speakingTexts: [] as string[],
+  finalScores: null as CalculatedScores | null,
+};
 
-  finalScores: null,
-  writingScoreRatio: 0,
+export const useTestStore = create<TestSessionState>((set, get) => ({
+  ...INITIAL_ATTEMPT,
+  candidateName: 'Candidate',
 
   startNewSession: (candidateName = 'Candidate') => {
-    const newSessionId = 'det-' + Math.random().toString(36).substring(2, 9);
     set({
-      sessionId: newSessionId,
-      backendSessionId: null,
+      ...INITIAL_ATTEMPT,
       candidateName,
-      currentStage: 'READ_SELECT',
-      difficultyLevel: 'B1',
-      thetaAbility: 0.0,
-      deadlineAt: null,
-      serverQuestions: [],
-      readSelectCorrect: 0,
-      readSelectTotal: 0,
-      fillBlanksCorrect: 0,
-      fillBlanksTotal: 0,
-      cTestCorrect: 0,
-      cTestTotal: 0,
-      listenTypeSimilaritySum: 0,
-      listenTypeTotal: 0,
-      interactiveReadingScore: 0,
-      interactiveListeningScore: 0,
-      writePhotoTexts: [],
-      interactiveWritingTexts: { part1: '', part2: '' },
-      writingSampleText: '',
-      speakingTexts: [],
-      finalScores: null,
-      writingScoreRatio: 0,
     });
   },
 
   setStage: (stage) => set({ currentStage: stage }),
   setDifficultyLevel: (level) => set({ difficultyLevel: level }),
-  setBackendSessionId: (id) => set({ backendSessionId: id }),
+  setBackendSessionId: (id) =>
+    set({ backendSessionId: id, sessionId: id || '', attemptStatus: id ? 'in_progress' : 'starting' }),
   setServerQuestions: (questions) => set({ serverQuestions: questions }),
   setDeadlineAt: (deadline) => set({ deadlineAt: deadline }),
-  setFinalScores: (scores) => set({ finalScores: scores, currentStage: 'COMPLETED' }),
+
+  hydrateServerAttempt: (context) => {
+    set((state) => ({
+      backendSessionId: context.sessionId,
+      sessionId: context.sessionId,
+      currentStage: context.stage,
+      difficultyLevel: context.difficultyLevel,
+      deadlineAt: context.deadlineAt,
+      serverQuestions: context.questions,
+      serverRevision: context.revision ?? state.serverRevision,
+      lastConfirmedStage: context.stage,
+      lastSyncedAt: Date.now(),
+      attemptStatus: 'in_progress',
+      attemptError: null,
+    }));
+  },
+
+  setAttemptStatus: (status, error = null) =>
+    set((state) => ({
+      attemptStatus: status,
+      attemptError: error,
+      lastSyncedAt: status === 'in_progress' || status === 'completed' ? Date.now() : state.lastSyncedAt,
+    })),
+
+  setAttemptError: (error) => set({ attemptError: error }),
+
+  applyServerCompletion: (result) => {
+    set({
+      backendSessionId: result.sessionId,
+      sessionId: result.sessionId,
+      finalScores: result.scores,
+      resultId: result.sessionId,
+      certificateId: result.certificateId,
+      certificateEligible: result.certificateEligible,
+      currentStage: 'COMPLETED',
+      lastConfirmedStage: 'COMPLETED',
+      attemptStatus: 'completed',
+      attemptError: null,
+      lastSyncedAt: Date.now(),
+    });
+  },
 
   recordReadSelectResult: (correct, total) => {
     const accuracy = total > 0 ? correct / total : 0;
@@ -194,48 +252,4 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
   recordWritingSampleResult: (text) => set({ writingSampleText: text }),
   recordSpeakingResult: (text) =>
     set((state) => ({ speakingTexts: [...state.speakingTexts, text] })),
-
-  finishTestAndCalculateScores: () => {
-    const state = get();
-    // If backend scores were already supplied, respect them as source of truth
-    if (state.finalScores) {
-      return state.finalScores;
-    }
-
-    const rsRatio = state.readSelectTotal > 0 ? state.readSelectCorrect / state.readSelectTotal : 0;
-    const fbRatio = state.fillBlanksTotal > 0 ? state.fillBlanksCorrect / state.fillBlanksTotal : 0;
-    const ctRatio = state.cTestTotal > 0 ? state.cTestCorrect / state.cTestTotal : 0;
-    const ltRatio = state.listenTypeTotal > 0 ? state.listenTypeSimilaritySum / state.listenTypeTotal : 0;
-
-    // Writing evaluation using Rubric Grader
-    let photoScoresSum = 0;
-    state.writePhotoTexts.forEach((text) => {
-      const fb = evaluateWriteAboutPhoto(text, {
-        expectedKeywords: ['laboratory', 'students', 'engineer', 'presentation', 'monitors', 'researcher'],
-      });
-      photoScoresSum += fb.score;
-    });
-    const photoAvg = state.writePhotoTexts.length > 0 ? photoScoresSum / state.writePhotoTexts.length : 0;
-
-    const iwPart1Fb = evaluateEssayWriting(state.interactiveWritingTexts.part1, 80, ['university', 'students', 'education', 'courses']);
-    const iwPart2Fb = evaluateEssayWriting(state.interactiveWritingTexts.part2, 50, ['support', 'stress', 'mental', 'employers']);
-    const wsFb = evaluateEssayWriting(state.writingSampleText, 100, ['transportation', 'environment', 'economic', 'philosophy', 'intelligence', 'academic']);
-
-    const writingRatio = state.writePhotoTexts.length > 0 || state.writingSampleText || state.interactiveWritingTexts.part1
-      ? Math.min(1.0, Math.max(0.0, photoAvg * 0.25 + iwPart1Fb.score * 0.25 + iwPart2Fb.score * 0.2 + wsFb.score * 0.3))
-      : 0;
-
-    const scores = computeFinalScores({
-      readSelectAccuracy: rsRatio,
-      fillBlanksAccuracy: fbRatio,
-      cTestAccuracy: ctRatio,
-      listenTypeAccuracy: ltRatio,
-      interactiveReadingScore: state.interactiveReadingScore,
-      interactiveListeningScore: state.interactiveListeningScore,
-      writingScore: writingRatio,
-    });
-
-    set({ finalScores: scores, writingScoreRatio: writingRatio, currentStage: 'COMPLETED' });
-    return scores;
-  },
 }));

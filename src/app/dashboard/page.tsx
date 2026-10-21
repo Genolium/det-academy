@@ -69,7 +69,6 @@ function DashboardContent() {
     syncWithBackend,
     getBestMockScore,
     getReadinessPercentage,
-    isEligibleForCertificate,
     candidateName,
   } = useProgressStore();
 
@@ -429,50 +428,40 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Certificate Status Widget */}
+            {/* Server registry widget */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-neutral-900 to-[#121614] border border-[#D2F544]/20">
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#D2F544]/20 border border-[#D2F544]/40 flex items-center justify-center text-[#D2F544] shrink-0 mt-0.5">
                   <Award className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Сертификат DET Academy</span>
-                    {isEligibleForCertificate() && (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-500 text-black">
-                        ДОСТУПЕН
-                      </span>
-                    )}
-                  </h4>
+                  <h4 className="text-xs font-bold text-white">Отчёты DET Academy</h4>
                   <p className="text-[11px] text-neutral-400 mt-1">
-                    {isEligibleForCertificate()
-                      ? 'Все нормативы выполнены! Ваш сертификат готов к выпуску и верификации.'
-                      : 'Пройдите 16 уроков и сдайте тест от 105 баллов для подтверждения готовности.'}
+                    Сертификат существует только после выдачи сервером. Локальные баллы и прогресс
+                    теории не создают документ.
                   </p>
                 </div>
               </div>
 
-              {isEligibleForCertificate() ? (
-                <Link
-                  href="/verify"
-                  className="mt-3 w-full py-2 px-3 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Посмотреть сертификат</span>
-                </Link>
-              ) : (
-                <div className="mt-3 flex items-center gap-2 text-[10px] text-neutral-500">
-                  <div className="flex items-center gap-1">
-                    {completedLessons.length >= 16 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
-                    <span>16 уроков</span>
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    {bestScore >= 105 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
-                    <span>Тест 105+</span>
-                  </div>
+              <Link
+                href="/verify"
+                className="mt-3 w-full py-2 px-3 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-[#D2F544]/60 text-white text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#D2F544]" />
+                <span>Проверить отчёт по ID</span>
+              </Link>
+
+              <div className="mt-3 flex items-center gap-2 text-[10px] text-neutral-500">
+                <div className="flex items-center gap-1">
+                  {completedLessons.length >= 16 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
+                  <span>16 уроков</span>
                 </div>
-              )}
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  {bestScore >= 105 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
+                  <span>Тест 105+</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

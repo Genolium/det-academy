@@ -14,7 +14,7 @@ import {
   Lock,
   Search,
 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 
 interface VerifyPageProps {
   params: Promise<{ id: string }>;
@@ -41,12 +41,14 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState<CertificateData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<'not_found' | 'network' | 'unknown' | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     if (!certId) {
       setError('Идентификатор сертификата не указан');
+      setErrorKind('not_found');
       setLoading(false);
       return;
     }
@@ -54,6 +56,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
     const fetchCert = async () => {
       setLoading(true);
       setError(null);
+      setErrorKind(null);
       try {
         const data = await api.getCertificate(certId);
         if (isMounted) {
@@ -75,12 +78,22 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           } else {
             setCert(null);
             setError('Сертификат с указанным идентификатором не найден');
+            setErrorKind('not_found');
           }
         }
-      } catch {
+      } catch (err) {
         if (isMounted) {
           setCert(null);
-          setError('Не удалось найти сертификат или произошла ошибка связи');
+          if (err instanceof ApiError && err.status === 404) {
+            setErrorKind('not_found');
+            setError('Сертификат с указанным идентификатором не зарегистрирован');
+          } else if (err instanceof ApiError && err.status === 0) {
+            setErrorKind('network');
+            setError('Реестр сертификатов временно недоступен. Это не означает, что сертификат отсутствует.');
+          } else {
+            setErrorKind('unknown');
+            setError('Не удалось проверить сертификат из-за ошибки реестра. Повторите попытку позже.');
+          }
         }
       } finally {
         if (isMounted) {
@@ -135,9 +148,23 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             <ShieldAlert className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white">Сертификат не найден</h1>
+            <h1 className="text-2xl font-black text-white">
+              {errorKind === 'network'
+                ? 'Реестр недоступен'
+                : errorKind === 'not_found'
+                ? 'Сертификат не найден'
+                : 'Не удалось проверить сертификат'}
+            </h1>
             <p className="text-sm text-neutral-400 mt-2">
-              Документ с номером <span className="font-mono text-neutral-200">{certId}</span> не зарегистрирован в базе подтверждённых результатов DET Academy.
+              {errorKind === 'network' ? (
+                error
+              ) : (
+                <>
+                  Документ с номером{' '}
+                  <span className="font-mono text-neutral-200">{certId}</span> не зарегистрирован
+                  в реестре отчётов DET Academy.
+                </>
+              )}
             </p>
           </div>
           <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
@@ -199,7 +226,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             <div className="flex items-center gap-2 text-emerald-400">
               <ShieldCheck className="w-5 h-5" />
               <span className="text-xs font-bold uppercase tracking-wider">
-                Официально подтверждённый отчёт тренировочного экзамена
+                Отчёт тренировочного экзамена DET Academy
               </span>
             </div>
             <div className="font-mono text-xs text-neutral-400 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
@@ -255,10 +282,10 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
 
             <div>
               <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                Статус сертификации
+                Статус в реестре DET Academy
               </span>
               <p className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> {cert.isVerified ? 'Подтверждён в реестре' : 'На проверке'}
+                <CheckCircle2 className="w-4 h-4" /> {cert.isVerified ? 'Зарегистрирован в реестре DET Academy' : 'Ожидает проверки'}
               </p>
             </div>
           </div>
@@ -267,7 +294,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           <div className="bg-gradient-to-br from-[#12161A] to-[#0A0D0F] border border-neutral-800 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
               <span className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">
-                Итоговый балл (Overall DET Score)
+                Тренировочная оценка (Overall Estimate)
               </span>
               <div className="flex items-baseline justify-center md:justify-start gap-2 mt-1">
                 <span className="text-6xl sm:text-7xl font-black text-[#D2F544] tracking-tight">
