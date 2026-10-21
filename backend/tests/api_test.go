@@ -87,6 +87,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Put("/goals", studyHandler.UpdateGoals)
 			r.Get("/plan", studyHandler.GetStudyPlan)
 			r.Get("/report/weekly", studyHandler.GetWeeklyReport)
+			r.Post("/plan/tasks/{id}/complete", studyHandler.CompletePlanTask)
 			r.Get("/analytics/skills", studyHandler.GetSkillAnalytics)
 			r.Get("/errors", studyHandler.GetErrors)
 			r.Post("/errors", studyHandler.SaveError)
@@ -923,6 +924,45 @@ func TestDiagnosticSessionUsesShortBlueprint(t *testing.T) {
 	if len(payload.Questions) > 6 {
 		t.Fatalf("expected short diagnostic set, got %d questions", len(payload.Questions))
 	}
+}
+
+func TestPlanTaskCompletionPersists(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email: "tasks@det-academy.com", Password: "strongPassword123!", Name: "Tasks", Locale: "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	completeReq := httptest.NewRequest("POST", "/api/v1/user/plan/tasks/task-srs/complete", nil)
+	completeReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	completeW := httptest.NewRecorder()
+	r.ServeHTTP(completeW, completeReq)
+	if completeW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on task completion, got %d: %s", completeW.Code, completeW.Body.String())
+	}
+
+	planReq := httptest.NewRequest("GET", "/api/v1/user/plan", nil)
+	planReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	planW := httptest.NewRecorder()
+	r.ServeHTTP(planW, planReq)
+	if planW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on plan, got %d", planW.Code)
+	}
+	var plan models.StudyPlanResponse
+	_ = json.Unmarshal(planW.Body.Bytes(), &plan)
+	for _, task := range plan.TasksToday {
+		if task.ID == "task-srs" {
+			if !task.Completed || task.CompletedAt == "" {
+				t.Fatalf("expected completed task-srs, got %+v", task)
+			}
+			return
+		}
+	}
+	t.Fatal("task-srs missing from plan")
 }
 
 func TestInstitutionsCatalog(t *testing.T) {

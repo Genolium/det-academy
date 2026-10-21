@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import vocabData from '@/data/academicVocabulary.json';
 import { useAuthStore } from '@/store/useAuthStore';
 import { hasAuthSession } from '@/lib/auth-session';
@@ -139,7 +139,7 @@ export const SrsFlashcards: React.FC = () => {
   }, [storage.cards, todayStr]);
 
   // Determine active list according to mode
-  const activeList = useMemo(() => {
+  const computedActiveList = useMemo(() => {
     if (queueMode === 'due') {
       return dueCards;
     }
@@ -148,6 +148,23 @@ export const SrsFlashcards: React.FC = () => {
     }
     return allCards;
   }, [queueMode, dueCards, newCards, allCards]);
+
+  // Freeze the queue for the duration of a session so grading a card does not
+  // remove it from the list and shift the next card into the skipped index.
+  const [sessionQueue, setSessionQueue] = useState<typeof vocabData>([]);
+  const sessionModeRef = useRef(queueMode);
+
+  useEffect(() => {
+    if (sessionModeRef.current !== queueMode) {
+      sessionModeRef.current = queueMode;
+      setSessionQueue(computedActiveList);
+      setCurrentIndex(0);
+    } else if (sessionQueue.length === 0 && computedActiveList.length > 0) {
+      setSessionQueue(computedActiveList);
+    }
+  }, [queueMode, computedActiveList, sessionQueue.length]);
+
+  const activeList = sessionQueue.length > 0 ? sessionQueue : computedActiveList;
 
   const currentWord = activeList[currentIndex] || activeList[0] || null;
 

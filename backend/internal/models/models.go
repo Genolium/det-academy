@@ -651,6 +651,7 @@ type DailyTask struct {
 	Count       int    `json:"count,omitempty"`
 	Priority    string `json:"priority"` // "HIGH", "MEDIUM", "LOW"
 	Completed   bool   `json:"completed"`
+	CompletedAt string `json:"completedAt,omitempty"`
 }
 
 type StudyPlanResponse struct {

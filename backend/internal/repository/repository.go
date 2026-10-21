@@ -114,6 +114,8 @@ type StudyRepository interface {
 	// Daily activity / streak
 	RecordActivity(ctx context.Context, userID, activityDate, source string) error
 	GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error)
+	CompletePlanTask(ctx context.Context, userID, taskID, taskDate, source string) error
+	GetPlanTaskCompletions(ctx context.Context, userID, taskDate string) (map[string]time.Time, error)
 
 	// Spaced Repetition (SRS)
 	GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error)

@@ -1103,6 +1103,17 @@ class ApiClient {
     return res.json();
   }
 
+  async completePlanTask(taskId: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/plan/tasks/${encodeURIComponent(taskId)}/complete`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to complete plan task', res.status);
+    }
+  }
+
   async updateUserGoals(data: UpdateGoalsRequest): Promise<UserGoal> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/goals`, {
       method: 'PUT',

@@ -1285,6 +1285,37 @@ func (r *StudyRepo) GetActivityDates(ctx context.Context, userID string, limit i
 	return dates, rows.Err()
 }
 
+func (r *StudyRepo) CompletePlanTask(ctx context.Context, userID, taskID, taskDate, source string) error {
+	query := `
+		INSERT INTO study_plan_task_completions (user_id, task_id, task_date, source, completed_at)
+		VALUES ($1, $2, $3, $4, NOW())
+		ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
+			source = EXCLUDED.source,
+			completed_at = EXCLUDED.completed_at
+	`
+	_, err := r.db.ExecContext(ctx, query, userID, taskID, taskDate, source)
+	return err
+}
+
+func (r *StudyRepo) GetPlanTaskCompletions(ctx context.Context, userID, taskDate string) (map[string]time.Time, error) {
+	query := `SELECT task_id, completed_at FROM study_plan_task_completions WHERE user_id = $1 AND task_date = $2`
+	rows, err := r.db.QueryContext(ctx, query, userID, taskDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := map[string]time.Time{}
+	for rows.Next() {
+		var taskID string
+		var completedAt time.Time
+		if err := rows.Scan(&taskID, &completedAt); err != nil {
+			return nil, err
+		}
+		result[taskID] = completedAt
+	}
+	return result, rows.Err()
+}
+
 func (r *StudyRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {
 	query := `
 		SELECT streak_days, COALESCE(last_studied_date, ''), total_reviewed

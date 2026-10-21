@@ -35,10 +35,11 @@ type MemoryStorage struct {
 	srsStats          map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards          map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
 	activity          map[string]map[string]bool                    // userID -> date -> active
-	events            map[string][]models.SessionEvent              // sessionID -> events
-	sessionQuestions  map[string][]models.SessionQuestion           // sessionID -> assignments
-	vocabulary        map[string]models.VocabularyEntry             // entryID -> entry
-	oauthTransactions map[string]models.OAuthTransaction            // stateHash -> transaction
+	taskCompletions   map[string]map[string]time.Time
+	events            map[string][]models.SessionEvent    // sessionID -> events
+	sessionQuestions  map[string][]models.SessionQuestion // sessionID -> assignments
+	vocabulary        map[string]models.VocabularyEntry   // entryID -> entry
+	oauthTransactions map[string]models.OAuthTransaction  // stateHash -> transaction
 	sessionLockMu     sync.Mutex
 	sessionLocks      map[string]*sync.Mutex
 }
@@ -63,6 +64,7 @@ func New() *MemoryStorage {
 		srsStats:          make(map[string]*models.SRSStats),
 		srsCards:          make(map[string]map[string]*models.SRSCardProgress),
 		activity:          make(map[string]map[string]bool),
+		taskCompletions:   make(map[string]map[string]time.Time),
 		events:            make(map[string][]models.SessionEvent),
 		sessionQuestions:  make(map[string][]models.SessionQuestion),
 		vocabulary:        make(map[string]models.VocabularyEntry),
@@ -2115,6 +2117,29 @@ func (r *studyMemoryRepo) GetActivityDates(ctx context.Context, userID string, l
 		dates = dates[:limit]
 	}
 	return dates, nil
+}
+
+func taskCompletionKey(userID, taskDate string) string { return userID + "|" + taskDate }
+
+func (r *studyMemoryRepo) CompletePlanTask(ctx context.Context, userID, taskID, taskDate, source string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	key := taskCompletionKey(userID, taskDate)
+	if r.s.taskCompletions[key] == nil {
+		r.s.taskCompletions[key] = map[string]time.Time{}
+	}
+	r.s.taskCompletions[key][taskID] = time.Now().UTC()
+	return nil
+}
+
+func (r *studyMemoryRepo) GetPlanTaskCompletions(ctx context.Context, userID, taskDate string) (map[string]time.Time, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	result := map[string]time.Time{}
+	for taskID, completedAt := range r.s.taskCompletions[taskCompletionKey(userID, taskDate)] {
+		result[taskID] = completedAt
+	}
+	return result, nil
 }
 
 func (r *studyMemoryRepo) GetSRSStats(ctx context.Context, userID string) (*models.SRSStats, error) {

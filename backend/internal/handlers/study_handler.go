@@ -268,3 +268,17 @@ func (h *StudyHandler) GetWeeklyReport(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, report)
 }
+
+func (h *StudyHandler) CompletePlanTask(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	taskID := chi.URLParam(r, "id")
+	if err := h.studyService.CompletePlanTask(r.Context(), userID, taskID); err != nil {
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "completed"})
+}

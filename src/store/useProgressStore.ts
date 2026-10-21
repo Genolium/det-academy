@@ -54,6 +54,7 @@ interface ProgressState {
   setTargetDate: (date: string) => Promise<void>;
   setDailyMinutes: (minutes: number) => Promise<void>;
   loadStudyPlan: () => Promise<void>;
+  completeDailyTask: (taskId: string) => Promise<void>;
   toggleLessonCompleted: (slug: string) => Promise<void>;
   syncWithBackend: (userId?: string | null) => Promise<void>;
   resetProgressState: () => void;
@@ -246,6 +247,11 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         // ignore
       }
     }
+  },
+
+  completeDailyTask: async (taskId) => {
+    await api.completePlanTask(taskId);
+    await get().loadStudyPlan();
   },
 
   syncWithBackend: async (explicitUserId) => {

@@ -314,6 +314,15 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 			currentEstimate, goal.TargetScore, goal.TargetScore-currentEstimate)
 	}
 
+	today := time.Now().UTC().Format("2006-01-02")
+	completions, _ := s.storage.Study().GetPlanTaskCompletions(ctx, userID, today)
+	for index := range tasks {
+		if completedAt, ok := completions[tasks[index].ID]; ok {
+			tasks[index].Completed = true
+			tasks[index].CompletedAt = completedAt.Format(time.RFC3339)
+		}
+	}
+
 	return &models.StudyPlanResponse{
 		TargetScore:       goal.TargetScore,
 		TargetDate:        goal.TargetDate,
@@ -781,6 +790,18 @@ func (s *StudyService) GetSkillAnalytics(ctx context.Context, userID string) (*m
 		Recommendations: recs,
 		History:         history,
 	}, nil
+}
+
+func (s *StudyService) CompletePlanTask(ctx context.Context, userID, taskID string) error {
+	allowed := map[string]bool{
+		"task-srs": true, "task-errors": true, "task-drill": true,
+		"task-theory": true, "task-mock": true,
+	}
+	if !allowed[taskID] {
+		return errors.New("unknown plan task")
+	}
+	today := time.Now().UTC().Format("2006-01-02")
+	return s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, "manual")
 }
 
 func (s *StudyService) GetWeeklyReport(ctx context.Context, userID string) (*models.WeeklyReport, error) {

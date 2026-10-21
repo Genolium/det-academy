@@ -66,6 +66,7 @@ function DashboardContent() {
     setTargetDate,
     setDailyMinutes,
     loadStudyPlan,
+    completeDailyTask,
     toggleLessonCompleted,
     syncWithBackend,
     getBestMockScore,
@@ -329,28 +330,51 @@ function DashboardContent() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {studyPlan.tasksToday.map((task) => (
-                    <Link
+                    <div
                       key={task.id}
-                      href={task.actionUrl}
-                      className="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800/80 border border-neutral-800 hover:border-neutral-700 transition-all flex items-center justify-between group cursor-pointer"
+                      className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+                        task.completed
+                          ? 'bg-emerald-950/20 border-emerald-900/50'
+                          : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700'
+                      }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <Link href={task.actionUrl} className="flex items-center gap-2.5 min-w-0 flex-1 group">
                         <div
                           className={`w-2 h-2 rounded-full shrink-0 ${
-                            task.priority === 'HIGH' ? 'bg-amber-400 animate-pulse' : 'bg-[#D2F544]'
+                            task.completed
+                              ? 'bg-emerald-400'
+                              : task.priority === 'HIGH'
+                              ? 'bg-amber-400 animate-pulse'
+                              : 'bg-[#D2F544]'
                           }`}
                         />
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate group-hover:text-[#D2F544] transition-colors">
+                          <p
+                            className={`text-xs font-bold truncate transition-colors ${
+                              task.completed ? 'text-emerald-200 line-through' : 'text-white group-hover:text-[#D2F544]'
+                            }`}
+                          >
                             {task.title}
                           </p>
                           <p className="text-[10px] text-neutral-400 truncate max-w-[240px]">
                             {task.description}
                           </p>
                         </div>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors shrink-0 ml-2" />
-                    </Link>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void completeDailyTask(task.id)}
+                        disabled={task.completed}
+                        className={`shrink-0 rounded-lg p-1.5 transition-colors ${
+                          task.completed
+                            ? 'text-emerald-400'
+                            : 'text-neutral-500 hover:text-white hover:bg-neutral-800'
+                        }`}
+                        title={task.completed ? 'Задание выполнено' : 'Отметить выполненным'}
+                      >
+                        {task.completed ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

@@ -214,6 +214,7 @@ func main() {
 			r.Put("/goals", studyHandler.UpdateGoals)
 			r.Get("/plan", studyHandler.GetStudyPlan)
 			r.Get("/report/weekly", studyHandler.GetWeeklyReport)
+			r.Post("/plan/tasks/{id}/complete", studyHandler.CompletePlanTask)
 			r.Get("/analytics/skills", studyHandler.GetSkillAnalytics)
 			r.Get("/errors", studyHandler.GetErrors)
 			r.Post("/errors", studyHandler.SaveError)

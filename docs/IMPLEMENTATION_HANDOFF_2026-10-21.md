@@ -1119,3 +1119,14 @@ npx playwright test   # 11 passed
 - Auth: email verification, refresh/revocation, rate limits, CSRF.
 - Backups/restore drill, Sentry/metrics/alerts.
 - Mobile/PWA/a11y.
+
+---
+
+## 12. Итерация 7: daily plan persistence и SRS snapshot (21 октября 2026)
+
+- Добавлена таблица `study_plan_task_completions` и API `POST /user/plan/tasks/{id}/complete`.
+- `GET /user/plan` отмечает выполненные задачи за сегодня и возвращает `completedAt`.
+- Dashboard показывает статус задачи и кнопку «Отметить выполненным».
+- SRS-очередь фиксируется на время сессии: оценка карточки больше не сдвигает следующую карточку и не пропускает её.
+- SRS recall-check остаётся перед переворотом карточки.
+- Проверки: `go test ./...`, `npx tsc --noEmit`, `npm run build`, `npx playwright test` — 11 passed.
