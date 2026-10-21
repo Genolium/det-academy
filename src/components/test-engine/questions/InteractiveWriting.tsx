@@ -5,7 +5,7 @@ import { interactiveWritingBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { api } from '@/lib/api';
+import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, BookOpen, Lock } from 'lucide-react';
 
@@ -55,7 +55,7 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
       const finalP2 = part2Ref.current;
 
       if (backendSessionId && serverQ) {
-        api.submitQuestionResponse(backendSessionId, {
+        submitOrQueueResponse(backendSessionId, {
           questionId: serverQ.id,
           userResponse: { part1: finalP1, part2: finalP2 },
           rawScore: 0,

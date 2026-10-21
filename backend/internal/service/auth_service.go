@@ -40,9 +40,17 @@ type AuthService struct {
 	appleKeysMu        sync.RWMutex
 	appleKeys          map[string]*rsa.PublicKey
 	appleKeysFetchedAt time.Time
+
+	oauthRepo          repository.OAuthTransactionRepository
+	googleClientSecret string
+	googleTokenURL     string
+	appleTokenURL      string
+	appleTeamID        string
+	appleKeyID         string
+	applePrivateKey    string
 }
 
-func NewAuthService(userRepo repository.UserRepository, jwtSecret string) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthRepos ...repository.OAuthTransactionRepository) *AuthService {
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientID == "" {
 		googleClientID = os.Getenv("NEXT_PUBLIC_GOOGLE_CLIENT_ID")
@@ -67,7 +75,7 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string) *AuthS
 	if env == "" {
 		env = os.Getenv("NODE_ENV")
 	}
-	return &AuthService{
+	service := &AuthService{
 		userRepo:           userRepo,
 		jwtSecret:          []byte(jwtSecret),
 		httpClient:         &http.Client{Timeout: 10 * time.Second},
@@ -78,7 +86,24 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string) *AuthS
 		appleJWKSURL:       appleJWKSURL,
 		isProduction:       env == "production",
 		appleKeys:          make(map[string]*rsa.PublicKey),
+		googleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		googleTokenURL:     envOr("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token"),
+		appleTokenURL:      envOr("APPLE_TOKEN_URL", "https://appleid.apple.com/auth/token"),
+		appleTeamID:        os.Getenv("APPLE_TEAM_ID"),
+		appleKeyID:         os.Getenv("APPLE_KEY_ID"),
+		applePrivateKey:    strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
 	}
+	if len(oauthRepos) > 0 {
+		service.oauthRepo = oauthRepos[0]
+	}
+	return service
+}
+
+func envOr(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }
 
 type JWTClaims struct {
@@ -798,6 +823,25 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 
 	var providerUID, resolvedEmail, resolvedName, resolvedAvatar string
 
+	var transaction *models.OAuthTransaction
+	if req.State != "" {
+		consumed, err := s.consumeOAuthTransaction(ctx, req.State, provider)
+		if err != nil {
+			return nil, "", errors.New("oauth state is invalid or already used")
+		}
+		if consumed.Action != "login" {
+			return nil, "", errors.New("oauth transaction is not for login")
+		}
+		transaction = consumed
+		req.Nonce = consumed.Nonce
+		req.RedirectURI = consumed.RedirectURI
+		if req.CodeVerifier == "" {
+			req.CodeVerifier = consumed.PKCEVerifier
+		}
+	} else if s.isProduction {
+		return nil, "", errors.New("oauth state is required")
+	}
+
 	switch provider {
 	case "yandex":
 		pUID, pEmail, pName, pAvatar, err := s.exchangeYandexOAuth(ctx, authCodeOrToken)
@@ -816,13 +860,25 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "google":
-		pUID, pEmail, pName, pAvatar, err := s.verifyGoogleToken(ctx, authCodeOrToken)
+		var pUID, pEmail, pName, pAvatar string
+		var err error
+		if transaction != nil && !strings.Contains(authCodeOrToken, ".") {
+			pUID, pEmail, pName, pAvatar, err = s.exchangeGoogleCode(ctx, transaction, authCodeOrToken)
+		} else {
+			pUID, pEmail, pName, pAvatar, err = s.verifyGoogleToken(ctx, authCodeOrToken)
+		}
 		if err != nil {
 			return nil, "", fmt.Errorf("ошибка авторизации через Google: %w", err)
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "apple":
-		pUID, pEmail, err := s.verifyAppleToken(ctx, authCodeOrToken, req.Nonce)
+		var pUID, pEmail string
+		var err error
+		if transaction != nil && !strings.Contains(authCodeOrToken, ".") {
+			pUID, pEmail, err = s.exchangeAppleCode(ctx, transaction, authCodeOrToken)
+		} else {
+			pUID, pEmail, err = s.verifyAppleToken(ctx, authCodeOrToken, req.Nonce)
+		}
 		if err != nil {
 			return nil, "", fmt.Errorf("ошибка авторизации через Apple ID: %w", err)
 		}
@@ -1009,6 +1065,28 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		redirectURI = "https://det-academy.ru/auth/callback"
 	}
 
+	var transaction *models.OAuthTransaction
+	if req.State != "" {
+		consumed, err := s.consumeOAuthTransaction(ctx, req.State, provider)
+		if err != nil {
+			return errors.New("oauth state is invalid or already used")
+		}
+		if consumed.Action != "link" {
+			return errors.New("oauth transaction is not for linking")
+		}
+		if consumed.UserID != "" && consumed.UserID != userID {
+			return errors.New("oauth transaction belongs to another user")
+		}
+		transaction = consumed
+		req.Nonce = consumed.Nonce
+		redirectURI = consumed.RedirectURI
+		if req.CodeVerifier == "" {
+			req.CodeVerifier = consumed.PKCEVerifier
+		}
+	} else if s.isProduction {
+		return errors.New("oauth state is required")
+	}
+
 	var providerUID, resolvedEmail, resolvedName, resolvedAvatar string
 	switch provider {
 	case "yandex":
@@ -1024,13 +1102,25 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "google":
-		pUID, pEmail, pName, pAvatar, err := s.verifyGoogleToken(ctx, token)
+		var pUID, pEmail, pName, pAvatar string
+		var err error
+		if transaction != nil && !strings.Contains(token, ".") {
+			pUID, pEmail, pName, pAvatar, err = s.exchangeGoogleCode(ctx, transaction, token)
+		} else {
+			pUID, pEmail, pName, pAvatar, err = s.verifyGoogleToken(ctx, token)
+		}
 		if err != nil {
 			return fmt.Errorf("ошибка авторизации Google: %w", err)
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "apple":
-		pUID, pEmail, err := s.verifyAppleToken(ctx, token, req.Nonce)
+		var pUID, pEmail string
+		var err error
+		if transaction != nil && !strings.Contains(token, ".") {
+			pUID, pEmail, err = s.exchangeAppleCode(ctx, transaction, token)
+		} else {
+			pUID, pEmail, err = s.verifyAppleToken(ctx, token, req.Nonce)
+		}
 		if err != nil {
 			return fmt.Errorf("ошибка авторизации Apple ID: %w", err)
 		}
@@ -1201,4 +1291,36 @@ func (s *AuthService) UpdateUserRole(ctx context.Context, id, role string) error
 
 func (s *AuthService) DeleteUser(ctx context.Context, id string) error {
 	return s.userRepo.Delete(ctx, id)
+}
+
+// EnsureBootstrapAdmin creates the first administrator only when explicitly
+// configured. It never promotes an existing user or creates a default account.
+func (s *AuthService) EnsureBootstrapAdmin(ctx context.Context, email, password, name string) error {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" || password == "" {
+		return nil
+	}
+	if len(password) < 12 {
+		return errors.New("bootstrap admin password must be at least 12 characters")
+	}
+	if existing, err := s.userRepo.GetByEmail(ctx, email); err == nil && existing != nil {
+		return nil
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	if name == "" {
+		name = "Administrator"
+	}
+	return s.userRepo.Create(ctx, &models.User{
+		ID:           uuid.New().String(),
+		Email:        email,
+		PasswordHash: string(hash),
+		Name:         name,
+		Role:         "admin",
+		Locale:       "ru",
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+	})
 }

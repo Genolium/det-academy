@@ -70,6 +70,7 @@ type CATService struct {
 	certRepo      repository.CertificateRepository
 	theoryService *TheoryService
 	evaluator     *Evaluator
+	studyRepo     repository.StudyRepository
 }
 
 func NewCATService(
@@ -78,8 +79,9 @@ func NewCATService(
 	theoryRepo repository.TheoryRepository,
 	certRepo repository.CertificateRepository,
 	theoryService *TheoryService,
+	studyRepos ...repository.StudyRepository,
 ) *CATService {
-	return &CATService{
+	service := &CATService{
 		sessionRepo:   sessionRepo,
 		questionRepo:  questionRepo,
 		theoryRepo:    theoryRepo,
@@ -87,6 +89,10 @@ func NewCATService(
 		theoryService: theoryService,
 		evaluator:     NewEvaluator(),
 	}
+	if len(studyRepos) > 0 {
+		service.studyRepo = studyRepos[0]
+	}
+	return service
 }
 
 // sanitizeContentPayload removes answer-bearing fields that some question
@@ -177,6 +183,9 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch initial questions: %w", err)
 	}
+	if err := s.assignSessionQuestions(ctx, session, questions); err != nil {
+		return nil, nil, fmt.Errorf("failed to assign initial questions: %w", err)
+	}
 
 	return session, sanitizeQuestionsForStudent(questions), nil
 }
@@ -213,6 +222,43 @@ func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty s
 	return questions, nil
 }
 
+func (s *CATService) assignSessionQuestions(ctx context.Context, session *models.TestSession, questions []models.Question) error {
+	if len(questions) == 0 {
+		return nil
+	}
+	now := time.Now().UTC()
+	assignments := make([]models.SessionQuestion, 0, len(questions))
+	for index, question := range questions {
+		limit := question.TimeLimitSec
+		if limit <= 0 {
+			limit = StageDefaultDurations[session.StageName]
+		}
+		if limit <= 0 {
+			limit = 120
+		}
+		assignments = append(assignments, models.SessionQuestion{
+			SessionID:  session.ID,
+			QuestionID: question.ID,
+			StageName:  session.StageName,
+			Position:   index,
+			IssuedAt:   now,
+			DeadlineAt: now.Add(time.Duration(limit) * time.Second),
+		})
+	}
+	return s.sessionRepo.AssignQuestions(ctx, assignments)
+}
+
+func (s *CATService) questionsForAssignments(ctx context.Context, assignments []models.SessionQuestion) ([]models.Question, error) {
+	questions := make([]models.Question, 0, len(assignments))
+	for _, assignment := range assignments {
+		question, err := s.questionRepo.GetByID(ctx, assignment.QuestionID)
+		if err == nil && question != nil {
+			questions = append(questions, *question)
+		}
+	}
+	return questions, nil
+}
+
 // GetSession retrieves session by ID with ownership verification
 func (s *CATService) GetSession(ctx context.Context, sessionID, userID string) (*models.TestSession, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
@@ -234,7 +280,14 @@ func (s *CATService) GetSessionWithDetails(ctx context.Context, sessionID, userI
 
 	var questions []models.Question
 	if session.Status == "IN_PROGRESS" && session.StageName != "COMPLETED" {
-		questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+		assignments, assignmentErr := s.sessionRepo.GetAssignedQuestions(ctx, session.ID, session.StageName)
+		if assignmentErr == nil && len(assignments) > 0 {
+			questions, _ = s.questionsForAssignments(ctx, assignments)
+		}
+		if len(questions) == 0 {
+			questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+			_ = s.assignSessionQuestions(ctx, session, questions)
+		}
 	}
 
 	responses, _ := s.sessionRepo.GetSessionResponses(ctx, sessionID)
@@ -413,6 +466,7 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 	var nextQuestions []models.Question
 	if session.StageName != "COMPLETED" {
 		nextQuestions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
+		_ = s.assignSessionQuestions(ctx, session, nextQuestions)
 	}
 
 	return session, sanitizeQuestionsForStudent(nextQuestions), nil
@@ -450,6 +504,20 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			"deadlineAt": session.DeadlineAt,
 		})
 		return false, 0, errors.New("stage deadline exceeded: answer was not accepted")
+	}
+
+	assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, req.QuestionID)
+	if err != nil {
+		return false, 0, errors.New("question was not issued for this attempt")
+	}
+	if assignment.StageName != session.StageName {
+		return false, 0, errors.New("question belongs to another stage")
+	}
+	if time.Now().After(assignment.DeadlineAt.Add(10 * time.Second)) {
+		s.recordEvent(ctx, session, "ANSWER_REJECTED_DEADLINE", req.QuestionID, map[string]interface{}{
+			"itemDeadlineAt": assignment.DeadlineAt,
+		})
+		return false, 0, errors.New("item deadline exceeded: answer was not accepted")
 	}
 
 	trimmedResponse := strings.TrimSpace(string(req.UserResponse))
@@ -664,6 +732,9 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 			calculatedScore = eval.Score
 			isCorrect = eval.Score >= 0.6
 		}
+		if !isCorrect {
+			s.recordMistake(ctx, session.UserID, q, req)
+		}
 	} else {
 		// Fallback when question details not in repo: evaluate text directly without trusting client raw score
 		userText, transcript, audioURL, durationSec := extractUserText(req.UserResponse)
@@ -690,6 +761,212 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 	}
 
 	return isCorrect, calculatedScore, s.sessionRepo.RecordResponse(ctx, resp)
+}
+
+func questionPromptText(questionType string, payload json.RawMessage, fallback string) string {
+	var content map[string]interface{}
+	if err := json.Unmarshal(payload, &content); err != nil {
+		return fallback
+	}
+	toString := func(key string) string {
+		if value, ok := content[key].(string); ok {
+			return value
+		}
+		return ""
+	}
+	switch questionType {
+	case "READ_SELECT":
+		return `Read and Select: "` + toString("word") + `"`
+	case "FILL_BLANKS":
+		return strings.TrimSpace(toString("sentenceBefore") + " " + toString("givenPrefix") + "[...] " + toString("sentenceAfter"))
+	case "C_TEST":
+		if title := toString("title"); title != "" {
+			return "C-Test: " + title
+		}
+		return strings.TrimSpace(toString("firstSentence") + " " + toString("lastSentence"))
+	case "LISTEN_TYPE":
+		return `Dictation: "` + toString("audioSentence") + `"`
+	case "INTERACTIVE_READING":
+		return "Interactive Reading: " + toString("passageTitle")
+	case "INTERACTIVE_LISTENING":
+		return "Interactive Listening: " + toString("scenario")
+	default:
+		return fallback
+	}
+}
+
+func correctAnswerText(questionType string, correct json.RawMessage) string {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(correct, &payload); err != nil {
+		return ""
+	}
+	stringValue := func(key string) string {
+		if value, ok := payload[key].(string); ok {
+			return value
+		}
+		return ""
+	}
+	switch questionType {
+	case "READ_SELECT":
+		if value, ok := payload["isReal"].(bool); ok {
+			if value {
+				return "Yes"
+			}
+			return "No"
+		}
+	case "FILL_BLANKS":
+		if value := stringValue("missingLetters"); value != "" {
+			return value
+		}
+		if value := stringValue("fullWord"); value != "" {
+			return value
+		}
+		return stringValue("answer")
+	case "LISTEN_TYPE":
+		if value := stringValue("expectedSentence"); value != "" {
+			return value
+		}
+		return stringValue("text")
+	case "C_TEST":
+		if values, ok := payload["answers"].([]interface{}); ok {
+			parts := make([]string, 0, len(values))
+			for _, value := range values {
+				if text, ok := value.(string); ok {
+					parts = append(parts, text)
+				}
+			}
+			return strings.Join(parts, " / ")
+		}
+	case "INTERACTIVE_READING":
+		return stringValue("gapCorrect")
+	case "INTERACTIVE_LISTENING":
+		if values, ok := payload["turnsAnswers"].([]interface{}); ok {
+			parts := make([]string, 0, len(values))
+			for _, value := range values {
+				parts = append(parts, fmt.Sprintf("%v", value))
+			}
+			return strings.Join(parts, ", ")
+		}
+	}
+	return ""
+}
+
+func (s *CATService) recordMistake(ctx context.Context, userID string, question *models.Question, req models.SubmitResponseRequest) {
+	if s.studyRepo == nil || userID == "" {
+		return
+	}
+	prompt := questionPromptText(question.Type, question.ContentPayload, req.QuestionID)
+	correct := correctAnswerText(question.Type, question.CorrectAnswers)
+	if prompt == "" || correct == "" {
+		return
+	}
+	userAnswer := strings.TrimSpace(string(req.UserResponse))
+	if len(userAnswer) > 1000 {
+		userAnswer = userAnswer[:1000]
+	}
+	existing, _ := s.studyRepo.GetErrors(ctx, userID)
+	for index := range existing {
+		item := &existing[index]
+		if item.Prompt == prompt && item.CorrectAnswer == correct && !item.Mastered {
+			item.UserAnswer = userAnswer
+			item.AttemptsCount++
+			item.ConsecutiveSuccesses = 0
+			_ = s.studyRepo.SaveError(ctx, item)
+			return
+		}
+	}
+	now := time.Now().UTC()
+	_ = s.studyRepo.SaveError(ctx, &models.UserErrorItem{
+		ID:                   "err-" + uuid.New().String()[:8],
+		UserID:               userID,
+		QuestionType:         question.Type,
+		Prompt:               prompt,
+		UserAnswer:           userAnswer,
+		CorrectAnswer:        correct,
+		Explanation:          "Ответ на задание экзаменационного тренажёра. Повторите его в тетради ошибок.",
+		ConsecutiveSuccesses: 0,
+		AttemptsCount:        1,
+		Mastered:             false,
+		CreatedAt:            now,
+	})
+}
+
+func (s *CATService) VerifySessionOwner(ctx context.Context, sessionID, userID string) error {
+	session, err := s.sessionRepo.GetByID(ctx, sessionID)
+	if err != nil {
+		return errors.New("session not found")
+	}
+	if session.UserID != userID {
+		return errors.New("access denied: session does not belong to user")
+	}
+	return nil
+}
+
+func (s *CATService) GetMediaAssetForUser(ctx context.Context, assetID, userID string) (*models.MediaAsset, error) {
+	if assetID == "" || userID == "" {
+		return nil, errors.New("asset not found")
+	}
+	asset, err := s.sessionRepo.GetMediaAssetByID(ctx, assetID)
+	if err != nil || asset == nil {
+		return nil, errors.New("asset not found")
+	}
+	if asset.UserID != userID {
+		return nil, errors.New("access denied: asset does not belong to user")
+	}
+	return asset, nil
+}
+
+func (s *CATService) GetSessionReview(ctx context.Context, sessionID, userID string) (*models.SessionReviewResponse, error) {
+	session, err := s.sessionRepo.GetByID(ctx, sessionID)
+	if err != nil {
+		return nil, errors.New("session not found")
+	}
+	if session.UserID != userID {
+		return nil, errors.New("access denied: session does not belong to user")
+	}
+	if session.Status != "COMPLETED" && session.StageName != "COMPLETED" {
+		return nil, errors.New("review is available only after the attempt is completed")
+	}
+
+	assignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, sessionID)
+	responses, _ := s.sessionRepo.GetSessionResponses(ctx, sessionID)
+	responseByQuestion := map[string]models.QuestionResponse{}
+	for _, response := range responses {
+		responseByQuestion[response.QuestionID] = response
+	}
+
+	items := []models.ReviewItem{}
+	for _, assignment := range assignments {
+		question, qErr := s.questionRepo.GetByID(ctx, assignment.QuestionID)
+		if qErr != nil || question == nil {
+			continue
+		}
+		response, answered := responseByQuestion[assignment.QuestionID]
+		userAnswer := ""
+		isCorrect := false
+		rawScore := 0.0
+		if answered {
+			userAnswer = strings.TrimSpace(string(response.UserResponse))
+			if len(userAnswer) > 500 {
+				userAnswer = userAnswer[:500]
+			}
+			if response.IsCorrect != nil {
+				isCorrect = *response.IsCorrect
+			}
+			rawScore = response.RawScore
+		}
+		items = append(items, models.ReviewItem{
+			QuestionID:    assignment.QuestionID,
+			QuestionType:  question.Type,
+			StageName:     assignment.StageName,
+			Prompt:        questionPromptText(question.Type, question.ContentPayload, assignment.QuestionID),
+			UserAnswer:    userAnswer,
+			CorrectAnswer: correctAnswerText(question.Type, question.CorrectAnswers),
+			IsCorrect:     isCorrect,
+			RawScore:      rawScore,
+		})
+	}
+	return &models.SessionReviewResponse{SessionID: sessionID, Items: items}, nil
 }
 
 // RecordAudioResponse records uploaded audio speech, evaluates it, and stores the response.
@@ -1065,10 +1342,36 @@ func (s *CATService) completedSessionResponse(ctx context.Context, session *mode
 	}
 	scores.NotMeasured = notMeasured
 
+	assignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, session.ID)
+	responses, _ := s.sessionRepo.GetSessionResponses(ctx, session.ID)
+	answeredQuestionIDs := map[string]bool{}
+	for _, response := range responses {
+		answeredQuestionIDs[response.QuestionID] = true
+	}
+	answerCoverage := 1.0
+	if len(assignments) > 0 {
+		answerCoverage = float64(len(answeredQuestionIDs)) / float64(len(assignments))
+		if answerCoverage > 1 {
+			answerCoverage = 1
+		}
+	}
+	timeoutEvents := 0
+	if events, eventErr := s.sessionRepo.GetSessionEvents(ctx, session.ID); eventErr == nil {
+		for _, event := range events {
+			switch event.EventType {
+			case "ANSWER_REJECTED_DEADLINE", "STAGE_TIMEOUT", "STAGE_SKIPPED":
+				timeoutEvents++
+			}
+		}
+	}
+	scores.AnsweredQuestions = len(responses)
+	scores.AnswerCoverage = answerCoverage
+	scores.TimeoutEvents = timeoutEvents
+
 	cert, _ := s.certRepo.GetBySessionID(ctx, session.ID)
 	eligible := cert != nil
 	if !eligible {
-		eligible = s.theoryService.IsTheoryCompleted(ctx, session.UserID) && scores.Overall >= 105
+		eligible = s.theoryService.IsTheoryCompleted(ctx, session.UserID) && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
 	}
 
 	return &models.SessionCompleteResponse{
@@ -1108,6 +1411,9 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 		// return the immutable result instead of creating a second one.
 		return s.completedSessionResponse(ctx, session)
 	}
+	if session.StageName != "COMPLETED" {
+		return nil, errors.New("cannot complete session before all stages are finished")
+	}
 
 	// Verify that the session has actual recorded question responses
 	responses, err := s.sessionRepo.GetSessionResponses(ctx, sessionID)
@@ -1116,6 +1422,19 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 	if len(responses) == 0 {
 		return nil, errors.New("cannot complete session: no question responses recorded")
+	}
+
+	assignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, sessionID)
+	answeredQuestionIDs := map[string]bool{}
+	for _, response := range responses {
+		answeredQuestionIDs[response.QuestionID] = true
+	}
+	answerCoverage := 1.0
+	if len(assignments) > 0 {
+		answerCoverage = float64(len(answeredQuestionIDs)) / float64(len(assignments))
+		if answerCoverage > 1 {
+			answerCoverage = 1
+		}
 	}
 	timeoutEvents := 0
 	if events, eventErr := s.sessionRepo.GetSessionEvents(ctx, sessionID); eventErr == nil {
@@ -1214,7 +1533,8 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 
 	overall := 0
-	if len(notMeasured) == 0 {
+	meetsMinimumItems := len(answeredQuestionIDs) >= 8
+	if len(notMeasured) == 0 && meetsMinimumItems {
 		overall = RoundToDetScale(float64(readingScore+listeningScore+writingScore+speakingScore) / 4.0)
 	} else {
 		notMeasured = append(notMeasured, "overall")
@@ -1257,6 +1577,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 		NotMeasured:       notMeasured,
 		AnsweredQuestions: len(responses),
 		TimeoutEvents:     timeoutEvents,
+		AnswerCoverage:    answerCoverage,
 	}
 
 	now := time.Now()
@@ -1283,7 +1604,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Check certificate eligibility:
 	// Rule from MAIN.MD: theory_progress_percentage == 100% AND best_mock_test_score >= 105
 	isTheoryComplete := s.theoryService.IsTheoryCompleted(ctx, session.UserID)
-	eligible := isTheoryComplete && scores.Overall >= 105
+	eligible := isTheoryComplete && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
 
 	var cert *models.Certificate
 	if eligible {

@@ -31,6 +31,7 @@ export type AttemptStatus =
 
 interface ServerAttemptContext {
   sessionId: string;
+  candidateName?: string;
   stage: StageName;
   difficultyLevel: 'A2' | 'B1' | 'B2' | 'C1';
   deadlineAt: number | null;
@@ -166,6 +167,7 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
     set((state) => ({
       backendSessionId: context.sessionId,
       sessionId: context.sessionId,
+      candidateName: context.candidateName || state.candidateName,
       currentStage: context.stage,
       difficultyLevel: context.difficultyLevel,
       deadlineAt: context.deadlineAt,

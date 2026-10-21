@@ -60,8 +60,11 @@ func main() {
 		if cfg.Env == "production" || os.Getenv("ENV") == "production" || os.Getenv("NODE_ENV") == "production" {
 			log.Fatalf("[Storage FATAL] PostgreSQL connection failed in production mode, aborting: %v", err)
 		}
+		if os.Getenv("ALLOW_MEMORY_STORAGE") != "true" {
+			log.Fatalf("[Storage FATAL] PostgreSQL is unavailable and ALLOW_MEMORY_STORAGE is not enabled: %v", err)
+		}
 		log.Printf("[Storage] PostgreSQL not reachable: %v", err)
-		log.Printf("[Storage] Falling back to preloaded In-Memory Storage for MVP / local testing")
+		log.Printf("[Storage] Explicit in-memory storage enabled by ALLOW_MEMORY_STORAGE=true")
 		store = memory.New()
 	} else {
 		log.Println("[Storage] Connected to PostgreSQL successfully")
@@ -70,7 +73,15 @@ func main() {
 	defer store.Close()
 
 	// Initialize Services
-	authService := service.NewAuthService(store.Users(), cfg.JWTSecret)
+	authService := service.NewAuthService(store.Users(), cfg.JWTSecret, store.OAuthTransactions())
+	if err := authService.EnsureBootstrapAdmin(
+		context.Background(),
+		os.Getenv("BOOTSTRAP_ADMIN_EMAIL"),
+		os.Getenv("BOOTSTRAP_ADMIN_PASSWORD"),
+		os.Getenv("BOOTSTRAP_ADMIN_NAME"),
+	); err != nil {
+		log.Printf("[Bootstrap] Failed to create bootstrap admin: %v", err)
+	}
 	theoryService := service.NewTheoryService(store.Theory())
 	catService := service.NewCATService(
 		store.Sessions(),
@@ -78,6 +89,7 @@ func main() {
 		store.Theory(),
 		store.Certificates(),
 		theoryService,
+		store.Study(),
 	)
 	certService := service.NewCertificateService(
 		store.Certificates(),
@@ -98,7 +110,7 @@ func main() {
 	vocabularyService := service.NewVocabularyService(store.Vocabulary())
 
 	// Initialize Handlers
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := handlers.NewAuthHandler(authService, cfg.Env == "production")
 	theoryHandler := handlers.NewTheoryHandler(theoryService)
 	testHandler := handlers.NewTestHandler(catService)
 	certHandler := handlers.NewCertificateHandler(certService)
@@ -158,6 +170,13 @@ func main() {
 				"time":   time.Now().UTC().Format(time.RFC3339),
 			})
 		})
+		r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
+			if err := store.Ping(r.Context()); err != nil {
+				handlers.RespondError(w, http.StatusServiceUnavailable, "storage is not ready")
+				return
+			}
+			handlers.RespondJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+		})
 
 		// Auth routes
 		r.Route("/auth", func(r chi.Router) {
@@ -165,6 +184,7 @@ func main() {
 			r.Post("/login", authHandler.Login)
 			r.Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
+			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 
 			// Protected auth endpoints
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
@@ -214,13 +234,12 @@ func main() {
 				r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
 				r.Post("/sessions/{id}/audio", mediaHandler.UploadAudio)
 				r.Get("/sessions/{id}/evaluations", testHandler.GetSessionEvaluations)
+				r.Get("/sessions/{id}/review", testHandler.GetSessionReview)
 			})
 		})
 
 		// Media serving routes (Audio and uploaded responses)
-		r.Route("/media", func(r chi.Router) {
-			r.Get("/audio/{filename}", mediaHandler.ServeAudio)
-		})
+		r.With(handlers.AuthMiddleware(authService)).Get("/media/audio/{filename}", mediaHandler.ServeAudio)
 
 		// Certificates routes (Public verification and retrieval)
 		r.Route("/certificates", func(r chi.Router) {
@@ -260,6 +279,8 @@ func main() {
 			r.Get("/questions", adminHandler.ListQuestions)
 			r.Post("/questions", adminHandler.CreateQuestion)
 			r.Delete("/questions/{id}", adminHandler.DeleteQuestion)
+			r.Get("/vocabulary", vocabularyHandler.ListAll)
+			r.Put("/vocabulary/{id}/status", vocabularyHandler.UpdateStatus)
 			r.Get("/banners", adminHandler.ListBanners)
 			r.Post("/banners", adminHandler.CreateBanner)
 			r.Put("/banners/{id}", adminHandler.UpdateBanner)

@@ -75,6 +75,7 @@ function CallbackContent() {
             codeVerifier,
             redirectUri,
             nonce,
+            state,
           });
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('vk_code_verifier');
@@ -95,6 +96,7 @@ function CallbackContent() {
             codeVerifier,
             redirectUri,
             nonce,
+            state,
           });
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('vk_code_verifier');

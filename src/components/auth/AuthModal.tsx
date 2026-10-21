@@ -7,7 +7,7 @@ import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { X, Lock, Mail, User, Info } from 'lucide-react';
-import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
+import { api } from '@/lib/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -66,134 +66,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleGoogleRealLogin = async () => {
+  const startOAuthFlow = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
     clearError();
-    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-    if (!googleClientId) {
-      alert('Google Client ID не настроен в файле .env');
-      return;
-    }
-
-    // Prefer the ID-token flow: the backend verifies issuer, audience,
-    // signature and email_verified before creating a session.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const google = (window as any).google;
-    if (google && google.accounts && google.accounts.id) {
-      const nonce = generateRandomString(32);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('oauth_nonce', nonce);
-      }
-      google.accounts.id.initialize({
-        client_id: googleClientId,
-        nonce,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        callback: async (response: any) => {
-          if (!response?.credential) return;
-          const ok = await oauthLogin({
-            provider: 'google',
-            code: response.credential,
-            nonce,
-          });
-          if (ok) {
-            const u = useAuthStore.getState().user;
-            if (u) setCandidateName(u.name);
-            syncWithBackend();
-            onClose();
-          }
-        },
-      });
-      google.accounts.id.prompt();
-      return;
-    }
-
-    // Redirect ID-token flow. The callback page reads id_token from the hash.
-    const nonce = generateRandomString(32);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('oauth_nonce', nonce);
-    }
+    setNotice(null);
     const redirectUri = `${window.location.origin}/auth/callback`;
-    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    authUrl.searchParams.set('client_id', googleClientId);
-    authUrl.searchParams.set('redirect_uri', redirectUri);
-    authUrl.searchParams.set('response_type', 'id_token');
-    authUrl.searchParams.set('response_mode', 'fragment');
-    authUrl.searchParams.set('scope', 'openid email profile');
-    authUrl.searchParams.set('nonce', nonce);
-    authUrl.searchParams.set('state', 'provider=google&action=login');
-    window.location.href = authUrl.toString();
+    try {
+      const response = await api.startOAuth({ provider, action: 'login', redirectUri });
+      window.location.href = response.url;
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Не удалось начать OAuth-авторизацию');
+    }
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
-    clearError();
-    setNotice(null);
-
-    if (provider === 'google') {
-      await handleGoogleRealLogin();
-      return;
-    }
-
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
-    const callbackUri = `${origin}/auth/callback`;
-
-    if (provider === 'vk') {
-      const vkAppId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '54805089';
-      if (vkAppId) {
-        const codeVerifier = generateRandomString(64);
-        const codeChallenge = await generateCodeChallenge(codeVerifier);
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('vk_code_verifier', codeVerifier);
-          sessionStorage.setItem('vk_state', 'provider=vk&action=login');
-        }
-
-        const vkUrl = new URL('https://id.vk.ru/authorize');
-        vkUrl.searchParams.set('response_type', 'code');
-        vkUrl.searchParams.set('client_id', vkAppId);
-        vkUrl.searchParams.set('redirect_uri', callbackUri);
-        vkUrl.searchParams.set('state', 'provider=vk&action=login');
-        vkUrl.searchParams.set('code_challenge', codeChallenge);
-        vkUrl.searchParams.set('code_challenge_method', 's256');
-        vkUrl.searchParams.set('scope', 'vkid.personal_info email');
-
-        window.location.href = vkUrl.toString();
-        return;
-      }
-      setNotice('Для входа через VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
-      return;
-    }
-
-    if (provider === 'yandex') {
-      const yandexId = process.env.NEXT_PUBLIC_YANDEX_CLIENT_ID;
-      if (yandexId) {
-        window.location.href = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexId}&redirect_uri=${encodeURIComponent(
-          callbackUri
-        )}&state=provider%3Dyandex%26action%3Dlogin`;
-        return;
-      }
-      setNotice('Для входа через Яндекс ID укажите NEXT_PUBLIC_YANDEX_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
-      return;
-    }
-
-    if (provider === 'apple') {
-      const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
-      if (appleClientId) {
-        const nonce = generateRandomString(32);
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('oauth_nonce', nonce);
-        }
-        const appleUrl = new URL('https://appleid.apple.com/auth/authorize');
-        appleUrl.searchParams.set('client_id', appleClientId);
-        appleUrl.searchParams.set('redirect_uri', callbackUri);
-        appleUrl.searchParams.set('response_type', 'code id_token');
-        appleUrl.searchParams.set('scope', 'name email');
-        appleUrl.searchParams.set('response_mode', 'fragment');
-        appleUrl.searchParams.set('nonce', nonce);
-        appleUrl.searchParams.set('state', 'provider=apple&action=login');
-        window.location.href = appleUrl.toString();
-        return;
-      }
-      setNotice('Для входа через Apple ID укажите NEXT_PUBLIC_APPLE_CLIENT_ID в .env на сервере. Войдите через Google или Email.');
-      return;
-    }
+    await startOAuthFlow(provider);
   };
 
   return (

@@ -16,52 +16,56 @@ import (
 )
 
 type MemoryStorage struct {
-	mu             sync.RWMutex
-	users          map[string]*models.User
-	usersByEmail   map[string]*models.User
-	theory         map[string]map[string]bool // userID -> lessonSlug -> isCompleted
-	questions      map[string]*models.Question
-	sessions       map[string]*models.TestSession
-	responses      map[string][]models.QuestionResponse
-	evaluations    map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
-	mediaAssets    map[string]*models.MediaAsset        // assetID -> *MediaAsset
-	certificates   map[string]*models.Certificate
-	banners        map[string]*models.AdBanner
-	institutions   map[string]*models.Institution
-	socialAccounts map[string][]models.SocialAccount             // userID -> []SocialAccount
-	goals          map[string]*models.UserGoal                   // userID -> *UserGoal
-	errors         map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
-	srsStats       map[string]*models.SRSStats                   // userID -> *SRSStats
-	srsCards       map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
-	activity       map[string]map[string]bool                    // userID -> date -> active
-	events         map[string][]models.SessionEvent              // sessionID -> events
-	vocabulary     map[string]models.VocabularyEntry             // entryID -> entry
-	sessionLockMu  sync.Mutex
-	sessionLocks   map[string]*sync.Mutex
+	mu                sync.RWMutex
+	users             map[string]*models.User
+	usersByEmail      map[string]*models.User
+	theory            map[string]map[string]bool // userID -> lessonSlug -> isCompleted
+	questions         map[string]*models.Question
+	sessions          map[string]*models.TestSession
+	responses         map[string][]models.QuestionResponse
+	evaluations       map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
+	mediaAssets       map[string]*models.MediaAsset        // assetID -> *MediaAsset
+	certificates      map[string]*models.Certificate
+	banners           map[string]*models.AdBanner
+	institutions      map[string]*models.Institution
+	socialAccounts    map[string][]models.SocialAccount             // userID -> []SocialAccount
+	goals             map[string]*models.UserGoal                   // userID -> *UserGoal
+	errors            map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
+	srsStats          map[string]*models.SRSStats                   // userID -> *SRSStats
+	srsCards          map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
+	activity          map[string]map[string]bool                    // userID -> date -> active
+	events            map[string][]models.SessionEvent              // sessionID -> events
+	sessionQuestions  map[string][]models.SessionQuestion           // sessionID -> assignments
+	vocabulary        map[string]models.VocabularyEntry             // entryID -> entry
+	oauthTransactions map[string]models.OAuthTransaction            // stateHash -> transaction
+	sessionLockMu     sync.Mutex
+	sessionLocks      map[string]*sync.Mutex
 }
 
 func New() *MemoryStorage {
 	s := &MemoryStorage{
-		users:          make(map[string]*models.User),
-		usersByEmail:   make(map[string]*models.User),
-		theory:         make(map[string]map[string]bool),
-		questions:      make(map[string]*models.Question),
-		sessions:       make(map[string]*models.TestSession),
-		responses:      make(map[string][]models.QuestionResponse),
-		evaluations:    make(map[string][]models.EvaluationResult),
-		mediaAssets:    make(map[string]*models.MediaAsset),
-		certificates:   make(map[string]*models.Certificate),
-		banners:        make(map[string]*models.AdBanner),
-		institutions:   make(map[string]*models.Institution),
-		socialAccounts: make(map[string][]models.SocialAccount),
-		goals:          make(map[string]*models.UserGoal),
-		errors:         make(map[string]map[string]*models.UserErrorItem),
-		srsStats:       make(map[string]*models.SRSStats),
-		srsCards:       make(map[string]map[string]*models.SRSCardProgress),
-		activity:       make(map[string]map[string]bool),
-		events:         make(map[string][]models.SessionEvent),
-		vocabulary:     make(map[string]models.VocabularyEntry),
-		sessionLocks:   make(map[string]*sync.Mutex),
+		users:             make(map[string]*models.User),
+		usersByEmail:      make(map[string]*models.User),
+		theory:            make(map[string]map[string]bool),
+		questions:         make(map[string]*models.Question),
+		sessions:          make(map[string]*models.TestSession),
+		responses:         make(map[string][]models.QuestionResponse),
+		evaluations:       make(map[string][]models.EvaluationResult),
+		mediaAssets:       make(map[string]*models.MediaAsset),
+		certificates:      make(map[string]*models.Certificate),
+		banners:           make(map[string]*models.AdBanner),
+		institutions:      make(map[string]*models.Institution),
+		socialAccounts:    make(map[string][]models.SocialAccount),
+		goals:             make(map[string]*models.UserGoal),
+		errors:            make(map[string]map[string]*models.UserErrorItem),
+		srsStats:          make(map[string]*models.SRSStats),
+		srsCards:          make(map[string]map[string]*models.SRSCardProgress),
+		activity:          make(map[string]map[string]bool),
+		events:            make(map[string][]models.SessionEvent),
+		sessionQuestions:  make(map[string][]models.SessionQuestion),
+		vocabulary:        make(map[string]models.VocabularyEntry),
+		oauthTransactions: make(map[string]models.OAuthTransaction),
+		sessionLocks:      make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
 	s.seedVocabulary()
@@ -81,7 +85,11 @@ func (s *MemoryStorage) Study() repository.StudyRepository { return &studyMemory
 func (s *MemoryStorage) Vocabulary() repository.VocabularyRepository {
 	return &vocabularyMemoryRepo{s: s}
 }
-func (s *MemoryStorage) Close() error { return nil }
+func (s *MemoryStorage) OAuthTransactions() repository.OAuthTransactionRepository {
+	return &oauthTransactionMemoryRepo{s: s}
+}
+func (s *MemoryStorage) Ping(ctx context.Context) error { return nil }
+func (s *MemoryStorage) Close() error                   { return nil }
 
 //go:embed vocabulary_seed.json
 var vocabularySeedJSON []byte
@@ -1520,6 +1528,52 @@ func (r *sessionMemoryRepo) Update(ctx context.Context, session *models.TestSess
 	return nil
 }
 
+func (r *sessionMemoryRepo) AssignQuestions(ctx context.Context, assignments []models.SessionQuestion) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for _, assignment := range assignments {
+		found := false
+		for _, existing := range r.s.sessionQuestions[assignment.SessionID] {
+			if existing.QuestionID == assignment.QuestionID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			r.s.sessionQuestions[assignment.SessionID] = append(r.s.sessionQuestions[assignment.SessionID], assignment)
+		}
+	}
+	return nil
+}
+
+func (r *sessionMemoryRepo) GetAssignedQuestions(ctx context.Context, sessionID, stageName string) ([]models.SessionQuestion, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	result := []models.SessionQuestion{}
+	for _, assignment := range r.s.sessionQuestions[sessionID] {
+		if stageName == "" || assignment.StageName == stageName {
+			result = append(result, assignment)
+		}
+	}
+	return result, nil
+}
+
+func (r *sessionMemoryRepo) GetAllAssignedQuestions(ctx context.Context, sessionID string) ([]models.SessionQuestion, error) {
+	return r.GetAssignedQuestions(ctx, sessionID, "")
+}
+
+func (r *sessionMemoryRepo) GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	for _, assignment := range r.s.sessionQuestions[sessionID] {
+		if assignment.QuestionID == questionID {
+			copyAssignment := assignment
+			return &copyAssignment, nil
+		}
+	}
+	return nil, errors.New("question was not issued for this attempt")
+}
+
 func (r *sessionMemoryRepo) RecordEvent(ctx context.Context, event *models.SessionEvent) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -2057,6 +2111,30 @@ func (r *vocabularyMemoryRepo) List(ctx context.Context, search, level string) (
 	return entries, nil
 }
 
+func (r *vocabularyMemoryRepo) ListAll(ctx context.Context) ([]models.VocabularyEntry, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	entries := []models.VocabularyEntry{}
+	for _, entry := range r.s.vocabulary {
+		entries = append(entries, entry)
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Word < entries[j].Word })
+	return entries, nil
+}
+
+func (r *vocabularyMemoryRepo) UpdateStatus(ctx context.Context, id, status string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	entry, ok := r.s.vocabulary[id]
+	if !ok {
+		return errors.New("vocabulary entry not found")
+	}
+	entry.Status = status
+	entry.ReviewedAt = time.Now().UTC()
+	r.s.vocabulary[id] = entry
+	return nil
+}
+
 func (r *vocabularyMemoryRepo) Count(ctx context.Context) (int, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
@@ -2067,4 +2145,45 @@ func (r *vocabularyMemoryRepo) Count(ctx context.Context) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+// --- OAuth transactions ---
+
+type oauthTransactionMemoryRepo struct{ s *MemoryStorage }
+
+func (r *oauthTransactionMemoryRepo) Create(ctx context.Context, transaction *models.OAuthTransaction) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.oauthTransactions[transaction.StateHash] = *transaction
+	return nil
+}
+
+func (r *oauthTransactionMemoryRepo) Consume(ctx context.Context, stateHash, provider string) (*models.OAuthTransaction, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	transaction, ok := r.s.oauthTransactions[stateHash]
+	if !ok || transaction.Provider != provider {
+		return nil, errors.New("oauth transaction not found")
+	}
+	if transaction.ConsumedAt != nil {
+		return nil, errors.New("oauth transaction already consumed")
+	}
+	if time.Now().After(transaction.ExpiresAt) {
+		return nil, errors.New("oauth transaction expired")
+	}
+	now := time.Now().UTC()
+	transaction.ConsumedAt = &now
+	r.s.oauthTransactions[stateHash] = transaction
+	return &transaction, nil
+}
+
+func (r *oauthTransactionMemoryRepo) CleanupExpired(ctx context.Context) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for key, transaction := range r.s.oauthTransactions {
+		if time.Now().After(transaction.ExpiresAt.Add(time.Hour)) {
+			delete(r.s.oauthTransactions, key)
+		}
+	}
+	return nil
 }

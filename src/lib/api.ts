@@ -170,6 +170,22 @@ export interface MediaAsset {
   createdAt: string;
 }
 
+export interface ReviewItem {
+  questionId: string;
+  questionType: string;
+  stageName: string;
+  prompt: string;
+  userAnswer: string;
+  correctAnswer?: string;
+  isCorrect: boolean;
+  rawScore: number;
+}
+
+export interface SessionReviewResponse {
+  sessionId: string;
+  items: ReviewItem[];
+}
+
 export interface EvaluationResult {
   id: string;
   responseId?: string;
@@ -453,6 +469,24 @@ class ApiClient {
     return data;
   }
 
+  async startOAuth(params: {
+    provider: 'google' | 'apple' | 'vk' | 'yandex';
+    action?: 'login' | 'link';
+    redirectUri: string;
+  }): Promise<{ url: string; state: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth/start`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Не удалось начать OAuth-авторизацию', res.status);
+    }
+    return res.json();
+  }
+
   async oauthLogin(params: {
     provider: 'google' | 'apple' | 'vk' | 'yandex';
     code?: string;
@@ -463,6 +497,7 @@ class ApiClient {
     deviceId?: string;
     codeVerifier?: string;
     nonce?: string;
+    state?: string;
   }): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
       method: 'POST',
@@ -535,6 +570,7 @@ class ApiClient {
     codeVerifier?: string;
     redirectUri?: string;
     nonce?: string;
+    state?: string;
   }): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
       method: 'POST',
@@ -644,7 +680,7 @@ class ApiClient {
     userResponse: unknown;
     rawScore: number;
     timeSpentSec: number;
-  }): Promise<{ status: string; isCorrect?: boolean; rawScore?: number }> {
+  }): Promise<{ status: string }> {
     let res: Response;
     try {
       res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
@@ -661,7 +697,7 @@ class ApiClient {
       throw new ApiError(data.error || 'Не удалось сохранить ответ на сервере', res.status);
     }
     const data = await res.json().catch(() => ({ status: 'recorded' }));
-    return data as { status: string; isCorrect?: boolean; rawScore?: number };
+    return data as { status: string };
   }
 
   async completeStage(sessionId: string, payload: {
@@ -736,6 +772,17 @@ class ApiClient {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Failed to upload speaking audio');
+    }
+    return res.json();
+  }
+
+  async getSessionReview(sessionId: string): Promise<SessionReviewResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/review`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить разбор попытки', res.status);
     }
     return res.json();
   }
@@ -906,6 +953,30 @@ class ApiClient {
       throw new Error('Failed to load sessions');
     }
     return res.json();
+  }
+
+  async getAdminVocabulary(): Promise<{ entries: VocabularyEntry[]; total: number }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin/vocabulary`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to load vocabulary admin list', res.status);
+    }
+    return res.json();
+  }
+
+  async updateVocabularyStatus(id: string, status: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin/vocabulary/${encodeURIComponent(id)}/status`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Failed to update vocabulary status', res.status);
+    }
   }
 
   async getAdminBanners(): Promise<{ banners: AdBannerData[]; total: number }> {

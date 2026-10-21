@@ -52,6 +52,8 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
   const [timeLeft, setTimeLeft] = useState(20); // 20s prep, then 90s speech
   const [transcript, setTranscript] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const transcriptRef = useRef(transcript);
   useEffect(() => {
@@ -84,7 +86,16 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
       }
       formData.append('durationSec', Math.max(1, 90 - timeLeft).toString());
 
-      api.uploadSpeakingAudio(backendSessionId, formData).catch(() => {});
+      setIsSubmitting(true);
+      try {
+        await api.uploadSpeakingAudio(backendSessionId, formData);
+      } catch {
+        setIsSubmitting(false);
+        isCompletedRef.current = false;
+        setSubmitError('Не удалось сохранить аудио на сервере. Проверьте соединение и повторите.');
+        return;
+      }
+
     }
 
     recordSpeakingResult(spokenText || (recordedBlob ? 'Записан устный ответ (аудио)' : ''));
@@ -241,6 +252,12 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
               <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{micError}</span>
+              </div>
+            )}
+            {submitError && (
+              <div className="flex items-center gap-2 text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{submitError}</span>
               </div>
             )}
           </div>

@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalculatedScores } from '@/lib/scoring';
-import { api, EvaluationResult } from '@/lib/api';
+import { api, EvaluationResult, ReviewItem } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { Award, RotateCcw, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Award, RotateCcw, CheckCircle2, ShieldCheck, Sparkles, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SubscoresRadarChart } from '@/components/analytics/SubscoresRadarChart';
 import { RubricFeedbackCard } from '@/components/audio/RubricFeedbackCard';
@@ -35,6 +35,8 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
 
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [loadingEvals, setLoadingEvals] = useState(false);
+  const [review, setReview] = useState<ReviewItem[]>([]);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const notMeasured = scores.notMeasured || [];
   const overallMeasured = (scores.overall || 0) > 0 && !notMeasured.includes('overall');
@@ -89,6 +91,16 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
       // ignore
     }
   }, [overallMeasured]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    api
+      .getSessionReview(sessionId)
+      .then((response) => setReview(response.items || []))
+      .catch((error: unknown) =>
+        setReviewError(error instanceof Error ? error.message : 'Разбор недоступен')
+      );
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -376,6 +388,63 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
               </Link>
               .
             </p>
+          )}
+        </div>
+
+        {/* Attempt review */}
+        <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[#D2F544]" />
+              <h3 className="text-base font-bold text-white">Разбор попытки</h3>
+            </div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-500">
+              {review.length} заданий
+            </span>
+          </div>
+          {reviewError && <p className="text-xs text-amber-400">{reviewError}</p>}
+          {review.length === 0 && !reviewError && (
+            <p className="text-xs text-neutral-500">
+              Разбор появится после завершения попытки.
+            </p>
+          )}
+          {review.length > 0 && (
+            <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+              {review.map((item) => (
+                <div
+                  key={`${item.stageName}-${item.questionId}`}
+                  className={`rounded-2xl border p-3 text-xs ${
+                    item.isCorrect
+                      ? 'border-emerald-900/60 bg-emerald-950/20'
+                      : 'border-amber-900/60 bg-amber-950/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+                      {item.stageName.replaceAll('_', ' ')}
+                    </span>
+                    <span
+                      className={`font-bold ${
+                        item.isCorrect ? 'text-emerald-400' : 'text-amber-300'
+                      }`}
+                    >
+                      {item.isCorrect ? 'верно' : item.userAnswer ? 'ошибка' : 'пропущено'}
+                    </span>
+                  </div>
+                  <p className="text-neutral-200 leading-relaxed">{item.prompt}</p>
+                  {item.userAnswer && (
+                    <p className="mt-1 font-mono text-[11px] text-red-300 break-words">
+                      Ваш ответ: {item.userAnswer}
+                    </p>
+                  )}
+                  {!item.isCorrect && item.correctAnswer && (
+                    <p className="mt-1 font-mono text-[11px] text-[#D2F544] break-words">
+                      Правильный ответ: {item.correctAnswer}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

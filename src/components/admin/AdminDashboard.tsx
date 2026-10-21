@@ -398,6 +398,13 @@ export const AdminDashboard: React.FC = () => {
               <span>Headless CMS (Directus)</span>
             </a>
 
+            <Link
+              href="/admin/vocabulary"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#D2F544] text-[#0C2418] text-xs font-bold hover:bg-[#c2e534] transition-colors"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Публикация словаря</span>
+            </Link>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-bold text-[#D2F544]">
               <span className="w-2 h-2 rounded-full bg-[#D2F544] animate-pulse" />
               <span>Администратор: {user.name}</span>

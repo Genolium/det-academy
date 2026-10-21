@@ -11,11 +11,16 @@ import (
 )
 
 type AuthHandler struct {
-	authService *service.AuthService
+	authService  *service.AuthService
+	secureCookie bool
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, secureCookie ...bool) *AuthHandler {
+	handler := &AuthHandler{authService: authService}
+	if len(secureCookie) > 0 {
+		handler.secureCookie = secureCookie[0]
+	}
+	return handler
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +44,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false, // set to true in HTTPS
+		Secure:   h.secureCookie,
 	})
 
 	RespondJSON(w, http.StatusCreated, models.AuthResponse{
@@ -69,13 +74,28 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
+		Secure:   h.secureCookie,
 	})
 
 	RespondJSON(w, http.StatusOK, models.AuthResponse{
 		Token: token,
 		User:  *user,
 	})
+}
+
+func (h *AuthHandler) StartOAuth(w http.ResponseWriter, r *http.Request) {
+	var req models.OAuthStartRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10)).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	userID := GetUserIDFromContext(r.Context())
+	response, err := h.authService.StartOAuth(r.Context(), req, userID)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, response)
 }
 
 func (h *AuthHandler) OAuthLogin(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +118,7 @@ func (h *AuthHandler) OAuthLogin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
+		Secure:   h.secureCookie,
 	})
 
 	RespondJSON(w, http.StatusOK, models.AuthResponse{
@@ -236,4 +256,3 @@ func (h *AuthHandler) UnlinkProvider(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(w, http.StatusOK, map[string]string{"message": "привязка успешно удалена"})
 }
-

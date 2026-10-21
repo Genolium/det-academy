@@ -65,13 +65,13 @@ export function removeQueuedResponse(sessionId: string, questionId: string): voi
 export async function submitOrQueueResponse(
   sessionId: string,
   payload: QueuedResponse['payload']
-): Promise<{ synced: boolean; isCorrect?: boolean; rawScore?: number }> {
+): Promise<{ synced: boolean }> {
   if (!sessionId) return { synced: false };
   enqueueResponse(sessionId, payload);
   try {
-    const ack = await api.submitQuestionResponse(sessionId, payload);
+    await api.submitQuestionResponse(sessionId, payload);
     removeQueuedResponse(sessionId, payload.questionId);
-    return { synced: true, isCorrect: ack.isCorrect, rawScore: ack.rawScore };
+    return { synced: true };
   } catch (err) {
     if (isPermanentRejection(err)) {
       removeQueuedResponse(sessionId, payload.questionId);

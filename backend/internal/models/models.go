@@ -272,11 +272,37 @@ type OAuthLoginRequest struct {
 	DeviceID     string `json:"deviceId,omitempty"`     // VK ID device_id
 	CodeVerifier string `json:"codeVerifier,omitempty"` // PKCE code_verifier
 	Nonce        string `json:"nonce,omitempty"`        // OIDC nonce for Google/Apple
+	State        string `json:"state,omitempty"`        // server-issued OAuth transaction state
 }
 
 type UpdateProfileRequest struct {
 	Name      string `json:"name,omitempty"`
 	AvatarURL string `json:"avatarUrl,omitempty"`
+}
+
+type OAuthTransaction struct {
+	ID           string     `json:"id"`
+	StateHash    string     `json:"-"`
+	Nonce        string     `json:"-"`
+	PKCEVerifier string     `json:"-"`
+	Provider     string     `json:"provider"`
+	Action       string     `json:"action"`
+	RedirectURI  string     `json:"redirectUri"`
+	UserID       string     `json:"userId,omitempty"`
+	ExpiresAt    time.Time  `json:"expiresAt"`
+	ConsumedAt   *time.Time `json:"consumedAt,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+}
+
+type OAuthStartRequest struct {
+	Provider    string `json:"provider"`
+	Action      string `json:"action"`
+	RedirectURI string `json:"redirectUri"`
+}
+
+type OAuthStartResponse struct {
+	URL   string `json:"url"`
+	State string `json:"state"`
 }
 
 type OAuthURLResponse struct {
@@ -350,6 +376,7 @@ type CalculatedScores struct {
 	NotMeasured       []string `json:"notMeasured,omitempty"`
 	AnsweredQuestions int      `json:"answeredQuestions"`
 	TimeoutEvents     int      `json:"timeoutEvents"`
+	AnswerCoverage    float64  `json:"answerCoverage"`
 }
 
 type SessionDetailsResponse struct {
@@ -366,6 +393,31 @@ type SessionCompleteResponse struct {
 	Certificate         *Certificate     `json:"certificate,omitempty"`
 }
 
+type ReviewItem struct {
+	QuestionID    string  `json:"questionId"`
+	QuestionType  string  `json:"questionType"`
+	StageName     string  `json:"stageName"`
+	Prompt        string  `json:"prompt"`
+	UserAnswer    string  `json:"userAnswer"`
+	CorrectAnswer string  `json:"correctAnswer,omitempty"`
+	IsCorrect     bool    `json:"isCorrect"`
+	RawScore      float64 `json:"rawScore"`
+}
+
+type SessionReviewResponse struct {
+	SessionID string       `json:"sessionId"`
+	Items     []ReviewItem `json:"items"`
+}
+
+type SessionQuestion struct {
+	SessionID  string    `json:"sessionId"`
+	QuestionID string    `json:"questionId"`
+	StageName  string    `json:"stageName"`
+	Position   int       `json:"position"`
+	IssuedAt   time.Time `json:"issuedAt"`
+	DeadlineAt time.Time `json:"deadlineAt"`
+}
+
 type SessionEvent struct {
 	ID         string          `json:"id"`
 	SessionID  string          `json:"sessionId"`
@@ -377,20 +429,20 @@ type SessionEvent struct {
 }
 
 type VocabularyEntry struct {
-	ID          string    `json:"id"`
-	Word        string    `json:"word"`
-	IPA         string    `json:"ipa,omitempty"`
-	PartOfSpeech string   `json:"pos,omitempty"`
-	Level       string    `json:"level"`
-	MeaningRu   string    `json:"meaningRu"`
-	DefinitionEn string   `json:"definitionEn"`
-	Example     string    `json:"example,omitempty"`
-	Collocations []string `json:"collocations,omitempty"`
-	Source      string    `json:"source"`
-	SourceURL   string    `json:"sourceUrl,omitempty"`
-	Status      string    `json:"status"`
-	Version     string    `json:"version"`
-	ReviewedAt  time.Time `json:"reviewedAt"`
+	ID           string    `json:"id"`
+	Word         string    `json:"word"`
+	IPA          string    `json:"ipa,omitempty"`
+	PartOfSpeech string    `json:"pos,omitempty"`
+	Level        string    `json:"level"`
+	MeaningRu    string    `json:"meaningRu"`
+	DefinitionEn string    `json:"definitionEn"`
+	Example      string    `json:"example,omitempty"`
+	Collocations []string  `json:"collocations,omitempty"`
+	Source       string    `json:"source"`
+	SourceURL    string    `json:"sourceUrl,omitempty"`
+	Status       string    `json:"status"`
+	Version      string    `json:"version"`
+	ReviewedAt   time.Time `json:"reviewedAt"`
 }
 
 // Admin & CRM DTOs
@@ -478,6 +530,7 @@ type LinkProviderRequest struct {
 	CodeVerifier   string `json:"codeVerifier,omitempty"`
 	RedirectURI    string `json:"redirectUri,omitempty"`
 	Nonce          string `json:"nonce,omitempty"`
+	State          string `json:"state,omitempty"`
 }
 
 // Media Asset models
@@ -488,7 +541,7 @@ type MediaAsset struct {
 	SessionID   string    `json:"sessionId,omitempty"`
 	QuestionID  string    `json:"questionId,omitempty"`
 	FileType    string    `json:"fileType"`
-	FilePath    string    `json:"filePath"`
+	FilePath    string    `json:"-"`
 	URL         string    `json:"url"`
 	FileSize    int64     `json:"fileSize"`
 	DurationSec float64   `json:"durationSec"`

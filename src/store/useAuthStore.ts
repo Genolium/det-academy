@@ -3,6 +3,7 @@ import { api, ApiError, User } from '@/lib/api';
 import { hasAuthSession } from '@/lib/auth-session';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
+import { useTestStore } from '@/store/useTestStore';
 
 interface AuthState {
   user: User | null;
@@ -21,6 +22,7 @@ interface AuthState {
     deviceId?: string;
     codeVerifier?: string;
     nonce?: string;
+    state?: string;
   }) => Promise<boolean>;
   updateProfile: (params: { name?: string; avatarUrl?: string }) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -41,10 +43,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.login({ email, password });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      useProgressStore.getState().syncWithBackend(resp.user.id);
       void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
@@ -59,10 +61,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.register({ email, password, name });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      useProgressStore.getState().syncWithBackend(resp.user.id);
       void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
@@ -77,10 +79,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const resp = await api.oauthLogin(params);
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
+      await useProgressStore.getState().syncWithBackend(resp.user.id);
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      useProgressStore.getState().syncWithBackend(resp.user.id);
       void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
@@ -113,6 +115,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       useProgressStore.getState().resetProgressState();
       useErrorNotebookStore.getState().resetForUser();
+      useTestStore.getState().startNewSession();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('det_active_test_attempt_v2');
+        localStorage.removeItem('det_active_test_session_id');
+      }
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

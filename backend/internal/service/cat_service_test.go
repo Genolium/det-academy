@@ -73,7 +73,7 @@ func TestIRT2PLAndThetaScoring(t *testing.T) {
 func TestBlueprintSelectionAndTimeoutEvents(t *testing.T) {
 	store := memory.New()
 	theory := NewTheoryService(store.Theory())
-	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory)
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
 	ctx := context.Background()
 
 	blueprint := models.GetDefaultExamBlueprint()

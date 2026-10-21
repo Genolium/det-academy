@@ -66,7 +66,11 @@ func TestPostgresTrustedCompletionIntegrity(t *testing.T) {
 		payload    string
 	}{
 		{"q-rs-01", `{"isReal":true}`},
+		{"q-rs-02", `{"isReal":false}`},
+		{"q-rs-03", `{"isReal":true}`},
+		{"q-rs-04", `{"isReal":true}`},
 		{"q-lt-01", `"The library provides free access to academic journals."`},
+		{"q-lt-02", `"Technological innovations are reshaping global transportation networks."`},
 		{"q-ws-01", `{"text":"A balanced education combines practical career skills with rigorous academic theory. Practical courses teach collaboration and problem solving, while seminars develop analytical habits that make graduates adaptable over time."}`},
 		{"q-ss-01", `{"transcript":"I prefer living in a large city because it offers more educational and professional opportunities. Public transport makes it easier to attend classes and internships, and cultural events expose me to different perspectives.","durationSec":150}`},
 	}
@@ -111,6 +115,13 @@ func TestPostgresTrustedCompletionIntegrity(t *testing.T) {
 	}
 	if countReadSelect != 1 {
 		t.Fatalf("expected exactly one response per question, got %d", countReadSelect)
+	}
+
+	// Simulate the end of the final stage; CompleteSession is not allowed early.
+	session.StageName = "COMPLETED"
+	session.CurrentStage = 14
+	if err := store.Sessions().Update(ctx, session); err != nil {
+		t.Fatalf("failed to finish session stage: %v", err)
 	}
 
 	// Two concurrent completions must converge on one immutable result.

@@ -139,7 +139,7 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCorrect, rawScore, err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req)
+	_, _, err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "access denied") {
 			RespondError(w, http.StatusForbidden, err.Error())
@@ -149,11 +149,9 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
-		"status":    "recorded",
-		"isCorrect": isCorrect,
-		"rawScore":  rawScore,
-	})
+	// Correctness is deliberately not returned: it is an oracle that would
+	// let a client brute-force the answer key before finalization.
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "recorded"})
 }
 
 func (h *TestHandler) CompleteStage(w http.ResponseWriter, r *http.Request) {
@@ -221,6 +219,25 @@ func (h *TestHandler) CompleteSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondJSON(w, http.StatusOK, result)
+}
+
+func (h *TestHandler) GetSessionReview(w http.ResponseWriter, r *http.Request) {
+	sessionID := chi.URLParam(r, "id")
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	review, err := h.catService.GetSessionReview(r.Context(), sessionID, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			RespondError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, review)
 }
 
 // GetSessionEvaluations retrieves all rubric evaluations and feedback for questions in a session.

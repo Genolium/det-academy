@@ -24,7 +24,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	store := memory.New()
 	jwtSecret := "test-secret-key-123456"
 
-	authService := service.NewAuthService(store.Users(), jwtSecret)
+	authService := service.NewAuthService(store.Users(), jwtSecret, store.OAuthTransactions())
 	theoryService := service.NewTheoryService(store.Theory())
 	catService := service.NewCATService(
 		store.Sessions(),
@@ -32,6 +32,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 		store.Theory(),
 		store.Certificates(),
 		theoryService,
+		store.Study(),
 	)
 	certService := service.NewCertificateService(
 		store.Certificates(),
@@ -76,6 +77,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Post("/login", authHandler.Login)
 			r.Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
+			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
 		})
 
@@ -114,12 +116,11 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 				r.Post("/sessions/{id}/complete", testHandler.CompleteSession)
 				r.Post("/sessions/{id}/audio", mediaHandler.UploadAudio)
 				r.Get("/sessions/{id}/evaluations", testHandler.GetSessionEvaluations)
+				r.Get("/sessions/{id}/review", testHandler.GetSessionReview)
 			})
 		})
 
-		r.Route("/media", func(r chi.Router) {
-			r.Get("/audio/{filename}", mediaHandler.ServeAudio)
-		})
+		r.With(handlers.AuthMiddleware(authService)).Get("/media/audio/{filename}", mediaHandler.ServeAudio)
 
 		r.Route("/certificates", func(r chi.Router) {
 			r.Get("/{id}", certHandler.GetByID)
@@ -151,6 +152,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Get("/questions", adminHandler.ListQuestions)
 			r.Post("/questions", adminHandler.CreateQuestion)
 			r.Delete("/questions/{id}", adminHandler.DeleteQuestion)
+			r.Get("/vocabulary", vocabularyHandler.ListAll)
+			r.Put("/vocabulary/{id}/status", vocabularyHandler.UpdateStatus)
 			r.Get("/banners", adminHandler.ListBanners)
 			r.Post("/banners", adminHandler.CreateBanner)
 			r.Put("/banners/{id}", adminHandler.UpdateBanner)
@@ -186,6 +189,39 @@ func submitTestAnswer(t *testing.T, r http.Handler, token, sessionID, questionID
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("failed to submit answer for %s: %d %s", questionID, w.Code, w.Body.String())
+	}
+}
+
+func getCurrentQuestionIDs(t *testing.T, r http.Handler, token, sessionID string) []string {
+	t.Helper()
+	req := httptest.NewRequest("GET", "/api/v1/test/sessions/"+sessionID, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to read session: %d %s", w.Code, w.Body.String())
+	}
+	var details models.SessionDetailsResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &details); err != nil {
+		t.Fatalf("failed to decode session: %v", err)
+	}
+	ids := make([]string, 0, len(details.Questions))
+	for _, question := range details.Questions {
+		ids = append(ids, question.ID)
+	}
+	return ids
+}
+
+func completeCurrentStage(t *testing.T, r http.Handler, token, sessionID, stage string) {
+	t.Helper()
+	payload, _ := json.Marshal(models.StageCompleteRequest{StageName: stage, Accuracy: 0.5})
+	req := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/stage-complete", bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to complete stage %s: %d %s", stage, w.Code, w.Body.String())
 	}
 }
 
@@ -442,11 +478,21 @@ func TestTestSessionLifecycle(t *testing.T) {
 		t.Fatalf("expected 200 on submit response, got %d: %s", respW.Code, respW.Body.String())
 	}
 
-	// Record at least one server-verified answer for every skill so the overall
-	// score is measured. Skipped skills must not borrow another skill's score.
-	submitTestAnswer(t, r, token, sessionID, "q-lt-01", `"The library provides free access to academic journals."`)
-	submitTestAnswer(t, r, token, sessionID, "q-ws-01", `{"text":"Practical career skills and theoretical academic subjects both matter, but a balanced education is most beneficial. Practical courses teach students to communicate and solve real problems, while theoretical subjects develop analytical habits that make those skills adaptable."}`)
-	submitTestAnswer(t, r, token, sessionID, "q-ss-01", `{"transcript":"I prefer living in a large city because it offers more educational and professional opportunities. Public transport makes it easier to attend classes and internships, and cultural events expose me to different perspectives.","durationSec":150}`)
+	// Answer one issued question per stage so the overall score is measured.
+	// Skipped skills must not borrow another skill's score.
+	completeCurrentStage(t, r, token, sessionID, "READ_SELECT")
+	for index, stage := range service.StageSequence {
+		if index == 0 {
+			continue
+		}
+		ids := getCurrentQuestionIDs(t, r, token, sessionID)
+		if len(ids) == 0 {
+			t.Fatalf("no assigned questions for stage %s", stage)
+		}
+		_, payload := stageAnswer(stage)
+		submitTestAnswer(t, r, token, sessionID, ids[0], payload)
+		completeCurrentStage(t, r, token, sessionID, stage)
+	}
 
 	// 5. Complete session
 	compPayload := models.CompleteSessionRequest{
@@ -566,7 +612,16 @@ func TestCompletionDoesNotCreditSkippedSkills(t *testing.T) {
 	sessionID := startResp.Session.ID
 
 	// Only writing is answered. Reading, listening and speaking are skipped.
-	submitTestAnswer(t, r, regResp.Token, sessionID, "q-ws-01", `{"text":"A balanced education combines practical career skills with rigorous academic theory. Practical courses teach collaboration and problem solving, while seminars develop analytical habits that make graduates adaptable over time."}`)
+	for _, stage := range service.StageSequence {
+		if stage == "WRITING_SAMPLE" {
+			ids := getCurrentQuestionIDs(t, r, regResp.Token, sessionID)
+			if len(ids) == 0 {
+				t.Fatalf("no assigned writing question")
+			}
+			submitTestAnswer(t, r, regResp.Token, sessionID, ids[0], `{"text":"A balanced education combines practical career skills with rigorous academic theory. Practical courses teach collaboration and problem solving, while seminars develop analytical habits that make graduates adaptable over time."}`)
+		}
+		completeCurrentStage(t, r, regResp.Token, sessionID, stage)
+	}
 
 	compReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/complete", bytes.NewReader([]byte("{}")))
 	compReq.Header.Set("Authorization", "Bearer "+regResp.Token)
@@ -693,6 +748,114 @@ func TestVocabularyPublication(t *testing.T) {
 	}
 	if payload.Entries[0].Status != "published" {
 		t.Fatalf("expected only published entries, got %s", payload.Entries[0].Status)
+	}
+}
+
+func TestWrongAnswerPopulatesErrorNotebook(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email:    "notebook@det-academy.com",
+		Password: "strongPassword123!",
+		Name:     "Notebook User",
+		Locale:   "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	if regW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on register, got %d", regW.Code)
+	}
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	startBody, _ := json.Marshal(map[string]string{"candidateName": "Notebook User", "difficultyLevel": "B2"})
+	startReq := httptest.NewRequest("POST", "/api/v1/test/sessions", bytes.NewReader(startBody))
+	startReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	startW := httptest.NewRecorder()
+	r.ServeHTTP(startW, startReq)
+	if startW.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on start, got %d", startW.Code)
+	}
+	var startResp models.SessionDetailsResponse
+	_ = json.Unmarshal(startW.Body.Bytes(), &startResp)
+	sessionID := startResp.Session.ID
+
+	completeCurrentStage(t, r, regResp.Token, sessionID, "READ_SELECT")
+	ids := getCurrentQuestionIDs(t, r, regResp.Token, sessionID)
+	if len(ids) == 0 {
+		t.Fatal("expected assigned FILL_BLANKS question")
+	}
+	submitTestAnswer(t, r, regResp.Token, sessionID, ids[0], `{"answer":"zzzz"}`)
+
+	req := httptest.NewRequest("GET", "/api/v1/user/errors", nil)
+	req.Header.Set("Authorization", "Bearer "+regResp.Token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 on errors, got %d: %s", w.Code, w.Body.String())
+	}
+	var payload struct {
+		Errors []models.UserErrorItem `json:"errors"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &payload)
+	if len(payload.Errors) == 0 {
+		t.Fatal("expected wrong exam answer to populate the error notebook")
+	}
+	if payload.Errors[0].CorrectAnswer == "" {
+		t.Fatal("expected a correct answer in the error notebook")
+	}
+}
+
+func TestAdminVocabularyPublishing(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	loginBody, _ := json.Marshal(models.LoginRequest{Email: "admin@det-academy.com", Password: "admin123"})
+	loginReq := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(loginBody))
+	loginW := httptest.NewRecorder()
+	r.ServeHTTP(loginW, loginReq)
+	if loginW.Code != http.StatusOK {
+		t.Fatalf("expected admin login, got %d", loginW.Code)
+	}
+	var loginResp models.AuthResponse
+	_ = json.Unmarshal(loginW.Body.Bytes(), &loginResp)
+
+	listReq := httptest.NewRequest("GET", "/api/v1/admin/vocabulary", nil)
+	listReq.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	listW := httptest.NewRecorder()
+	r.ServeHTTP(listW, listReq)
+	if listW.Code != http.StatusOK {
+		t.Fatalf("expected admin vocabulary list, got %d: %s", listW.Code, listW.Body.String())
+	}
+	var payload struct {
+		Entries []models.VocabularyEntry `json:"entries"`
+	}
+	_ = json.Unmarshal(listW.Body.Bytes(), &payload)
+	if len(payload.Entries) == 0 {
+		t.Fatal("expected seeded vocabulary entries")
+	}
+	entry := payload.Entries[0]
+
+	statusBody, _ := json.Marshal(map[string]string{"status": "archived"})
+	statusReq := httptest.NewRequest("PUT", "/api/v1/admin/vocabulary/"+entry.ID+"/status", bytes.NewReader(statusBody))
+	statusReq.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	statusW := httptest.NewRecorder()
+	r.ServeHTTP(statusW, statusReq)
+	if statusW.Code != http.StatusOK {
+		t.Fatalf("expected status update, got %d: %s", statusW.Code, statusW.Body.String())
+	}
+
+	publicReq := httptest.NewRequest("GET", "/api/v1/vocabulary?search="+entry.Word, nil)
+	publicW := httptest.NewRecorder()
+	r.ServeHTTP(publicW, publicReq)
+	var publicPayload struct {
+		Entries []models.VocabularyEntry `json:"entries"`
+	}
+	_ = json.Unmarshal(publicW.Body.Bytes(), &publicPayload)
+	for _, item := range publicPayload.Entries {
+		if item.ID == entry.ID {
+			t.Fatal("archived entry must not be returned by the public API")
+		}
 	}
 }
 
@@ -1124,12 +1287,20 @@ func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
 
 	// 4. Verify audio file retrieval via GET /api/v1/media/audio/{filename}
 	audioPath := uploadRes.URL
+	unauthAudioReq := httptest.NewRequest("GET", audioPath, nil)
+	unauthAudioW := httptest.NewRecorder()
+	r.ServeHTTP(unauthAudioW, unauthAudioReq)
+	if unauthAudioW.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated audio access, got %d", unauthAudioW.Code)
+	}
+
 	getAudioReq := httptest.NewRequest("GET", audioPath, nil)
+	getAudioReq.Header.Set("Authorization", "Bearer "+token1)
 	getAudioW := httptest.NewRecorder()
 	r.ServeHTTP(getAudioW, getAudioReq)
 
 	if getAudioW.Code != http.StatusOK {
-		t.Fatalf("expected 200 on get audio, got %d", getAudioW.Code)
+		t.Fatalf("expected 200 on owner audio access, got %d", getAudioW.Code)
 	}
 	if getAudioW.Header().Get("Accept-Ranges") != "bytes" {
 		t.Fatalf("expected Accept-Ranges: bytes header, got %s", getAudioW.Header().Get("Accept-Ranges"))
@@ -1494,24 +1665,14 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 	stages := service.StageSequence
 	for i, stage := range stages {
 		stageNum := i + 1
-		questionID, answerPayload := stageAnswer(stage)
-		submitTestAnswer(t, r, token, sessionID, questionID, answerPayload)
-
-		// Transition / complete stage
-		if stageNum < len(stages) {
-			stagePayload := models.StageCompleteRequest{
-				StageName:        stage,
-				Accuracy:         0.9,
-				TotalQuestions:   5,
-				CorrectQuestions: 5,
-			}
-			stageBody, _ := json.Marshal(stagePayload)
-			stageReq := httptest.NewRequest("POST", "/api/v1/test/sessions/"+sessionID+"/stage-complete", bytes.NewReader(stageBody))
-			stageReq.Header.Set("Authorization", "Bearer "+token)
-			stageReq.Header.Set("Content-Type", "application/json")
-			stageW := httptest.NewRecorder()
-			r.ServeHTTP(stageW, stageReq)
+		ids := getCurrentQuestionIDs(t, r, token, sessionID)
+		if len(ids) == 0 {
+			t.Fatalf("no assigned questions for stage %s", stage)
 		}
+		_, answerPayload := stageAnswer(stage)
+		submitTestAnswer(t, r, token, sessionID, ids[0], answerPayload)
+		completeCurrentStage(t, r, token, sessionID, stage)
+		_ = stageNum
 	}
 
 	// 6. Complete Session

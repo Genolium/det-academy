@@ -65,6 +65,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const [transcript, setTranscript] = useState('');
   const [turnTranscripts, setTurnTranscripts] = useState<string[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPlayingPromptAudio, setIsPlayingPromptAudio] = useState(false);
 
   const transcriptRef = useRef(transcript);
@@ -147,7 +149,15 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
         }
         formData.append('durationSec', '210');
 
-        api.uploadSpeakingAudio(backendSessionId, formData).catch(() => {});
+        try {
+          await api.uploadSpeakingAudio(backendSessionId, formData);
+        } catch {
+          setIsSubmitting(false);
+          isAdvancingRef.current = false;
+          setSubmitError('Не удалось сохранить аудио на сервере. Проверьте соединение и повторите.');
+          return;
+        }
+
       }
 
       recordSpeakingResult(fullTranscript || (recordedBlob ? 'Записан интерактивный диалог' : ''));
@@ -276,6 +286,12 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
             <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 p-2 rounded-lg">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{micError}</span>
+            </div>
+          )}
+          {submitError && (
+            <div className="flex items-center gap-2 text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{submitError}</span>
             </div>
           )}
         </div>

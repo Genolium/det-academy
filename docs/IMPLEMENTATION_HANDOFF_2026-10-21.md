@@ -965,3 +965,68 @@ npx playwright test             # 10 passed
 - Speaking/Writing pipeline с очередью, retry, статусами `queued/transcribing/evaluating` и калибровкой не входил в эту итерацию.
 - Directus publishing workflow для vocabulary (draft → reviewed → published) пока представлен таблицей и статусом, но без UI/событий CMS.
 - Production release gate: dependency/security scan, backup/restore drill, error tracking, dashboards и ручной critical path.
+
+---
+
+## 9. Итерация 4: Phase A — доверие к экзамену (21 октября 2026)
+
+### 9.1. Экзамен
+
+- Введена таблица `session_questions`: сервер хранит, какие вопросы реально выданы в каждой попытке.
+- `RecordQuestionResponse` принимает только выданный вопрос текущей стадии.
+- Добавлен per-item deadline (по `timeLimitSec` вопроса) с grace 10 секунд.
+- `/respond` больше не возвращает `isCorrect`/`rawScore` — correctness oracle удалён.
+- `CompleteSession` запрещён до `StageName = COMPLETED`.
+- Overall не выставляется, если отвечено меньше 8 заданий.
+- Сертификат требует покрытие выданных вопросов ≥ 30% и отсутствие timeout-событий.
+- Ошибки объективных заданий автоматически пишутся в серверную тетрадь ошибок (`recordMistake`).
+- Добавлен `GET /test/sessions/{id}/review` и блок «Разбор попытки» в результате.
+- `Interactive Reading`/`Listening` проходят по 2 серверных блока.
+
+### 9.2. OAuth
+
+- Добавлена таблица `oauth_transactions`: `state_hash`, `nonce`, PKCE verifier, provider, action, redirect URI, user, expiry, consumed_at.
+- `POST /auth/oauth/start` выпускает state/nonce/PKCE и URL провайдера.
+- `Consume` атомарный: повторный callback отклоняется.
+- Google authorization-code flow: обмен кода + `id_token`, проверка `iss/aud/exp/email_verified`.
+- Apple authorization-code flow: ES256 client secret из `APPLE_TEAM_ID`/`APPLE_KEY_ID`/`APPLE_PRIVATE_KEY`, обмен кода, JWKS-проверка `id_token`, nonce.
+- Frontend AuthModal переведён на серверный `/auth/oauth/start`; callback передаёт `state`.
+- Redirect URI проверяется по allowlist.
+
+### 9.3. Media и production
+
+- Загрузка аудио проверяет владельца сессии **до** записи файла.
+- Имя файла — только `assetID + extension`; path traversal из `questionID` невозможен.
+- Запись через temp file + atomic rename, файл удаляется при ошибке.
+- `/api/v1/media/audio/{filename}` теперь требует авторизацию и ownership.
+- `MediaAsset.filePath` больше не отдаётся в JSON.
+- Docker: media volume, `MEDIA_UPLOAD_DIR`, `ENV=production`, обязательные секреты, порты на `127.0.0.1`, seed.sql убран из production, `.env` исключён из build context.
+- `ALLOW_MEMORY_STORAGE=true` требуется для memory fallback; production fail-closed.
+- Secure cookie включается в production.
+- `/ready` проверяет доступность storage.
+- Добавлены `.github/workflows/ci.yml` и `Makefile`.
+- Добавлен admin publishing UI `/admin/vocabulary` (draft/reviewed/published/archived) и API.
+
+### 9.4. AI/ML
+
+Добавлен проектный документ `docs/AI_ML_ARCHITECTURE_2026-10-21.md`: провайдеры, STT, очередь, evidence spans, калибровка, guardrails. Код очереди и провайдера ещё не включён.
+
+### 9.5. Проверки
+
+```bash
+npx tsc --noEmit
+npm run lint          # 0 errors, 126 warnings
+npm run build
+(cd backend && go test ./... -count=1)
+TEST_DATABASE_URL=... go test ./tests -run TestPostgresTrustedCompletionIntegrity
+npx playwright test   # 10 passed
+```
+
+### 9.6. Осталось
+
+- Async evaluation queue (`queued/transcribing/evaluating/retry`) и AI provider implementation.
+- Server-side STT (Whisper-compatible/Ollama) вместо клиентского transcript.
+- Diagnostic + daily plan + SRS recall + weekly report (Phase B).
+- Directus schema sync for vocabulary (current admin UI writes the app DB directly).
+- Backups/restore drill, Sentry/metrics, branch protection, full-stack E2E.
+- Rate limits/CSRF/email verification/refresh tokens.

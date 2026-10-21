@@ -5,7 +5,7 @@ import { writingSampleBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { api } from '@/lib/api';
+import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Clock, Award } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
     const textToSubmit = essayRef.current;
 
     if (backendSessionId && serverQ) {
-      api.submitQuestionResponse(backendSessionId, {
+      submitOrQueueResponse(backendSessionId, {
         questionId: serverQ.id,
         userResponse: { text: textToSubmit },
         rawScore: 0,

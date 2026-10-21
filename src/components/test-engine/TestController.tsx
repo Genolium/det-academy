@@ -213,6 +213,7 @@ export const TestController: React.FC = () => {
       });
       hydrateServerAttempt({
         sessionId: resp.session.id,
+        candidateName: resp.session.candidateName,
         stage: (resp.session.stageName as StageName) || 'READ_SELECT',
         difficultyLevel: (resp.session.difficultyLevel as 'A2' | 'B1' | 'B2' | 'C1') || 'B1',
         deadlineAt: resp.session.deadlineAt
@@ -254,6 +255,7 @@ export const TestController: React.FC = () => {
 
       hydrateServerAttempt({
         sessionId: session.id,
+        candidateName: session.candidateName,
         stage: (session.stageName as StageName) || 'READ_SELECT',
         difficultyLevel: (session.difficultyLevel as 'A2' | 'B1' | 'B2' | 'C1') || 'B1',
         deadlineAt: session.deadlineAt ? new Date(session.deadlineAt).getTime() : null,

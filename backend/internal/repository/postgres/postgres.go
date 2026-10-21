@@ -16,16 +16,17 @@ import (
 )
 
 type PostgresStorage struct {
-	db           *sql.DB
-	users        *UserRepo
-	theory       *TheoryRepo
-	questions    *QuestionRepo
-	sessions     *SessionRepo
-	certificates *CertRepo
-	banners      *BannerRepo
-	institutions *InstitutionRepo
-	study        *StudyRepo
-	vocabulary   *VocabularyRepo
+	db                *sql.DB
+	users             *UserRepo
+	theory            *TheoryRepo
+	questions         *QuestionRepo
+	sessions          *SessionRepo
+	certificates      *CertRepo
+	banners           *BannerRepo
+	institutions      *InstitutionRepo
+	study             *StudyRepo
+	vocabulary        *VocabularyRepo
+	oauthTransactions *OAuthTransactionRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -47,16 +48,17 @@ func New(dbURL string) (*PostgresStorage, error) {
 	}
 
 	s := &PostgresStorage{
-		db:           db,
-		users:        &UserRepo{db: db},
-		theory:       &TheoryRepo{db: db},
-		questions:    &QuestionRepo{db: db},
-		sessions:     &SessionRepo{db: db},
-		certificates: &CertRepo{db: db},
-		banners:      &BannerRepo{db: db},
-		institutions: &InstitutionRepo{db: db},
-		study:        &StudyRepo{db: db},
-		vocabulary:   &VocabularyRepo{db: db},
+		db:                db,
+		users:             &UserRepo{db: db},
+		theory:            &TheoryRepo{db: db},
+		questions:         &QuestionRepo{db: db},
+		sessions:          &SessionRepo{db: db},
+		certificates:      &CertRepo{db: db},
+		banners:           &BannerRepo{db: db},
+		institutions:      &InstitutionRepo{db: db},
+		study:             &StudyRepo{db: db},
+		vocabulary:        &VocabularyRepo{db: db},
+		oauthTransactions: &OAuthTransactionRepo{db: db},
 	}
 
 	return s, nil
@@ -71,7 +73,11 @@ func (s *PostgresStorage) Banners() repository.BannerRepository           { retu
 func (s *PostgresStorage) Institutions() repository.InstitutionRepository { return s.institutions }
 func (s *PostgresStorage) Study() repository.StudyRepository              { return s.study }
 func (s *PostgresStorage) Vocabulary() repository.VocabularyRepository    { return s.vocabulary }
-func (s *PostgresStorage) Close() error                                   { return s.db.Close() }
+func (s *PostgresStorage) OAuthTransactions() repository.OAuthTransactionRepository {
+	return s.oauthTransactions
+}
+func (s *PostgresStorage) Ping(ctx context.Context) error { return s.db.PingContext(ctx) }
+func (s *PostgresStorage) Close() error                   { return s.db.Close() }
 
 // --- Users ---
 
@@ -435,6 +441,76 @@ func (r *SessionRepo) Update(ctx context.Context, s *models.TestSession) error {
 		s.DeadlineAt, s.CompletedAt, s.ID,
 	)
 	return err
+}
+
+func (r *SessionRepo) AssignQuestions(ctx context.Context, assignments []models.SessionQuestion) error {
+	if len(assignments) == 0 {
+		return nil
+	}
+	query := `
+		INSERT INTO session_questions (session_id, question_id, stage_name, position, issued_at, deadline_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (session_id, question_id) DO NOTHING
+	`
+	for _, assignment := range assignments {
+		if _, err := r.db.ExecContext(ctx, query,
+			assignment.SessionID, assignment.QuestionID, assignment.StageName,
+			assignment.Position, assignment.IssuedAt, assignment.DeadlineAt,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *SessionRepo) GetAssignedQuestions(ctx context.Context, sessionID, stageName string) ([]models.SessionQuestion, error) {
+	query := `
+		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at
+		FROM session_questions
+		WHERE session_id = $1
+	`
+	args := []interface{}{sessionID}
+	if stageName != "" {
+		query += " AND stage_name = $2"
+		args = append(args, stageName)
+	}
+	query += " ORDER BY position ASC, question_id ASC"
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	assignments := []models.SessionQuestion{}
+	for rows.Next() {
+		var assignment models.SessionQuestion
+		if err := rows.Scan(&assignment.SessionID, &assignment.QuestionID, &assignment.StageName,
+			&assignment.Position, &assignment.IssuedAt, &assignment.DeadlineAt); err != nil {
+			return nil, err
+		}
+		assignments = append(assignments, assignment)
+	}
+	return assignments, rows.Err()
+}
+
+func (r *SessionRepo) GetAllAssignedQuestions(ctx context.Context, sessionID string) ([]models.SessionQuestion, error) {
+	return r.GetAssignedQuestions(ctx, sessionID, "")
+}
+
+func (r *SessionRepo) GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error) {
+	query := `
+		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at
+		FROM session_questions
+		WHERE session_id = $1 AND question_id = $2
+	`
+	var assignment models.SessionQuestion
+	if err := r.db.QueryRowContext(ctx, query, sessionID, questionID).Scan(
+		&assignment.SessionID, &assignment.QuestionID, &assignment.StageName,
+		&assignment.Position, &assignment.IssuedAt, &assignment.DeadlineAt,
+	); err != nil {
+		return nil, err
+	}
+	return &assignment, nil
 }
 
 func (r *SessionRepo) RecordEvent(ctx context.Context, event *models.SessionEvent) error {
@@ -1238,8 +1314,87 @@ func (r *VocabularyRepo) List(ctx context.Context, search, level string) ([]mode
 	return entries, rows.Err()
 }
 
+func (r *VocabularyRepo) ListAll(ctx context.Context) ([]models.VocabularyEntry, error) {
+	query := `
+		SELECT id, word, COALESCE(ipa, ''), COALESCE(pos, ''), level, meaning_ru,
+		       definition_en, COALESCE(example, ''), collocations, source,
+		       COALESCE(source_url, ''), status, version, reviewed_at
+		FROM vocabulary_entries
+		ORDER BY status ASC, word ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	entries := []models.VocabularyEntry{}
+	for rows.Next() {
+		var entry models.VocabularyEntry
+		var collocations []byte
+		if err := rows.Scan(&entry.ID, &entry.Word, &entry.IPA, &entry.PartOfSpeech, &entry.Level,
+			&entry.MeaningRu, &entry.DefinitionEn, &entry.Example, &collocations,
+			&entry.Source, &entry.SourceURL, &entry.Status, &entry.Version, &entry.ReviewedAt); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal(collocations, &entry.Collocations)
+		entries = append(entries, entry)
+	}
+	return entries, rows.Err()
+}
+
+func (r *VocabularyRepo) UpdateStatus(ctx context.Context, id, status string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE vocabulary_entries SET status = $1, reviewed_at = NOW() WHERE id = $2`, status, id)
+	return err
+}
+
 func (r *VocabularyRepo) Count(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM vocabulary_entries WHERE status = 'published'`).Scan(&count)
 	return count, err
+}
+
+// --- OAuth transactions ---
+
+type OAuthTransactionRepo struct{ db *sql.DB }
+
+func (r *OAuthTransactionRepo) Create(ctx context.Context, transaction *models.OAuthTransaction) error {
+	query := `
+		INSERT INTO oauth_transactions
+			(id, state_hash, nonce, pkce_verifier, provider, action, redirect_uri, user_id, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, '')::uuid, $9, $10)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		transaction.ID, transaction.StateHash, transaction.Nonce, transaction.PKCEVerifier,
+		transaction.Provider, transaction.Action, transaction.RedirectURI, transaction.UserID,
+		transaction.ExpiresAt, transaction.CreatedAt,
+	)
+	return err
+}
+
+func (r *OAuthTransactionRepo) Consume(ctx context.Context, stateHash, provider string) (*models.OAuthTransaction, error) {
+	query := `
+		UPDATE oauth_transactions
+		SET consumed_at = NOW()
+		WHERE state_hash = $1
+		  AND provider = $2
+		  AND consumed_at IS NULL
+		  AND expires_at > NOW()
+		RETURNING id, state_hash, nonce, pkce_verifier, provider, action, redirect_uri,
+		          COALESCE(user_id::text, ''), expires_at, consumed_at, created_at
+	`
+	var transaction models.OAuthTransaction
+	err := r.db.QueryRowContext(ctx, query, stateHash, provider).Scan(
+		&transaction.ID, &transaction.StateHash, &transaction.Nonce, &transaction.PKCEVerifier,
+		&transaction.Provider, &transaction.Action, &transaction.RedirectURI,
+		&transaction.UserID, &transaction.ExpiresAt, &transaction.ConsumedAt, &transaction.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
+}
+
+func (r *OAuthTransactionRepo) CleanupExpired(ctx context.Context) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM oauth_transactions WHERE expires_at < NOW() - INTERVAL '1 hour'`)
+	return err
 }

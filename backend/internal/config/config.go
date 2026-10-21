@@ -32,6 +32,9 @@ func Load() *Config {
 		dbURL = os.Getenv("DB_URL")
 	}
 	if dbURL == "" {
+		if env == "production" {
+			log.Fatal("[Config FATAL] DATABASE_URL is mandatory in production mode")
+		}
 		dbURL = "postgres://postgres:postgres@localhost:5432/det_academy?sslmode=disable"
 	}
 

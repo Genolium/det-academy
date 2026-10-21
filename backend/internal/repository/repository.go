@@ -49,6 +49,10 @@ type TestSessionRepository interface {
 	WithSessionLock(ctx context.Context, sessionID string, fn func() error) error
 	RecordEvent(ctx context.Context, event *models.SessionEvent) error
 	GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error)
+	AssignQuestions(ctx context.Context, assignments []models.SessionQuestion) error
+	GetAssignedQuestions(ctx context.Context, sessionID, stageName string) ([]models.SessionQuestion, error)
+	GetAllAssignedQuestions(ctx context.Context, sessionID string) ([]models.SessionQuestion, error)
+	GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error)
 	SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error
 	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
@@ -83,6 +87,12 @@ type InstitutionRepository interface {
 	Count(ctx context.Context) (int, error)
 }
 
+type OAuthTransactionRepository interface {
+	Create(ctx context.Context, transaction *models.OAuthTransaction) error
+	Consume(ctx context.Context, stateHash, provider string) (*models.OAuthTransaction, error)
+	CleanupExpired(ctx context.Context) error
+}
+
 type StudyRepository interface {
 	// Goals
 	GetGoals(ctx context.Context, userID string) (*models.UserGoal, error)
@@ -107,7 +117,9 @@ type StudyRepository interface {
 
 type VocabularyRepository interface {
 	List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error)
+	ListAll(ctx context.Context) ([]models.VocabularyEntry, error)
 	Count(ctx context.Context) (int, error)
+	UpdateStatus(ctx context.Context, id, status string) error
 }
 
 type Storage interface {
@@ -120,5 +132,7 @@ type Storage interface {
 	Institutions() InstitutionRepository
 	Study() StudyRepository
 	Vocabulary() VocabularyRepository
+	OAuthTransactions() OAuthTransactionRepository
+	Ping(ctx context.Context) error
 	Close() error
 }

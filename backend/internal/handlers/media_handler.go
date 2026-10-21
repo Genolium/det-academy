@@ -47,6 +47,17 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, "Missing session ID")
 		return
 	}
+	// Authorize before touching the filesystem. Otherwise an attacker can
+	// fill the disk using someone else's or a non-existent session.
+	if err := h.catService.VerifySessionOwner(r.Context(), sessionID, userID); err != nil {
+		RespondError(w, http.StatusForbidden, "Session does not belong to user")
+		return
+	}
+
+	if err := os.MkdirAll(h.uploadDir, 0755); err != nil {
+		RespondError(w, http.StatusInternalServerError, "Media storage is unavailable")
+		return
+	}
 
 	// 25MB limit on audio upload
 	r.Body = http.MaxBytesReader(w, r.Body, 25<<20)
@@ -86,25 +97,46 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	assetID := uuid.New().String()
-	cleanFilename := fmt.Sprintf("%s_%s_%s%s", sessionID, questionID, assetID[:8], ext)
+	// The public filename is derived only from a server-generated UUID. Never
+	// build a filesystem path from sessionID/questionID supplied by a client.
+	cleanFilename := assetID + ext
 	targetPath := filepath.Join(h.uploadDir, cleanFilename)
 
-	dst, err := os.Create(targetPath)
+	tmpFile, err := os.CreateTemp(h.uploadDir, "upload-*")
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, "Failed to save audio file on server")
 		return
 	}
-	defer dst.Close()
+	tmpPath := tmpFile.Name()
+	cleanupTemp := func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
+	}
 
-	writtenBytes, err := io.Copy(dst, file)
+	writtenBytes, err := io.Copy(tmpFile, file)
 	if err != nil {
+		cleanupTemp()
 		RespondError(w, http.StatusInternalServerError, "Failed to write audio stream")
 		return
 	}
-
+	if err := tmpFile.Sync(); err != nil {
+		cleanupTemp()
+		RespondError(w, http.StatusInternalServerError, "Failed to flush audio file")
+		return
+	}
+	if err := tmpFile.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		RespondError(w, http.StatusInternalServerError, "Failed to close audio file")
+		return
+	}
 	if writtenBytes == 0 {
-		_ = os.Remove(targetPath)
+		_ = os.Remove(tmpPath)
 		RespondError(w, http.StatusBadRequest, "Uploaded audio file is empty (0 bytes)")
+		return
+	}
+	if err := os.Rename(tmpPath, targetPath); err != nil {
+		_ = os.Remove(tmpPath)
+		RespondError(w, http.StatusInternalServerError, "Failed to finalize audio file")
 		return
 	}
 
@@ -126,6 +158,7 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	// Save media asset and evaluate speaking if questionId provided
 	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset)
 	if err != nil {
+		_ = os.Remove(targetPath)
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -138,25 +171,35 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeAudio streams the recorded student audio with HTTP Range support.
+// The route is authenticated and ownership is checked against media_assets.
 // GET /api/v1/media/audio/{filename}
 func (h *MediaHandler) ServeAudio(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(UserIDKey).(string)
+	if !ok || userID == "" {
+		RespondError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	filename := chi.URLParam(r, "filename")
 	if filename == "" {
 		RespondError(w, http.StatusBadRequest, "Missing filename")
 		return
 	}
-
-	// Prevent directory traversal attacks
 	cleanFilename := filepath.Base(filename)
-	filePath := filepath.Join(h.uploadDir, cleanFilename)
+	assetID := strings.TrimSuffix(cleanFilename, filepath.Ext(cleanFilename))
+	asset, err := h.catService.GetMediaAssetForUser(r.Context(), assetID, userID)
+	if err != nil || asset == nil {
+		RespondError(w, http.StatusNotFound, "Audio file not found")
+		return
+	}
 
+	filePath := asset.FilePath
 	info, err := os.Stat(filePath)
 	if err != nil || info.IsDir() {
 		RespondError(w, http.StatusNotFound, "Audio file not found")
 		return
 	}
 
-	// Content-Type based on extension
 	ext := strings.ToLower(filepath.Ext(cleanFilename))
 	switch ext {
 	case ".webm":
@@ -172,9 +215,9 @@ func (h *MediaHandler) ServeAudio(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.Header().Set("Content-Type", "application/octet-stream")
 	}
-
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Cache-Control", "private, max-age=86400")
+	w.Header().Set("Cache-Control", "private, no-store")
 
 	http.ServeFile(w, r, filePath)
 }
