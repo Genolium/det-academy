@@ -13,6 +13,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
 	UpdateRole(ctx context.Context, id, role string) error
+	IncrementTokenVersion(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
 

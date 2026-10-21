@@ -13,6 +13,7 @@ type User struct {
 	Role         string    `json:"role"` // "student", "editor", "admin"
 	AvatarURL    string    `json:"avatarUrl"`
 	Locale       string    `json:"locale"`
+	TokenVersion int       `json:"-"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 }

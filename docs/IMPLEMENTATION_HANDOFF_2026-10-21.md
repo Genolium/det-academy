@@ -1130,3 +1130,17 @@ npx playwright test   # 11 passed
 - SRS-очередь фиксируется на время сессии: оценка карточки больше не сдвигает следующую карточку и не пропускает её.
 - SRS recall-check остаётся перед переворотом карточки.
 - Проверки: `go test ./...`, `npx tsc --noEmit`, `npm run build`, `npx playwright test` — 11 passed.
+
+---
+
+## 13. Итерация 8: operations, auth revocation и server-first каталог (21 октября 2026)
+
+- Institutions map больше не импортирует 7.6 MB локальный dataset; каталог загружается с сервера, при недоступности показывается явная ошибка.
+- Добавлены rate limit на `/auth/*`, Origin guard для state-changing запросов, глобальный request size limit.
+- Добавлены `/api/v1/metrics` и JSON access-логи с request_id/status/duration.
+- Пользовательский `token_version` и revocation: logout, смена пароля и роли инвалидируют старые JWT; middleware проверяет версию.
+- Admin pagination исправлена: `ListAll` применяет LIMIT/OFFSET.
+- Добавлены `scripts/backup_postgres.sh`, `scripts/restore_postgres.sh`, `docs/RUNBOOK.md`.
+- Добавлен `scripts/directus_sync_vocabulary.mjs` для идемпотентной схемы коллекции и public read permission.
+- Добавлен PWA manifest.
+- Проверки: Go tests, tsc, build, 11 Playwright tests.

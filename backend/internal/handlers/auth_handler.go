@@ -166,6 +166,9 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if userID := GetUserIDFromContext(r.Context()); userID != "" {
+		_ = h.authService.RevokeUserTokens(r.Context(), userID)
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "det_token",
 		Value:    "",

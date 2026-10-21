@@ -1285,6 +1285,7 @@ func (r *userMemoryRepo) UpdatePassword(ctx context.Context, id, passwordHash st
 		return errors.New("user not found")
 	}
 	u.PasswordHash = passwordHash
+	u.TokenVersion++
 	u.UpdatedAt = time.Now().UTC()
 	return nil
 }
@@ -1297,6 +1298,19 @@ func (r *userMemoryRepo) UpdateRole(ctx context.Context, id, role string) error 
 		return errors.New("user not found")
 	}
 	u.Role = role
+	u.TokenVersion++
+	u.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (r *userMemoryRepo) IncrementTokenVersion(ctx context.Context, id string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	u, ok := r.s.users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+	u.TokenVersion++
 	u.UpdatedAt = time.Now().UTC()
 	return nil
 }
@@ -1389,7 +1403,21 @@ func (r *userMemoryRepo) ListAll(ctx context.Context, page, limit int, search, r
 	}
 
 	total := len(result)
-	return result, total, nil
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+	start := (page - 1) * limit
+	if start >= len(result) {
+		return []models.User{}, total, nil
+	}
+	end := start + limit
+	if end > len(result) {
+		end = len(result)
+	}
+	return result[start:end], total, nil
 }
 
 // --- Theory Memory Repo ---

@@ -148,12 +148,14 @@ func main() {
 	// Global Middlewares
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.RealIP)
-	r.Use(chiMiddleware.Logger)
+	r.Use(chiMiddleware.RequestSize(30 << 20))
+	r.Use(handlers.MetricsMiddleware)
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.Timeout(60 * time.Second))
 
 	// CORS configuration: Allow explicit trusted origins with credentials
 	allowedOrigins := corsOrigins()
+	r.Use(handlers.OriginGuardMiddleware(allowedOrigins))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -191,10 +193,13 @@ func main() {
 		})
 
 		// Auth routes
+		r.Get("/metrics", handlers.MetricsHandler)
+
 		r.Route("/auth", func(r chi.Router) {
+			r.Use(handlers.RateLimitMiddleware(60, time.Minute))
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
-			r.Post("/logout", authHandler.Logout)
+			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 

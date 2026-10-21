@@ -8,7 +8,6 @@ import { Search, MapPin, Globe, ExternalLink, Filter, GraduationCap, CheckCircle
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { institutionsDataset } from '@/data/institutionsData';
 
 type SubscoreFilter = 'ANY' | 'WRITING_120' | 'LITERACY_120' | 'ALL_115' | 'CONVERSATION_120';
 
@@ -17,6 +16,7 @@ export const InstitutionsMap: React.FC = () => {
   const t = translations[locale].institutions;
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -38,21 +38,20 @@ export const InstitutionsMap: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const baseMap = new Map<string, Institution>();
-        (institutionsDataset as Institution[]).forEach((item) => {
-          baseMap.set(item.name.toLowerCase().trim(), item);
-        });
+        let loaded = 0;
 
-        // Merge from Go Backend API
-        try {
-          const res = await api.getInstitutions();
-          if (res && res.institutions) {
-            res.institutions.forEach((item) => {
-              baseMap.set(item.name.toLowerCase().trim(), item);
-            });
-          }
-        } catch {}
+        // The server is the only source of the catalogue. The multi-megabyte
+        // local dataset is no longer shipped in the JavaScript bundle.
+        const res = await api.getInstitutions();
+        if (res && res.institutions) {
+          res.institutions.forEach((item) => {
+            baseMap.set(item.name.toLowerCase().trim(), item);
+            loaded++;
+          });
+        }
 
         // Merge from Directus CMS
         try {
@@ -80,11 +79,17 @@ export const InstitutionsMap: React.FC = () => {
           }
         } catch {}
 
-        const allMerged = Array.from(baseMap.values());
-        setInstitutions(allMerged);
+        if (loaded === 0) {
+          setLoadError(
+            locale === 'ru'
+              ? 'Каталог вузов временно недоступен. Данные не подменяются локальной копией.'
+              : 'The institution catalogue is temporarily unavailable. No local fallback is shown.'
+          );
+        } else {
+          setInstitutions(Array.from(baseMap.values()));
+        }
       } catch (err) {
-        console.warn('Fallback to static institutions dataset:', err);
-        setInstitutions(institutionsDataset as Institution[]);
+        setLoadError(err instanceof Error ? err.message : 'Не удалось загрузить каталог вузов');
       } finally {
         setLoading(false);
       }
@@ -472,6 +477,12 @@ export const InstitutionsMap: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {loadError && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-800">
+          {loadError}
+        </div>
+      )}
+
       {/* Search and Filters Bar */}
       <div className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">

@@ -19,7 +19,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'DET Academy | Интерактивная платформа подготовки к Duolingo English Test',
-  description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Симулятор экзамена, тренажер скоропечатания DET, карта мировых вузов, база знаний и сертификация.`,
+  description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Диагностика, персональный план, тренажёры, пробные тесты и разбор ошибок.`,
+  manifest: '/manifest.webmanifest',
+  themeColor: '#D2F544',
   icons: {
     icon: [
       { url: '/logo.svg', type: 'image/svg+xml' },

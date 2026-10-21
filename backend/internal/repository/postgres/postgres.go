@@ -85,8 +85,8 @@ type UserRepo struct{ db *sql.DB }
 
 func (r *UserRepo) Create(ctx context.Context, u *models.User) error {
 	query := `
-		INSERT INTO users (id, email, password_hash, name, role, avatar_url, locale, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (id, email, password_hash, name, role, avatar_url, locale, token_version, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	now := time.Now().UTC()
 	u.CreatedAt = now
@@ -95,15 +95,15 @@ func (r *UserRepo) Create(ctx context.Context, u *models.User) error {
 	if role == "" {
 		role = "student"
 	}
-	_, err := r.db.ExecContext(ctx, query, u.ID, u.Email, u.PasswordHash, u.Name, role, u.AvatarURL, u.Locale, u.CreatedAt, u.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, query, u.ID, u.Email, u.PasswordHash, u.Name, role, u.AvatarURL, u.Locale, u.TokenVersion, u.CreatedAt, u.UpdatedAt)
 	return err
 }
 
 func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE id = $1`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -112,10 +112,10 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 }
 
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE email = $1`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.CreatedAt, &u.UpdatedAt,
+		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -131,14 +131,19 @@ func (r *UserRepo) Update(ctx context.Context, u *models.User) error {
 }
 
 func (r *UserRepo) UpdatePassword(ctx context.Context, id, passwordHash string) error {
-	query := `UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3`
+	query := `UPDATE users SET password_hash = $1, updated_at = $2, token_version = token_version + 1 WHERE id = $3`
 	_, err := r.db.ExecContext(ctx, query, passwordHash, time.Now().UTC(), id)
 	return err
 }
 
 func (r *UserRepo) UpdateRole(ctx context.Context, id, role string) error {
-	query := `UPDATE users SET role = $1, updated_at = $2 WHERE id = $3`
+	query := `UPDATE users SET role = $1, updated_at = $2, token_version = token_version + 1 WHERE id = $3`
 	_, err := r.db.ExecContext(ctx, query, role, time.Now().UTC(), id)
+	return err
+}
+
+func (r *UserRepo) IncrementTokenVersion(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = $1`, id)
 	return err
 }
 
@@ -231,7 +236,14 @@ func (r *UserRepo) ListAll(ctx context.Context, page, limit int, search, role st
 		return nil, 0, err
 	}
 
-	query := fmt.Sprintf("SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, created_at, updated_at FROM users WHERE %s ORDER BY created_at DESC", whereSQL)
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+	query := fmt.Sprintf("SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, created_at, updated_at FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d", whereSQL, argIdx, argIdx+1)
+	args = append(args, limit, (page-1)*limit)
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
@@ -240,7 +252,7 @@ func (r *UserRepo) ListAll(ctx context.Context, page, limit int, search, role st
 
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		users = append(users, u)

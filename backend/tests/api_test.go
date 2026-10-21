@@ -75,7 +75,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
-			r.Post("/logout", authHandler.Logout)
+			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/logout", authHandler.Logout)
 			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
@@ -963,6 +963,42 @@ func TestPlanTaskCompletionPersists(t *testing.T) {
 		}
 	}
 	t.Fatal("task-srs missing from plan")
+}
+
+func TestLogoutRevokesExistingToken(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	regBody, _ := json.Marshal(models.RegisterRequest{
+		Email: "revoke@det-academy.com", Password: "strongPassword123!", Name: "Revoke", Locale: "ru",
+	})
+	regReq := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(regBody))
+	regW := httptest.NewRecorder()
+	r.ServeHTTP(regW, regReq)
+	var regResp models.AuthResponse
+	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
+
+	meReq := httptest.NewRequest("GET", "/api/v1/auth/me", nil)
+	meReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	meW := httptest.NewRecorder()
+	r.ServeHTTP(meW, meReq)
+	if meW.Code != http.StatusOK {
+		t.Fatalf("expected token to work before logout, got %d", meW.Code)
+	}
+
+	logoutReq := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
+	logoutReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	logoutW := httptest.NewRecorder()
+	r.ServeHTTP(logoutW, logoutReq)
+	if logoutW.Code != http.StatusOK {
+		t.Fatalf("expected logout 200, got %d", logoutW.Code)
+	}
+
+	meAgain := httptest.NewRequest("GET", "/api/v1/auth/me", nil)
+	meAgain.Header.Set("Authorization", "Bearer "+regResp.Token)
+	meAgainW := httptest.NewRecorder()
+	r.ServeHTTP(meAgainW, meAgain)
+	if meAgainW.Code != http.StatusUnauthorized {
+		t.Fatalf("expected revoked token to be rejected, got %d", meAgainW.Code)
+	}
 }
 
 func TestInstitutionsCatalog(t *testing.T) {

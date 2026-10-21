@@ -107,10 +107,11 @@ func envOr(key, fallback string) string {
 }
 
 type JWTClaims struct {
-	UserID string `json:"userId"`
-	Email  string `json:"email"`
-	Name   string `json:"name"`
-	Role   string `json:"role"`
+	UserID       string `json:"userId"`
+	Email        string `json:"email"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+	TokenVersion int    `json:"ver"`
 	jwt.RegisteredClaims
 }
 
@@ -1240,10 +1241,11 @@ func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	}
 
 	claims := JWTClaims{
-		UserID: user.ID,
-		Email:  user.Email,
-		Name:   user.Name,
-		Role:   role,
+		UserID:       user.ID,
+		Email:        user.Email,
+		Name:         user.Name,
+		Role:         role,
+		TokenVersion: user.TokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7 days
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -1268,10 +1270,21 @@ func (s *AuthService) ValidateToken(tokenString string) (*JWTClaims, error) {
 	}
 
 	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
+		user, userErr := s.userRepo.GetByID(context.Background(), claims.UserID)
+		if userErr != nil {
+			return nil, errors.New("user no longer exists")
+		}
+		if claims.TokenVersion != user.TokenVersion {
+			return nil, errors.New("token has been revoked")
+		}
 		return claims, nil
 	}
 
 	return nil, errors.New("invalid token")
+}
+
+func (s *AuthService) RevokeUserTokens(ctx context.Context, userID string) error {
+	return s.userRepo.IncrementTokenVersion(ctx, userID)
 }
 
 func (s *AuthService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
