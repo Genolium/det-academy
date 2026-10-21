@@ -95,6 +95,7 @@ func main() {
 		store.Institutions(),
 	)
 	studyService := service.NewStudyService(store, theoryService, catService)
+	vocabularyService := service.NewVocabularyService(store.Vocabulary())
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -105,6 +106,7 @@ func main() {
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
 	studyHandler := handlers.NewStudyHandler(studyService)
+	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
 
 	mediaUploadDir := os.Getenv("MEDIA_UPLOAD_DIR")
 	if mediaUploadDir == "" {
@@ -238,6 +240,8 @@ func main() {
 		})
 
 		// Universities & Institutions accepting DET
+		r.Get("/vocabulary", vocabularyHandler.List)
+
 		r.Route("/institutions", func(r chi.Router) {
 			r.Get("/", institutionHandler.List)
 			r.Get("/{id}", institutionHandler.GetByID)

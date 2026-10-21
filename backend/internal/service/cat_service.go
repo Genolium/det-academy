@@ -172,16 +172,45 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 		return nil, nil, fmt.Errorf("failed to create test session: %w", err)
 	}
 
-	// Fetch initial questions for Stage 1
-	questions, err := s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, session.DifficultyLevel)
+	// Fetch a deterministic blueprint-sized initial question set.
+	questions, err := s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch initial questions: %w", err)
 	}
-	if len(questions) == 0 {
-		questions, _ = s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, "")
-	}
 
 	return session, sanitizeQuestionsForStudent(questions), nil
+}
+
+// stageItemCount returns the blueprint-defined number of items for a stage.
+func stageItemCount(stageName string) int {
+	blueprint := models.GetDefaultExamBlueprint()
+	for _, stage := range blueprint.Stages {
+		if stage.StageName == stageName && stage.ItemCount > 0 {
+			return stage.ItemCount
+		}
+	}
+	return 1
+}
+
+// stageQuestions returns a deterministic, blueprint-sized question set for a
+// stage. If the exact difficulty band has too few items, it falls back to the
+// full type pool instead of silently shrinking the stage.
+func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty string) ([]models.Question, error) {
+	count := stageItemCount(stageName)
+	questions, err := s.questionRepo.ListByTypeAndDifficulty(ctx, stageName, difficulty)
+	if err != nil {
+		return nil, err
+	}
+	if len(questions) < count {
+		fallback, fallbackErr := s.questionRepo.ListByTypeAndDifficulty(ctx, stageName, "")
+		if fallbackErr == nil && len(fallback) > len(questions) {
+			questions = fallback
+		}
+	}
+	if len(questions) > count {
+		questions = questions[:count]
+	}
+	return questions, nil
 }
 
 // GetSession retrieves session by ID with ownership verification
@@ -205,10 +234,7 @@ func (s *CATService) GetSessionWithDetails(ctx context.Context, sessionID, userI
 
 	var questions []models.Question
 	if session.Status == "IN_PROGRESS" && session.StageName != "COMPLETED" {
-		questions, _ = s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, session.DifficultyLevel)
-		if len(questions) == 0 {
-			questions, _ = s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, "")
-		}
+		questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
 	}
 
 	responses, _ := s.sessionRepo.GetSessionResponses(ctx, sessionID)
@@ -327,6 +353,7 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 	// accuracy hint is used only when the stage produced no recorded answers.
 	stageAccuracy := math.Max(0, math.Min(1, req.Accuracy))
 	stageTypes := QuestionTypesForStage(session.StageName)
+	stageResponseCount := 0
 	if len(stageTypes) > 0 {
 		if responses, err := s.sessionRepo.GetSessionResponses(ctx, sessionID); err == nil {
 			sum, count := 0.0, 0
@@ -343,10 +370,21 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 					}
 				}
 			}
+			stageResponseCount = count
 			if count > 0 {
 				stageAccuracy = sum / float64(count)
 			}
 		}
+	}
+	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(10*time.Second)) {
+		s.recordEvent(ctx, session, "STAGE_TIMEOUT", "", map[string]interface{}{
+			"deadlineAt": session.DeadlineAt,
+			"responded":  stageResponseCount,
+		})
+	} else if stageResponseCount == 0 {
+		s.recordEvent(ctx, session, "STAGE_SKIPPED", "", map[string]interface{}{
+			"reason": "no recorded answers for stage",
+		})
 	}
 
 	// Adjust difficulty based on IRT
@@ -374,13 +412,23 @@ func (s *CATService) SubmitStageResult(ctx context.Context, sessionID, userID st
 
 	var nextQuestions []models.Question
 	if session.StageName != "COMPLETED" {
-		nextQuestions, _ = s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, session.DifficultyLevel)
-		if len(nextQuestions) == 0 {
-			nextQuestions, _ = s.questionRepo.ListByTypeAndDifficulty(ctx, session.StageName, "")
-		}
+		nextQuestions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel)
 	}
 
 	return session, sanitizeQuestionsForStudent(nextQuestions), nil
+}
+
+func (s *CATService) recordEvent(ctx context.Context, session *models.TestSession, eventType, questionID string, payload map[string]interface{}) {
+	raw, _ := json.Marshal(payload)
+	_ = s.sessionRepo.RecordEvent(ctx, &models.SessionEvent{
+		ID:         uuid.New().String(),
+		SessionID:  session.ID,
+		EventType:  eventType,
+		StageName:  session.StageName,
+		QuestionID: questionID,
+		Payload:    raw,
+		CreatedAt:  time.Now().UTC(),
+	})
 }
 
 // RecordQuestionResponse records and grades an individual question answer on the server
@@ -398,6 +446,9 @@ func (s *CATService) RecordQuestionResponse(ctx context.Context, sessionID, user
 	// The server owns time. A short grace period absorbs network latency, but
 	// a background tab or a changed client clock cannot extend the stage.
 	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(10*time.Second)) {
+		s.recordEvent(ctx, session, "ANSWER_REJECTED_DEADLINE", req.QuestionID, map[string]interface{}{
+			"deadlineAt": session.DeadlineAt,
+		})
 		return false, 0, errors.New("stage deadline exceeded: answer was not accepted")
 	}
 
@@ -1032,6 +1083,19 @@ func (s *CATService) completedSessionResponse(ctx context.Context, session *mode
 // Requires ownership verification and non-empty verified responses. Repeated
 // calls for a completed attempt return the existing immutable result.
 func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID string, req models.CompleteSessionRequest) (*models.SessionCompleteResponse, error) {
+	var result *models.SessionCompleteResponse
+	var operationErr error
+	lockErr := s.sessionRepo.WithSessionLock(ctx, sessionID, func() error {
+		result, operationErr = s.completeSessionLocked(ctx, sessionID, userID, req)
+		return operationErr
+	})
+	if lockErr != nil {
+		return nil, lockErr
+	}
+	return result, operationErr
+}
+
+func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userID string, req models.CompleteSessionRequest) (*models.SessionCompleteResponse, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, errors.New("session not found")
@@ -1052,6 +1116,15 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 	}
 	if len(responses) == 0 {
 		return nil, errors.New("cannot complete session: no question responses recorded")
+	}
+	timeoutEvents := 0
+	if events, eventErr := s.sessionRepo.GetSessionEvents(ctx, sessionID); eventErr == nil {
+		for _, event := range events {
+			switch event.EventType {
+			case "ANSWER_REJECTED_DEADLINE", "STAGE_TIMEOUT", "STAGE_SKIPPED":
+				timeoutEvents++
+			}
+		}
 	}
 
 	// Aggregate server-verified question responses by skill. There is no
@@ -1183,6 +1256,7 @@ func (s *CATService) CompleteSession(ctx context.Context, sessionID, userID stri
 		RangeHigh:         rangeHigh,
 		NotMeasured:       notMeasured,
 		AnsweredQuestions: len(responses),
+		TimeoutEvents:     timeoutEvents,
 	}
 
 	now := time.Now()

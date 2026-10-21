@@ -192,6 +192,28 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path.endsWith('/arena/leaderboard')) {
       return json(route, 200, { leaderboard: [], total: 0 });
     }
+    if (path.endsWith('/vocabulary')) {
+      return json(route, 200, {
+        entries: [
+          {
+            id: 'voc-1',
+            word: 'Substantiate',
+            ipa: '/səbˈstæn.ʃi.eɪt/',
+            pos: 'verb',
+            level: 'C1',
+            meaningRu: 'Обосновывать',
+            definitionEn: 'To provide evidence to support a claim.',
+            example: 'The candidate failed to substantiate her claim.',
+            collocations: ['substantiate claims'],
+            source: 'Academic Word List (platform dataset)',
+            status: 'published',
+            version: '2026.1',
+            reviewedAt: new Date().toISOString(),
+          },
+        ],
+        total: 1,
+      });
+    }
     if (path.endsWith('/institutions')) {
       return json(route, 200, { institutions: [], total: 0 });
     }

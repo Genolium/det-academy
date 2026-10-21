@@ -136,6 +136,7 @@ export interface SessionCompleteResponse {
     rangeHigh: number;
     notMeasured?: string[];
     answeredQuestions: number;
+    timeoutEvents?: number;
   };
   certificateEligible: boolean;
   certificate?: {
@@ -343,6 +344,23 @@ export interface AdBannerData {
   clicks?: number;
 }
 
+export interface VocabularyEntry {
+  id: string;
+  word: string;
+  ipa?: string;
+  pos?: string;
+  level: string;
+  meaningRu: string;
+  definitionEn: string;
+  example?: string;
+  collocations?: string[];
+  source: string;
+  sourceUrl?: string;
+  status: string;
+  version: string;
+  reviewedAt: string;
+}
+
 export interface Institution {
   id: string;
   name: string;
@@ -444,6 +462,7 @@ class ApiClient {
     avatarUrl?: string;
     deviceId?: string;
     codeVerifier?: string;
+    nonce?: string;
   }): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
       method: 'POST',
@@ -515,6 +534,7 @@ class ApiClient {
     deviceId?: string;
     codeVerifier?: string;
     redirectUri?: string;
+    nonce?: string;
   }): Promise<{ message: string }> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
       method: 'POST',
@@ -777,6 +797,22 @@ class ApiClient {
 
   // --- Universities & Institutions ---
 
+  async getVocabulary(
+    params?: { search?: string; level?: string }
+  ): Promise<{ entries: VocabularyEntry[]; total: number }> {
+    const query = new URLSearchParams();
+    if (params?.search) query.set('search', params.search);
+    if (params?.level && params.level !== 'ALL') query.set('level', params.level);
+    const res = await fetch(`${API_BASE_URL}/api/v1/vocabulary?${query.toString()}`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить словарь', res.status);
+    }
+    return res.json();
+  }
+
   async getInstitutions(params?: {
     search?: string;
     country?: string;
@@ -1036,8 +1072,8 @@ class ApiClient {
     }
   }
 
-  async getUserStreak(): Promise<{ streakDays: number; lastActiveDate: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/streak`, {
+  async getUserStreak(utcOffsetMinutes = 0): Promise<{ streakDays: number; lastActiveDate: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/streak?utc_offset_minutes=${utcOffsetMinutes}`, {
       headers: this.getHeaders(),
       credentials: 'include',
     });
@@ -1047,12 +1083,15 @@ class ApiClient {
     return res.json();
   }
 
-  async recordUserActivity(source: string): Promise<{ streakDays: number; lastActiveDate: string }> {
+  async recordUserActivity(
+    source: string,
+    utcOffsetMinutes = 0
+  ): Promise<{ streakDays: number; lastActiveDate: string }> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/activity`, {
       method: 'POST',
       headers: this.getHeaders(),
       credentials: 'include',
-      body: JSON.stringify({ source }),
+      body: JSON.stringify({ source, utcOffsetMinutes }),
     });
     if (!res.ok) {
       throw new ApiError('Failed to record user activity', res.status);

@@ -1,7 +1,12 @@
 package service
 
 import (
+	"context"
+	"det-academy-backend/internal/models"
+	"det-academy-backend/internal/repository/memory"
+	"encoding/json"
 	"testing"
+	"time"
 )
 
 func TestLevenshteinDistance(t *testing.T) {
@@ -62,5 +67,71 @@ func TestIRT2PLAndThetaScoring(t *testing.T) {
 	// ComputeNextDifficulty transitions
 	if diff := ComputeNextDifficulty("B1", 0.95); diff != "B2" && diff != "C1" {
 		t.Errorf("expected promotion from B1 with 95%% accuracy, got %s", diff)
+	}
+}
+
+func TestBlueprintSelectionAndTimeoutEvents(t *testing.T) {
+	store := memory.New()
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory)
+	ctx := context.Background()
+
+	blueprint := models.GetDefaultExamBlueprint()
+	if blueprint.Version != "2026.1" {
+		t.Fatalf("expected versioned blueprint, got %s", blueprint.Version)
+	}
+	for _, stage := range blueprint.Stages {
+		if stage.StageName == "INTERACTIVE_READING" && stage.ItemCount != 2 {
+			t.Fatalf("expected 2 interactive reading blocks, got %d", stage.ItemCount)
+		}
+		if stage.StageName == "INTERACTIVE_LISTENING" && stage.ItemCount != 2 {
+			t.Fatalf("expected 2 interactive listening blocks, got %d", stage.ItemCount)
+		}
+	}
+
+	reading, err := cat.stageQuestions(ctx, "INTERACTIVE_READING", "B1")
+	if err != nil {
+		t.Fatalf("failed to select reading blocks: %v", err)
+	}
+	if len(reading) != 2 {
+		t.Fatalf("expected 2 reading blocks, got %d", len(reading))
+	}
+	listening, err := cat.stageQuestions(ctx, "INTERACTIVE_LISTENING", "B1")
+	if err != nil {
+		t.Fatalf("failed to select listening blocks: %v", err)
+	}
+	if len(listening) != 2 {
+		t.Fatalf("expected 2 listening blocks, got %d", len(listening))
+	}
+
+	session, _, err := cat.StartSession(ctx, "timeout-user", "Timeout User", "B1")
+	if err != nil {
+		t.Fatalf("failed to start session: %v", err)
+	}
+	expired := time.Now().Add(-time.Minute)
+	session.DeadlineAt = &expired
+	if err := store.Sessions().Update(ctx, session); err != nil {
+		t.Fatalf("failed to expire session: %v", err)
+	}
+
+	_, _, err = cat.RecordQuestionResponse(ctx, session.ID, "timeout-user", models.SubmitResponseRequest{
+		QuestionID:   "q-rs-01",
+		UserResponse: json.RawMessage(`{"isReal":true}`),
+	})
+	if err == nil {
+		t.Fatal("expected late answer to be rejected")
+	}
+	events, err := store.Sessions().GetSessionEvents(ctx, session.ID)
+	if err != nil {
+		t.Fatalf("failed to read events: %v", err)
+	}
+	found := false
+	for _, event := range events {
+		if event.EventType == "ANSWER_REJECTED_DEADLINE" && event.QuestionID == "q-rs-01" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected ANSWER_REJECTED_DEADLINE event, got %+v", events)
 	}
 }

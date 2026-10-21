@@ -1,43 +1,51 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import vocabulary from '@/data/academicVocabulary.json';
 import { readSelectBank, fillBlanksBank } from '@/data/questionBank';
+import { api, VocabularyEntry } from '@/lib/api';
 import { BookOpen, Search, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
 
-interface VocabularyEntry {
-  id: string;
-  word: string;
-  ipa?: string;
-  pos?: string;
-  level?: string;
-  meaningRu?: string;
-  definitionEn?: string;
-  example?: string;
-  collocations?: string[];
-}
-
-const entries = vocabulary as VocabularyEntry[];
 const levels = ['ALL', 'B1', 'B2', 'C1', 'C2'] as const;
 
 export default function VocabularyPage() {
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<(typeof levels)[number]>('ALL');
   const [tab, setTab] = useState<'awl' | 'read-select' | 'fill-blanks'>('awl');
+  const [entries, setEntries] = useState<VocabularyEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return entries.filter((entry) => {
-      if (level !== 'ALL' && entry.level !== level) return false;
-      if (!normalized) return true;
-      return (
-        entry.word.toLowerCase().includes(normalized) ||
-        (entry.meaningRu || '').toLowerCase().includes(normalized) ||
-        (entry.definitionEn || '').toLowerCase().includes(normalized)
-      );
-    });
-  }, [query, level]);
+  useEffect(() => {
+    if (tab !== 'awl') return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    const timer = setTimeout(() => {
+      api
+        .getVocabulary({ search: query.trim(), level })
+        .then((response) => {
+          if (cancelled) return;
+          setEntries(response.entries || []);
+          setTotal(response.total || 0);
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          setEntries([]);
+          setLoadError(
+            error instanceof Error ? error.message : 'Не удалось загрузить опубликованный словарь'
+          );
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, level, tab]);
 
   const readSelectWords = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -88,7 +96,7 @@ export default function VocabularyPage() {
             <div className="flex items-center gap-1 rounded-xl bg-neutral-100 p-1">
               {(
                 [
-                  ['awl', `Academic Word List (${entries.length})`],
+                  ['awl', `Academic Word List (${total})`],
                   ['read-select', `Read & Select (${readSelectBank.length})`],
                   ['fill-blanks', `Fill in the Blanks (${fillBlanksBank.length})`],
                 ] as const
@@ -126,8 +134,25 @@ export default function VocabularyPage() {
         </div>
 
         {tab === 'awl' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filtered.map((entry) => (
+          <>
+            {loading && (
+              <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
+                Загружаем опубликованный словарь...
+              </div>
+            )}
+            {loadError && (
+              <div className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-800">
+                {loadError}. Показать локальную копию нельзя: словарь должен приходить из
+                опубликованного серверного набора.
+              </div>
+            )}
+            {!loading && !loadError && entries.length === 0 && (
+              <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
+                По запросу ничего не найдено.
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {entries.map((entry) => (
               <article
                 key={entry.id}
                 className="bg-white border border-neutral-200 rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow"
@@ -164,7 +189,8 @@ export default function VocabularyPage() {
                 )}
               </article>
             ))}
-          </div>
+            </div>
+          </>
         )}
 
         {tab === 'read-select' && (

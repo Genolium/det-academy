@@ -29,10 +29,17 @@ function CallbackContent() {
 
       const code = searchParams.get('code');
       const deviceId = searchParams.get('device_id') || undefined;
-      const state = searchParams.get('state') || '';
       const codeVerifier = typeof window !== 'undefined' ? sessionStorage.getItem('vk_code_verifier') || undefined : undefined;
+      const nonce = typeof window !== 'undefined' ? sessionStorage.getItem('oauth_nonce') || undefined : undefined;
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
       const redirectUri = `${origin}/auth/callback`;
+
+      // OIDC providers return tokens/state in the fragment.
+      let hashParams: URLSearchParams | null = null;
+      if (typeof window !== 'undefined' && window.location.hash) {
+        hashParams = new URLSearchParams(window.location.hash.substring(1));
+      }
+      const state = searchParams.get('state') || hashParams?.get('state') || '';
 
       // 2. Extract provider (from query param or state)
       let providerParam = searchParams.get('provider') as 'google' | 'apple' | 'vk' | 'yandex' | null;
@@ -46,14 +53,9 @@ function CallbackContent() {
         providerParam = 'google';
       }
 
-      // Check URL hash if tokens were returned directly (e.g. token flow)
-      let accessToken = '';
-      if (typeof window !== 'undefined' && window.location.hash) {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        accessToken = hashParams.get('access_token') || '';
-      }
-
-      const authCodeOrToken = code || accessToken;
+      const idToken = hashParams?.get('id_token') || '';
+      const accessToken = hashParams?.get('access_token') || '';
+      const authCodeOrToken = code || idToken || accessToken;
       if (!authCodeOrToken) {
         setStatus('error');
         setMessage('Код авторизации или токен не был получен от сервиса');
@@ -72,9 +74,11 @@ function CallbackContent() {
             deviceId,
             codeVerifier,
             redirectUri,
+            nonce,
           });
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('vk_code_verifier');
+            sessionStorage.removeItem('oauth_nonce');
           }
           setStatus('success');
           setMessage('Аккаунт успешно привязан! Перенаправление в личный кабинет...');
@@ -90,9 +94,11 @@ function CallbackContent() {
             deviceId,
             codeVerifier,
             redirectUri,
+            nonce,
           });
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('vk_code_verifier');
+            sessionStorage.removeItem('oauth_nonce');
           }
 
           if (ok) {

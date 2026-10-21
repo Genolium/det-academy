@@ -24,31 +24,40 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const block = useMemo(() => {
-    const question = serverQuestions.find((item) => item.type === 'INTERACTIVE_LISTENING');
-    if (!question) return null;
-    const payload = question.contentPayload as {
-      scenario?: string;
-      summaryPrompt?: string;
-      turns?: Array<{
-        speaker?: string;
-        speakerAudioText?: string;
-        options?: string[];
-      }>;
-    };
-    return {
-      id: question.id,
-      scenario: payload.scenario || '',
-      summaryPrompt: payload.summaryPrompt || '',
-      turns: (payload.turns || []).map<ListeningTurn>((turn) => ({
-        speaker: turn.speaker || 'Speaker',
-        speakerAudioText: turn.speakerAudioText || '',
-        options: turn.options || [],
-      })),
-      timeLimitSec: question.timeLimitSec || 240,
-    };
+  const blocks = useMemo(() => {
+    const questions = serverQuestions.filter((item) => item.type === 'INTERACTIVE_LISTENING');
+    const perBlockLimit = Math.max(
+      60,
+      Math.floor((questions[0]?.timeLimitSec || 240) / Math.max(1, questions.length))
+    );
+    return questions
+      .map((question) => {
+        const payload = question.contentPayload as {
+          scenario?: string;
+          summaryPrompt?: string;
+          turns?: Array<{
+            speaker?: string;
+            speakerAudioText?: string;
+            options?: string[];
+          }>;
+        };
+        return {
+          id: question.id,
+          scenario: payload.scenario || '',
+          summaryPrompt: payload.summaryPrompt || '',
+          turns: (payload.turns || []).map<ListeningTurn>((turn) => ({
+            speaker: turn.speaker || 'Speaker',
+            speakerAudioText: turn.speakerAudioText || '',
+            options: turn.options || [],
+          })),
+          timeLimitSec: perBlockLimit,
+        };
+      })
+      .filter((item) => item.turns.length > 0);
   }, [serverQuestions]);
 
+  const [blockIndex, setBlockIndex] = useState(0);
+  const block = blocks[blockIndex] || null;
   const [phase, setPhase] = useState<'DIALOG' | 'SUMMARY'>('DIALOG');
   const [currentTurnIdx, setCurrentTurnIdx] = useState(0);
   const [selectedResponses, setSelectedResponses] = useState<number[]>([]);
@@ -61,8 +70,13 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
 
   useEffect(() => {
     if (!block) return;
+    setPhase('DIALOG');
+    setCurrentTurnIdx(0);
+    setSelectedResponses([]);
+    setSummaryText('');
     setTimeLeft(block.timeLimitSec);
     startedAtRef.current = Date.now();
+    submittedRef.current = false;
   }, [block?.id, block?.timeLimitSec]);
 
   useEffect(() => {
@@ -81,6 +95,10 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
         rawScore: 0,
         timeSpentSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       });
+    }
+    if (blockIndex + 1 < blocks.length) {
+      setBlockIndex((index) => index + 1);
+      return;
     }
     onComplete();
   };
@@ -132,7 +150,9 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-6 font-mono">
-        <span className="uppercase font-bold tracking-wider text-white">Interactive Listening</span>
+        <span className="uppercase font-bold tracking-wider text-white">
+          Interactive Listening • блок {blockIndex + 1} / {blocks.length}
+        </span>
         <div className="flex items-center gap-3">
           <span className="bg-neutral-800 text-[#D2F544] px-3 py-1 rounded-full font-bold">
             {phase === 'DIALOG' ? t.chooseTurnHint : t.listeningSummaryTimer}

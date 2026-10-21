@@ -118,30 +118,29 @@ export const InstitutionsMap: React.FC = () => {
       result = result.filter((inst) => inst.minScore >= minScoreFilter);
     }
 
-    // Faceted Subscore Filtering
+    // Faceted Subscore Filtering. Only explicit, sourced subscore minima are
+    // used. Missing values are treated as unconfirmed, never derived from the
+    // overall score.
     if (subscoreFilter === 'WRITING_120') {
-      result = result.filter((inst) => {
-        const prod = inst.minProduction ?? (inst.minScore >= 125 ? 120 : 110);
-        return prod >= 120;
-      });
+      result = result.filter((inst) => inst.minProduction != null && inst.minProduction >= 120);
     } else if (subscoreFilter === 'LITERACY_120') {
-      result = result.filter((inst) => {
-        const lit = inst.minLiteracy ?? (inst.minScore >= 125 ? 120 : 110);
-        return lit >= 120;
-      });
+      result = result.filter((inst) => inst.minLiteracy != null && inst.minLiteracy >= 120);
     } else if (subscoreFilter === 'ALL_115') {
-      result = result.filter((inst) => {
-        const lit = inst.minLiteracy ?? inst.minScore - 10;
-        const comp = inst.minComprehension ?? inst.minScore - 10;
-        const prod = inst.minProduction ?? inst.minScore - 10;
-        const conv = inst.minConversation ?? inst.minScore - 10;
-        return lit >= 115 && comp >= 115 && prod >= 115 && conv >= 115;
-      });
+      result = result.filter(
+        (inst) =>
+          inst.minLiteracy != null &&
+          inst.minComprehension != null &&
+          inst.minProduction != null &&
+          inst.minConversation != null &&
+          inst.minLiteracy >= 115 &&
+          inst.minComprehension >= 115 &&
+          inst.minProduction >= 115 &&
+          inst.minConversation >= 115
+      );
     } else if (subscoreFilter === 'CONVERSATION_120') {
-      result = result.filter((inst) => {
-        const conv = inst.minConversation ?? (inst.minScore >= 125 ? 120 : 110);
-        return conv >= 120;
-      });
+      result = result.filter(
+        (inst) => inst.minConversation != null && inst.minConversation >= 120
+      );
     }
 
     return result;
@@ -533,6 +532,12 @@ export const InstitutionsMap: React.FC = () => {
             </select>
           </div>
         </div>
+
+        <p className="text-[11px] text-neutral-500 leading-relaxed">
+          {locale === 'ru'
+            ? 'Фильтры по сабскорам используют только явно указанные значения. Пустое поле означает «требование не подтверждено», а не рассчитанный балл.'
+            : 'Subscore filters use explicit values only. An empty field means "requirement not confirmed", not a derived score.'}
+        </p>
 
         {/* Category Pills */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100">

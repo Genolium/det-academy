@@ -106,6 +106,17 @@ CREATE TABLE IF NOT EXISTS question_responses (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Immutable attempt events (timeouts, rejected answers, security signals)
+CREATE TABLE IF NOT EXISTS session_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    stage_name VARCHAR(50) NOT NULL DEFAULT '',
+    question_id VARCHAR(100) DEFAULT '',
+    payload JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Media Assets (Recorded audio & speech blobs)
 CREATE TABLE IF NOT EXISTS media_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -250,6 +261,25 @@ CREATE TABLE IF NOT EXISTS user_srs_cards (
     PRIMARY KEY (user_id, card_id)
 );
 
+-- Vocabulary publishing table (Directus/CMS managed, public read only when published)
+CREATE TABLE IF NOT EXISTS vocabulary_entries (
+    id VARCHAR(100) PRIMARY KEY,
+    word VARCHAR(255) NOT NULL,
+    ipa VARCHAR(255) DEFAULT '',
+    pos VARCHAR(50) DEFAULT '',
+    level VARCHAR(10) DEFAULT '',
+    meaning_ru TEXT DEFAULT '',
+    definition_en TEXT DEFAULT '',
+    example TEXT DEFAULT '',
+    collocations JSONB NOT NULL DEFAULT '[]',
+    source TEXT DEFAULT '',
+    source_url TEXT DEFAULT '',
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    version VARCHAR(20) NOT NULL DEFAULT '',
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_theory_progress_user ON theory_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_questions_type_diff ON questions(type, difficulty_band, is_active);
@@ -258,12 +288,14 @@ CREATE INDEX IF NOT EXISTS idx_question_responses_session ON question_responses(
 CREATE UNIQUE INDEX IF NOT EXISTS idx_question_responses_session_question ON question_responses(session_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_session ON media_assets(session_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_session ON evaluations(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events(session_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);
 CREATE INDEX IF NOT EXISTS idx_ad_banners_placement ON ad_banners(placement, is_active);
 CREATE INDEX IF NOT EXISTS idx_institutions_country ON institutions(country, min_score);
 CREATE INDEX IF NOT EXISTS idx_user_errors_user ON user_errors(user_id, mastered);
 CREATE INDEX IF NOT EXISTS idx_user_srs_cards_due ON user_srs_cards(user_id, due_date);
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON user_activity(user_id, activity_date DESC);
+CREATE INDEX IF NOT EXISTS idx_vocabulary_status_level ON vocabulary_entries(status, level, word);
 
 -- Seed Initial Questions Bank for 13 Modern DET Question Types
 INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)

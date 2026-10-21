@@ -4,8 +4,10 @@ import (
 	"context"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	_ "embed"
 	"encoding/json"
 	"errors"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +34,10 @@ type MemoryStorage struct {
 	srsStats       map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards       map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
 	activity       map[string]map[string]bool                    // userID -> date -> active
+	events         map[string][]models.SessionEvent              // sessionID -> events
+	vocabulary     map[string]models.VocabularyEntry             // entryID -> entry
+	sessionLockMu  sync.Mutex
+	sessionLocks   map[string]*sync.Mutex
 }
 
 func New() *MemoryStorage {
@@ -53,8 +59,12 @@ func New() *MemoryStorage {
 		srsStats:       make(map[string]*models.SRSStats),
 		srsCards:       make(map[string]map[string]*models.SRSCardProgress),
 		activity:       make(map[string]map[string]bool),
+		events:         make(map[string][]models.SessionEvent),
+		vocabulary:     make(map[string]models.VocabularyEntry),
+		sessionLocks:   make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
+	s.seedVocabulary()
 	return s
 }
 
@@ -68,7 +78,51 @@ func (s *MemoryStorage) Institutions() repository.InstitutionRepository {
 	return &institutionMemoryRepo{s: s}
 }
 func (s *MemoryStorage) Study() repository.StudyRepository { return &studyMemoryRepo{s: s} }
-func (s *MemoryStorage) Close() error                      { return nil }
+func (s *MemoryStorage) Vocabulary() repository.VocabularyRepository {
+	return &vocabularyMemoryRepo{s: s}
+}
+func (s *MemoryStorage) Close() error { return nil }
+
+//go:embed vocabulary_seed.json
+var vocabularySeedJSON []byte
+
+type seedVocabularyEntry struct {
+	ID           string   `json:"id"`
+	Word         string   `json:"word"`
+	IPA          string   `json:"ipa"`
+	Pos          string   `json:"pos"`
+	Level        string   `json:"level"`
+	MeaningRu    string   `json:"meaningRu"`
+	DefinitionEn string   `json:"definitionEn"`
+	Example      string   `json:"example"`
+	Collocations []string `json:"collocations"`
+}
+
+func (s *MemoryStorage) seedVocabulary() {
+	var raw []seedVocabularyEntry
+	if err := json.Unmarshal(vocabularySeedJSON, &raw); err != nil {
+		return
+	}
+	now := time.Now().UTC()
+	for _, item := range raw {
+		s.vocabulary[item.ID] = models.VocabularyEntry{
+			ID:           item.ID,
+			Word:         item.Word,
+			IPA:          item.IPA,
+			PartOfSpeech: item.Pos,
+			Level:        item.Level,
+			MeaningRu:    item.MeaningRu,
+			DefinitionEn: item.DefinitionEn,
+			Example:      item.Example,
+			Collocations: item.Collocations,
+			Source:       "Academic Word List (platform dataset)",
+			SourceURL:    "https://www.wgtn.ac.nz/lals/resources/academicwordlist",
+			Status:       "published",
+			Version:      "2026.1",
+			ReviewedAt:   now,
+		}
+	}
+}
 
 func (s *MemoryStorage) seedDefaultData() {
 	now := time.Now()
@@ -1388,6 +1442,13 @@ func (r *questionMemoryRepo) ListByTypeAndDifficulty(ctx context.Context, qType,
 		}
 		list = append(list, *q)
 	}
+	for i := 0; i < len(list); i++ {
+		for j := i + 1; j < len(list); j++ {
+			if list[j].ID < list[i].ID {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+	}
 	return list, nil
 }
 
@@ -1457,6 +1518,37 @@ func (r *sessionMemoryRepo) Update(ctx context.Context, session *models.TestSess
 	defer r.s.mu.Unlock()
 	r.s.sessions[session.ID] = session
 	return nil
+}
+
+func (r *sessionMemoryRepo) RecordEvent(ctx context.Context, event *models.SessionEvent) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.events[event.SessionID] = append(r.s.events[event.SessionID], *event)
+	return nil
+}
+
+func (r *sessionMemoryRepo) GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	events := r.s.events[sessionID]
+	if events == nil {
+		events = []models.SessionEvent{}
+	}
+	return events, nil
+}
+
+func (r *sessionMemoryRepo) WithSessionLock(ctx context.Context, sessionID string, fn func() error) error {
+	r.s.sessionLockMu.Lock()
+	lock, ok := r.s.sessionLocks[sessionID]
+	if !ok {
+		lock = &sync.Mutex{}
+		r.s.sessionLocks[sessionID] = lock
+	}
+	r.s.sessionLockMu.Unlock()
+
+	lock.Lock()
+	defer lock.Unlock()
+	return fn()
 }
 
 func (r *sessionMemoryRepo) RecordResponse(ctx context.Context, resp *models.QuestionResponse) error {
@@ -1935,4 +2027,44 @@ func (r *studyMemoryRepo) SaveSRSCard(ctx context.Context, userID string, card *
 	cp := *card
 	r.s.srsCards[userID][card.CardID] = &cp
 	return nil
+}
+
+// --- Vocabulary ---
+
+type vocabularyMemoryRepo struct{ s *MemoryStorage }
+
+func (r *vocabularyMemoryRepo) List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	normalized := strings.ToLower(strings.TrimSpace(search))
+	entries := []models.VocabularyEntry{}
+	for _, entry := range r.s.vocabulary {
+		if entry.Status != "published" {
+			continue
+		}
+		if level != "" && level != "ALL" && entry.Level != level {
+			continue
+		}
+		if normalized != "" &&
+			!strings.Contains(strings.ToLower(entry.Word), normalized) &&
+			!strings.Contains(strings.ToLower(entry.MeaningRu), normalized) &&
+			!strings.Contains(strings.ToLower(entry.DefinitionEn), normalized) {
+			continue
+		}
+		entries = append(entries, entry)
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Word < entries[j].Word })
+	return entries, nil
+}
+
+func (r *vocabularyMemoryRepo) Count(ctx context.Context) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	count := 0
+	for _, entry := range r.s.vocabulary {
+		if entry.Status == "published" {
+			count++
+		}
+	}
+	return count, nil
 }

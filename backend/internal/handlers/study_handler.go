@@ -5,6 +5,7 @@ import (
 	"det-academy-backend/internal/service"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -191,7 +192,8 @@ func (h *StudyHandler) GetStreak(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusUnauthorized, "authorization required")
 		return
 	}
-	streak, err := h.studyService.GetStreak(r.Context(), userID)
+	offset, _ := strconv.Atoi(r.URL.Query().Get("utc_offset_minutes"))
+	streak, err := h.studyService.GetStreak(r.Context(), userID, offset)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -207,7 +209,7 @@ func (h *StudyHandler) RecordActivity(w http.ResponseWriter, r *http.Request) {
 	}
 	var req models.RecordActivityRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)
-	streak, err := h.studyService.RecordActivity(r.Context(), userID, req.Source)
+	streak, err := h.studyService.RecordActivity(r.Context(), userID, req.Source, req.UTCOffsetMinutes)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return

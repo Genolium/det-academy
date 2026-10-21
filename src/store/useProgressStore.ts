@@ -302,7 +302,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     // Server-owned streak is authoritative when the API is reachable.
     if (hasAuthSession()) {
       try {
-        const streak = await api.getUserStreak();
+        const streak = await api.getUserStreak(-new Date().getTimezoneOffset());
         set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });
         if (typeof window !== 'undefined') {
           localStorage.setItem(
@@ -488,7 +488,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
     if (hasAuthSession()) {
       void api
-        .recordUserActivity('study')
+        .recordUserActivity('study', -new Date().getTimezoneOffset())
         .then((streak) => set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate }))
         .catch(() => {
           // Keep the optimistic local value until the next sync.

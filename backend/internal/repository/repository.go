@@ -46,6 +46,9 @@ type TestSessionRepository interface {
 	GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error)
 	ListRecent(ctx context.Context, limit int) ([]models.TestSession, error)
 	GetStats(ctx context.Context) (total int, completed int, avgScore float64, scoreDist map[string]int, err error)
+	WithSessionLock(ctx context.Context, sessionID string, fn func() error) error
+	RecordEvent(ctx context.Context, event *models.SessionEvent) error
+	GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error)
 	SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error
 	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
@@ -102,6 +105,11 @@ type StudyRepository interface {
 	SaveSRSCard(ctx context.Context, userID string, card *models.SRSCardProgress) error
 }
 
+type VocabularyRepository interface {
+	List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error)
+	Count(ctx context.Context) (int, error)
+}
+
 type Storage interface {
 	Users() UserRepository
 	Theory() TheoryRepository
@@ -111,5 +119,6 @@ type Storage interface {
 	Banners() BannerRepository
 	Institutions() InstitutionRepository
 	Study() StudyRepository
+	Vocabulary() VocabularyRepository
 	Close() error
 }

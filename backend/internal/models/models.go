@@ -54,7 +54,7 @@ type ExamBlueprint struct {
 // GetDefaultExamBlueprint returns the official modern DET 13-task structure
 func GetDefaultExamBlueprint() ExamBlueprint {
 	return ExamBlueprint{
-		Version:     "2025.1",
+		Version:     "2026.1",
 		TotalStages: 13,
 		Stages: []BlueprintStage{
 			{
@@ -93,7 +93,7 @@ func GetDefaultExamBlueprint() ExamBlueprint {
 				StageName:     "INTERACTIVE_READING",
 				DisplayName:   "Interactive Reading",
 				SkillCategory: "reading",
-				ItemCount:     1,
+				ItemCount:     2,
 				TimeLimitSec:  420, // 7 minutes
 				Description:   "Multi-step comprehension of an academic text",
 			},
@@ -101,7 +101,7 @@ func GetDefaultExamBlueprint() ExamBlueprint {
 				StageName:     "INTERACTIVE_LISTENING",
 				DisplayName:   "Interactive Listening",
 				SkillCategory: "listening",
-				ItemCount:     1,
+				ItemCount:     2,
 				TimeLimitSec:  240, // 4 minutes
 				Description:   "Conversational dialogue and passage summary",
 			},
@@ -271,6 +271,7 @@ type OAuthLoginRequest struct {
 	AvatarURL    string `json:"avatarUrl,omitempty"`
 	DeviceID     string `json:"deviceId,omitempty"`     // VK ID device_id
 	CodeVerifier string `json:"codeVerifier,omitempty"` // PKCE code_verifier
+	Nonce        string `json:"nonce,omitempty"`        // OIDC nonce for Google/Apple
 }
 
 type UpdateProfileRequest struct {
@@ -348,6 +349,7 @@ type CalculatedScores struct {
 	RangeHigh         int      `json:"rangeHigh"`
 	NotMeasured       []string `json:"notMeasured,omitempty"`
 	AnsweredQuestions int      `json:"answeredQuestions"`
+	TimeoutEvents     int      `json:"timeoutEvents"`
 }
 
 type SessionDetailsResponse struct {
@@ -364,20 +366,47 @@ type SessionCompleteResponse struct {
 	Certificate         *Certificate     `json:"certificate,omitempty"`
 }
 
+type SessionEvent struct {
+	ID         string          `json:"id"`
+	SessionID  string          `json:"sessionId"`
+	EventType  string          `json:"eventType"`
+	StageName  string          `json:"stageName"`
+	QuestionID string          `json:"questionId,omitempty"`
+	Payload    json.RawMessage `json:"payload,omitempty"`
+	CreatedAt  time.Time       `json:"createdAt"`
+}
+
+type VocabularyEntry struct {
+	ID          string    `json:"id"`
+	Word        string    `json:"word"`
+	IPA         string    `json:"ipa,omitempty"`
+	PartOfSpeech string   `json:"pos,omitempty"`
+	Level       string    `json:"level"`
+	MeaningRu   string    `json:"meaningRu"`
+	DefinitionEn string   `json:"definitionEn"`
+	Example     string    `json:"example,omitempty"`
+	Collocations []string `json:"collocations,omitempty"`
+	Source      string    `json:"source"`
+	SourceURL   string    `json:"sourceUrl,omitempty"`
+	Status      string    `json:"status"`
+	Version     string    `json:"version"`
+	ReviewedAt  time.Time `json:"reviewedAt"`
+}
+
 // Admin & CRM DTOs
 
 type AdminStats struct {
-	TotalUsers         int                `json:"totalUsers"`
-	TotalSessions      int                `json:"totalSessions"`
-	CompletedSessions  int                `json:"completedSessions"`
-	AverageScore       float64            `json:"averageScore"`
-	TotalCertificates  int                `json:"totalCertificates"`
-	ActiveBanners      int                `json:"activeBanners"`
-	TotalBannerClicks  int                `json:"totalBannerClicks"`
-	TotalQuestions     int                `json:"totalQuestions"`
-	TotalInstitutions  int                `json:"totalInstitutions"`
-	ScoreDistribution  map[string]int     `json:"scoreDistribution"`
-	RecentRegistrations []User            `json:"recentRegistrations"`
+	TotalUsers          int            `json:"totalUsers"`
+	TotalSessions       int            `json:"totalSessions"`
+	CompletedSessions   int            `json:"completedSessions"`
+	AverageScore        float64        `json:"averageScore"`
+	TotalCertificates   int            `json:"totalCertificates"`
+	ActiveBanners       int            `json:"activeBanners"`
+	TotalBannerClicks   int            `json:"totalBannerClicks"`
+	TotalQuestions      int            `json:"totalQuestions"`
+	TotalInstitutions   int            `json:"totalInstitutions"`
+	ScoreDistribution   map[string]int `json:"scoreDistribution"`
+	RecentRegistrations []User         `json:"recentRegistrations"`
 }
 
 type UpdateUserRoleRequest struct {
@@ -448,6 +477,7 @@ type LinkProviderRequest struct {
 	DeviceID       string `json:"deviceId,omitempty"`
 	CodeVerifier   string `json:"codeVerifier,omitempty"`
 	RedirectURI    string `json:"redirectUri,omitempty"`
+	Nonce          string `json:"nonce,omitempty"`
 }
 
 // Media Asset models
@@ -583,7 +613,8 @@ type UserStreak struct {
 }
 
 type RecordActivityRequest struct {
-	Source string `json:"source"`
+	Source           string `json:"source"`
+	UTCOffsetMinutes int    `json:"utcOffsetMinutes"`
 }
 
 type SRSStats struct {
@@ -647,5 +678,3 @@ type SkillAnalyticsResponse struct {
 	Recommendations []string                 `json:"recommendations"`
 	History         []SkillAttemptHistory    `json:"history"`
 }
-
-

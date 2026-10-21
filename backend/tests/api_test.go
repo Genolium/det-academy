@@ -58,6 +58,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
 	studyService := service.NewStudyService(store, theoryService, catService)
 	studyHandler := handlers.NewStudyHandler(studyService)
+	vocabularyService := service.NewVocabularyService(store.Vocabulary())
+	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
 
 	tempAudioDir, _ := os.MkdirTemp("", "det_test_media_*")
 	mediaHandler := handlers.NewMediaHandler(catService, tempAudioDir)
@@ -129,6 +131,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Get("/", bannerHandler.GetBanners)
 			r.Post("/{id}/click", bannerHandler.RecordClick)
 		})
+
+		r.Get("/vocabulary", vocabularyHandler.List)
 
 		r.Route("/institutions", func(r chi.Router) {
 			r.Get("/", institutionHandler.List)
@@ -665,6 +669,30 @@ func TestServerOwnedStreak(t *testing.T) {
 	}
 	if streak.LastActiveDate != time.Now().UTC().Format("2006-01-02") {
 		t.Fatalf("expected today's date, got %s", streak.LastActiveDate)
+	}
+}
+
+func TestVocabularyPublication(t *testing.T) {
+	r, _, _ := setupTestRouter()
+
+	req := httptest.NewRequest("GET", "/api/v1/vocabulary?search=substan&level=C1", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 on vocabulary, got %d: %s", w.Code, w.Body.String())
+	}
+	var payload struct {
+		Entries []models.VocabularyEntry `json:"entries"`
+		Total   int                      `json:"total"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("failed to decode vocabulary: %v", err)
+	}
+	if payload.Total == 0 || len(payload.Entries) == 0 {
+		t.Fatalf("expected seeded published vocabulary")
+	}
+	if payload.Entries[0].Status != "published" {
+		t.Fatalf("expected only published entries, got %s", payload.Entries[0].Status)
 	}
 }
 

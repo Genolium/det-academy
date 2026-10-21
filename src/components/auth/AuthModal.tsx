@@ -74,71 +74,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    // Prefer the ID-token flow: the backend verifies issuer, audience,
+    // signature and email_verified before creating a session.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const google = (window as any).google;
-    if (google && google.accounts && google.accounts.oauth2) {
-      // Use Google OAuth2 Token Client for seamless popup
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: googleClientId,
-        scope: 'openid email profile',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        callback: async (tokenResponse: any) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            try {
-              // Fetch userinfo directly from Google
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              if (userInfoRes.ok) {
-                const profile = await userInfoRes.json();
-                const ok = await oauthLogin({
-                  provider: 'google',
-                  code: tokenResponse.access_token,
-                  email: profile.email,
-                  name: profile.name || profile.given_name || 'Google Student',
-                  avatarUrl: profile.picture || '',
-                });
-                if (ok) {
-                  const u = useAuthStore.getState().user;
-                  if (u) setCandidateName(u.name);
-                  syncWithBackend();
-                  onClose();
-                  return;
-                }
-              }
-            } catch (err) {
-              console.error('Google profile fetch error:', err);
-            }
-          }
-        },
-      });
-      client.requestAccessToken();
-      return;
-    }
-
     if (google && google.accounts && google.accounts.id) {
-      // Fallback to Google ID prompt
+      const nonce = generateRandomString(32);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('oauth_nonce', nonce);
+      }
       google.accounts.id.initialize({
         client_id: googleClientId,
+        nonce,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         callback: async (response: any) => {
-          if (response && response.credential) {
-            const payload = parseJwt(response.credential);
-            if (payload) {
-              const ok = await oauthLogin({
-                provider: 'google',
-                code: response.credential,
-                email: payload.email,
-                name: payload.name || payload.given_name || 'Google Student',
-                avatarUrl: payload.picture || '',
-              });
-              if (ok) {
-                const u = useAuthStore.getState().user;
-                if (u) setCandidateName(u.name);
-                syncWithBackend();
-                onClose();
-              }
-            }
+          if (!response?.credential) return;
+          const ok = await oauthLogin({
+            provider: 'google',
+            code: response.credential,
+            nonce,
+          });
+          if (ok) {
+            const u = useAuthStore.getState().user;
+            if (u) setCandidateName(u.name);
+            syncWithBackend();
+            onClose();
           }
         },
       });
@@ -146,12 +106,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Direct Google OAuth 2.0 Web Redirect fallback
-    const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}` : 'http://localhost:3000';
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(
-      redirectUri
-    )}&response_type=token&scope=openid%20email%20profile`;
-    window.location.href = authUrl;
+    // Redirect ID-token flow. The callback page reads id_token from the hash.
+    const nonce = generateRandomString(32);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('oauth_nonce', nonce);
+    }
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    authUrl.searchParams.set('client_id', googleClientId);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('response_type', 'id_token');
+    authUrl.searchParams.set('response_mode', 'fragment');
+    authUrl.searchParams.set('scope', 'openid email profile');
+    authUrl.searchParams.set('nonce', nonce);
+    authUrl.searchParams.set('state', 'provider=google&action=login');
+    window.location.href = authUrl.toString();
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
@@ -207,9 +176,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (provider === 'apple') {
       const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
       if (appleClientId) {
-        window.location.href = `https://appleid.apple.com/auth/authorize?client_id=${appleClientId}&redirect_uri=${encodeURIComponent(
-          callbackUri
-        )}&response_type=code%20id_token&scope=name%20email&response_mode=fragment&state=provider%3Dapple%26action%3Dlogin`;
+        const nonce = generateRandomString(32);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('oauth_nonce', nonce);
+        }
+        const appleUrl = new URL('https://appleid.apple.com/auth/authorize');
+        appleUrl.searchParams.set('client_id', appleClientId);
+        appleUrl.searchParams.set('redirect_uri', callbackUri);
+        appleUrl.searchParams.set('response_type', 'code id_token');
+        appleUrl.searchParams.set('scope', 'name email');
+        appleUrl.searchParams.set('response_mode', 'fragment');
+        appleUrl.searchParams.set('nonce', nonce);
+        appleUrl.searchParams.set('state', 'provider=apple&action=login');
+        window.location.href = appleUrl.toString();
         return;
       }
       setNotice('Для входа через Apple ID укажите NEXT_PUBLIC_APPLE_CLIENT_ID в .env на сервере. Войдите через Google или Email.');

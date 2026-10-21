@@ -18,21 +18,30 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
   const { soundEnabled, locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const currentItem = useMemo(() => {
-    const question = serverQuestions.find((item) => item.type === 'LISTEN_TYPE');
-    if (!question) return null;
-    const payload = question.contentPayload as {
-      audioSentence?: string;
-      playsAllowed?: number;
-    };
-    return {
-      id: question.id,
-      audioSentence: payload.audioSentence || '',
-      playsAllowed: Math.max(1, Number(payload.playsAllowed || 3)),
-      timeLimitSec: question.timeLimitSec || 60,
-    };
+  const items = useMemo(() => {
+    const questions = serverQuestions.filter((item) => item.type === 'LISTEN_TYPE');
+    const perItemLimit = Math.max(
+      30,
+      Math.floor((questions[0]?.timeLimitSec || 60) / Math.max(1, questions.length))
+    );
+    return questions
+      .map((question) => {
+        const payload = question.contentPayload as {
+          audioSentence?: string;
+          playsAllowed?: number;
+        };
+        return {
+          id: question.id,
+          audioSentence: payload.audioSentence || '',
+          playsAllowed: Math.max(1, Number(payload.playsAllowed || 3)),
+          timeLimitSec: questions.length > 1 ? perItemLimit : question.timeLimitSec || 60,
+        };
+      })
+      .filter((item) => item.audioSentence);
   }, [serverQuestions]);
 
+  const [itemIndex, setItemIndex] = useState(0);
+  const currentItem = items[itemIndex] || null;
   const [typedText, setTypedText] = useState('');
   const [playCount, setPlayCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(currentItem?.timeLimitSec || 60);
@@ -46,8 +55,12 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
   }, [typedText]);
 
   useEffect(() => {
+    setTypedText('');
+    setPlayCount(0);
+    setIsPlayingAudio(false);
     setTimeLeft(currentItem?.timeLimitSec || 60);
     startedAtRef.current = Date.now();
+    isSubmittedRef.current = false;
   }, [currentItem?.id, currentItem?.timeLimitSec]);
 
   const playAudio = () => {
@@ -77,6 +90,10 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     }
 
     if (soundEnabled) sound.playSuccessChime();
+    if (itemIndex + 1 < items.length) {
+      setItemIndex((index) => index + 1);
+      return;
+    }
     onComplete();
   };
 
@@ -116,7 +133,7 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     <div className="max-w-3xl mx-auto py-10 px-4">
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
         <span className="uppercase font-bold tracking-wider text-white">
-          Listen and Type (Dictation)
+          Listen and Type (Dictation) • {itemIndex + 1} / {items.length}
         </span>
         <div className="flex items-center gap-1.5 text-[#D2F544] font-bold text-sm bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
           <Clock className="w-4 h-4" />

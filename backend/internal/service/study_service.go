@@ -433,7 +433,7 @@ func (s *StudyService) DeleteError(ctx context.Context, userID, errorID string) 
 
 // --- Daily activity & server-owned streak ---
 
-func (s *StudyService) GetStreak(ctx context.Context, userID string) (*models.UserStreak, error) {
+func (s *StudyService) GetStreak(ctx context.Context, userID string, utcOffsetMinutes int) (*models.UserStreak, error) {
 	dates, err := s.storage.Study().GetActivityDates(ctx, userID, 365)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load activity: %w", err)
@@ -447,7 +447,7 @@ func (s *StudyService) GetStreak(ctx context.Context, userID string) (*models.Us
 		active[date] = true
 	}
 
-	today := time.Now().UTC()
+	today := time.Now().UTC().Add(time.Duration(utcOffsetMinutes) * time.Minute)
 	start := today
 	if !active[today.Format("2006-01-02")] {
 		yesterday := today.AddDate(0, 0, -1)
@@ -464,15 +464,18 @@ func (s *StudyService) GetStreak(ctx context.Context, userID string) (*models.Us
 	return &models.UserStreak{StreakDays: streak, LastActiveDate: dates[0]}, nil
 }
 
-func (s *StudyService) RecordActivity(ctx context.Context, userID, source string) (*models.UserStreak, error) {
+func (s *StudyService) RecordActivity(ctx context.Context, userID, source string, utcOffsetMinutes int) (*models.UserStreak, error) {
 	if strings.TrimSpace(source) == "" {
 		source = "app"
 	}
-	today := time.Now().UTC().Format("2006-01-02")
+	if utcOffsetMinutes < -14*60 || utcOffsetMinutes > 14*60 {
+		utcOffsetMinutes = 0
+	}
+	today := time.Now().UTC().Add(time.Duration(utcOffsetMinutes) * time.Minute).Format("2006-01-02")
 	if err := s.storage.Study().RecordActivity(ctx, userID, today, source); err != nil {
 		return nil, fmt.Errorf("failed to record activity: %w", err)
 	}
-	return s.GetStreak(ctx, userID)
+	return s.GetStreak(ctx, userID, utcOffsetMinutes)
 }
 
 // --- Spaced Repetition (SRS) Engine ---

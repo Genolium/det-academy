@@ -29,34 +29,43 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
 
-  const block = useMemo(() => {
-    const question = serverQuestions.find((item) => item.type === 'INTERACTIVE_READING');
-    if (!question) return null;
-    const payload = question.contentPayload as ReadingPayload;
-    const sentenceOptions = Array.isArray(payload.sentenceOptions)
-      ? payload.sentenceOptions
-      : payload.sentenceOptions?.options || [];
-    const steps: Step[] = ['gap'];
-    if (sentenceOptions.length > 0) steps.push('sentence');
-    if (payload.passageText) steps.push('highlight');
-    if (payload.mainIdeaQuestion?.options?.length) steps.push('mainIdea');
-    if (payload.titleQuestion?.options?.length) steps.push('title');
-    return {
-      id: question.id,
-      title: payload.passageTitle || 'Interactive Reading',
-      passageText: payload.passageText || '',
-      gap: payload.gapSentence || {},
-      sentenceOptions,
-      sentenceQuestion:
-        'Select the sentence that best fits into the passage:',
-      highlightPrompt: payload.highlightPrompt || 'Select the sentence that answers the prompt.',
-      mainIdea: payload.mainIdeaQuestion || null,
-      titleQuestion: payload.titleQuestion || null,
-      steps,
-      timeLimitSec: question.timeLimitSec || 420,
-    };
+  const blocks = useMemo(() => {
+    const questions = serverQuestions.filter((item) => item.type === 'INTERACTIVE_READING');
+    const perBlockLimit = Math.max(
+      60,
+      Math.floor((questions[0]?.timeLimitSec || 420) / Math.max(1, questions.length))
+    );
+    return questions
+      .map((question) => {
+        const payload = question.contentPayload as ReadingPayload;
+        const sentenceOptions = Array.isArray(payload.sentenceOptions)
+          ? payload.sentenceOptions
+          : payload.sentenceOptions?.options || [];
+        const steps: Step[] = ['gap'];
+        if (sentenceOptions.length > 0) steps.push('sentence');
+        if (payload.passageText) steps.push('highlight');
+        if (payload.mainIdeaQuestion?.options?.length) steps.push('mainIdea');
+        if (payload.titleQuestion?.options?.length) steps.push('title');
+        return {
+          id: question.id,
+          title: payload.passageTitle || 'Interactive Reading',
+          passageText: payload.passageText || '',
+          gap: payload.gapSentence || {},
+          sentenceOptions,
+          sentenceQuestion: 'Select the sentence that best fits into the passage:',
+          highlightPrompt:
+            payload.highlightPrompt || 'Select the sentence that answers the prompt.',
+          mainIdea: payload.mainIdeaQuestion || null,
+          titleQuestion: payload.titleQuestion || null,
+          steps,
+          timeLimitSec: perBlockLimit,
+        };
+      })
+      .filter((item) => item.gap.before || item.gap.after || item.passageText);
   }, [serverQuestions]);
 
+  const [blockIndex, setBlockIndex] = useState(0);
+  const block = blocks[blockIndex] || null;
   const [stepIndex, setStepIndex] = useState(0);
   const [gap, setGap] = useState('');
   const [sentenceIndex, setSentenceIndex] = useState<number | null>(null);
@@ -79,8 +88,15 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
 
   useEffect(() => {
     if (!block) return;
+    setStepIndex(0);
+    setGap('');
+    setSentenceIndex(null);
+    setHighlightSentence('');
+    setMainIdeaIndex(null);
+    setTitleIndex(null);
     setTimeLeft(block.timeLimitSec);
     startedAtRef.current = Date.now();
+    submittedRef.current = false;
   }, [block?.id, block?.timeLimitSec]);
 
   const submit = () => {
@@ -99,6 +115,10 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
         rawScore: 0,
         timeSpentSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       });
+    }
+    if (blockIndex + 1 < blocks.length) {
+      setBlockIndex((index) => index + 1);
+      return;
     }
     onComplete();
   };
@@ -148,7 +168,9 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-4 font-mono">
-        <span className="uppercase font-bold tracking-wider text-white">Interactive Reading</span>
+        <span className="uppercase font-bold tracking-wider text-white">
+          Interactive Reading • блок {blockIndex + 1} / {blocks.length}
+        </span>
         <div className="flex items-center gap-3">
           <span className="bg-neutral-800 text-[#D2F544] px-3 py-1 rounded-full font-bold">
             {t.readingStep} {stepIndex + 1} / {block.steps.length}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Button } from '@/components/ui/Button';
@@ -29,9 +29,11 @@ import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function PracticeHubPage() {
   const { user, isAuthenticated } = useAuthStore();
+  const { strictMode, setStrictMode } = useSettingsStore();
   const [activeDrillSlug, setActiveDrillSlug] = useState<string | null>(null);
   const [drillCounter, setDrillCounter] = useState(0);
   const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
@@ -41,6 +43,13 @@ export default function PracticeHubPage() {
 
   const { errors } = useErrorNotebookStore();
   const unmasteredErrors = errors.filter((error) => !error.mastered).length;
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('det_strict_mode');
+      if (stored === 'true') setStrictMode(true);
+    } catch {}
+  }, [setStrictMode]);
 
   // Strict requested order:
   // 1. скоропечатание, 2. read and complete, 3. словарный блиц, 4. fill in blanks, 5. аудио-диктанты, 6. академический словарь, потом всё остальное
@@ -168,6 +177,26 @@ export default function PracticeHubPage() {
             Отрабатывайте все типы заданий Duolingo English Test в изолированном интерактивном режиме с таймерами и детальной диагностикой.
           </p>
         </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+          <button
+            onClick={() => setStrictMode(!strictMode)}
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wider transition-all ${
+              strictMode
+                ? 'border-red-300 bg-red-50 text-red-700'
+                : 'border-neutral-300 bg-white text-neutral-600 hover:border-neutral-400'
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full ${strictMode ? 'bg-red-500 animate-pulse' : 'bg-neutral-300'}`} />
+            {strictMode ? 'Strict mode: ON' : 'Strict mode: OFF'}
+          </button>
+          <span className="text-[11px] text-neutral-500 max-w-md text-center">
+            Строгий режим добавляет общий таймер на 10 минут. Экзаменационный тест всегда
+            использует серверный дедлайн.
+          </span>
+        </div>
+
+        {strictMode && <PracticeStrictTimer />}
 
         {/* Modal / Live Drill Window if active */}
         {activeDrillSlug && (
@@ -310,3 +339,50 @@ export default function PracticeHubPage() {
     </div>
   );
 }
+
+const PracticeStrictTimer: React.FC = () => {
+  const [secondsLeft, setSecondsLeft] = useState(10 * 60);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsLeft((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const expired = secondsLeft === 0;
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+
+  return (
+    <div
+      className={`mb-8 rounded-2xl border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 ${
+        expired
+          ? 'border-red-300 bg-red-50 text-red-800'
+          : secondsLeft <= 60
+          ? 'border-amber-300 bg-amber-50 text-amber-800'
+          : 'border-neutral-200 bg-white text-[#0E1012]'
+      }`}
+    >
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider">Strict practice timer</p>
+        <p className="text-xs text-neutral-500">
+          {expired
+            ? 'Время вышло. В реальном экзамене ответы после дедлайна не принимаются.'
+            : 'Работайте в темпе экзамена. Таймер общий для этой тренировочной сессии.'}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="font-mono text-2xl font-black tabular-nums">
+          {minutes}:{seconds.toString().padStart(2, '0')}
+        </span>
+        <button
+          onClick={() => setSecondsLeft(10 * 60)}
+          className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-neutral-600 hover:border-neutral-400"
+        >
+          Сбросить
+        </button>
+      </div>
+    </div>
+  );
+};

@@ -8,6 +8,8 @@ interface SettingsState {
   setCookieConsentAccepted: (accepted: boolean) => void;
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
+  strictMode: boolean;
+  setStrictMode: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -27,4 +29,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
   soundEnabled: true,
   setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
+  strictMode: false,
+  setStrictMode: (enabled) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('det_strict_mode', enabled ? 'true' : 'false');
+    }
+    set({ strictMode: enabled });
+  },
 }));

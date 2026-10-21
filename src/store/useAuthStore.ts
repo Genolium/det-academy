@@ -20,6 +20,7 @@ interface AuthState {
     avatarUrl?: string;
     deviceId?: string;
     codeVerifier?: string;
+    nonce?: string;
   }) => Promise<boolean>;
   updateProfile: (params: { name?: string; avatarUrl?: string }) => Promise<boolean>;
   logout: () => Promise<void>;

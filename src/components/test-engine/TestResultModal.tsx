@@ -177,6 +177,9 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             )}
             <div className="text-neutral-500 pt-1">
               Отвечено заданий: {scores.answeredQuestions ?? 0}
+              {(scores.timeoutEvents ?? 0) > 0 && (
+                <> · таймаутов: {scores.timeoutEvents}</>
+              )}
             </div>
           </div>
         </div>

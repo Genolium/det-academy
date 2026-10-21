@@ -25,6 +25,7 @@ type PostgresStorage struct {
 	banners      *BannerRepo
 	institutions *InstitutionRepo
 	study        *StudyRepo
+	vocabulary   *VocabularyRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -55,6 +56,7 @@ func New(dbURL string) (*PostgresStorage, error) {
 		banners:      &BannerRepo{db: db},
 		institutions: &InstitutionRepo{db: db},
 		study:        &StudyRepo{db: db},
+		vocabulary:   &VocabularyRepo{db: db},
 	}
 
 	return s, nil
@@ -68,6 +70,7 @@ func (s *PostgresStorage) Certificates() repository.CertificateRepository { retu
 func (s *PostgresStorage) Banners() repository.BannerRepository           { return s.banners }
 func (s *PostgresStorage) Institutions() repository.InstitutionRepository { return s.institutions }
 func (s *PostgresStorage) Study() repository.StudyRepository              { return s.study }
+func (s *PostgresStorage) Vocabulary() repository.VocabularyRepository    { return s.vocabulary }
 func (s *PostgresStorage) Close() error                                   { return s.db.Close() }
 
 // --- Users ---
@@ -305,6 +308,7 @@ func (r *QuestionRepo) ListByTypeAndDifficulty(ctx context.Context, qType, diffi
 		query += fmt.Sprintf(" AND difficulty_band = $%d", idx)
 		args = append(args, difficultyBand)
 	}
+	query += " ORDER BY id"
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -431,6 +435,61 @@ func (r *SessionRepo) Update(ctx context.Context, s *models.TestSession) error {
 		s.DeadlineAt, s.CompletedAt, s.ID,
 	)
 	return err
+}
+
+func (r *SessionRepo) RecordEvent(ctx context.Context, event *models.SessionEvent) error {
+	query := `
+		INSERT INTO session_events (id, session_id, event_type, stage_name, question_id, payload, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	payload := event.Payload
+	if len(payload) == 0 {
+		payload = []byte(`{}`)
+	}
+	_, err := r.db.ExecContext(ctx, query, event.ID, event.SessionID, event.EventType, event.StageName, event.QuestionID, payload, event.CreatedAt)
+	return err
+}
+
+func (r *SessionRepo) GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error) {
+	query := `
+		SELECT id, session_id, event_type, stage_name, COALESCE(question_id, ''), payload, created_at
+		FROM session_events
+		WHERE session_id = $1
+		ORDER BY created_at ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	events := []models.SessionEvent{}
+	for rows.Next() {
+		var event models.SessionEvent
+		var payload []byte
+		if err := rows.Scan(&event.ID, &event.SessionID, &event.EventType, &event.StageName, &event.QuestionID, &payload, &event.CreatedAt); err != nil {
+			return nil, err
+		}
+		event.Payload = payload
+		events = append(events, event)
+	}
+	return events, rows.Err()
+}
+
+func (r *SessionRepo) WithSessionLock(ctx context.Context, sessionID string, fn func() error) error {
+	conn, err := r.db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	if _, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock(hashtext($1))`, sessionID); err != nil {
+		return err
+	}
+	defer func() {
+		_, _ = conn.ExecContext(context.Background(), `SELECT pg_advisory_unlock(hashtext($1))`, sessionID)
+	}()
+
+	return fn()
 }
 
 func (r *SessionRepo) RecordResponse(ctx context.Context, resp *models.QuestionResponse) error {
@@ -1128,4 +1187,59 @@ func (r *StudyRepo) SaveSRSCard(ctx context.Context, userID string, card *models
 		userID, card.CardID, card.IntervalDays, card.Repetitions, card.EasinessFactor, card.DueDate, card.LastReviewedAt,
 	)
 	return err
+}
+
+// --- Vocabulary ---
+
+type VocabularyRepo struct{ db *sql.DB }
+
+func (r *VocabularyRepo) List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error) {
+	query := `
+		SELECT id, word, COALESCE(ipa, ''), COALESCE(pos, ''), level, meaning_ru,
+		       definition_en, COALESCE(example, ''), collocations, source,
+		       COALESCE(source_url, ''), status, version, reviewed_at
+		FROM vocabulary_entries
+		WHERE status = 'published'
+	`
+	args := []interface{}{}
+	idx := 1
+	if search != "" {
+		query += fmt.Sprintf(" AND (LOWER(word) LIKE $%d OR LOWER(meaning_ru) LIKE $%d OR LOWER(definition_en) LIKE $%d)", idx, idx, idx)
+		pattern := "%" + strings.ToLower(search) + "%"
+		args = append(args, pattern)
+		idx++
+	}
+	if level != "" && level != "ALL" {
+		query += fmt.Sprintf(" AND level = $%d", idx)
+		args = append(args, level)
+	}
+	query += " ORDER BY word ASC"
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	entries := []models.VocabularyEntry{}
+	for rows.Next() {
+		var entry models.VocabularyEntry
+		var collocations []byte
+		if err := rows.Scan(
+			&entry.ID, &entry.Word, &entry.IPA, &entry.PartOfSpeech, &entry.Level,
+			&entry.MeaningRu, &entry.DefinitionEn, &entry.Example, &collocations,
+			&entry.Source, &entry.SourceURL, &entry.Status, &entry.Version, &entry.ReviewedAt,
+		); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal(collocations, &entry.Collocations)
+		entries = append(entries, entry)
+	}
+	return entries, rows.Err()
+}
+
+func (r *VocabularyRepo) Count(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM vocabulary_entries WHERE status = 'published'`).Scan(&count)
+	return count, err
 }

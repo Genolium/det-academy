@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rsa"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
 	"encoding/base64"
@@ -10,10 +11,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,12 +28,56 @@ import (
 type AuthService struct {
 	userRepo  repository.UserRepository
 	jwtSecret []byte
+
+	httpClient         *http.Client
+	googleClientID     string
+	appleClientID      string
+	googleTokenInfoURL string
+	googleUserInfoURL  string
+	appleJWKSURL       string
+	isProduction       bool
+
+	appleKeysMu        sync.RWMutex
+	appleKeys          map[string]*rsa.PublicKey
+	appleKeysFetchedAt time.Time
 }
 
 func NewAuthService(userRepo repository.UserRepository, jwtSecret string) *AuthService {
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	if googleClientID == "" {
+		googleClientID = os.Getenv("NEXT_PUBLIC_GOOGLE_CLIENT_ID")
+	}
+	appleClientID := os.Getenv("APPLE_CLIENT_ID")
+	if appleClientID == "" {
+		appleClientID = os.Getenv("APPLE_SERVICE_ID")
+	}
+	tokenInfoURL := os.Getenv("GOOGLE_TOKENINFO_URL")
+	if tokenInfoURL == "" {
+		tokenInfoURL = "https://oauth2.googleapis.com/tokeninfo"
+	}
+	userInfoURL := os.Getenv("GOOGLE_USERINFO_URL")
+	if userInfoURL == "" {
+		userInfoURL = "https://www.googleapis.com/oauth2/v3/userinfo"
+	}
+	appleJWKSURL := os.Getenv("APPLE_JWKS_URL")
+	if appleJWKSURL == "" {
+		appleJWKSURL = "https://appleid.apple.com/auth/keys"
+	}
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = os.Getenv("NODE_ENV")
+	}
 	return &AuthService{
-		userRepo:  userRepo,
-		jwtSecret: []byte(jwtSecret),
+		userRepo:           userRepo,
+		jwtSecret:          []byte(jwtSecret),
+		httpClient:         &http.Client{Timeout: 10 * time.Second},
+		googleClientID:     googleClientID,
+		appleClientID:      appleClientID,
+		googleTokenInfoURL: tokenInfoURL,
+		googleUserInfoURL:  userInfoURL,
+		appleJWKSURL:       appleJWKSURL,
+		isProduction:       env == "production",
+		appleKeys:          make(map[string]*rsa.PublicKey),
 	}
 }
 
@@ -476,96 +524,263 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 	return uid, resolvedEmail, resolvedName, resolvedAvatar, nil
 }
 
-// verifyGoogleToken verifies a Google ID Token or Access Token via Google API
+// verifyGoogleToken verifies a Google ID token through tokeninfo and checks
+// issuer, audience, expiry and email_verified. The userinfo fallback is only
+// allowed outside production when no client ID is configured.
 func (s *AuthService) verifyGoogleToken(ctx context.Context, token string) (uid, email, name, avatar string, err error) {
 	if token == "" {
 		return "", "", "", "", errors.New("google token is required")
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-
-	// 1. Try as ID Token via Google tokeninfo endpoint
-	reqURL := "https://oauth2.googleapis.com/tokeninfo?id_token=" + url.QueryEscape(token)
+	reqURL := s.googleTokenInfoURL + "?id_token=" + url.QueryEscape(token)
 	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err == nil {
-		resp, err := client.Do(req)
+		resp, err := s.httpClient.Do(req)
 		if err == nil {
 			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				var info struct {
-					Sub           string `json:"sub"`
-					Email         string `json:"email"`
-					EmailVerified string `json:"email_verified"`
-					Name          string `json:"name"`
-					Picture       string `json:"picture"`
+					Sub           string          `json:"sub"`
+					Email         string          `json:"email"`
+					EmailVerified json.RawMessage `json:"email_verified"`
+					Name          string          `json:"name"`
+					Picture       string          `json:"picture"`
+					Iss           string          `json:"iss"`
+					Aud           json.RawMessage `json:"aud"`
+					Exp           json.RawMessage `json:"exp"`
 				}
-				if err := json.NewDecoder(resp.Body).Decode(&info); err == nil && info.Sub != "" {
+				if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&info); err == nil && info.Sub != "" {
+					if info.Iss != "accounts.google.com" && info.Iss != "https://accounts.google.com" {
+						return "", "", "", "", errors.New("google token has an invalid issuer")
+					}
+					if s.googleClientID != "" {
+						if !claimContains(info.Aud, s.googleClientID) {
+							return "", "", "", "", errors.New("google token was issued for another client")
+						}
+					} else if s.isProduction {
+						return "", "", "", "", errors.New("google client id is not configured")
+					}
+					if exp, ok := claimInt64(info.Exp); ok && time.Now().Unix() >= exp {
+						return "", "", "", "", errors.New("google token has expired")
+					}
+					if !claimBool(info.EmailVerified) {
+						info.Email = ""
+					}
 					return info.Sub, info.Email, info.Name, info.Picture, nil
 				}
 			}
 		}
 	}
 
-	// 2. Try as Access Token via userinfo endpoint
-	userinfoURL := "https://www.googleapis.com/oauth2/v3/userinfo"
-	reqUI, err := http.NewRequestWithContext(ctx, "GET", userinfoURL, nil)
-	if err == nil {
-		reqUI.Header.Set("Authorization", "Bearer "+token)
-		respUI, err := client.Do(reqUI)
-		if err == nil {
-			defer respUI.Body.Close()
-			if respUI.StatusCode == http.StatusOK {
-				var uiInfo struct {
-					Sub     string `json:"sub"`
-					Email   string `json:"email"`
-					Name    string `json:"name"`
-					Picture string `json:"picture"`
-				}
-				if err := json.NewDecoder(respUI.Body).Decode(&uiInfo); err == nil && uiInfo.Sub != "" {
-					return uiInfo.Sub, uiInfo.Email, uiInfo.Name, uiInfo.Picture, nil
-				}
+	// Access-token flow: valid only when no audience can be asserted. In
+	// production this path is disabled so a token for another client cannot be
+	// used to sign in.
+	if s.isProduction || s.googleClientID != "" {
+		return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+	}
+	reqUI, err := http.NewRequestWithContext(ctx, "GET", s.googleUserInfoURL, nil)
+	if err != nil {
+		return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+	}
+	reqUI.Header.Set("Authorization", "Bearer "+token)
+	respUI, err := s.httpClient.Do(reqUI)
+	if err != nil {
+		return "", "", "", "", errors.New("не удалось проверить токен Google")
+	}
+	defer respUI.Body.Close()
+	if respUI.StatusCode != http.StatusOK {
+		return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+	}
+	var uiInfo struct {
+		Sub     string `json:"sub"`
+		Email   string `json:"email"`
+		Name    string `json:"name"`
+		Picture string `json:"picture"`
+	}
+	if err := json.NewDecoder(io.LimitReader(respUI.Body, 1<<20)).Decode(&uiInfo); err != nil || uiInfo.Sub == "" {
+		return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+	}
+	return uiInfo.Sub, uiInfo.Email, uiInfo.Name, uiInfo.Picture, nil
+}
+
+func claimContains(raw json.RawMessage, expected string) bool {
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		return single == expected
+	}
+	var multiple []string
+	if err := json.Unmarshal(raw, &multiple); err == nil {
+		for _, value := range multiple {
+			if value == expected {
+				return true
 			}
 		}
 	}
-
-	return "", "", "", "", errors.New("недействительный или неподтверждённый токен Google")
+	return false
 }
 
-// verifyAppleToken decodes and verifies an Apple identity token (JWT)
-func (s *AuthService) verifyAppleToken(ctx context.Context, token string) (uid, email string, err error) {
+func claimBool(raw json.RawMessage) bool {
+	var boolean bool
+	if err := json.Unmarshal(raw, &boolean); err == nil {
+		return boolean
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		return strings.EqualFold(text, "true")
+	}
+	return false
+}
+
+func claimInt64(raw json.RawMessage) (int64, bool) {
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err == nil {
+		if value, err := number.Int64(); err == nil {
+			return value, true
+		}
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		if value, err := strconv.ParseInt(text, 10, 64); err == nil {
+			return value, true
+		}
+	}
+	return 0, false
+}
+
+type appleJWKSResponse struct {
+	Keys []struct {
+		Kty string `json:"kty"`
+		Kid string `json:"kid"`
+		Use string `json:"use"`
+		Alg string `json:"alg"`
+		N   string `json:"n"`
+		E   string `json:"e"`
+	} `json:"keys"`
+}
+
+func (s *AuthService) fetchAppleKeys(ctx context.Context, force bool) (map[string]*rsa.PublicKey, error) {
+	s.appleKeysMu.RLock()
+	if !force && len(s.appleKeys) > 0 && time.Since(s.appleKeysFetchedAt) < time.Hour {
+		copyKeys := make(map[string]*rsa.PublicKey, len(s.appleKeys))
+		for keyID, key := range s.appleKeys {
+			copyKeys[keyID] = key
+		}
+		s.appleKeysMu.RUnlock()
+		return copyKeys, nil
+	}
+	s.appleKeysMu.RUnlock()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", s.appleJWKSURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("apple JWKS returned status %d", resp.StatusCode)
+	}
+
+	var payload appleJWKSResponse
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&payload); err != nil {
+		return nil, fmt.Errorf("failed to decode apple JWKS: %w", err)
+	}
+
+	keys := make(map[string]*rsa.PublicKey)
+	for _, item := range payload.Keys {
+		if item.Kty != "RSA" || item.Kid == "" {
+			continue
+		}
+		modulusBytes, err := base64.RawURLEncoding.DecodeString(item.N)
+		if err != nil {
+			continue
+		}
+		exponentBytes, err := base64.RawURLEncoding.DecodeString(item.E)
+		if err != nil || len(exponentBytes) == 0 {
+			continue
+		}
+		exponent := 0
+		for _, b := range exponentBytes {
+			exponent = exponent<<8 + int(b)
+		}
+		if exponent < 3 {
+			continue
+		}
+		keys[item.Kid] = &rsa.PublicKey{
+			N: new(big.Int).SetBytes(modulusBytes),
+			E: exponent,
+		}
+	}
+	if len(keys) == 0 {
+		return nil, errors.New("apple JWKS did not contain usable RSA keys")
+	}
+
+	s.appleKeysMu.Lock()
+	s.appleKeys = keys
+	s.appleKeysFetchedAt = time.Now()
+	s.appleKeysMu.Unlock()
+	return keys, nil
+}
+
+// verifyAppleToken verifies the Apple identity token signature via JWKS and
+// checks issuer, audience, expiry and email verification.
+func (s *AuthService) verifyAppleToken(ctx context.Context, token, expectedNonce string) (uid, email string, err error) {
 	if token == "" {
 		return "", "", errors.New("apple identity token is required")
 	}
-
-	parts := strings.Split(token, ".")
-	if len(parts) < 2 {
-		return "", "", errors.New("недействительный формат токена Apple")
+	if s.appleClientID == "" {
+		return "", "", errors.New("apple client id is not configured")
 	}
 
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return "", "", errors.New("ошибка декодирования токена Apple")
+	claims := jwt.MapClaims{}
+	parsed, err := jwt.ParseWithClaims(token, claims, func(parsedToken *jwt.Token) (interface{}, error) {
+		keyID, _ := parsedToken.Header["kid"].(string)
+		if keyID == "" {
+			return nil, errors.New("apple token has no key id")
+		}
+		keys, keyErr := s.fetchAppleKeys(ctx, false)
+		if keyErr == nil {
+			if key, ok := keys[keyID]; ok {
+				return key, nil
+			}
+		}
+		keys, keyErr = s.fetchAppleKeys(ctx, true)
+		if keyErr != nil {
+			return nil, keyErr
+		}
+		key, ok := keys[keyID]
+		if !ok {
+			return nil, errors.New("apple signing key not found")
+		}
+		return key, nil
+	}, jwt.WithValidMethods([]string{"RS256"}), jwt.WithIssuer("https://appleid.apple.com"), jwt.WithAudience(s.appleClientID), jwt.WithExpirationRequired())
+	if err != nil || !parsed.Valid {
+		return "", "", errors.New("недействительный или неподтверждённый токен Apple")
 	}
 
-	var claims struct {
-		Iss   string `json:"iss"`
-		Sub   string `json:"sub"`
-		Exp   int64  `json:"exp"`
-		Email string `json:"email"`
+	sub, _ := claims["sub"].(string)
+	if sub == "" {
+		return "", "", errors.New("apple token has no subject")
 	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return "", "", errors.New("неверный формат данных токена Apple")
-	}
-
-	if claims.Sub == "" || (claims.Iss != "https://appleid.apple.com" && claims.Iss != "appleid.apple.com") {
-		return "", "", errors.New("недостоверный издатель токена Apple")
+	if expectedNonce != "" {
+		nonce, _ := claims["nonce"].(string)
+		if nonce != expectedNonce {
+			return "", "", errors.New("apple token nonce mismatch")
+		}
 	}
 
-	if claims.Exp > 0 && time.Now().Unix() > claims.Exp {
-		return "", "", errors.New("срок действия токена Apple истёк")
+	verified := false
+	if value, ok := claims["email_verified"].(bool); ok {
+		verified = value
+	} else if value, ok := claims["email_verified"].(string); ok {
+		verified = strings.EqualFold(value, "true")
 	}
-
-	return claims.Sub, claims.Email, nil
+	if verified {
+		email, _ = claims["email"].(string)
+	}
+	return sub, email, nil
 }
 
 // OAuthLogin handles login or registration via OAuth providers (Google, Apple, VK, Yandex)
@@ -607,7 +822,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "apple":
-		pUID, pEmail, err := s.verifyAppleToken(ctx, authCodeOrToken)
+		pUID, pEmail, err := s.verifyAppleToken(ctx, authCodeOrToken, req.Nonce)
 		if err != nil {
 			return nil, "", fmt.Errorf("ошибка авторизации через Apple ID: %w", err)
 		}
@@ -815,7 +1030,7 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		}
 		providerUID, resolvedEmail, resolvedName, resolvedAvatar = pUID, pEmail, pName, pAvatar
 	case "apple":
-		pUID, pEmail, err := s.verifyAppleToken(ctx, token)
+		pUID, pEmail, err := s.verifyAppleToken(ctx, token, req.Nonce)
 		if err != nil {
 			return fmt.Errorf("ошибка авторизации Apple ID: %w", err)
 		}

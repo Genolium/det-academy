@@ -908,3 +908,60 @@ npx playwright test           # 9 passed
 - Серверный streak использует UTC-день; timezone policy пользователя ещё не реализована.
 - Каталог `/vocabulary` — статический срез локальных данных, не CMS-публикация.
 - Production OAuth/Apple JWKS, Directus и внешний speech pipeline по-прежнему не проверены end-to-end (этапы 2 и 5).
+
+---
+
+## 8. Итерация 3: blueprint, блокировки, OAuth и публикация словаря (21 октября 2026)
+
+### 8.1. Что сделано
+
+- Blueprint обновлён до `2026.1`; `INTERACTIVE_READING` и `INTERACTIVE_LISTENING` содержат по 2 блока.
+- Сервер детерминированно выбирает blueprint-sized набор вопросов для старта, resume и следующего этапа; `ListByTypeAndDifficulty` сортирует по `id`.
+- `CompleteSession` обёрнут в session lock: PostgreSQL advisory lock, in-memory per-session mutex. Конкурентные финализации сериализуются.
+- Добавлены `session_events`: `ANSWER_REJECTED_DEADLINE`, `STAGE_TIMEOUT`, `STAGE_SKIPPED`. `CompleteSession` считает `timeoutEvents` и отдаёт их в scores.
+- Streak принимает `utcOffsetMinutes`; дата активности считается в локальном дне пользователя, а не жёстко в UTC.
+- В свободной практике появился `Strict mode` с общим 10-минутным таймером. Экзамен всегда использует серверный дедлайн.
+- Vocabulary перенесён в PostgreSQL (`vocabulary_entries`) с полями `status`, `version`, `reviewed_at`, `source`, `source_url`. Публичный API `/api/v1/vocabulary` отдаёт только `published`.
+- Добавлен seed `backend/db/04-vocabulary-seed.sql` (506 записей) и embed-набор для in-memory режима.
+- Apple ID token теперь проверяется криптографически: JWKS, `kid`, RS256, `iss`, `aud`, `exp`, nonce, `email_verified`.
+- Google ID token проверяет `iss`, `aud`, `exp`, `email_verified`. Access-token fallback отключён в production/при заданном client ID.
+- Google/Apple frontend flow передаёт `nonce`; callback читает `id_token` из fragment.
+- Arena больше не создаёт локального бота и не меняет Elo при недоступном сервере: показывается `OFFLINE`.
+- Фильтры вузов по сабскорам используют только явные значения; эвристики «overall ≥ 125 ⇒ subscore 120» удалены.
+
+### 8.2. Новые миграции
+
+```text
+backend/db/migrations/003_stage3_integrity.sql
+backend/db/migrations/004_vocabulary.sql
+backend/db/migrations/005_session_events.sql
+backend/db/04-vocabulary-seed.sql
+```
+
+### 8.3. Проверки
+
+```bash
+npx tsc --noEmit
+npm run lint                    # 0 errors, 121 warnings
+npm run build
+(cd backend && go test ./... -count=1)
+TEST_DATABASE_URL="postgres://postgres:postgres@localhost:15432/det_academy_test?sslmode=disable" \
+  (cd backend && go test ./tests -run TestPostgresTrustedCompletionIntegrity -count=1)
+npx playwright test             # 10 passed
+```
+
+Новые регрессии:
+
+- `TestBlueprintSelectionAndTimeoutEvents` — 2 IR/IL блока и событие `ANSWER_REJECTED_DEADLINE`.
+- `TestVerifyAppleTokenChecksSignatureAudienceAndEmail` — подпись, aud, unverified email.
+- `TestVerifyAppleTokenRejectsTamperedSignature`.
+- `TestVerifyGoogleTokenChecksAudienceAndVerifiedEmail`.
+- `TestVocabularyPublication` — публикуются только `published` записи.
+
+### 8.4. Что осталось
+
+- Полный OAuth transaction store (server-side state hash, PKCE metadata, atomic consume) для VK/Yandex/Google/Apple ещё не выделен в отдельную таблицу. Текущий nonce проверяется, но state остаётся клиентским.
+- Apple `code` flow (обмен authorization code) не реализован; поддерживается identity token.
+- Speaking/Writing pipeline с очередью, retry, статусами `queued/transcribing/evaluating` и калибровкой не входил в эту итерацию.
+- Directus publishing workflow для vocabulary (draft → reviewed → published) пока представлен таблицей и статусом, но без UI/событий CMS.
+- Production release gate: dependency/security scan, backup/restore drill, error tracking, dashboards и ручной critical path.

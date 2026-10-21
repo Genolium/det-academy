@@ -25,7 +25,7 @@ import { LeagueBadge } from '@/components/ui/LeagueBadge';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { api, ArenaLeaderboardEntry } from '@/lib/api';
 
-type ArenaState = 'LOBBY' | 'SEARCHING' | 'COUNTDOWN' | 'DUELING' | 'RESULT';
+type ArenaState = 'LOBBY' | 'SEARCHING' | 'COUNTDOWN' | 'DUELING' | 'RESULT' | 'OFFLINE';
 
 interface OpponentData {
   name: string;
@@ -203,27 +203,14 @@ export default function MultiplayerArenaPage() {
       };
 
       ws.onerror = () => {
-        // Fallback simulation if backend offline
-        fallbackSimulatedMatch();
+        setState('OFFLINE');
+        try {
+          ws.close();
+        } catch {}
       };
     } catch {
-      fallbackSimulatedMatch();
+      setState('OFFLINE');
     }
-  };
-
-  const fallbackSimulatedMatch = () => {
-    setTimeout(() => {
-      setOpponent({
-        name: 'Marcus (Stanford)',
-        elo: 1435,
-        progressPct: 0,
-        currentWpm: 48,
-        accuracy: 94,
-        isBot: true,
-      });
-      setInputs(new Array(challenge.blanks.length).fill(''));
-      startCountdown();
-    }, 1500);
   };
 
   const startCountdown = () => {
@@ -331,16 +318,9 @@ export default function MultiplayerArenaPage() {
         })
       );
     } else {
-      // Local fallback calculation
-      const isWinner = accuracy >= 0.75;
-      const delta = isWinner ? 32 : -18;
-      const newElo = Math.max(100, userElo + delta);
-      setWon(isWinner);
-      setDeltaElo(delta);
-      setUserElo(newElo);
-      setPvpElo(newElo);
-      recordDailyActivity();
-      setState('RESULT');
+      // No server acknowledgement means no rating change. Never award Elo
+      // locally or invent a match result.
+      setState('OFFLINE');
     }
   };
 
@@ -531,6 +511,27 @@ export default function MultiplayerArenaPage() {
         )}
 
         {/* 2. SEARCHING MATCH STATE */}
+        {state === 'OFFLINE' && (
+          <div className="max-w-lg mx-auto bg-[#0E1012] border border-amber-800/60 rounded-3xl p-10 text-center space-y-5 shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+              <Swords className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-white">Арена недоступна</h3>
+              <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+                Сервер матчей не отвечает. Рейтинг не изменён, соперник не был создан.
+                Локальная симуляция бота отключена, чтобы не показывать вымышленный результат.
+              </p>
+            </div>
+            <button
+              onClick={() => setState('LOBBY')}
+              className="px-6 py-2.5 rounded-xl bg-[#D2F544] text-[#0C2418] text-xs font-black hover:bg-[#c2e534] transition-colors"
+            >
+              Вернуться в лобби
+            </button>
+          </div>
+        )}
+
         {state === 'SEARCHING' && (
           <div className="max-w-lg mx-auto bg-[#0E1012] border border-neutral-800 rounded-3xl p-12 text-center space-y-6 shadow-2xl">
             <div className="relative w-20 h-20 mx-auto">
