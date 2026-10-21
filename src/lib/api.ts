@@ -1,3 +1,5 @@
+import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth-session';
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
     ? process.env.NEXT_PUBLIC_API_URL
@@ -371,16 +373,24 @@ export interface AdminStats {
   recentRegistrations: User[];
 }
 
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 class ApiClient {
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('det_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   }
@@ -399,9 +409,7 @@ class ApiClient {
       throw new Error(data.error || 'Registration failed');
     }
     const data: AuthResponse = await res.json();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('det_token', data.token);
-    }
+    setAuthToken(data.token);
     return data;
   }
 
@@ -417,9 +425,7 @@ class ApiClient {
       throw new Error(data.error || 'Login failed');
     }
     const data: AuthResponse = await res.json();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('det_token', data.token);
-    }
+    setAuthToken(data.token);
     return data;
   }
 
@@ -444,9 +450,7 @@ class ApiClient {
       throw new Error(data.error || 'OAuth authentication failed');
     }
     const data: AuthResponse = await res.json();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('det_token', data.token);
-    }
+    setAuthToken(data.token);
     return data;
   }
 
@@ -470,7 +474,7 @@ class ApiClient {
       credentials: 'include',
     });
     if (!res.ok) {
-      throw new Error('Not authenticated');
+      throw new ApiError('Not authenticated', res.status);
     }
     return res.json();
   }
@@ -481,9 +485,7 @@ class ApiClient {
       headers: this.getHeaders(),
       credentials: 'include',
     }).catch(() => {});
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('det_token');
-    }
+    clearAuthToken();
   }
 
   async getLinkedProviders(): Promise<LinkedProvidersResponse> {
@@ -603,7 +605,10 @@ class ApiClient {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Для прохождения симулятора теста требуется регистрация');
+      throw new ApiError(
+        data.error || 'Для прохождения симулятора теста требуется регистрация',
+        res.status
+      );
     }
     return res.json();
   }
@@ -635,7 +640,8 @@ class ApiClient {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      throw new Error('Failed to complete stage on backend');
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Failed to complete stage on backend', res.status);
     }
     return res.json();
   }
@@ -647,7 +653,7 @@ class ApiClient {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to retrieve test session');
+      throw new ApiError(data.error || 'Failed to retrieve test session', res.status);
     }
     return res.json();
   }
@@ -670,7 +676,7 @@ class ApiClient {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to finalize test session on backend');
+      throw new ApiError(data.error || 'Failed to finalize test session on backend', res.status);
     }
     return res.json();
   }
@@ -711,12 +717,22 @@ class ApiClient {
   // --- Certificates ---
 
   async getCertificate(id: string): Promise<BackendCertificate> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/certificates/${id}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/api/v1/certificates/${encodeURIComponent(id)}`, {
+        headers: this.getHeaders(),
+        credentials: 'include',
+      });
+    } catch {
+      throw new ApiError('Не удалось связаться с реестром сертификатов', 0);
+    }
     if (!res.ok) {
-      throw new Error('Certificate not found');
+      const data = await res.json().catch(() => ({}));
+      const message =
+        res.status === 404
+          ? 'Сертификат с указанным идентификатором не найден'
+          : data.error || 'Не удалось проверить сертификат';
+      throw new ApiError(message, res.status);
     }
     return res.json();
   }

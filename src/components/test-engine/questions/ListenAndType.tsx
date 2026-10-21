@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { stringSimilarity } from '@/lib/scoring';
 import { translations } from '@/lib/translations';
-import { useErrorBankStore } from '@/store/useErrorBankStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { Button } from '@/components/ui/Button';
 import { Volume2, VolumeX, ArrowRight, Clock, AlertCircle } from 'lucide-react';
 
@@ -61,14 +61,13 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     if (soundEnabled && similarity > 0.7) {
       sound.playSuccessChime();
     } else {
-      try {
-        useErrorBankStore.getState().addError({
-          type: 'LISTEN_TYPE',
-          audioSentence: currentItem.audioSentence,
-          userTranscript: typedText.trim(),
-          similarityRatio: similarity,
-        });
-      } catch {}
+      void useErrorNotebookStore.getState().addError({
+        type: 'LISTEN_TYPE',
+        prompt: `Dictation: "${currentItem.audioSentence}"`,
+        userAnswer: typedText.trim(),
+        correctAnswer: currentItem.audioSentence,
+        explanation: `Сходство с эталоном: ${Math.round(similarity * 100)}%.`,
+      });
     }
     onComplete();
   };

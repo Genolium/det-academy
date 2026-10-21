@@ -26,7 +26,7 @@ import { SpeakAboutPhoto } from '@/components/test-engine/questions/SpeakAboutPh
 import { SpeakingSample } from '@/components/test-engine/questions/SpeakingSample';
 import { WritingInspector } from '@/components/practice/WritingInspector';
 import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
-import { useErrorBankStore } from '@/store/useErrorBankStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -39,8 +39,8 @@ export default function PracticeHubPage() {
     'In my opinion, higher education represents a pivotal catalyst for modern socioeconomic mobility. This is primarily because university curricula foster advanced critical thinking and empirical inquiry. For instance, recent studies demonstrate that graduates adapt substantially faster to automated digital environments. Ultimately, governments must prioritize equitable access to tertiary learning.'
   );
 
-  const { errors, getUnmasteredCount } = useErrorBankStore();
-  const unmasteredErrors = getUnmasteredCount();
+  const { errors } = useErrorNotebookStore();
+  const unmasteredErrors = errors.filter((error) => !error.mastered).length;
 
   // Strict requested order:
   // 1. скоропечатание, 2. read and complete, 3. словарный блиц, 4. fill in blanks, 5. аудио-диктанты, 6. академический словарь, потом всё остальное

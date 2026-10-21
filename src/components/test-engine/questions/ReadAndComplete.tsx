@@ -44,8 +44,8 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
       if (userVal.toLowerCase() === token.missing.toLowerCase()) {
         correct++;
       } else {
-        addError({
-          type: 'c-test',
+        void addError({
+          type: 'C_TEST',
           prompt: `C-Test word: ${token.prefix}[...] in "${cTestItem.title}"`,
           userAnswer: token.prefix + userVal,
           correctAnswer: token.prefix + token.missing,

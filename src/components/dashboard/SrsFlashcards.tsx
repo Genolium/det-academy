@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import vocabData from '@/data/academicVocabulary.json';
 import { useAuthStore } from '@/store/useAuthStore';
+import { hasAuthSession } from '@/lib/auth-session';
 import { api, SRSStateResponse, SRSCardProgress } from '@/lib/api';
 import { Sparkles, RotateCw, Volume2, CheckCircle2, Flame, Award, ArrowRight, BookOpen, Layers } from 'lucide-react';
 
@@ -41,7 +42,7 @@ export const SrsFlashcards: React.FC = () => {
     let isMounted = true;
 
     async function loadSRS() {
-      if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
+      if (hasAuthSession()) {
         try {
           const resp: SRSStateResponse = await api.getUserSRSState();
           if (resp && isMounted) {
@@ -238,7 +239,7 @@ export const SrsFlashcards: React.FC = () => {
     saveStorage(updatedStorage);
 
     // Sync with backend if authenticated
-    if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
+    if (hasAuthSession()) {
       try {
         await api.reviewSRSCard(currentWord.id, quality);
       } catch {

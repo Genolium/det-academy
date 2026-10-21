@@ -6,7 +6,7 @@ import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { sound } from '@/lib/sound';
 import { translations } from '@/lib/translations';
-import { useErrorBankStore } from '@/store/useErrorBankStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight } from 'lucide-react';
 
@@ -42,16 +42,13 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
       setCorrectCount((c) => c + 1);
     } else {
       if (soundEnabled) sound.playErrorBuzz();
-      try {
-        useErrorBankStore.getState().addError({
-          type: 'FILL_BLANKS',
-          contextSentence: `${currentItem.sentenceBefore} ${currentItem.givenPrefix}[...] ${currentItem.sentenceAfter}`,
-          givenPrefix: currentItem.givenPrefix,
-          userInput: inputVal.trim(),
-          missingLetters: currentItem.missingLetters,
-          correctAnswer: currentItem.fullWord,
-        });
-      } catch {}
+      void useErrorNotebookStore.getState().addError({
+        type: 'FILL_BLANKS',
+        prompt: `${currentItem.sentenceBefore} ${currentItem.givenPrefix}[...] ${currentItem.sentenceAfter}`,
+        userAnswer: `${currentItem.givenPrefix}${inputVal.trim()}`,
+        correctAnswer: currentItem.fullWord,
+        explanation: `Начало: "${currentItem.givenPrefix}", пропуск: "${currentItem.missingLetters}".`,
+      });
     }
 
     if (index + 1 < pool.length) {

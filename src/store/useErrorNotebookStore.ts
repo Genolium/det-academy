@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 import { api, UserErrorItem as BackendErrorItem } from '@/lib/api';
+import { hasAuthSession } from '@/lib/auth-session';
+
+export type ErrorType = 'C_TEST' | 'LISTEN_TYPE' | 'READ_SELECT' | 'FILL_BLANKS' | string;
 
 export interface ErrorItem {
   id: string;
-  type: string;
+  type: ErrorType;
   prompt: string;
   userAnswer: string;
   correctAnswer: string;
@@ -13,237 +16,402 @@ export interface ErrorItem {
   attemptsCount: number;
   mastered: boolean;
   lastReviewedAt?: string;
+  /** True when the item exists only in the browser and still needs a server save. */
+  pendingSync?: boolean;
+}
+
+export interface SaveErrorInput {
+  type: ErrorType;
+  prompt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation?: string;
+}
+
+interface RecallResult {
+  success: boolean;
+  consecutiveSuccesses: number;
+  mastered: boolean;
+  correctAnswer: string;
+  explanation?: string;
+  message: string;
+  networkError?: boolean;
 }
 
 interface ErrorNotebookState {
   errors: ErrorItem[];
   activeUserId: string | null;
-  loadForUser: (userId?: string) => Promise<void>;
-  addError: (error: {
-    type: string;
-    prompt: string;
-    userAnswer: string;
-    correctAnswer: string;
-    explanation?: string;
-  }) => Promise<void>;
-  recallError: (
-    id: string,
-    answer: string
-  ) => Promise<{
-    success: boolean;
-    consecutiveSuccesses: number;
-    mastered: boolean;
-    correctAnswer: string;
-    explanation?: string;
-    message: string;
-  }>;
+  isSyncing: boolean;
+  syncError: string | null;
+  loadForUser: (userId?: string | null) => Promise<void>;
+  addError: (error: SaveErrorInput) => Promise<void>;
+  recallError: (id: string, answer: string) => Promise<RecallResult>;
   removeError: (id: string) => Promise<void>;
-  clearAll: () => void;
+  clearAll: () => Promise<void>;
+  resetForUser: () => void;
 }
 
-const getStorageKey = (userId?: string | null) => {
-  if (userId) return `det_error_notebook_${userId}`;
-  if (typeof window !== 'undefined') {
-    try {
-      const rawUser = localStorage.getItem('det_auth_user');
-      if (rawUser) {
-        const u = JSON.parse(rawUser);
-        if (u?.id) return `det_error_notebook_${u.id}`;
-      }
-    } catch {}
-  }
-  return 'det_error_notebook_guest';
+const LEGACY_ERROR_BANK_KEY = 'det_error_bank_v2';
+
+const TYPE_LABELS: Record<string, string> = {
+  C_TEST: 'C-Test',
+  LISTEN_TYPE: 'Listen and Type',
+  READ_SELECT: 'Read and Select',
+  FILL_BLANKS: 'Fill in the Blanks',
 };
 
-export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => {
-  let initialErrors: ErrorItem[] = [];
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = localStorage.getItem(getStorageKey());
-      if (raw) initialErrors = JSON.parse(raw);
-    } catch {}
+export function normalizeErrorType(type: string): string {
+  const normalized = (type || '')
+    .trim()
+    .replace(/[-\s]+/g, '_')
+    .toUpperCase();
+  if (normalized in TYPE_LABELS) return normalized;
+  return normalized || 'READ_SELECT';
+}
+
+export function errorTypeLabel(type: string): string {
+  return TYPE_LABELS[normalizeErrorType(type)] || type;
+}
+
+const getStorageKey = (userId?: string | null) =>
+  userId ? `det_error_notebook_${userId}` : 'det_error_notebook_guest';
+
+const readCache = (userId?: string | null): ErrorItem[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(getStorageKey(userId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const persist = (items: ErrorItem[], userId?: string | null) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(items));
+  } catch {}
+};
+
+const mapServerItem = (item: BackendErrorItem): ErrorItem => ({
+  id: item.id,
+  type: normalizeErrorType(item.type),
+  prompt: item.prompt,
+  userAnswer: item.userAnswer,
+  correctAnswer: item.correctAnswer,
+  explanation: item.explanation,
+  consecutiveSuccesses: item.consecutiveSuccesses || 0,
+  attemptsCount: item.attemptsCount || 1,
+  mastered: Boolean(item.mastered),
+  timestamp: item.createdAt || new Date().toISOString(),
+  lastReviewedAt: item.lastReviewedAt,
+});
+
+interface LegacyBankItem {
+  type?: string;
+  questionTitle?: string;
+  contextSentence?: string;
+  wordTested?: string;
+  isRealWord?: boolean;
+  userChoseReal?: boolean;
+  definition?: string;
+  givenPrefix?: string;
+  userInput?: string;
+  correctAnswer?: string;
+  tokenPrefix?: string;
+  missingLetters?: string;
+  fullWord?: string;
+  audioSentence?: string;
+  userTranscript?: string;
+  similarityRatio?: number;
+}
+
+const mapLegacyItem = (item: LegacyBankItem): SaveErrorInput | null => {
+  const type = normalizeErrorType(item.type || 'READ_SELECT');
+
+  if (type === 'READ_SELECT') {
+    if (!item.wordTested) return null;
+    return {
+      type,
+      prompt: `Read and Select: "${item.wordTested}"`,
+      userAnswer: item.userChoseReal === undefined ? 'No answer' : item.userChoseReal ? 'Yes' : 'No',
+      correctAnswer: item.isRealWord ? 'Yes' : 'No',
+      explanation:
+        item.definition ||
+        (item.isRealWord
+          ? `"${item.wordTested}" is a real English word.`
+          : `"${item.wordTested}" is a pseudo-word used as a DET trap.`),
+    };
   }
 
-  const persist = (items: ErrorItem[], userId?: string | null) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(getStorageKey(userId), JSON.stringify(items));
-      } catch {}
+  if (type === 'FILL_BLANKS') {
+    const prompt = item.contextSentence || item.questionTitle;
+    if (!prompt || !item.correctAnswer) return null;
+    return {
+      type,
+      prompt,
+      userAnswer: `${item.givenPrefix || ''}${item.userInput || ''}`,
+      correctAnswer: `${item.givenPrefix || ''}${item.correctAnswer}`,
+      explanation: item.definition,
+    };
+  }
+
+  if (type === 'C_TEST') {
+    const prompt =
+      item.contextSentence ||
+      `C-Test word: ${item.tokenPrefix || ''}[...]${item.questionTitle ? ` in "${item.questionTitle}"` : ''}`;
+    const correct = item.fullWord || `${item.tokenPrefix || ''}${item.missingLetters || ''}`;
+    if (!prompt || !correct) return null;
+    return {
+      type,
+      prompt,
+      userAnswer: `${item.tokenPrefix || ''}${item.userInput || ''}`,
+      correctAnswer: correct,
+      explanation: item.definition || `Complete word was "${correct}".`,
+    };
+  }
+
+  if (type === 'LISTEN_TYPE') {
+    if (!item.audioSentence) return null;
+    return {
+      type,
+      prompt: `Dictation: "${item.audioSentence}"`,
+      userAnswer: item.userTranscript || '',
+      correctAnswer: item.audioSentence,
+      explanation:
+        typeof item.similarityRatio === 'number'
+          ? `Transcript match: ${Math.round(item.similarityRatio * 100)}%.`
+          : undefined,
+    };
+  }
+
+  return null;
+};
+
+/**
+ * One-time migration of the former local-only Error Bank. The old key is
+ * removed only after every item was accepted by the unified store.
+ */
+async function migrateLegacyErrorBank(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(LEGACY_ERROR_BANK_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+
+  let legacy: LegacyBankItem[] = [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) legacy = parsed;
+  } catch {}
+
+  const store = useErrorNotebookStore.getState();
+  for (const oldItem of legacy) {
+    const mapped = mapLegacyItem(oldItem);
+    if (mapped) {
+      await store.addError(mapped);
     }
-  };
+  }
 
-  return {
-    errors: initialErrors,
-    activeUserId: null,
+  try {
+    localStorage.removeItem(LEGACY_ERROR_BANK_KEY);
+  } catch {}
+}
 
-    loadForUser: async (userId) => {
-      const targetUserId = userId || null;
-      set({ activeUserId: targetUserId });
+export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => ({
+  // Never read a user cache at module load: that leaks the previous user's
+  // errors into a fresh login before `loadForUser` runs.
+  errors: [],
+  activeUserId: null,
+  isSyncing: false,
+  syncError: null,
 
-      // 1. Try to load from backend if authenticated
-      if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
-        try {
-          const resp = await api.getUserErrors();
-          if (resp && Array.isArray(resp.errors)) {
-            const mapped: ErrorItem[] = resp.errors.map((be: BackendErrorItem) => ({
-              id: be.id,
-              type: be.type,
-              prompt: be.prompt,
-              userAnswer: be.userAnswer,
-              correctAnswer: be.correctAnswer,
-              explanation: be.explanation,
-              consecutiveSuccesses: be.consecutiveSuccesses || 0,
-              attemptsCount: be.attemptsCount || 1,
-              mastered: Boolean(be.mastered),
-              timestamp: be.createdAt || new Date().toISOString(),
-              lastReviewedAt: be.lastReviewedAt,
-            }));
-            set({ errors: mapped });
-            persist(mapped, targetUserId);
-            return;
-          }
-        } catch {
-          // fallback to localStorage
-        }
+  resetForUser: () => {
+    set({ errors: [], activeUserId: null, isSyncing: false, syncError: null });
+  },
+
+  loadForUser: async (userId) => {
+    const targetUserId = userId || null;
+    set({ activeUserId: targetUserId, isSyncing: true, syncError: null });
+
+    const cached = readCache(targetUserId);
+    set({ errors: cached });
+
+    await migrateLegacyErrorBank();
+
+    if (!hasAuthSession()) {
+      set({ errors: readCache(targetUserId), isSyncing: false, syncError: null });
+      return;
+    }
+
+    // Retry items that were created while the API was unavailable.
+    const pending = get().errors.filter((item) => item.pendingSync);
+    for (const item of pending) {
+      try {
+        const saved = await api.saveUserError({
+          type: item.type,
+          prompt: item.prompt,
+          userAnswer: item.userAnswer,
+          correctAnswer: item.correctAnswer,
+          explanation: item.explanation,
+        });
+        set((state) => ({
+          errors: state.errors.map((current) =>
+            current.id === item.id ? mapServerItem(saved) : current
+          ),
+        }));
+      } catch {
+        // Keep it pending; the next load will retry.
       }
+    }
 
-      // 2. Fallback to user-scoped localStorage
-      if (typeof window !== 'undefined') {
-        try {
-          const key = getStorageKey(targetUserId);
-          const raw = localStorage.getItem(key);
-          set({ errors: raw ? JSON.parse(raw) : [] });
-        } catch {
-          set({ errors: [] });
-        }
+    try {
+      const resp = await api.getUserErrors();
+      if (resp && Array.isArray(resp.errors)) {
+        const serverItems = resp.errors.map(mapServerItem);
+        // Keep still-unsaved local items next to the server truth.
+        const stillPending = get().errors.filter((item) => item.pendingSync);
+        const merged = [
+          ...stillPending,
+          ...serverItems.filter((server) => !stillPending.some((p) => p.id === server.id)),
+        ];
+        set({ errors: merged, isSyncing: false, syncError: null });
+        persist(merged, targetUserId);
+        return;
       }
-    },
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Не удалось загрузить тетрадь ошибок';
+      set({ isSyncing: false, syncError: message });
+      // Keep the local cache so the user can still review what is available.
+      persist(get().errors, targetUserId);
+      return;
+    }
 
-    addError: async (err) => {
-      const state = get();
-      // Avoid duplicate active errors with identical prompt and correct answer
-      const existing = state.errors.find(
-        (e) => e.prompt === err.prompt && e.correctAnswer === err.correctAnswer && !e.mastered
+    set({ isSyncing: false });
+  },
+
+  addError: async (input) => {
+    const normalizedType = normalizeErrorType(input.type);
+    const state = get();
+    const existing = state.errors.find(
+      (item) =>
+        !item.mastered &&
+        item.prompt === input.prompt &&
+        item.correctAnswer === input.correctAnswer
+    );
+    if (existing) return;
+
+    let item: ErrorItem = {
+      ...input,
+      type: normalizedType,
+      id: 'err-' + Math.random().toString(36).substring(2, 10),
+      timestamp: new Date().toISOString(),
+      consecutiveSuccesses: 0,
+      attemptsCount: 1,
+      mastered: false,
+      pendingSync: true,
+    };
+
+    if (hasAuthSession()) {
+      try {
+        const saved = await api.saveUserError({
+          type: normalizedType,
+          prompt: input.prompt,
+          userAnswer: input.userAnswer,
+          correctAnswer: input.correctAnswer,
+          explanation: input.explanation,
+        });
+        item = mapServerItem(saved);
+      } catch {
+        // Keep the local item marked as pending; it is retried on next load.
+        set({ syncError: 'Ошибка сохранена локально и будет отправлена на сервер позже.' });
+      }
+    }
+
+    set((current) => {
+      const withoutDuplicate = current.errors.filter(
+        (entry) =>
+          entry.id !== item.id &&
+          !(entry.prompt === item.prompt && entry.correctAnswer === item.correctAnswer && !entry.mastered)
       );
-      if (existing) return;
+      const updated = [item, ...withoutDuplicate];
+      persist(updated, current.activeUserId);
+      return { errors: updated };
+    });
+  },
 
-      let newItemId = 'err-' + Math.random().toString(36).substring(2, 9);
+  recallError: async (id, answer) => {
+    const state = get();
+    const currentItem = state.errors.find((item) => item.id === id);
 
-      // Save to backend if authenticated
-      if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
-        try {
-          const be = await api.saveUserError({
-            type: err.type,
-            prompt: err.prompt,
-            userAnswer: err.userAnswer,
-            correctAnswer: err.correctAnswer,
-            explanation: err.explanation,
-          });
-          if (be?.id) {
-            newItemId = be.id;
-          }
-        } catch {
-          // local fallback
-        }
-      }
-
-      const newItem: ErrorItem = {
-        ...err,
-        id: newItemId,
-        timestamp: new Date().toISOString(),
-        consecutiveSuccesses: 0,
-        attemptsCount: 1,
-        mastered: false,
-      };
-
-      const updated = [newItem, ...state.errors];
-      set({ errors: updated });
-      persist(updated, state.activeUserId);
-    },
-
-    recallError: async (id, answer) => {
-      const state = get();
-      const currentItem = state.errors.find((e) => e.id === id);
-
-      // 1. Try server recall if authenticated
-      if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
-        try {
-          const resp = await api.recallUserError(id, answer);
-          const updated = state.errors.map((e) => {
-            if (e.id === id) {
-              return {
-                ...e,
-                consecutiveSuccesses: resp.consecutiveSuccesses,
-                mastered: resp.mastered,
-                attemptsCount: e.attemptsCount + 1,
-                lastReviewedAt: new Date().toISOString(),
-              };
-            }
-            return e;
-          });
-          set({ errors: updated });
-          persist(updated, state.activeUserId);
-          return resp;
-        } catch {
-          // fallback to client-side logic
-        }
-      }
-
-      // 2. Client-side verified recall logic
-      if (!currentItem) {
+    if (hasAuthSession() && currentItem && !currentItem.pendingSync) {
+      try {
+        const resp = await api.recallUserError(id, answer);
+        set((current) => {
+          const updated = current.errors.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  consecutiveSuccesses: resp.consecutiveSuccesses,
+                  mastered: resp.mastered,
+                  attemptsCount: item.attemptsCount + 1,
+                  lastReviewedAt: new Date().toISOString(),
+                }
+              : item
+          );
+          persist(updated, current.activeUserId);
+          return { errors: updated };
+        });
+        return resp;
+      } catch {
         return {
           success: false,
-          consecutiveSuccesses: 0,
-          mastered: false,
+          consecutiveSuccesses: currentItem.consecutiveSuccesses,
+          mastered: currentItem.mastered,
           correctAnswer: '',
-          message: 'Задание не найдено',
+          message: 'Не удалось проверить ответ: сервер недоступен. Повторите попытку позже.',
+          networkError: true,
         };
       }
+    }
 
-      const cleanAns = answer.trim().toLowerCase();
-      const cleanCorrect = currentItem.correctAnswer.trim().toLowerCase();
-      const isCorrect = cleanAns === cleanCorrect;
+    if (!currentItem) {
+      return {
+        success: false,
+        consecutiveSuccesses: 0,
+        mastered: false,
+        correctAnswer: '',
+        message: 'Задание не найдено',
+      };
+    }
 
-      const newConsecutive = isCorrect ? currentItem.consecutiveSuccesses + 1 : 0;
-      const newMastered = isCorrect && newConsecutive >= 2;
+    const clean = (value: string) => value.trim().toLowerCase().replace(/[.,!?;:"]/g, '');
+    const isCorrect = clean(answer) === clean(currentItem.correctAnswer);
+    const newConsecutive = isCorrect ? currentItem.consecutiveSuccesses + 1 : 0;
+    const newMastered = isCorrect && newConsecutive >= 2;
 
-      const updated = state.errors.map((e) => {
-        if (e.id === id) {
-          return {
-            ...e,
-            consecutiveSuccesses: newConsecutive,
-            attemptsCount: e.attemptsCount + 1,
-            mastered: newMastered,
-            lastReviewedAt: new Date().toISOString(),
-          };
-        }
-        return e;
-      });
+    set((current) => {
+      const updated = current.errors.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              consecutiveSuccesses: newConsecutive,
+              attemptsCount: item.attemptsCount + 1,
+              mastered: newMastered,
+              lastReviewedAt: new Date().toISOString(),
+            }
+          : item
+      );
+      persist(updated, current.activeUserId);
+      return { errors: updated };
+    });
 
-      set({ errors: updated });
-      persist(updated, state.activeUserId);
-
-      if (isCorrect) {
-        if (newMastered) {
-          return {
-            success: true,
-            consecutiveSuccesses: newConsecutive,
-            mastered: true,
-            correctAnswer: currentItem.correctAnswer,
-            explanation: currentItem.explanation,
-            message: 'Отлично! Ошибка усвоена (2 верных ответа подряд).',
-          };
-        }
-        return {
-          success: true,
-          consecutiveSuccesses: newConsecutive,
-          mastered: false,
-          correctAnswer: currentItem.correctAnswer,
-          explanation: currentItem.explanation,
-          message: 'Верно! Повторите в следующем раунде для закрепления (1 из 2).',
-        };
-      }
-
+    if (!isCorrect) {
       return {
         success: false,
         consecutiveSuccesses: 0,
@@ -252,23 +420,64 @@ export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => {
         explanation: currentItem.explanation,
         message: `Неверно. Правильный ответ: ${currentItem.correctAnswer}`,
       };
-    },
+    }
 
-    removeError: async (id) => {
-      const state = get();
-      if (typeof window !== 'undefined' && localStorage.getItem('det_auth_token')) {
-        try {
-          await api.deleteUserError(id);
-        } catch {}
+    return {
+      success: true,
+      consecutiveSuccesses: newConsecutive,
+      mastered: newMastered,
+      correctAnswer: currentItem.correctAnswer,
+      explanation: currentItem.explanation,
+      message: newMastered
+        ? 'Отлично! Ошибка усвоена (2 верных ответа подряд).'
+        : 'Верно! Повторите в следующем раунде для закрепления (1 из 2).',
+    };
+  },
+
+  removeError: async (id) => {
+    const state = get();
+    const item = state.errors.find((entry) => entry.id === id);
+    if (!item) return;
+
+    if (hasAuthSession() && !item.pendingSync) {
+      try {
+        await api.deleteUserError(id);
+      } catch {
+        set({ syncError: 'Не удалось удалить ошибку на сервере. Повторите попытку.' });
+        return;
       }
-      const updated = state.errors.filter((e) => e.id !== id);
-      set({ errors: updated });
-      persist(updated, state.activeUserId);
-    },
+    }
 
-    clearAll: () => {
-      set({ errors: [] });
-      persist([], get().activeUserId);
-    },
-  };
-});
+    set((current) => {
+      const updated = current.errors.filter((entry) => entry.id !== id);
+      persist(updated, current.activeUserId);
+      return { errors: updated, syncError: null };
+    });
+  },
+
+  clearAll: async () => {
+    const state = get();
+    if (hasAuthSession()) {
+      const failed: ErrorItem[] = [];
+      for (const item of state.errors) {
+        if (item.pendingSync) continue;
+        try {
+          await api.deleteUserError(item.id);
+        } catch {
+          failed.push(item);
+        }
+      }
+      if (failed.length > 0) {
+        set({
+          errors: failed,
+          syncError: 'Часть ошибок не удалось удалить на сервере. Повторите попытку.',
+        });
+        persist(failed, state.activeUserId);
+        return;
+      }
+    }
+
+    set({ errors: [], syncError: null });
+    persist([], state.activeUserId);
+  },
+}));

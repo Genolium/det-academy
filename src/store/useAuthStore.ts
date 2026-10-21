@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { api, User } from '@/lib/api';
+import { api, ApiError, User } from '@/lib/api';
+import { hasAuthSession } from '@/lib/auth-session';
 import { useProgressStore } from '@/store/useProgressStore';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 interface AuthState {
   user: User | null;
@@ -42,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
       useProgressStore.getState().syncWithBackend(resp.user.id);
+      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
@@ -59,6 +62,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
       useProgressStore.getState().syncWithBackend(resp.user.id);
+      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
@@ -76,6 +80,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
       useProgressStore.getState().syncWithBackend(resp.user.id);
+      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'OAuth authentication failed';
@@ -106,16 +111,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       await api.logout();
     } finally {
       useProgressStore.getState().resetProgressState();
+      useErrorNotebookStore.getState().resetForUser();
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
 
   checkAuth: async () => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('det_token');
-    if (!token) {
+    if (!hasAuthSession()) {
+      // The backend can still have an HttpOnly session cookie, so verify once
+      // instead of trusting the absence of a local token.
       useProgressStore.getState().resetProgressState();
-      return;
     }
 
     set({ isLoading: true });
@@ -126,9 +132,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         useProgressStore.getState().setCandidateName(user.name);
       }
       useProgressStore.getState().syncWithBackend(user.id);
-    } catch {
-      localStorage.removeItem('det_token');
-      useProgressStore.getState().resetProgressState();
+      void useErrorNotebookStore.getState().loadForUser(user.id);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await api.logout().catch(() => {});
+        useProgressStore.getState().resetProgressState();
+        useErrorNotebookStore.getState().resetForUser();
+      }
+      // A network/5xx failure must not destroy the local session token. The
+      // next check can retry once the API is reachable again.
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
