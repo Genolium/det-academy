@@ -620,6 +620,14 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+type EvaluationQueueStats struct {
+	Queued                 int   `json:"queued"`
+	Processing             int   `json:"processing"`
+	RetryableFailed        int   `json:"retryableFailed"`
+	PermanentlyFailed      int   `json:"permanentlyFailed"`
+	OldestProcessingAgeSec int64 `json:"oldestProcessingAgeSec"`
+}
+
 type EvaluationJob struct {
 	ID               string    `json:"id"`
 	SessionID        string    `json:"sessionId"`

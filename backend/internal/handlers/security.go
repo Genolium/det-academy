@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bufio"
+	"det-academy-backend/internal/service"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -110,6 +113,20 @@ func (r *statusRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
+func (r *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := r.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("underlying ResponseWriter does not support hijacking")
+	}
+	return hijacker.Hijack()
+}
+
+func (r *statusRecorder) Flush() {
+	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 func MetricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -135,4 +152,12 @@ func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "# HELP det_errors_total Total 5xx responses\n")
 	fmt.Fprintf(w, "# TYPE det_errors_total counter\n")
 	fmt.Fprintf(w, "det_errors_total %d\n", metricErrors.Load())
+	queued, processing, retryable, failed, oldest := service.EvaluationQueueMetrics()
+	fmt.Fprintf(w, "# HELP det_evaluation_jobs_queued Evaluation jobs waiting to be claimed\n")
+	fmt.Fprintf(w, "# TYPE det_evaluation_jobs_queued gauge\n")
+	fmt.Fprintf(w, "det_evaluation_jobs_queued %d\n", queued)
+	fmt.Fprintf(w, "det_evaluation_jobs_processing %d\n", processing)
+	fmt.Fprintf(w, "det_evaluation_jobs_retryable_failed %d\n", retryable)
+	fmt.Fprintf(w, "det_evaluation_jobs_permanently_failed %d\n", failed)
+	fmt.Fprintf(w, "det_evaluation_jobs_oldest_processing_age_seconds %d\n", oldest)
 }

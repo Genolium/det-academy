@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -10,6 +9,7 @@ import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister
 import { OfflineIndicator } from '@/components/system/OfflineIndicator';
 import { ErrorReporter } from '@/components/system/ErrorReporter';
 import { AuthBootstrap } from '@/components/system/AuthBootstrap';
+import { LocaleSync } from '@/components/system/LocaleSync';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -24,6 +24,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'DET Academy | Интерактивная платформа подготовки к Duolingo English Test',
   description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Диагностика, персональный план, тренажёры, пробные тесты и разбор ошибок.`,
+  metadataBase: new URL('https://det-academy.ru'),
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
@@ -58,9 +59,8 @@ export default function RootLayout({
         <OfflineIndicator />
         <ErrorReporter />
         <AuthBootstrap />
+        <LocaleSync />
         <ServiceWorkerRegister />
-        {/* Google Identity Services SDK for Real One-Tap & OAuth Popup */}
-        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </body>
     </html>
   );

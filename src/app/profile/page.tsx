@@ -30,6 +30,7 @@ import {
 import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
 import { UniversityMatchWidget } from '@/components/institutions/UniversityMatchWidget';
+import { loadGoogleIdentity } from '@/lib/google-identity';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 
 function ProfileContent() {
@@ -135,7 +136,7 @@ function ProfileContent() {
     }
   };
 
-  const handleLink = (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
+  const handleLink = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
     setErrorMsg(null);
     setSuccessMsg(null);
 
@@ -149,6 +150,12 @@ function ProfileContent() {
         return;
       }
 
+      try {
+        await loadGoogleIdentity();
+      } catch {
+        setErrorMsg('Не удалось загрузить Google Identity SDK');
+        return;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const google = (window as any).google;
       if (google && google.accounts && google.accounts.oauth2) {

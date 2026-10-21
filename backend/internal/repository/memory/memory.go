@@ -1246,9 +1246,11 @@ type userMemoryRepo struct{ s *MemoryStorage }
 func (r *userMemoryRepo) Create(ctx context.Context, u *models.User) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	if _, exists := r.s.usersByEmail[u.Email]; exists {
 		return errors.New("user already exists")
 	}
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	r.s.users[u.ID] = u
 	r.s.usersByEmail[u.Email] = u
 	return nil
@@ -1267,7 +1269,7 @@ func (r *userMemoryRepo) GetByID(ctx context.Context, id string) (*models.User, 
 func (r *userMemoryRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
-	u, ok := r.s.usersByEmail[email]
+	u, ok := r.s.usersByEmail[strings.ToLower(strings.TrimSpace(email))]
 	if !ok {
 		return nil, errors.New("user not found")
 	}
@@ -1799,8 +1801,11 @@ func (r *sessionMemoryRepo) ClaimEvaluationJob(ctx context.Context) (*models.Eva
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
 	now := time.Now().UTC()
+	leaseExpired := now.Add(-2 * time.Minute)
 	for _, job := range r.s.evaluationJobs {
-		if (job.Status == "queued" || job.Status == "retryable_failed") && !job.NextAttemptAt.After(now) {
+		queued := (job.Status == "queued" || job.Status == "retryable_failed") && !job.NextAttemptAt.After(now)
+		staleProcessing := job.Status == "processing" && job.Attempts < job.MaxAttempts && job.UpdatedAt.Before(leaseExpired)
+		if queued || staleProcessing {
 			job.Status = "processing"
 			job.Attempts++
 			job.UpdatedAt = now
@@ -1835,6 +1840,48 @@ func (r *sessionMemoryRepo) FailEvaluationJob(ctx context.Context, jobID string,
 		}
 	}
 	return nil
+}
+
+func (r *sessionMemoryRepo) ReapStaleEvaluationJobs(ctx context.Context) (int, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	now := time.Now().UTC()
+	leaseExpired := now.Add(-2 * time.Minute)
+	reaped := 0
+	for _, job := range r.s.evaluationJobs {
+		if job.Status == "processing" && job.Attempts >= job.MaxAttempts && job.UpdatedAt.Before(leaseExpired) {
+			job.Status = "permanently_failed"
+			if job.LastError == "" {
+				job.LastError = "processing lease expired after max attempts"
+			}
+			job.UpdatedAt = now
+			reaped++
+		}
+	}
+	return reaped, nil
+}
+
+func (r *sessionMemoryRepo) EvaluationQueueStats(ctx context.Context) (*models.EvaluationQueueStats, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	stats := &models.EvaluationQueueStats{}
+	now := time.Now().UTC()
+	for _, job := range r.s.evaluationJobs {
+		switch job.Status {
+		case "queued":
+			stats.Queued++
+		case "processing":
+			stats.Processing++
+			if stats.OldestProcessingAgeSec == 0 || int64(now.Sub(job.CreatedAt).Seconds()) > stats.OldestProcessingAgeSec {
+				stats.OldestProcessingAgeSec = int64(now.Sub(job.CreatedAt).Seconds())
+			}
+		case "retryable_failed":
+			stats.RetryableFailed++
+		case "permanently_failed":
+			stats.PermanentlyFailed++
+		}
+	}
+	return stats, nil
 }
 
 func (r *sessionMemoryRepo) CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error) {
@@ -2382,6 +2429,17 @@ func (r *refreshTokenMemoryRepo) GetActiveByHash(ctx context.Context, tokenHash 
 	defer r.s.mu.RUnlock()
 	token, ok := r.s.refreshTokens[tokenHash]
 	if !ok || token.RevokedAt != nil || token.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("refresh token is invalid")
+	}
+	copyToken := token
+	return &copyToken, nil
+}
+
+func (r *refreshTokenMemoryRepo) GetByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	token, ok := r.s.refreshTokens[tokenHash]
+	if !ok {
 		return nil, errors.New("refresh token is invalid")
 	}
 	copyToken := token

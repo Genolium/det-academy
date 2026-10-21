@@ -10,6 +10,7 @@ export const CookieConsent: React.FC = () => {
   const { locale, cookieConsentAccepted, setCookieConsentAccepted } = useSettingsStore();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const t = translations[locale].cookie;
 
   useEffect(() => {
@@ -18,11 +19,14 @@ export const CookieConsent: React.FC = () => {
     if (stored === 'true') {
       setCookieConsentAccepted(true);
     }
+    if (stored === 'true' || stored === 'rejected') {
+      setDismissed(true);
+    }
   }, [setCookieConsentAccepted]);
 
   // The exam must stay distraction-free and its controls must never be
   // covered by a consent banner.
-  if (!mounted || cookieConsentAccepted || pathname?.startsWith('/test/session')) {
+  if (!mounted || dismissed || cookieConsentAccepted || pathname?.startsWith('/test/session')) {
     return null;
   }
 
@@ -38,7 +42,19 @@ export const CookieConsent: React.FC = () => {
       </div>
       <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end shrink-0">
         <button
-          onClick={() => setCookieConsentAccepted(true)}
+          onClick={() => {
+            localStorage.setItem('det_cookie_consent', 'rejected');
+            setDismissed(true);
+          }}
+          className="w-full sm:w-auto border border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold px-4 py-2 rounded-full transition-colors whitespace-nowrap text-center cursor-pointer"
+        >
+          {locale === 'ru' ? 'Отклонить' : 'Decline'}
+        </button>
+        <button
+          onClick={() => {
+            setCookieConsentAccepted(true);
+            setDismissed(true);
+          }}
           className="w-full sm:w-auto bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] text-xs font-bold px-4 py-2 rounded-full transition-transform active:scale-95 whitespace-nowrap text-center cursor-pointer"
         >
           {t.accept}

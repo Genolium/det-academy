@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS theory_lessons (
     category_label_en VARCHAR(100) NOT NULL,
     format TEXT NOT NULL,
     scoring TEXT NOT NULL,
-    time_limit VARCHAR(50) NOT NULL,
+    time_limit TEXT NOT NULL,
     rules JSONB NOT NULL DEFAULT '[]',
     strategy_steps JSONB NOT NULL DEFAULT '[]',
     formula TEXT DEFAULT '',
@@ -363,12 +363,14 @@ CREATE TABLE IF NOT EXISTS oauth_transactions (
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_theory_progress_user ON theory_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_questions_type_diff ON questions(type, difficulty_band, is_active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email));
 CREATE INDEX IF NOT EXISTS idx_test_sessions_user ON test_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_question_responses_session ON question_responses(session_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_question_responses_session_question ON question_responses(session_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_session ON media_assets(session_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_session ON evaluations(session_id);
 CREATE INDEX IF NOT EXISTS idx_evaluation_jobs_status ON evaluation_jobs(status, next_attempt_at);
+CREATE INDEX IF NOT EXISTS idx_evaluation_jobs_lease ON evaluation_jobs(status, updated_at);
 CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events(session_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_session_questions_session ON session_questions(session_id, stage_name, position);
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);

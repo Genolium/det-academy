@@ -138,9 +138,34 @@ export default function MultiplayerArenaPage() {
 
   const socketRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const inputsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    inputsRef.current = inputs;
+  }, [inputs]);
+
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.onclose = null;
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    };
+  }, []);
 
   // Start finding match
   const handleFindMatch = () => {
+    if (socketRef.current) {
+      socketRef.current.onclose = null;
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     setState('SEARCHING');
 
     // Connect WebSocket
@@ -208,6 +233,10 @@ export default function MultiplayerArenaPage() {
           ws.close();
         } catch {}
       };
+
+      ws.onclose = () => {
+        setState((current) => (current === 'SEARCHING' || current === 'COUNTDOWN' || current === 'DUELING' ? 'OFFLINE' : current));
+      };
     } catch {
       setState('OFFLINE');
     }
@@ -218,12 +247,14 @@ export default function MultiplayerArenaPage() {
     setCountdown(3);
 
     let count = 3;
-    const interval = setInterval(() => {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    countdownTimerRef.current = setInterval(() => {
       count--;
       if (count > 0) {
         setCountdown(count);
       } else {
-        clearInterval(interval);
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
         startDuel();
       }
     }, 1000);
@@ -250,6 +281,7 @@ export default function MultiplayerArenaPage() {
   const handleInputChange = (index: number, val: string) => {
     const updated = [...inputs];
     updated[index] = val;
+    inputsRef.current = updated;
     setInputs(updated);
 
     // Calculate progress
@@ -299,7 +331,7 @@ export default function MultiplayerArenaPage() {
 
     const elapsedSec = (Date.now() - startTime) / 1000;
     let correctCount = 0;
-    inputs.forEach((ans, i) => {
+    inputsRef.current.forEach((ans, i) => {
       if (ans.trim().toLowerCase() === challenge.blanks[i].toLowerCase()) {
         correctCount++;
       }
@@ -325,8 +357,16 @@ export default function MultiplayerArenaPage() {
   };
 
   const handleRematch = () => {
+    if (socketRef.current) {
+      socketRef.current.onclose = null;
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     setState('LOBBY');
     setInputs([]);
+    inputsRef.current = [];
     setOpponent((prev) => ({ ...prev, progressPct: 0, currentWpm: 0 }));
   };
 
@@ -523,12 +563,20 @@ export default function MultiplayerArenaPage() {
                 Локальная симуляция бота отключена, чтобы не показывать вымышленный результат.
               </p>
             </div>
-            <button
-              onClick={() => setState('LOBBY')}
-              className="px-6 py-2.5 rounded-xl bg-[#D2F544] text-[#0C2418] text-xs font-black hover:bg-[#c2e534] transition-colors"
-            >
-              Вернуться в лобби
-            </button>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={handleFindMatch}
+                className="px-6 py-2.5 rounded-xl bg-[#D2F544] text-[#0C2418] text-xs font-black hover:bg-[#c2e534] transition-colors"
+              >
+                Повторить поиск
+              </button>
+              <button
+                onClick={() => setState('LOBBY')}
+                className="px-6 py-2.5 rounded-xl border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
+              >
+                Вернуться в лобби
+              </button>
+            </div>
           </div>
         )}
 
@@ -577,6 +625,7 @@ export default function MultiplayerArenaPage() {
                 </div>
                 <div className="text-xs font-black text-white">
                   {opponent.name} ({opponent.elo})
+                  {opponent.isBot && <span className="ml-1.5 rounded-full bg-amber-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300">Bot</span>}
                 </div>
               </div>
             </div>
@@ -632,6 +681,7 @@ export default function MultiplayerArenaPage() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-purple-400">
                     {opponent.name}: {opponent.progressPct}% ({opponent.currentWpm} WPM • {opponent.accuracy}%)
+                    {opponent.isBot && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-300">Bot</span>}
                   </span>
                   <span className="text-neutral-500 text-[11px]">Финиш</span>
                 </div>

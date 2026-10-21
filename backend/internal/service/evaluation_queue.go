@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"sync/atomic"
+
 	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
@@ -15,6 +17,18 @@ import (
 )
 
 var ErrEvaluationPending = errors.New("evaluation is still pending")
+
+var (
+	evalQueued       atomic.Int64
+	evalProcessing   atomic.Int64
+	evalRetryable    atomic.Int64
+	evalFailed       atomic.Int64
+	evalOldestAgeSec atomic.Int64
+)
+
+func EvaluationQueueMetrics() (queued, processing, retryable, failed, oldestAgeSec int64) {
+	return evalQueued.Load(), evalProcessing.Load(), evalRetryable.Load(), evalFailed.Load(), evalOldestAgeSec.Load()
+}
 
 type EvaluationQueue struct {
 	sessionRepo           repository.TestSessionRepository
@@ -51,6 +65,8 @@ func (q *EvaluationQueue) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			_, _ = q.sessionRepo.ReapStaleEvaluationJobs(ctx)
+			q.refreshMetrics(ctx)
 			for {
 				job, err := q.sessionRepo.ClaimEvaluationJob(ctx)
 				if err != nil {
@@ -60,6 +76,18 @@ func (q *EvaluationQueue) Run(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (q *EvaluationQueue) refreshMetrics(ctx context.Context) {
+	stats, err := q.sessionRepo.EvaluationQueueStats(ctx)
+	if err != nil {
+		return
+	}
+	evalQueued.Store(int64(stats.Queued))
+	evalProcessing.Store(int64(stats.Processing))
+	evalRetryable.Store(int64(stats.RetryableFailed))
+	evalFailed.Store(int64(stats.PermanentlyFailed))
+	evalOldestAgeSec.Store(stats.OldestProcessingAgeSec)
 }
 
 func (q *EvaluationQueue) processJob(ctx context.Context, job *models.EvaluationJob) {

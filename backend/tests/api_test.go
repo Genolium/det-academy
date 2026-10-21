@@ -82,6 +82,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.Post("/verify-email", authHandler.VerifyEmail)
 			r.Post("/refresh", authHandler.Refresh)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
+			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)
 		})
 
 		r.Route("/user", func(r chi.Router) {

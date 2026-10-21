@@ -115,6 +115,33 @@ func envOr(key, fallback string) string {
 	return fallback
 }
 
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return errors.New("password must contain at least 8 characters")
+	}
+	hasLetter, hasDigit := false, false
+	for _, char := range password {
+		switch {
+		case char >= 'a' && char <= 'z', char >= 'A' && char <= 'Z':
+			hasLetter = true
+		case char >= '0' && char <= '9':
+			hasDigit = true
+		}
+	}
+	if !hasLetter || !hasDigit {
+		return errors.New("password must contain at least one letter and one digit")
+	}
+	return nil
+}
+
+func trustedOAuthEmail(provider string) bool {
+	return provider == "google" || provider == "apple"
+}
+
 type JWTClaims struct {
 	UserID       string `json:"userId"`
 	Email        string `json:"email"`
@@ -127,6 +154,10 @@ type JWTClaims struct {
 func (s *AuthService) Register(ctx context.Context, req models.RegisterRequest) (*models.User, string, error) {
 	if req.Email == "" || req.Password == "" || req.Name == "" {
 		return nil, "", errors.New("email, password, and name are required")
+	}
+	req.Email = normalizeEmail(req.Email)
+	if err := validatePassword(req.Password); err != nil {
+		return nil, "", err
 	}
 
 	// Check if user already exists
@@ -175,6 +206,7 @@ func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*mode
 	if req.Email == "" || req.Password == "" {
 		return nil, "", errors.New("email and password are required")
 	}
+	req.Email = normalizeEmail(req.Email)
 
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
@@ -959,9 +991,17 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		}
 	}
 
-	// 3. Try to find existing user by verified provider email
+	resolvedEmail = normalizeEmail(resolvedEmail)
+	trustedEmail := trustedOAuthEmail(provider)
+
+	// 3. Only Google/Apple currently prove email ownership. For VK/Yandex,
+	// matching an existing password account by email would be an account
+	// takeover primitive; require an explicit logged-in link instead.
 	existingUser, err := s.userRepo.GetByEmail(ctx, resolvedEmail)
 	if err == nil && existingUser != nil {
+		if !trustedEmail {
+			return nil, "", errors.New("email from this provider is not verified; sign in to your existing account to link it")
+		}
 		upgradeUserIfPlaceholder(existingUser)
 
 		// Ensure social account link is stored
@@ -986,7 +1026,7 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		ID:            uuid.New().String(),
 		Email:         resolvedEmail,
 		PasswordHash:  "", // OAuth accounts do not have local passwords initially
-		EmailVerified: resolvedEmail != "",
+		EmailVerified: trustedEmail && resolvedEmail != "",
 		Name:          resolvedName,
 		Role:          "student",
 		AvatarURL:     resolvedAvatar,
@@ -1036,8 +1076,8 @@ func (s *AuthService) GetLinkedProviders(ctx context.Context, userID string) (*m
 }
 
 func (s *AuthService) SetPassword(ctx context.Context, userID string, req models.SetPasswordRequest) error {
-	if len(req.NewPassword) < 6 {
-		return errors.New("новый пароль должен содержать минимум 6 символов")
+	if err := validatePassword(req.NewPassword); err != nil {
+		return err
 	}
 
 	user, err := s.userRepo.GetByID(ctx, userID)
@@ -1060,7 +1100,13 @@ func (s *AuthService) SetPassword(ctx context.Context, userID string, req models
 		return fmt.Errorf("ошибка хеширования пароля: %w", err)
 	}
 
-	return s.userRepo.UpdatePassword(ctx, userID, string(hashedPassword))
+	if err := s.userRepo.UpdatePassword(ctx, userID, string(hashedPassword)); err != nil {
+		return err
+	}
+	if s.refreshRepo != nil {
+		_ = s.refreshRepo.RevokeAllForUser(ctx, userID)
+	}
+	return nil
 }
 
 func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req models.LinkProviderRequest) error {
@@ -1372,8 +1418,18 @@ func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*mod
 		return nil, "", "", errors.New("refresh token is invalid")
 	}
 	hash := hashState(strings.TrimSpace(rawToken))
-	stored, err := s.refreshRepo.GetActiveByHash(ctx, hash)
+	stored, err := s.refreshRepo.GetByHash(ctx, hash)
 	if err != nil {
+		return nil, "", "", errors.New("refresh token is invalid or expired")
+	}
+	if stored.RevokedAt != nil {
+		// Reuse of a revoked token means the family is compromised. Revoke all
+		// refresh tokens and invalidate existing access tokens.
+		_ = s.refreshRepo.RevokeAllForUser(ctx, stored.UserID)
+		_ = s.userRepo.IncrementTokenVersion(ctx, stored.UserID)
+		return nil, "", "", errors.New("refresh token is invalid or expired")
+	}
+	if stored.ExpiresAt.Before(time.Now().UTC()) {
 		return nil, "", "", errors.New("refresh token is invalid or expired")
 	}
 	_ = s.refreshRepo.Revoke(ctx, hash)
@@ -1421,6 +1477,7 @@ func (s *AuthService) EnsureBootstrapAdmin(ctx context.Context, email, password,
 	if len(password) < 12 {
 		return errors.New("bootstrap admin password must be at least 12 characters")
 	}
+	email = normalizeEmail(email)
 	if existing, err := s.userRepo.GetByEmail(ctx, email); err == nil && existing != nil {
 		return nil
 	}

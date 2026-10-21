@@ -34,6 +34,10 @@ function report(message: string, stack?: string): void {
   }
 }
 
+export function reportClientError(message: string, stack?: string): void {
+  report(message, stack);
+}
+
 export function installErrorReporter(): void {
   if (installed || typeof window === 'undefined') return;
   installed = true;

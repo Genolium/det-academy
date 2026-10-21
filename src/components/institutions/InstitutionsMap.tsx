@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import 'leaflet/dist/leaflet.css';
 import { Institution, api } from '@/lib/api';
 import { directusCms } from '@/lib/directus';
 import { PillBadge } from '@/components/ui/PillBadge';
@@ -10,6 +11,25 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 
 type SubscoreFilter = 'ANY' | 'WRITING_120' | 'LITERACY_120' | 'ALL_115' | 'CONVERSATION_120';
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeExternalUrl(value?: string): string {
+  if (!value) return '#';
+  try {
+    const parsed = new URL(value, window.location.origin);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : '#';
+  } catch {
+    return '#';
+  }
+}
 
 export const InstitutionsMap: React.FC = () => {
   const { locale } = useSettingsStore();
@@ -156,14 +176,6 @@ export const InstitutionsMap: React.FC = () => {
     if (typeof window === 'undefined' || !mapContainerRef.current) return;
 
     // Load leaflet css dynamically if not already loaded
-    if (!document.getElementById('leaflet-css')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-
     let isSubscribed = true;
 
     // Dynamically import Leaflet
@@ -183,12 +195,10 @@ export const InstitutionsMap: React.FC = () => {
         minZoom: 2,
         maxZoom: 18,
         scrollWheelZoom: false,
-        attributionControl: false,
       });
 
-      // OpenStreetMap Standard Tiles (Attribution disabled as requested)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
@@ -274,19 +284,19 @@ export const InstitutionsMap: React.FC = () => {
     const popupContent = `
       <div style="font-family: inherit; padding: 4px; max-width: 240px;">
         <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #16a34a; margin-bottom: 2px;">
-          ${inst.category} • ${inst.country}
+          ${escapeHtml(inst.category)} • ${escapeHtml(inst.country)}
         </div>
         <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.2;">
-          ${inst.name}
+          ${escapeHtml(inst.name)}
         </div>
         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
-          📍 ${inst.city}${inst.state ? ', ' + inst.state : ''}
+          📍 ${escapeHtml(inst.city)}${inst.state ? ', ' + escapeHtml(inst.state) : ''}
         </div>
         <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
           <strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>
-          ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${inst.subscoreReqs}</div>` : ''}
+          ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(inst.subscoreReqs)}</div>` : ''}
         </div>
-        <a href="${inst.websiteUrl}" target="_blank" rel="noopener noreferrer" style="
+        <a href="${safeExternalUrl(inst.websiteUrl)}" target="_blank" rel="noopener noreferrer" style="
           display: inline-block;
           background: #0f172a;
           color: #D2F544;
@@ -614,7 +624,7 @@ export const InstitutionsMap: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <a
-                  href={selectedInstitution.websiteUrl}
+                  href={safeExternalUrl(selectedInstitution.websiteUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#0E1012] hover:bg-neutral-800 text-[#D2F544] px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors"

@@ -75,6 +75,17 @@ export const TypingEngine: React.FC = () => {
     resetTest();
   }, [mode, timeLimit, wordLimit, vocabPack]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        resetTest();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
   // Timer countdown for 'time' mode
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -363,7 +374,7 @@ export const TypingEngine: React.FC = () => {
             aria-label="Поле ввода текста"
             value={currentInput}
             onChange={handleInputChange}
-            className="opacity-0 absolute inset-0 cursor-default"
+            className="opacity-0 absolute inset-0 cursor-default pointer-events-none"
             autoFocus
             autoCapitalize="none"
             autoCorrect="off"

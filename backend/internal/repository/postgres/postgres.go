@@ -101,6 +101,7 @@ func (r *UserRepo) Create(ctx context.Context, u *models.User) error {
 	if role == "" {
 		role = "student"
 	}
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	_, err := r.db.ExecContext(ctx, query, u.ID, u.Email, u.PasswordHash, u.Name, role, u.AvatarURL, u.Locale, u.TokenVersion, u.EmailVerified, u.CreatedAt, u.UpdatedAt)
 	return err
 }
@@ -118,7 +119,7 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 }
 
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE LOWER(email) = LOWER($1)`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt,
@@ -131,6 +132,7 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 
 func (r *UserRepo) Update(ctx context.Context, u *models.User) error {
 	query := `UPDATE users SET email = $1, name = $2, avatar_url = $3, locale = $4, updated_at = $5 WHERE id = $6`
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 	u.UpdatedAt = time.Now().UTC()
 	_, err := r.db.ExecContext(ctx, query, u.Email, u.Name, u.AvatarURL, u.Locale, u.UpdatedAt, u.ID)
 	return err
@@ -839,8 +841,10 @@ func (r *SessionRepo) ClaimEvaluationJob(ctx context.Context) (*models.Evaluatio
 	query := `
 		WITH claimed AS (
 			SELECT id FROM evaluation_jobs
-			WHERE status IN ('queued', 'retryable_failed')
-			  AND next_attempt_at <= NOW()
+			WHERE (
+				(status IN ('queued', 'retryable_failed') AND next_attempt_at <= NOW())
+				OR (status = 'processing' AND attempts < max_attempts AND updated_at < NOW() - INTERVAL '2 minutes')
+			)
 			ORDER BY created_at ASC
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
@@ -881,6 +885,40 @@ func (r *SessionRepo) FailEvaluationJob(ctx context.Context, jobID string, retry
 	`
 	_, err := r.db.ExecContext(ctx, query, jobID, retryAt, lastError)
 	return err
+}
+
+func (r *SessionRepo) ReapStaleEvaluationJobs(ctx context.Context) (int, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE evaluation_jobs
+		SET status = 'permanently_failed',
+		    last_error = CASE WHEN last_error = '' THEN 'processing lease expired after max attempts' ELSE last_error END,
+		    updated_at = NOW()
+		WHERE status = 'processing'
+		  AND attempts >= max_attempts
+		  AND updated_at < NOW() - INTERVAL '2 minutes'
+	`)
+	if err != nil {
+		return 0, err
+	}
+	count, _ := res.RowsAffected()
+	return int(count), nil
+}
+
+func (r *SessionRepo) EvaluationQueueStats(ctx context.Context) (*models.EvaluationQueueStats, error) {
+	var stats models.EvaluationQueueStats
+	err := r.db.QueryRowContext(ctx, `
+		SELECT
+			COUNT(*) FILTER (WHERE status = 'queued'),
+			COUNT(*) FILTER (WHERE status = 'processing'),
+			COUNT(*) FILTER (WHERE status = 'retryable_failed'),
+			COUNT(*) FILTER (WHERE status = 'permanently_failed'),
+			COALESCE(EXTRACT(EPOCH FROM (NOW() - MIN(created_at) FILTER (WHERE status = 'processing'))), 0)::bigint
+		FROM evaluation_jobs
+	`).Scan(&stats.Queued, &stats.Processing, &stats.RetryableFailed, &stats.PermanentlyFailed, &stats.OldestProcessingAgeSec)
+	if err != nil {
+		return nil, err
+	}
+	return &stats, nil
 }
 
 func (r *SessionRepo) CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error) {
@@ -1604,6 +1642,18 @@ func (r *RefreshTokenRepo) GetActiveByHash(ctx context.Context, tokenHash string
 		SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
 		FROM refresh_tokens
 		WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()
+	`, tokenHash).Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &token.RevokedAt, &token.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
+func (r *RefreshTokenRepo) GetByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	var token models.RefreshToken
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
+		FROM refresh_tokens WHERE token_hash = $1
 	`, tokenHash).Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &token.RevokedAt, &token.CreatedAt)
 	if err != nil {
 		return nil, err

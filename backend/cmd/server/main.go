@@ -279,7 +279,7 @@ func main() {
 		})
 
 		// Multiplayer Arena WebSocket & Leaderboard
-		r.Get("/arena/ws", arenaHandler.HandleWebSocket)
+		r.With(handlers.AuthMiddleware(authService)).Get("/arena/ws", arenaHandler.HandleWebSocket)
 		r.Get("/arena/leaderboard", arenaHandler.GetLeaderboard)
 
 		// Ad Banners routes

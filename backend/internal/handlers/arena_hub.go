@@ -6,7 +6,10 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/url"
+	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,9 +19,32 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all CORS in dev/prod with reverse proxy
-	},
+	CheckOrigin: allowedWebSocketOrigin,
+}
+
+func allowedWebSocketOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true // CLI/health probes do not send Origin.
+	}
+	parsed, err := url.Parse(origin)
+	if err != nil || parsed.Hostname() == "" {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+	if host == "localhost" || host == "127.0.0.1" {
+		return true
+	}
+	for _, allowed := range strings.Split(os.Getenv("ALLOWED_ORIGIN"), ",") {
+		allowed = strings.TrimSpace(allowed)
+		if allowed == "" {
+			continue
+		}
+		if parsedAllowed, parseErr := url.Parse(allowed); parseErr == nil && strings.EqualFold(parsedAllowed.Hostname(), host) {
+			return true
+		}
+	}
+	return false
 }
 
 type ArenaMessage struct {
@@ -400,7 +426,7 @@ func (h *ArenaHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 						if completedCount > 0 {
-							pct := 55 + ((bestScore*7)%38)
+							pct := 55 + ((bestScore * 7) % 38)
 							winRate = fmt.Sprintf("%d%%", pct)
 						}
 					}
@@ -475,17 +501,27 @@ func (h *ArenaHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 
 	client := &ArenaClient{
-		ID:   uuid.New().String(),
+		ID:   userID,
 		Name: "Candidate",
 		ELO:  1200,
 		Conn: conn,
 		Send: make(chan []byte, 256),
+	}
+	if h.userRepo != nil {
+		if user, userErr := h.userRepo.GetByID(r.Context(), userID); userErr == nil && user != nil {
+			client.Name = user.Name
+		}
 	}
 
 	// Writer pump
@@ -519,10 +555,8 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		case "join_queue":
 			var p JoinQueuePayload
 			_ = json.Unmarshal(msg.Payload, &p)
-			if p.PlayerName != "" {
-				client.Name = p.PlayerName
-			}
-			if p.PlayerELO > 0 {
+			// Name comes from the authenticated user, not the client payload.
+			if p.PlayerELO >= 1000 && p.PlayerELO <= 3000 {
 				client.ELO = p.PlayerELO
 			}
 			h.hub.register <- client

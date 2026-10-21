@@ -186,3 +186,90 @@ func TestEvaluationQueueUsesNeuralWritingEvaluator(t *testing.T) {
 		t.Fatalf("expected response score to be updated, got %+v", responses)
 	}
 }
+
+func TestEvaluationQueueReclaimsStaleProcessingJob(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{
+		ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS",
+		StageName: "SPEAKING_SAMPLE", CurrentStage: 13, DifficultyLevel: "B1",
+	}
+	if err := store.Sessions().Create(ctx, session); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		QuestionType: "SPEAK_PHOTO", Status: "PENDING", SpeakingDuration: 75,
+		FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	if err := store.Sessions().SaveEvaluation(ctx, evaluation); err != nil {
+		t.Fatalf("save evaluation: %v", err)
+	}
+	job := &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		EvaluationID: evaluation.ID, Status: "processing", Attempts: 1, MaxAttempts: 3,
+		NextAttemptAt: time.Now().Add(-time.Minute),
+		CreatedAt:     time.Now().Add(-10 * time.Minute),
+		UpdatedAt:     time.Now().Add(-10 * time.Minute),
+	}
+	if err := store.Sessions().CreateEvaluationJob(ctx, job); err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	claimed, err := store.Sessions().ClaimEvaluationJob(ctx)
+	if err != nil {
+		t.Fatalf("stale processing job was not reclaimed: %v", err)
+	}
+	if claimed.ID != job.ID {
+		t.Fatalf("expected stale job %s, got %s", job.ID, claimed.ID)
+	}
+	if claimed.Status != "processing" || claimed.Attempts != 2 {
+		t.Fatalf("expected processing attempt 2, got status=%s attempts=%d", claimed.Status, claimed.Attempts)
+	}
+}
+
+func TestEvaluationQueueReapsExhaustedProcessingJob(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS", StageName: "SPEAKING_SAMPLE", CurrentStage: 13}
+	_ = store.Sessions().Create(ctx, session)
+	evaluation := &models.EvaluationResult{ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01", Status: "PENDING", CreatedAt: time.Now().UTC()}
+	_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+	_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01", EvaluationID: evaluation.ID,
+		Status: "processing", Attempts: 3, MaxAttempts: 3,
+		CreatedAt: time.Now().Add(-10 * time.Minute), UpdatedAt: time.Now().Add(-10 * time.Minute),
+	})
+	reaped, err := store.Sessions().ReapStaleEvaluationJobs(ctx)
+	if err != nil || reaped != 1 {
+		t.Fatalf("expected one reaped job, got %d err=%v", reaped, err)
+	}
+	if _, err := store.Sessions().ClaimEvaluationJob(ctx); err == nil {
+		t.Fatal("exhausted processing job must not be reclaimed")
+	}
+}
+
+func TestEvaluationQueueStatsCountsStatuses(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS", StageName: "SPEAKING_SAMPLE", CurrentStage: 13}
+	_ = store.Sessions().Create(ctx, session)
+	for index, status := range []string{"queued", "processing", "retryable_failed", "permanently_failed"} {
+		evaluation := &models.EvaluationResult{ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-" + status, Status: "PENDING", CreatedAt: time.Now().UTC()}
+		_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+		_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+			ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-" + status, EvaluationID: evaluation.ID,
+			Status: status, Attempts: index, MaxAttempts: 3, CreatedAt: time.Now().Add(-time.Duration(index) * time.Minute), UpdatedAt: time.Now(),
+		})
+	}
+	stats, err := store.Sessions().EvaluationQueueStats(ctx)
+	if err != nil {
+		t.Fatalf("stats: %v", err)
+	}
+	if stats.Queued != 1 || stats.Processing != 1 || stats.RetryableFailed != 1 || stats.PermanentlyFailed != 1 {
+		t.Fatalf("unexpected stats: %+v", stats)
+	}
+	if stats.OldestProcessingAgeSec <= 0 {
+		t.Fatalf("expected positive processing age: %+v", stats)
+	}
+}

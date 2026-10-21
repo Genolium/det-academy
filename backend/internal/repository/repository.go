@@ -29,6 +29,7 @@ type UserRepository interface {
 type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *models.RefreshToken) error
 	GetActiveByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
+	GetByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
 	Revoke(ctx context.Context, tokenHash string) error
 	RevokeAllForUser(ctx context.Context, userID string) error
 }
@@ -71,6 +72,8 @@ type TestSessionRepository interface {
 	ClaimEvaluationJob(ctx context.Context) (*models.EvaluationJob, error)
 	CompleteEvaluationJob(ctx context.Context, jobID string) error
 	FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error
+	ReapStaleEvaluationJobs(ctx context.Context) (int, error)
+	EvaluationQueueStats(ctx context.Context) (*models.EvaluationQueueStats, error)
 	CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error)
 	UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
