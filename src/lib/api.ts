@@ -430,6 +430,8 @@ export interface Institution {
   acceptanceRate?: string;
   programs: string[];
   createdAt: string;
+  source?: 'duolingo' | 'extended';
+  verified?: boolean;
 }
 
 export interface AdminStats {

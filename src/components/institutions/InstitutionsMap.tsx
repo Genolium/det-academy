@@ -37,6 +37,7 @@ export const InstitutionsMap: React.FC = () => {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [catalogStats, setCatalogStats] = useState<{ total: number; official: number; extended: number; countries: number } | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -61,16 +62,39 @@ export const InstitutionsMap: React.FC = () => {
       setLoadError(null);
       try {
         const baseMap = new Map<string, Institution>();
+        const keyFor = (item: Institution) => `${item.name.toLowerCase().trim()}|${item.country.toLowerCase().trim()}`;
         let loaded = 0;
 
-        // The server is the only source of the catalogue. The multi-megabyte
-        // local dataset is no longer shipped in the JavaScript bundle.
-        const res = await api.getInstitutions();
-        if (res && res.institutions) {
-          res.institutions.forEach((item) => {
-            baseMap.set(item.name.toLowerCase().trim(), item);
+        // The full catalogue is served by a server route so the 12k+ records
+        // never enter the JavaScript bundle.
+        let catalog: { institutions?: Institution[]; stats?: { total: number; official: number; extended: number; countries: number } } | null = null;
+        for (let attempt = 0; attempt < 3 && !catalog; attempt += 1) {
+          try {
+            const catalogResponse = await fetch('/registry/institutions-map', { cache: 'no-store' });
+            if (!catalogResponse.ok) throw new Error(`catalog ${catalogResponse.status}`);
+            catalog = await catalogResponse.json();
+          } catch {
+            if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400));
+          }
+        }
+        if (catalog && Array.isArray(catalog.institutions)) {
+          catalog.institutions.forEach((item: Institution) => {
+            baseMap.set(keyFor(item), item);
             loaded++;
           });
+          setCatalogStats(catalog.stats || null);
+        }
+
+        // Keep admin/Directus-added institutions visible even if they are not
+        // in the static catalogue.
+        if (loaded === 0) {
+          const res = await api.getInstitutions();
+          if (res && res.institutions) {
+            res.institutions.forEach((item) => {
+              baseMap.set(keyFor(item), { ...item, source: item.source || 'extended', verified: Boolean(item.verified) });
+              loaded++;
+            });
+          }
         }
 
         // Merge from Directus CMS
@@ -78,7 +102,7 @@ export const InstitutionsMap: React.FC = () => {
           const directusData = await directusCms.getInstitutions();
           if (directusData && directusData.length > 0) {
             directusData.forEach((d) => {
-              baseMap.set(d.name.toLowerCase().trim(), {
+              baseMap.set(`${d.name.toLowerCase().trim()}|${d.country.toLowerCase().trim()}`, {
                 id: d.id,
                 name: d.name,
                 country: d.country,
@@ -94,6 +118,8 @@ export const InstitutionsMap: React.FC = () => {
                 acceptanceRate: d.acceptance_rate,
                 programs: d.programs || [],
                 createdAt: new Date().toISOString(),
+                source: 'extended',
+                verified: false,
               });
             });
           }
@@ -562,6 +588,13 @@ export const InstitutionsMap: React.FC = () => {
             ? 'Фильтры по сабскорам используют только явно указанные значения. Пустое поле означает «требование не подтверждено», а не рассчитанный балл.'
             : 'Subscore filters use explicit values only. An empty field means "requirement not confirmed", not a derived score.'}
         </p>
+        {catalogStats && (
+          <p className="text-[11px] text-neutral-500">
+            {locale === 'ru'
+              ? `На карте: ${catalogStats.total.toLocaleString('ru-RU')} вузов, ${catalogStats.official.toLocaleString('ru-RU')} официальных совпадений Duolingo, ${catalogStats.countries} стран. Extended-записи помечены отдельно; проверяйте требования на сайте вуза.`
+              : `Mapped: ${catalogStats.total.toLocaleString('en-US')} institutions, ${catalogStats.official.toLocaleString('en-US')} official Duolingo matches, ${catalogStats.countries} countries. Extended records are labelled separately; verify requirements with the university.`}
+          </p>
+        )}
 
         {/* Category Pills */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100">
@@ -596,7 +629,7 @@ export const InstitutionsMap: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className="hidden sm:inline">{t.mapPinsNote}</span>
-              <span className="font-mono text-[#D2F544] font-bold">{t.foundLabel} {filteredInstitutions.length}</span>
+              <span data-testid="map-found-count" className="font-mono text-[#D2F544] font-bold">{t.foundLabel} {filteredInstitutions.length}</span>
             </div>
           </div>
 
@@ -613,6 +646,9 @@ export const InstitutionsMap: React.FC = () => {
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                   {selectedInstitution.category}
+                </span>
+                <span className={`ml-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${selectedInstitution.source === 'duolingo' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                  {selectedInstitution.source === 'duolingo' ? 'DET official' : 'DET extended'}
                 </span>
                 <h4 className="text-base font-extrabold text-[#0E1012] mt-1">
                   {selectedInstitution.name}
