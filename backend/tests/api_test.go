@@ -22,9 +22,9 @@ import (
 
 func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	store := memory.New()
-	jwtSecret := "test-secret-key-123456"
+	testSigningValue := "unit-test-only"
 
-	authService := service.NewAuthService(store.Users(), jwtSecret, store.OAuthTransactions())
+	authService := service.NewAuthService(store.Users(), testSigningValue, store.OAuthTransactions())
 	authService.SetRefreshTokenRepo(store.RefreshTokens())
 	theoryService := service.NewTheoryService(store.Theory())
 	catService := service.NewCATService(
