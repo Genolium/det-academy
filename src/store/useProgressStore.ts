@@ -299,6 +299,26 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
     }
 
+    // Server-owned streak is authoritative when the API is reachable.
+    if (hasAuthSession()) {
+      try {
+        const streak = await api.getUserStreak();
+        set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            getScopedKey('streak_days', activeUserId),
+            streak.streakDays.toString()
+          );
+          localStorage.setItem(
+            getScopedKey('last_active_date', activeUserId),
+            streak.lastActiveDate
+          );
+        }
+      } catch {
+        // Offline: keep the last local value.
+      }
+    }
+
     // 2. Sync theory progress from backend (if logged in)
     try {
       const resp = await api.getTheoryProgress();
@@ -458,13 +478,22 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterday = yesterdayDate.toISOString().split('T')[0];
-    const streakDays = state.lastActiveDate === yesterday ? state.streakDays + 1 : 1;
+    const optimisticStreak = state.lastActiveDate === yesterday ? state.streakDays + 1 : 1;
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem(getScopedKey('streak_days', state.userId), streakDays.toString());
+      localStorage.setItem(getScopedKey('streak_days', state.userId), optimisticStreak.toString());
       localStorage.setItem(getScopedKey('last_active_date', state.userId), today);
     }
-    set({ streakDays, lastActiveDate: today });
+    set({ streakDays: optimisticStreak, lastActiveDate: today });
+
+    if (hasAuthSession()) {
+      void api
+        .recordUserActivity('study')
+        .then((streak) => set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate }))
+        .catch(() => {
+          // Keep the optimistic local value until the next sync.
+        });
+    }
   },
 
   setPvpElo: (pvpElo) => {

@@ -431,6 +431,50 @@ func (s *StudyService) DeleteError(ctx context.Context, userID, errorID string) 
 	return s.storage.Study().DeleteError(ctx, userID, errorID)
 }
 
+// --- Daily activity & server-owned streak ---
+
+func (s *StudyService) GetStreak(ctx context.Context, userID string) (*models.UserStreak, error) {
+	dates, err := s.storage.Study().GetActivityDates(ctx, userID, 365)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load activity: %w", err)
+	}
+	if len(dates) == 0 {
+		return &models.UserStreak{StreakDays: 0, LastActiveDate: ""}, nil
+	}
+
+	active := map[string]bool{}
+	for _, date := range dates {
+		active[date] = true
+	}
+
+	today := time.Now().UTC()
+	start := today
+	if !active[today.Format("2006-01-02")] {
+		yesterday := today.AddDate(0, 0, -1)
+		if !active[yesterday.Format("2006-01-02")] {
+			return &models.UserStreak{StreakDays: 0, LastActiveDate: dates[0]}, nil
+		}
+		start = yesterday
+	}
+
+	streak := 0
+	for day := start; active[day.Format("2006-01-02")]; day = day.AddDate(0, 0, -1) {
+		streak++
+	}
+	return &models.UserStreak{StreakDays: streak, LastActiveDate: dates[0]}, nil
+}
+
+func (s *StudyService) RecordActivity(ctx context.Context, userID, source string) (*models.UserStreak, error) {
+	if strings.TrimSpace(source) == "" {
+		source = "app"
+	}
+	today := time.Now().UTC().Format("2006-01-02")
+	if err := s.storage.Study().RecordActivity(ctx, userID, today, source); err != nil {
+		return nil, fmt.Errorf("failed to record activity: %w", err)
+	}
+	return s.GetStreak(ctx, userID)
+}
+
 // --- Spaced Repetition (SRS) Engine ---
 
 func (s *StudyService) GetSRSState(ctx context.Context, userID string) (*models.SRSStateResponse, error) {
@@ -717,10 +761,10 @@ func (s *StudyService) GetSkillAnalytics(ctx context.Context, userID string) (*m
 	}
 
 	return &models.SkillAnalyticsResponse{
-		HasData:         true,
-		LatestOverall:   intVal(latest.OverallScore),
-		BestOverall:     bestOverall,
-		Modalities:      modalities,
+		HasData:       true,
+		LatestOverall: intVal(latest.OverallScore),
+		BestOverall:   bestOverall,
+		Modalities:    modalities,
 		Subscores: models.IntegratedSubscores{
 			Literacy:      intVal(latest.LiteracyScore),
 			Comprehension: intVal(latest.ComprehensionScore),

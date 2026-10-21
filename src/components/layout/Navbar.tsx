@@ -24,6 +24,7 @@ import {
   MapPin,
   Swords,
   Flame,
+  BookOpen,
 } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { LeagueBadge } from '@/components/ui/LeagueBadge';
@@ -113,6 +114,12 @@ export const Navbar: React.FC = () => {
       label: t.drills,
       icon: Layers,
       isActive: pathname === '/practice',
+    },
+    {
+      href: '/vocabulary',
+      label: locale === 'ru' ? 'Словарь' : 'Vocabulary',
+      icon: BookOpen,
+      isActive: pathname.startsWith('/vocabulary'),
     },
     {
       href: '/institutions',

@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { Cookie } from 'lucide-react';
 
 export const CookieConsent: React.FC = () => {
   const { locale, cookieConsentAccepted, setCookieConsentAccepted } = useSettingsStore();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const t = translations[locale].cookie;
 
@@ -18,7 +20,9 @@ export const CookieConsent: React.FC = () => {
     }
   }, [setCookieConsentAccepted]);
 
-  if (!mounted || cookieConsentAccepted) {
+  // The exam must stay distraction-free and its controls must never be
+  // covered by a consent banner.
+  if (!mounted || cookieConsentAccepted || pathname?.startsWith('/test/session')) {
     return null;
   }
 

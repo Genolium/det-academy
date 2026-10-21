@@ -237,7 +237,7 @@ function DashboardContent() {
                 </span>
                 <span className="text-neutral-500 text-xs">•</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-neutral-300 text-xs font-bold">
+                  <span className="text-neutral-300 text-xs font-bold" suppressHydrationWarning>
                     {user?.name || candidateName || 'Кандидат DET'}
                   </span>
                   <button

@@ -184,6 +184,8 @@ func main() {
 			r.Post("/errors", studyHandler.SaveError)
 			r.Post("/errors/{id}/recall", studyHandler.RecallError)
 			r.Delete("/errors/{id}", studyHandler.DeleteError)
+			r.Get("/streak", studyHandler.GetStreak)
+			r.Post("/activity", studyHandler.RecordActivity)
 			r.Get("/srs", studyHandler.GetSRSState)
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
 		})

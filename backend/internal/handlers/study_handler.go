@@ -185,6 +185,36 @@ func (h *StudyHandler) DeleteError(w http.ResponseWriter, r *http.Request) {
 
 // --- Spaced Repetition (SRS) ---
 
+func (h *StudyHandler) GetStreak(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	streak, err := h.studyService.GetStreak(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, streak)
+}
+
+func (h *StudyHandler) RecordActivity(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	var req models.RecordActivityRequest
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	streak, err := h.studyService.RecordActivity(r.Context(), userID, req.Source)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, streak)
+}
+
 func (h *StudyHandler) GetSRSState(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	if userID == "" {
