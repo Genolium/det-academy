@@ -77,12 +77,15 @@ func main() {
 		if os.Getenv("RUN_MIGRATIONS") != "false" {
 			migrationsDir := postgres.MigrationsDir()
 			if migrationsDir == "" {
-				log.Fatalf("[Migrations] no migrations directory found; set MIGRATIONS_DIR")
+				log.Printf("[Migrations] no migrations directory found; set MIGRATIONS_DIR to enable automatic migrations")
+			} else if err := pgStore.RunMigrations(migrationsDir); err != nil {
+				// A failed migration must never take the whole API down. The
+				// service keeps serving the schema it already has and the
+				// error is reported for an operator to fix.
+				log.Printf("[Migrations] failed: %v (continuing with the existing schema)", err)
+			} else {
+				log.Printf("[Migrations] applied from %s", migrationsDir)
 			}
-			if err := pgStore.RunMigrations(migrationsDir); err != nil {
-				log.Fatalf("[Migrations] failed: %v", err)
-			}
-			log.Printf("[Migrations] applied from %s", migrationsDir)
 		}
 		store = pgStore
 	}

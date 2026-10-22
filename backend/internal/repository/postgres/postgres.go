@@ -119,7 +119,9 @@ func (r *UserRepo) GetByID(ctx context.Context, id string) (*models.User, error)
 }
 
 func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE LOWER(email) = LOWER($1)`
+	// ORDER BY keeps the lookup deterministic when legacy rows still differ
+	// only by letter case and the case-insensitive index could not be built.
+	query := `SELECT id, email, password_hash, name, COALESCE(role, 'student'), avatar_url, locale, token_version, email_verified, created_at, updated_at FROM users WHERE LOWER(email) = LOWER($1) ORDER BY created_at ASC, id ASC LIMIT 1`
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.AvatarURL, &u.Locale, &u.TokenVersion, &u.EmailVerified, &u.CreatedAt, &u.UpdatedAt,
