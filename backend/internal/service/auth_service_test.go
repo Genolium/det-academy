@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"det-academy-backend/internal/email"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
 
@@ -156,6 +157,10 @@ func TestVerifyGoogleTokenChecksAudienceAndVerifiedEmail(t *testing.T) {
 }
 
 type captureSender struct{ link string }
+
+func (s *captureSender) Send(ctx context.Context, msg email.Message) error {
+	return nil
+}
 
 func (s *captureSender) SendVerification(ctx context.Context, to, link string) error {
 	s.link = link

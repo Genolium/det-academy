@@ -1,4 +1,4 @@
-.PHONY: install typecheck lint content-lint build test-backend test-postgres test-e2e test-all
+.PHONY: install typecheck lint content-lint build test-backend test-postgres test-e2e test-all deploy
 
 install:
 	npm ci
@@ -26,3 +26,7 @@ test-e2e:
 	npx playwright test
 
 test-all: typecheck lint build test-backend test-e2e
+
+# Production deploy on the server (pull, rebuild, migrate, verify).
+deploy:
+	./scripts/deploy_production.sh --backup

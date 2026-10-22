@@ -7,6 +7,7 @@ import (
 	"det-academy-backend/internal/repository"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -40,12 +41,9 @@ func New(dbURL string) (*PostgresStorage, error) {
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := db.PingContext(ctx); err != nil {
+	if err := waitForDatabase(db); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("failed to ping postgres: %w", err)
+		return nil, err
 	}
 
 	s := &PostgresStorage{
@@ -64,6 +62,35 @@ func New(dbURL string) (*PostgresStorage, error) {
 	}
 
 	return s, nil
+}
+
+// waitForDatabase retries the initial connection. On a fresh deployment the
+// backend container can start before PostgreSQL accepts connections, and a
+// single failed ping must not take the whole API down.
+func waitForDatabase(db *sql.DB) error {
+	timeout := 60 * time.Second
+	if raw := strings.TrimSpace(os.Getenv("DB_CONNECT_TIMEOUT")); raw != "" {
+		if parsed, err := time.ParseDuration(raw); err == nil && parsed > 0 {
+			timeout = parsed
+		}
+	}
+
+	deadline := time.Now().Add(timeout)
+	var lastErr error
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err := db.PingContext(ctx)
+		cancel()
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		if time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return fmt.Errorf("failed to ping postgres within %s: %w", timeout, lastErr)
 }
 
 func (s *PostgresStorage) Users() repository.UserRepository               { return s.users }

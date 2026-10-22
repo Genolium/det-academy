@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Deploy the current master branch to the production Docker stack.
+#
+# The script is idempotent: it can be re-run after a failure. It never drops
+# the database, applies migrations through the backend container and verifies
+# the critical endpoints before it reports success.
+#
+# Usage:
+#   ./scripts/deploy_production.sh [--with-nginx] [--backup]
+#
+#   --with-nginx  also install nginx/det-academy.ru.conf and reload nginx
+#   --backup      create a PostgreSQL backup before deploying
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+WITH_NGINX=false
+BACKUP=false
+for arg in "$@"; do
+  case "$arg" in
+    --with-nginx) WITH_NGINX=true ;;
+    --backup) BACKUP=true ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    *) echo "unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+log() { printf '\n==> %s\n' "$1"; }
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "required command not found: $1" >&2
+    exit 1
+  fi
+}
+
+require_cmd git
+require_cmd docker
+require_cmd curl
+
+if [ ! -f .env ]; then
+  echo ".env is missing in $REPO_ROOT" >&2
+  exit 1
+fi
+
+log "Pulling origin/master"
+git fetch --quiet origin master
+git checkout --quiet master
+git reset --quiet --hard origin/master
+git log --oneline -1
+
+if [ "$BACKUP" = true ]; then
+  log "Backing up PostgreSQL"
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+  DATABASE_URL="${DATABASE_URL}" BACKUP_DIR="${BACKUP_DIR:-/var/backups/det}" \
+    ./scripts/backup_postgres.sh
+fi
+
+log "Rebuilding and restarting the stack"
+docker compose up -d --build --remove-orphans
+
+log "Applying migrations explicitly (the backend also runs them on start)"
+docker compose exec -T backend /app/server migrate || true
+
+log "Waiting for the backend to become healthy"
+healthy=false
+for _ in $(seq 1 60); do
+  if curl -fsS --max-time 3 http://127.0.0.1:18080/api/v1/health >/dev/null 2>&1; then
+    healthy=true
+    break
+  fi
+  sleep 2
+done
+
+if [ "$healthy" != true ]; then
+  echo "backend did not become healthy; last 60 log lines:" >&2
+  docker compose logs --tail=60 backend >&2 || true
+  exit 1
+fi
+
+log "Verifying the critical endpoints"
+curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/health && echo
+curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/ready && echo
+curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/vocabulary -o /dev/null && echo "vocabulary ok"
+
+if [ "$WITH_NGINX" = true ]; then
+  log "Installing the nginx configuration"
+  sudo cp nginx/det-academy.ru.conf /etc/nginx/sites-available/det-academy.ru
+  sudo ln -sf /etc/nginx/sites-available/det-academy.ru /etc/nginx/sites-enabled/det-academy.ru
+  sudo nginx -t
+  sudo systemctl reload nginx
+fi
+
+log "Current container state"
+docker compose ps
+
+log "Done. Public check:"
+echo "  curl -fsS https://det-academy.ru/api/v1/health"

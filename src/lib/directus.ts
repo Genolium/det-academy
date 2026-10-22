@@ -25,8 +25,25 @@ function resolveDirectusUrl(): string {
       return '/directus';
     }
   }
+  // Server side rendering talks to the CMS container directly. The variable is
+  // not prefixed with NEXT_PUBLIC_, so it stays server-only.
+  const internal = process.env.DIRECTUS_INTERNAL_URL;
+  if (internal) {
+    return internal.replace(/\/+$/, '');
+  }
   const fallback = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:18055';
   return fallback.replace(/\/+$/, '');
+}
+
+/**
+ * Browser requests to the CMS are bounded so that an unreachable CMS never
+ * blocks the page. Server side requests keep the default behaviour.
+ */
+function clientTimeoutSignal(): AbortSignal | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+  return AbortSignal.timeout(5000);
 }
 
 export interface DirectusTheoryLesson {
@@ -109,6 +126,7 @@ class DirectusCmsClient {
 
       const res = await fetch(url.toString(), {
         next: { revalidate: 60 }, // ISR cache revalidation
+        signal: clientTimeoutSignal(),
       });
 
       if (!res.ok) {
@@ -144,6 +162,7 @@ class DirectusCmsClient {
         : `${origin}${baseUrl}/items/theory_lessons?filter[slug][_eq]=${slug}`;
       const res = await fetch(targetUrl, {
         next: { revalidate: 60 },
+        signal: clientTimeoutSignal(),
       });
       if (!res.ok) return null;
       const json = await res.json();

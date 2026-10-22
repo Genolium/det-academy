@@ -108,6 +108,18 @@ export const InstitutionsMap: React.FC = () => {
           }
         }
 
+        if (loaded === 0) {
+          setLoadError(
+            locale === 'ru'
+              ? 'Каталог вузов временно недоступен. Данные не подменяются локальной копией.'
+              : 'The institution catalogue is temporarily unavailable. No local fallback is shown.'
+          );
+        } else {
+          // Render the verified catalogue immediately. The CMS merge below is
+          // an enrichment and must never delay the map.
+          setInstitutions(Array.from(baseMap.values()));
+        }
+
         // Merge from Directus CMS
         try {
           const directusData = await directusCms.getInstitutions();
@@ -133,18 +145,9 @@ export const InstitutionsMap: React.FC = () => {
                 verified: false,
               });
             });
+            setInstitutions(Array.from(baseMap.values()));
           }
         } catch {}
-
-        if (loaded === 0) {
-          setLoadError(
-            locale === 'ru'
-              ? 'Каталог вузов временно недоступен. Данные не подменяются локальной копией.'
-              : 'The institution catalogue is temporarily unavailable. No local fallback is shown.'
-          );
-        } else {
-          setInstitutions(Array.from(baseMap.values()));
-        }
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'Не удалось загрузить каталог вузов');
       } finally {

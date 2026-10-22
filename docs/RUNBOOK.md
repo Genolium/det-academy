@@ -1,5 +1,34 @@
 # DET Academy runbook
 
+## Deploying to production
+
+The production host is `5.42.220.14`. The deploy is a git pull plus a Docker
+rebuild; the repository ships an idempotent script for it:
+
+```bash
+cd /path/to/det-academy
+./scripts/deploy_production.sh --backup     # backup, pull, rebuild, migrate, verify
+./scripts/deploy_production.sh --with-nginx # additionally install nginx/det-academy.ru.conf
+```
+
+The script pulls `origin/master`, rebuilds the stack, applies the migrations
+through the backend container (`docker compose exec backend /app/server migrate`),
+waits for `/api/v1/health` and verifies `/api/v1/ready` and `/api/v1/vocabulary`.
+It never drops the database.
+
+Manual equivalent:
+
+```bash
+git fetch origin master && git reset --hard origin/master
+docker compose up -d --build --remove-orphans
+docker compose logs --tail=100 backend   # look for "[Migrations] applied"
+curl -fsS https://det-academy.ru/api/v1/health
+```
+
+The backend applies pending migrations on start-up. A failing migration is
+logged but never stops the service, so a broken migration cannot take the API
+down. Migrations that need attention are visible in the container log.
+
 ## Required production env
 
 - `POSTGRES_PASSWORD`, `DATABASE_URL`
@@ -9,11 +38,15 @@
 - `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` (one-time)
 - `MEDIA_UPLOAD_DIR=/data/media`
 - optional: `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `AI_STT_ENABLED=true`
+- optional: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`
+  (see `docs/external-integrations.md`)
 
 ## Migrations
 
 Apply every file in `backend/db/migrations/` in order before starting a new
-backend version. `init.sql` is only for a fresh database.
+backend version. `init.sql` is only for a fresh database. The backend container
+applies them on start-up and records them in `schema_migrations`; the same can
+be triggered manually with `docker compose exec backend /app/server migrate`.
 
 ## Backup
 

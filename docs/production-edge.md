@@ -60,3 +60,16 @@ permission and an anonymous published row.
 The edge is **BLOCKED** on server access: the repository-side configuration and
 preflight are ready, but production still serves the wrong certificate/vhost and
 omits the security headers.
+
+## CMS content no longer depends on the nginx server block
+
+The frontend reads the CMS through the same origin: `src/app/directus/[...path]/route.ts`
+proxies `/directus/*` to the CMS container (`DIRECTUS_INTERNAL_URL`, for example
+`http://directus:8055`). The behaviour on production therefore does not depend
+on the `/directus/` location block above:
+
+- the theory catalogue, banners, institutions and vocabulary are served through
+  the application origin;
+- the directus subdomain and its certificate remain a separate, optional
+  concern (a dedicated hostname for editors);
+- the security headers still require the nginx server block to be deployed.

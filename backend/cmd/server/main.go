@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -51,7 +52,37 @@ func corsOrigins() []string {
 	return origins
 }
 
+// runMigrationsCommand applies every pending migration and reports the result.
+func runMigrationsCommand() error {
+	cfg := config.Load()
+	store, err := postgres.New(cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("connect to database: %w", err)
+	}
+	defer store.Close()
+
+	migrationsDir := postgres.MigrationsDir()
+	if migrationsDir == "" {
+		return fmt.Errorf("no migrations directory found; set MIGRATIONS_DIR")
+	}
+	if err := store.RunMigrations(migrationsDir); err != nil {
+		return err
+	}
+	log.Printf("[Migrations] applied from %s", migrationsDir)
+	return nil
+}
+
 func main() {
+	// "migrate" applies the pending migrations and exits. It allows the
+	// deployment script to run migrations explicitly instead of relying on
+	// the start-up hook.
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		if err := runMigrationsCommand(); err != nil {
+			log.Fatalf("[Migrations] %v", err)
+		}
+		return
+	}
+
 	cfg := config.Load()
 	log.Printf("Starting DET Academy Backend Server on port %s...", cfg.Port)
 	if err := observability.Init(os.Getenv("SENTRY_DSN"), cfg.Env, os.Getenv("SENTRY_RELEASE")); err != nil {

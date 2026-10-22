@@ -42,6 +42,12 @@ services:
       PUBLIC_APP_URL: "${PUBLIC_APP_URL:-https://det-academy.ru}"
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
       EMAIL_FROM: "${EMAIL_FROM:-DET Academy <noreply@det-academy.ru>}"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM: "${SMTP_FROM:-${EMAIL_FROM:-DET Academy <noreply@det-academy.ru>}}"
+      SMTP_IMPLICIT_TLS: "${SMTP_IMPLICIT_TLS:-false}"
       AI_BASE_URL: "${AI_BASE_URL:-}"
       AI_API_KEY: "${AI_API_KEY:-}"
       AI_MODEL: "${AI_MODEL:-gpt-4o-mini}"
@@ -84,6 +90,10 @@ services:
       NEXT_PUBLIC_YANDEX_CLIENT_ID: "${NEXT_PUBLIC_YANDEX_CLIENT_ID:-}"
       PORT: "3000"
       NODE_ENV: "production"
+      # Same-origin proxies: the browser talks to nginx/Next only, the
+      # containers talk to each other over the internal docker network.
+      API_PROXY_TARGET: "http://backend:8080"
+      DIRECTUS_INTERNAL_URL: "http://directus:8055"
     depends_on:
       - backend
     networks:
@@ -108,8 +118,8 @@ services:
       DB_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
       DB_SSL: "false"
       CORS_ENABLED: "true"
-      CORS_ORIGIN: "true"
-      PUBLIC_URL: "/"
+      CORS_ORIGIN: "${DIRECTUS_CORS_ORIGIN:-https://det-academy.ru,https://www.det-academy.ru,http://localhost:3000,http://localhost:13000}"
+      PUBLIC_URL: "${DIRECTUS_PUBLIC_URL:-/directus}"
       CONTENT_SECURITY_POLICY_DIRECTIVES__SCRIPT_SRC: "'self' 'unsafe-eval' 'unsafe-inline' blob:"
       CONTENT_SECURITY_POLICY_DIRECTIVES__CONNECT_SRC: "'self' http: https: ws: wss: *"
       STORAGE_LOCATIONS: "local"
