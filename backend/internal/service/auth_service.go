@@ -54,6 +54,11 @@ type AuthService struct {
 	publicAppURL             string
 	requireEmailVerification bool
 	refreshRepo              repository.RefreshTokenRepository
+
+	// mailSlots bounds the number of verification emails that are delivered in
+	// the background at the same time. A mail server that does not answer must
+	// never pile up goroutines or block a registration.
+	mailSlots chan struct{}
 }
 
 func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthRepos ...repository.OAuthTransactionRepository) *AuthService {
@@ -81,6 +86,14 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthR
 	if env == "" {
 		env = os.Getenv("NODE_ENV")
 	}
+	mailSender := email.NewFromEnv()
+	requireEmailVerification := os.Getenv("REQUIRE_EMAIL_VERIFICATION") == "true"
+	if _, noEmailTransport := mailSender.(email.LogSender); noEmailTransport && requireEmailVerification {
+		// Requiring verification without a working mail transport locks every
+		// new account out of the platform, so the requirement is dropped.
+		log.Printf("[Auth] REQUIRE_EMAIL_VERIFICATION ignored: no email transport is configured")
+		requireEmailVerification = false
+	}
 	service := &AuthService{
 		userRepo:                 userRepo,
 		jwtSecret:                []byte(jwtSecret),
@@ -98,9 +111,10 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthR
 		appleTeamID:              os.Getenv("APPLE_TEAM_ID"),
 		appleKeyID:               os.Getenv("APPLE_KEY_ID"),
 		applePrivateKey:          strings.ReplaceAll(os.Getenv("APPLE_PRIVATE_KEY"), `\n`, "\n"),
-		emailSender:              email.NewFromEnv(),
+		emailSender:              mailSender,
 		publicAppURL:             email.PublicAppURL(),
-		requireEmailVerification: os.Getenv("REQUIRE_EMAIL_VERIFICATION") == "true",
+		requireEmailVerification: requireEmailVerification,
+		mailSlots:                make(chan struct{}, 8),
 	}
 	if len(oauthRepos) > 0 {
 		service.oauthRepo = oauthRepos[0]
@@ -190,9 +204,7 @@ func (s *AuthService) Register(ctx context.Context, req models.RegisterRequest) 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, "", fmt.Errorf("failed to create user: %w", err)
 	}
-	if err := s.sendVerificationEmail(ctx, user); err != nil {
-		log.Printf("[Auth] failed to send verification email: %v", err)
-	}
+	s.sendVerificationEmailAsync(user)
 
 	token, err := s.GenerateToken(user)
 	if err != nil {
@@ -1312,6 +1324,34 @@ func (s *AuthService) sendVerificationEmail(ctx context.Context, user *models.Us
 	}
 	link := s.publicAppURL + "/auth/verify-email?token=" + token
 	return s.emailSender.SendVerification(ctx, user.Email, link)
+}
+
+// emailDeliveryTimeout bounds one delivery attempt in the background.
+const emailDeliveryTimeout = 10 * time.Second
+
+// sendVerificationEmailAsync delivers the verification email in the
+// background. A mail server that is slow or unreachable must not block the
+// registration request, so the delivery runs with its own timeout and a
+// bounded number of parallel attempts.
+func (s *AuthService) sendVerificationEmailAsync(user *models.User) {
+	if user == nil || user.EmailVerified || user.Email == "" {
+		return
+	}
+	select {
+	case s.mailSlots <- struct{}{}:
+	default:
+		log.Printf("[Auth] verification email for %s skipped: too many pending deliveries", user.Email)
+		return
+	}
+
+	go func() {
+		defer func() { <-s.mailSlots }()
+		ctx, cancel := context.WithTimeout(context.Background(), emailDeliveryTimeout)
+		defer cancel()
+		if err := s.sendVerificationEmail(ctx, user); err != nil {
+			log.Printf("[Auth] failed to send verification email: %v", err)
+		}
+	}()
 }
 
 func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*models.User, error) {

@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -156,20 +157,115 @@ func TestVerifyGoogleTokenChecksAudienceAndVerifiedEmail(t *testing.T) {
 	}
 }
 
-type captureSender struct{ link string }
+type captureSender struct {
+	mu   sync.Mutex
+	link string
+	sent chan string
+}
 
 func (s *captureSender) Send(ctx context.Context, msg email.Message) error {
 	return nil
 }
 
 func (s *captureSender) SendVerification(ctx context.Context, to, link string) error {
+	s.mu.Lock()
 	s.link = link
+	s.mu.Unlock()
+	select {
+	case s.sent <- link:
+	default:
+	}
 	return nil
+}
+
+// waitForLink waits for the background delivery of the verification email.
+func (s *captureSender) waitForLink(t *testing.T) string {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for {
+		s.mu.Lock()
+		link := s.link
+		s.mu.Unlock()
+		if link != "" {
+			return link
+		}
+		select {
+		case <-deadline:
+			t.Fatal("expected verification link")
+			return ""
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+}
+
+// slowSender simulates a mail server that does not answer.
+type slowSender struct {
+	delay time.Duration
+}
+
+func (s *slowSender) Send(ctx context.Context, msg email.Message) error {
+	time.Sleep(s.delay)
+	return nil
+}
+
+func (s *slowSender) SendVerification(ctx context.Context, to, link string) error {
+	time.Sleep(s.delay)
+	return nil
+}
+
+// TestRegisterDoesNotBlockOnSlowMailServer protects the registration request
+// from a mail server that is slow or unreachable. The delivery runs in the
+// background, so the response must not wait for it.
+func TestRegisterDoesNotBlockOnSlowMailServer(t *testing.T) {
+	register := func(sender email.Sender) time.Duration {
+		store := memory.New()
+		service := NewAuthService(store.Users(), "test-secret", store.OAuthTransactions())
+		service.emailSender = sender
+		service.publicAppURL = "https://det-academy.test"
+
+		started := time.Now()
+		if _, _, err := service.Register(context.Background(), models.RegisterRequest{
+			Email: "slow-mail@example.com", Password: "strongPassword123!", Name: "Slow", Locale: "ru",
+		}); err != nil {
+			t.Fatalf("register: %v", err)
+		}
+		return time.Since(started)
+	}
+
+	// The baseline contains the password hashing, the slow run must not add
+	// the mail delay on top of it.
+	baseline := register(&captureSender{sent: make(chan string, 1)})
+	slow := register(&slowSender{delay: 2 * time.Second})
+
+	if slow > baseline+500*time.Millisecond {
+		t.Fatalf("registration waited %s (baseline %s) for the mail delivery", slow, baseline)
+	}
+}
+
+// TestEmailVerificationRequirementNeedsAMailTransport makes sure the platform
+// can never lock new accounts out by requiring verification while no email
+// transport is configured.
+func TestEmailVerificationRequirementNeedsAMailTransport(t *testing.T) {
+	t.Setenv("SMTP_HOST", "")
+	t.Setenv("RESEND_API_KEY", "")
+	t.Setenv("REQUIRE_EMAIL_VERIFICATION", "true")
+
+	store := memory.New()
+	service := NewAuthService(store.Users(), "test-secret", store.OAuthTransactions())
+	if service.requireEmailVerification {
+		t.Fatal("verification must be disabled when no email transport is configured")
+	}
+
+	t.Setenv("SMTP_HOST", "smtp.example.com")
+	service = NewAuthService(memory.New().Users(), "test-secret")
+	if !service.requireEmailVerification {
+		t.Fatal("verification must stay enabled when a transport is configured")
+	}
 }
 
 func TestEmailVerificationFlow(t *testing.T) {
 	store := memory.New()
-	sender := &captureSender{}
+	sender := &captureSender{sent: make(chan string, 1)}
 	service := NewAuthService(store.Users(), "test-secret", store.OAuthTransactions())
 	service.emailSender = sender
 	service.publicAppURL = "https://det-academy.test"
@@ -183,14 +279,12 @@ func TestEmailVerificationFlow(t *testing.T) {
 	if user.EmailVerified {
 		t.Fatal("new user must start unverified")
 	}
-	if sender.link == "" {
-		t.Fatal("expected verification link")
-	}
+	senderLink := sender.waitForLink(t)
 	const prefix = "https://det-academy.test/auth/verify-email?token="
-	if !strings.HasPrefix(sender.link, prefix) {
-		t.Fatalf("unexpected link: %s", sender.link)
+	if !strings.HasPrefix(senderLink, prefix) {
+		t.Fatalf("unexpected link: %s", senderLink)
 	}
-	token := strings.TrimPrefix(sender.link, prefix)
+	token := strings.TrimPrefix(senderLink, prefix)
 	verified, err := service.VerifyEmail(context.Background(), token)
 	if err != nil {
 		t.Fatalf("verify: %v", err)

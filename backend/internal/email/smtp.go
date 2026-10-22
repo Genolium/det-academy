@@ -40,7 +40,7 @@ func (s *SMTPSender) timeout() time.Duration {
 	if s.Timeout > 0 {
 		return s.Timeout
 	}
-	return 15 * time.Second
+	return 10 * time.Second
 }
 
 // Send delivers a single message over SMTP.

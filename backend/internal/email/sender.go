@@ -115,8 +115,9 @@ func NewFromEnv() Sender {
 			Password:    os.Getenv("SMTP_PASSWORD"),
 			From:        from,
 			ImplicitTLS: port == 465 || isTruthy(os.Getenv("SMTP_IMPLICIT_TLS")),
-			Timeout:     15 * time.Second,
+			Timeout:     10 * time.Second,
 		}
+		log.Printf("[email] transport: SMTP %s (%s)", sender.address(), tlsMode(sender.ImplicitTLS))
 		return sender
 	}
 
@@ -145,6 +146,13 @@ func isTruthy(value string) bool {
 	default:
 		return false
 	}
+}
+
+func tlsMode(implicit bool) string {
+	if implicit {
+		return "implicit TLS"
+	}
+	return "STARTTLS"
 }
 
 func PublicAppURL() string {
