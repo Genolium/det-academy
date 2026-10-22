@@ -104,8 +104,43 @@ type ArenaClient struct {
 	Conn       *websocket.Conn
 	Room       *ArenaRoom
 	Send       chan []byte
+	Done       chan struct{}
+	closeOnce  sync.Once
 	IsFinished bool
 	Result     *FinishPayload
+}
+
+func (c *ArenaClient) close() {
+	if c == nil {
+		return
+	}
+	c.closeOnce.Do(func() {
+		if c.Done != nil {
+			close(c.Done)
+		}
+	})
+}
+
+// send never blocks the hub and never panics after a disconnect.
+func (c *ArenaClient) send(message []byte) bool {
+	if c == nil || c.Send == nil {
+		return false
+	}
+	if c.Done != nil {
+		select {
+		case <-c.Done:
+			return false
+		default:
+		}
+	}
+	select {
+	case c.Send <- message:
+		return true
+	case <-c.Done:
+		return false
+	default:
+		return false
+	}
 }
 
 type ArenaRoom struct {
@@ -167,7 +202,7 @@ func (h *ArenaHub) Run() {
 				}
 			}
 			h.mu.Unlock()
-			close(client.Send)
+			client.close()
 		}
 	}
 }
@@ -206,6 +241,7 @@ func (h *ArenaHub) checkWaitingBots() {
 			Name: botName,
 			ELO:  botElo,
 			Send: make(chan []byte, 10),
+			Done: make(chan struct{}),
 		}
 
 		h.createMatch(p1, bot, true)
@@ -239,7 +275,7 @@ func (h *ArenaHub) createMatch(p1, p2 *ArenaClient, isBot bool) {
 			"challenge":    challenge,
 		},
 	})
-	p1.Send <- p1MatchMsg
+	p1.send(p1MatchMsg)
 
 	if !isBot && p2.Conn != nil {
 		p2MatchMsg, _ := json.Marshal(map[string]interface{}{
@@ -252,7 +288,7 @@ func (h *ArenaHub) createMatch(p1, p2 *ArenaClient, isBot bool) {
 				"challenge":    challenge,
 			},
 		})
-		p2.Send <- p2MatchMsg
+		p2.send(p2MatchMsg)
 	}
 
 	// If playing with a bot, simulate realistic typing progression
@@ -287,10 +323,7 @@ func (h *ArenaHub) runBotSimulator(room *ArenaRoom, human, bot *ArenaClient) {
 			},
 		})
 
-		select {
-		case human.Send <- msg:
-		default:
-		}
+		human.send(msg)
 	}
 
 	// Bot finishes
@@ -361,7 +394,7 @@ func (h *ArenaHub) evaluateMatch(room *ArenaRoom) {
 			"oppTime":     p2.Result.TimeTakenSec,
 		},
 	})
-	p1.Send <- res1
+	p1.send(res1)
 
 	// Send result to P2 if not bot
 	if !room.IsBot && p2.Conn != nil {
@@ -376,7 +409,7 @@ func (h *ArenaHub) evaluateMatch(room *ArenaRoom) {
 				"oppTime":     p1.Result.TimeTakenSec,
 			},
 		})
-		p2.Send <- res2
+		p2.send(res2)
 	}
 }
 
@@ -517,6 +550,7 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		ELO:  1200,
 		Conn: conn,
 		Send: make(chan []byte, 256),
+		Done: make(chan struct{}),
 	}
 	if h.userRepo != nil {
 		if user, userErr := h.userRepo.GetByID(r.Context(), userID); userErr == nil && user != nil {
@@ -529,8 +563,15 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			_ = conn.Close()
 		}()
-		for message := range client.Send {
-			_ = conn.WriteMessage(websocket.TextMessage, message)
+		for {
+			select {
+			case message := <-client.Send:
+				if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+					return
+				}
+			case <-client.Done:
+				return
+			}
 		}
 	}()
 
@@ -575,8 +616,8 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 				if opp == client {
 					opp = client.Room.Player2
 				}
-				if opp != nil && !client.Room.IsBot && opp.Send != nil {
-					opp.Send <- oppMsg
+				if opp != nil && !client.Room.IsBot {
+					opp.send(oppMsg)
 				}
 			}
 
