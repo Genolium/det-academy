@@ -50,10 +50,17 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
+log "Deploying"
+echo "repository: $REPO_ROOT"
+echo "branch:     $(git rev-parse --abbrev-ref HEAD)"
+echo "commit:     $(git rev-parse --short HEAD)"
+
 log "Pulling origin/master"
-if [ "$FORCE" != true ] && [ -n "$(git status --porcelain)" ]; then
+# Only tracked modifications are a problem. Untracked files such as backups or
+# build artefacts on the server must not block a deployment.
+if [ "$FORCE" != true ] && [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "the working tree has local modifications:" >&2
-  git status --short >&2
+  git status --short --untracked-files=no >&2
   echo "commit or stash them, or re-run with --force" >&2
   exit 1
 fi
