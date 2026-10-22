@@ -6,10 +6,11 @@
 # the critical endpoints before it reports success.
 #
 # Usage:
-#   ./scripts/deploy_production.sh [--with-nginx] [--backup]
+#   ./scripts/deploy_production.sh [--with-nginx] [--backup] [--force]
 #
 #   --with-nginx  also install nginx/det-academy.ru.conf and reload nginx
 #   --backup      create a PostgreSQL backup before deploying
+#   --force       deploy even when the working tree has local modifications
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,11 +18,13 @@ cd "$REPO_ROOT"
 
 WITH_NGINX=false
 BACKUP=false
+FORCE=false
 for arg in "$@"; do
   case "$arg" in
     --with-nginx) WITH_NGINX=true ;;
     --backup) BACKUP=true ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    --force) FORCE=true ;;
+    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -45,9 +48,15 @@ if [ ! -f .env ]; then
 fi
 
 log "Pulling origin/master"
+if [ "$FORCE" != true ] && [ -n "$(git status --porcelain)" ]; then
+  echo "the working tree has local modifications:" >&2
+  git status --short >&2
+  echo "commit or stash them, or re-run with --force" >&2
+  exit 1
+fi
 git fetch --quiet origin master
 git checkout --quiet master
-git reset --quiet --hard origin/master
+git merge --ff-only --quiet origin/master
 git log --oneline -1
 
 if [ "$BACKUP" = true ]; then
