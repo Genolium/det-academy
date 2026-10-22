@@ -10,8 +10,6 @@ import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 
-type SubscoreFilter = 'ANY' | 'WRITING_120' | 'LITERACY_120' | 'ALL_115' | 'CONVERSATION_120';
-
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -43,8 +41,6 @@ export const InstitutionsMap: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [minScoreFilter, setMinScoreFilter] = useState<number>(0);
-  const [subscoreFilter, setSubscoreFilter] = useState<SubscoreFilter>('ANY');
 
   // Selected item to center map
   const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
@@ -152,7 +148,8 @@ export const InstitutionsMap: React.FC = () => {
       result = result.filter(
         (inst) =>
           inst.name.toLowerCase().includes(q) ||
-          inst.city.toLowerCase().includes(q) ||
+          (inst.city || '').toLowerCase().includes(q) ||
+          (inst.state || '').toLowerCase().includes(q) ||
           inst.country.toLowerCase().includes(q)
       );
     }
@@ -165,37 +162,8 @@ export const InstitutionsMap: React.FC = () => {
       result = result.filter((inst) => inst.category === selectedCategory);
     }
 
-    if (minScoreFilter > 0) {
-      result = result.filter((inst) => inst.minScore >= minScoreFilter);
-    }
-
-    // Faceted Subscore Filtering. Only explicit, sourced subscore minima are
-    // used. Missing values are treated as unconfirmed, never derived from the
-    // overall score.
-    if (subscoreFilter === 'WRITING_120') {
-      result = result.filter((inst) => inst.minProduction != null && inst.minProduction >= 120);
-    } else if (subscoreFilter === 'LITERACY_120') {
-      result = result.filter((inst) => inst.minLiteracy != null && inst.minLiteracy >= 120);
-    } else if (subscoreFilter === 'ALL_115') {
-      result = result.filter(
-        (inst) =>
-          inst.minLiteracy != null &&
-          inst.minComprehension != null &&
-          inst.minProduction != null &&
-          inst.minConversation != null &&
-          inst.minLiteracy >= 115 &&
-          inst.minComprehension >= 115 &&
-          inst.minProduction >= 115 &&
-          inst.minConversation >= 115
-      );
-    } else if (subscoreFilter === 'CONVERSATION_120') {
-      result = result.filter(
-        (inst) => inst.minConversation != null && inst.minConversation >= 120
-      );
-    }
-
     return result;
-  }, [search, selectedCountry, selectedCategory, minScoreFilter, subscoreFilter, institutions]);
+  }, [search, selectedCountry, selectedCategory, institutions]);
 
   // 3. Initialize Leaflet Map safely in client
   useEffect(() => {
@@ -298,7 +266,7 @@ export const InstitutionsMap: React.FC = () => {
           cursor: pointer;
           transform: translate(-50%, -50%);
         ">
-          <span>${inst.minScore}</span>
+          <span>${inst.minScore > 0 ? inst.minScore : 'DET'}</span>
         </div>
       `,
       iconSize: [40, 24],
@@ -319,7 +287,7 @@ export const InstitutionsMap: React.FC = () => {
           📍 ${escapeHtml(inst.city)}${inst.state ? ', ' + escapeHtml(inst.state) : ''}
         </div>
         <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
-          <strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>
+          ${inst.minScore > 0 ? `<strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>` : '<strong>Минимальный балл DET:</strong> <span style="color: #475569;">не подтверждён</span>'}
           ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(inst.subscoreReqs)}</div>` : ''}
         </div>
         <a href="${safeExternalUrl(inst.websiteUrl)}" target="_blank" rel="noopener noreferrer" style="
@@ -501,6 +469,7 @@ export const InstitutionsMap: React.FC = () => {
 
   const categories = [
     'All',
+    'Official DET',
     'Ivy League',
     'Top Global',
     'Top STEM',
@@ -523,7 +492,7 @@ export const InstitutionsMap: React.FC = () => {
       <div className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
           {/* Search box */}
-          <div className="md:col-span-4 relative">
+          <div className="md:col-span-8 relative">
             <Search className="w-4 h-4 text-neutral-400 absolute left-4 top-3.5" />
             <input
               type="text"
@@ -535,7 +504,7 @@ export const InstitutionsMap: React.FC = () => {
           </div>
 
           {/* Country filter */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-4">
             <select
               aria-label="Страна"
               value={selectedCountry}
@@ -550,49 +519,13 @@ export const InstitutionsMap: React.FC = () => {
             </select>
           </div>
 
-          {/* Min Score filter */}
-          <div className="md:col-span-3">
-            <select
-              aria-label="Минимальный балл"
-              value={minScoreFilter}
-              onChange={(e) => setMinScoreFilter(Number(e.target.value))}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
-            >
-              <option value={0}>{t.scoreAny}</option>
-              <option value={115}>{t.score115}</option>
-              <option value={120}>{t.score120}</option>
-              <option value={125}>{t.score125}</option>
-              <option value={130}>{t.score130}</option>
-            </select>
-          </div>
-
-          {/* Subscores Faceted Filter */}
-          <div className="md:col-span-3">
-            <select
-              aria-label="Фильтр по сабскорам"
-              value={subscoreFilter}
-              onChange={(e) => setSubscoreFilter(e.target.value as SubscoreFilter)}
-              className="w-full bg-emerald-50/70 border border-emerald-300 focus:border-emerald-600 rounded-2xl px-3 py-3 text-xs sm:text-sm font-bold text-emerald-900 outline-none cursor-pointer"
-            >
-              <option value="ANY">{t.subscoreAny}</option>
-              <option value="WRITING_120">{t.subscoreWriting120}</option>
-              <option value="LITERACY_120">{t.subscoreLiteracy120}</option>
-              <option value="ALL_115">{t.subscoreAll115}</option>
-              <option value="CONVERSATION_120">{t.subscoreConversation120}</option>
-            </select>
-          </div>
         </div>
 
-        <p className="text-[11px] text-neutral-500 leading-relaxed">
-          {locale === 'ru'
-            ? 'Фильтры по сабскорам используют только явно указанные значения. Пустое поле означает «требование не подтверждено», а не рассчитанный балл.'
-            : 'Subscore filters use explicit values only. An empty field means "requirement not confirmed", not a derived score.'}
-        </p>
         {catalogStats && (
           <p className="text-[11px] text-neutral-500">
             {locale === 'ru'
-              ? `На карте: ${catalogStats.total.toLocaleString('ru-RU')} вузов, ${catalogStats.official.toLocaleString('ru-RU')} официальных совпадений Duolingo, ${catalogStats.countries} стран. Extended-записи помечены отдельно; проверяйте требования на сайте вуза.`
-              : `Mapped: ${catalogStats.total.toLocaleString('en-US')} institutions, ${catalogStats.official.toLocaleString('en-US')} official Duolingo matches, ${catalogStats.countries} countries. Extended records are labelled separately; verify requirements with the university.`}
+              ? `На карте: ${catalogStats.total.toLocaleString('ru-RU')} официальных вузов Duolingo, ${catalogStats.countries} стран. Координаты подтверждены по Wikipedia; баллы и требования проверяйте на сайте вуза.`
+              : `Mapped: ${catalogStats.total.toLocaleString('en-US')} official Duolingo institutions, ${catalogStats.countries} countries. Coordinates are verified against Wikipedia; verify scores and requirements with the university.`}
           </p>
         )}
 
@@ -628,7 +561,7 @@ export const InstitutionsMap: React.FC = () => {
               <span>{t.mapHeading}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="hidden sm:inline">{t.mapPinsNote}</span>
+              <span className="hidden sm:inline">{locale === 'ru' ? 'Пины: подтверждённые координаты' : 'Pins: verified coordinates'}</span>
               <span data-testid="map-found-count" className="font-mono text-[#D2F544] font-bold">{t.foundLabel} {filteredInstitutions.length}</span>
             </div>
           </div>
@@ -654,7 +587,10 @@ export const InstitutionsMap: React.FC = () => {
                   {selectedInstitution.name}
                 </h4>
                 <p className="text-xs text-neutral-500">
-                  📍 {selectedInstitution.city}, {selectedInstitution.country} • {t.minScoreLabel} <strong className="text-emerald-700">{selectedInstitution.minScore}+</strong>
+                  📍 {selectedInstitution.state ? `${selectedInstitution.state}, ` : ''}{selectedInstitution.country} • {t.minScoreLabel}{' '}
+                  <strong className="text-emerald-700">
+                    {selectedInstitution.minScore > 0 ? `${selectedInstitution.minScore}+` : (locale === 'ru' ? 'не подтверждён' : 'not confirmed')}
+                  </strong>
                 </p>
               </div>
 

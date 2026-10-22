@@ -94,7 +94,7 @@ export default function InstitutionsPage() {
             }`}
           >
             <Map className="w-4 h-4 text-[#D2F544]" />
-            Интерактивная карта с баллами
+            Интерактивная карта (проверенные координаты)
           </button>
         </div>
 

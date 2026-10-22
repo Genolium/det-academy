@@ -432,6 +432,7 @@ export interface Institution {
   createdAt: string;
   source?: 'duolingo' | 'extended';
   verified?: boolean;
+  coordinateSource?: string;
 }
 
 export interface AdminStats {

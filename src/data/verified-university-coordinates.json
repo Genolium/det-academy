@@ -1,0 +1,5385 @@
+{
+  "Stanford University": {
+    "title": "Stanford University",
+    "latitude": 37.4275,
+    "longitude": -122.17027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stanford_University",
+    "wikidataId": "Q41506"
+  },
+  "Massachusetts Institute of Technology": {
+    "title": "Massachusetts Institute of Technology",
+    "latitude": 42.3597,
+    "longitude": -71.0919,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Massachusetts_Institute_of_Technology",
+    "wikidataId": "Q49108"
+  },
+  "Princeton University": {
+    "title": "Princeton University",
+    "latitude": 40.34527778,
+    "longitude": -74.65611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Princeton_University",
+    "wikidataId": "Q21578"
+  },
+  "California Institute of Technology": {
+    "title": "California Institute of Technology",
+    "latitude": 34.1375,
+    "longitude": -118.125,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_Institute_of_Technology",
+    "wikidataId": "Q161562"
+  },
+  "Columbia University in the City of New York": {
+    "title": "Columbia University",
+    "latitude": 40.8075,
+    "longitude": -73.96194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Columbia_University",
+    "wikidataId": "Q49088"
+  },
+  "University of Michigan - Ann Arbor": {
+    "title": "University of Michigan",
+    "latitude": 42.27694444,
+    "longitude": -83.73805556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Michigan",
+    "wikidataId": "Q230492"
+  },
+  "University of Washington": {
+    "title": "University of Washington",
+    "latitude": 47.6542,
+    "longitude": -122.3081,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Washington",
+    "wikidataId": "Q219563"
+  },
+  "Arizona State University": {
+    "title": "Arizona State University",
+    "latitude": 33.4209,
+    "longitude": -111.934,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Arizona_State_University",
+    "wikidataId": "Q670897"
+  },
+  "Purdue University": {
+    "title": "Purdue University",
+    "latitude": 40.425,
+    "longitude": -86.92305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Purdue_University",
+    "wikidataId": "Q217741"
+  },
+  "Kent State University": {
+    "title": "Kent State University",
+    "latitude": 41.14694444,
+    "longitude": -81.34333333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kent_State_University",
+    "wikidataId": "Q1473615"
+  },
+  "Berea College": {
+    "title": "Berea College",
+    "latitude": 37.573,
+    "longitude": -84.292,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Berea_College",
+    "wikidataId": "Q846859"
+  },
+  "University of Miami": {
+    "title": "University of Miami",
+    "latitude": 25.7216,
+    "longitude": -80.2793,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Miami",
+    "wikidataId": "Q738258"
+  },
+  "Illinois Institute of Technology": {
+    "title": "Illinois Institute of Technology",
+    "latitude": 41.835,
+    "longitude": -87.6275,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Illinois_Institute_of_Technology",
+    "wikidataId": "Q659706"
+  },
+  "George Mason University": {
+    "title": "George Mason University",
+    "latitude": 38.831,
+    "longitude": -77.308,
+    "sourceUrl": "https://en.wikipedia.org/wiki/George_Mason_University",
+    "wikidataId": "Q1411222"
+  },
+  "Rice University": {
+    "title": "Rice University",
+    "latitude": 29.71694444,
+    "longitude": -95.40277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rice_University",
+    "wikidataId": "Q842909"
+  },
+  "University of North Carolina": {
+    "title": "University of North Carolina",
+    "latitude": 35.90861111,
+    "longitude": -79.04916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_North_Carolina",
+    "wikidataId": "Q1191202"
+  },
+  "The Ohio State University": {
+    "title": "Ohio State University",
+    "latitude": 40.00055556,
+    "longitude": -83.01444444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ohio_State_University",
+    "wikidataId": "Q309331"
+  },
+  "University of Utah": {
+    "title": "University of Utah",
+    "latitude": 40.7642,
+    "longitude": -111.8465,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Utah",
+    "wikidataId": "Q168515"
+  },
+  "York University": {
+    "title": "York University",
+    "latitude": 43.77305556,
+    "longitude": -79.50361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/York_University",
+    "wikidataId": "Q849751"
+  },
+  "Washington University in St. Louis": {
+    "title": "Washington University in St. Louis",
+    "latitude": 38.648,
+    "longitude": -90.305,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Washington_University_in_St._Louis",
+    "wikidataId": "Q777403"
+  },
+  "Iowa State University": {
+    "title": "Iowa State University",
+    "latitude": 42.0262,
+    "longitude": -93.648,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Iowa_State_University",
+    "wikidataId": "Q1136919"
+  },
+  "University of California - San Diego": {
+    "title": "University of California, San Diego",
+    "latitude": 32.8801,
+    "longitude": -117.234,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_California,_San_Diego",
+    "wikidataId": "Q622664"
+  },
+  "University of Southern California": {
+    "title": "University of Southern California",
+    "latitude": 34.0206,
+    "longitude": -118.2848,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Southern_California",
+    "wikidataId": "Q4614"
+  },
+  "University of Virginia": {
+    "title": "University of Virginia",
+    "latitude": 38.03555556,
+    "longitude": -78.50333333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Virginia",
+    "wikidataId": "Q213439"
+  },
+  "SOAS University of London": {
+    "title": "SOAS University of London",
+    "latitude": 51.52205,
+    "longitude": -0.129,
+    "sourceUrl": "https://en.wikipedia.org/wiki/SOAS_University_of_London",
+    "wikidataId": "Q220144"
+  },
+  "University of Central Florida": {
+    "title": "University of Central Florida",
+    "latitude": 28.6016,
+    "longitude": -81.2005,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Central_Florida",
+    "wikidataId": "Q143451"
+  },
+  "North Carolina State University": {
+    "title": "North Carolina State University",
+    "latitude": 35.78722222,
+    "longitude": -78.67055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/North_Carolina_State_University",
+    "wikidataId": "Q1132346"
+  },
+  "University of Sussex": {
+    "title": "University of Sussex",
+    "latitude": 50.86527778,
+    "longitude": -0.08555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Sussex",
+    "wikidataId": "Q1161297"
+  },
+  "University of Liverpool": {
+    "title": "University of Liverpool",
+    "latitude": 53.406,
+    "longitude": -2.967,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Liverpool",
+    "wikidataId": "Q499510"
+  },
+  "University of Manitoba": {
+    "title": "University of Manitoba",
+    "latitude": 49.80944444,
+    "longitude": -97.13277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Manitoba",
+    "wikidataId": "Q1191833"
+  },
+  "Trinity College Dublin": {
+    "title": "Trinity College Dublin",
+    "latitude": 53.3444,
+    "longitude": -6.2577,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Trinity_College_Dublin",
+    "wikidataId": "Q258464"
+  },
+  "University of Southampton": {
+    "title": "University of Southampton",
+    "latitude": 50.93463,
+    "longitude": -1.39595,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Southampton",
+    "wikidataId": "Q76473"
+  },
+  "University of Calgary": {
+    "title": "University of Calgary",
+    "latitude": 51.0775,
+    "longitude": -114.13305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Calgary",
+    "wikidataId": "Q1067471"
+  },
+  "Anglia Ruskin University": {
+    "title": "Anglia Ruskin University",
+    "latitude": 52.20308333,
+    "longitude": 0.13369444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Anglia_Ruskin_University",
+    "wikidataId": "Q540751"
+  },
+  "Western Michigan University": {
+    "title": "Western Michigan University",
+    "latitude": 42.28333333,
+    "longitude": -85.61388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Michigan_University",
+    "wikidataId": "Q1546191"
+  },
+  "Tulane University": {
+    "title": "Tulane University",
+    "latitude": 29.94,
+    "longitude": -90.12,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tulane_University",
+    "wikidataId": "Q1193547"
+  },
+  "University of British Columbia": {
+    "title": "University of British Columbia",
+    "latitude": 49.2647,
+    "longitude": -123.2528,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_British_Columbia",
+    "wikidataId": "Q391028"
+  },
+  "Georgetown University": {
+    "title": "Georgetown University",
+    "latitude": 38.90722222,
+    "longitude": -77.07277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Georgetown_University",
+    "wikidataId": "Q333886"
+  },
+  "Macalester College": {
+    "title": "Macalester College",
+    "latitude": 44.93916667,
+    "longitude": -93.16777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Macalester_College",
+    "wikidataId": "Q1141571"
+  },
+  "American University": {
+    "title": "American University",
+    "latitude": 38.9371,
+    "longitude": -77.0869,
+    "sourceUrl": "https://en.wikipedia.org/wiki/American_University",
+    "wikidataId": "Q168000"
+  },
+  "University of Canterbury": {
+    "title": "University of Canterbury",
+    "latitude": -43.52333333,
+    "longitude": 172.58194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Canterbury",
+    "wikidataId": "Q432475"
+  },
+  "Rensselaer Polytechnic Institute": {
+    "title": "Rensselaer Polytechnic Institute",
+    "latitude": 42.73,
+    "longitude": -73.6775,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rensselaer_Polytechnic_Institute",
+    "wikidataId": "Q49211"
+  },
+  "University of Waterloo": {
+    "title": "University of Waterloo",
+    "latitude": 43.47694444,
+    "longitude": -80.55472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Waterloo",
+    "wikidataId": "Q1049470"
+  },
+  "University of Otago": {
+    "title": "University of Otago",
+    "latitude": -45.86555556,
+    "longitude": 170.51388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Otago",
+    "wikidataId": "Q1201513"
+  },
+  "Missouri State University": {
+    "title": "Missouri State University",
+    "latitude": 37.19971,
+    "longitude": -93.28079,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Missouri_State_University",
+    "wikidataId": "Q1249251"
+  },
+  "Tufts University": {
+    "title": "Tufts University",
+    "latitude": 42.406,
+    "longitude": -71.12,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tufts_University",
+    "wikidataId": "Q49120"
+  },
+  "University of Florida": {
+    "title": "University of Florida",
+    "latitude": 29.6475,
+    "longitude": -82.345,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Florida",
+    "wikidataId": "Q501758"
+  },
+  "University of Victoria": {
+    "title": "University of Victoria",
+    "latitude": 48.46333333,
+    "longitude": -123.31166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Victoria",
+    "wikidataId": "Q1458113"
+  },
+  "Aston University": {
+    "title": "Aston University",
+    "latitude": 52.486,
+    "longitude": -1.8895,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Aston_University",
+    "wikidataId": "Q750066"
+  },
+  "University of Waikato": {
+    "title": "University of Waikato",
+    "latitude": -37.78694444,
+    "longitude": 175.31388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Waikato",
+    "wikidataId": "Q606140"
+  },
+  "University of Bath": {
+    "title": "University of Bath",
+    "latitude": 51.38,
+    "longitude": -2.33,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Bath",
+    "wikidataId": "Q1422458"
+  },
+  "Babson College": {
+    "title": "Babson College",
+    "latitude": 42.29823056,
+    "longitude": -71.26119167,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Babson_College",
+    "wikidataId": "Q650167"
+  },
+  "Roanoke College": {
+    "title": "Roanoke College",
+    "latitude": 37.29583333,
+    "longitude": -80.05555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Roanoke_College",
+    "wikidataId": "Q7339779"
+  },
+  "Temple University": {
+    "title": "Temple University",
+    "latitude": 39.98138889,
+    "longitude": -75.15444444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Temple_University",
+    "wikidataId": "Q1420239"
+  },
+  "Washington and Lee University": {
+    "title": "Washington and Lee University",
+    "latitude": 37.78972222,
+    "longitude": -79.44583333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Washington_and_Lee_University",
+    "wikidataId": "Q1785291"
+  },
+  "University of Delaware": {
+    "title": "University of Delaware",
+    "latitude": 39.67833333,
+    "longitude": -75.75111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Delaware",
+    "wikidataId": "Q1068072"
+  },
+  "San Diego State University": {
+    "title": "San Diego State University",
+    "latitude": 32.77527778,
+    "longitude": -117.07222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/San_Diego_State_University",
+    "wikidataId": "Q913861"
+  },
+  "University of Leeds": {
+    "title": "University of Leeds",
+    "latitude": 53.80722222,
+    "longitude": -1.55166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Leeds",
+    "wikidataId": "Q503424"
+  },
+  "Bowdoin College": {
+    "title": "Bowdoin College",
+    "latitude": 43.90861111,
+    "longitude": -69.96277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bowdoin_College",
+    "wikidataId": "Q895401"
+  },
+  "Moody Bible Institute": {
+    "title": "Moody Bible Institute",
+    "latitude": 41.8973,
+    "longitude": -87.633,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Moody_Bible_Institute",
+    "wikidataId": "Q2257594"
+  },
+  "Illinois State University": {
+    "title": "Illinois State University",
+    "latitude": 40.511,
+    "longitude": -88.993,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Illinois_State_University",
+    "wikidataId": "Q558922"
+  },
+  "Dartmouth College": {
+    "title": "Dartmouth College",
+    "latitude": 43.70333333,
+    "longitude": -72.28833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dartmouth_College",
+    "wikidataId": "Q49116"
+  },
+  "Grinnell College": {
+    "title": "Grinnell College",
+    "latitude": 41.749057,
+    "longitude": -92.72013,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Grinnell_College",
+    "wikidataId": "Q2982991"
+  },
+  "Keele University": {
+    "title": "Keele University",
+    "latitude": 53.003,
+    "longitude": -2.273,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Keele_University",
+    "wikidataId": "Q1737734"
+  },
+  "San Francisco State University": {
+    "title": "San Francisco State University",
+    "latitude": 37.72333333,
+    "longitude": -122.47972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/San_Francisco_State_University",
+    "wikidataId": "Q1256981"
+  },
+  "Amherst College": {
+    "title": "Amherst College",
+    "latitude": 42.37083333,
+    "longitude": -72.51694444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Amherst_College",
+    "wikidataId": "Q49165"
+  },
+  "University of California - Davis": {
+    "title": "University of California, Davis",
+    "latitude": 38.54,
+    "longitude": -121.75,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_California,_Davis",
+    "wikidataId": "Q129421"
+  },
+  "Manchester Metropolitan University": {
+    "title": "Manchester Metropolitan University",
+    "latitude": 53.47,
+    "longitude": -2.24,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Manchester_Metropolitan_University",
+    "wikidataId": "Q1888771"
+  },
+  "James Cook University": {
+    "title": "James Cook University",
+    "latitude": -19.32777778,
+    "longitude": 146.75833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/James_Cook_University",
+    "wikidataId": "Q536512"
+  },
+  "De Montfort University": {
+    "title": "De Montfort University",
+    "latitude": 52.62972222,
+    "longitude": -1.13888889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/De_Montfort_University",
+    "wikidataId": "Q3551402"
+  },
+  "Brandeis University": {
+    "title": "Brandeis University",
+    "latitude": 42.365664,
+    "longitude": -71.259742,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brandeis_University",
+    "wikidataId": "Q49119"
+  },
+  "Texas A&M University": {
+    "title": "Texas A&M University",
+    "latitude": 30.61,
+    "longitude": -96.35,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Texas_A&M_University",
+    "wikidataId": "Q49212"
+  },
+  "Syracuse University": {
+    "title": "Syracuse University",
+    "latitude": 43.0376,
+    "longitude": -76.134,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Syracuse_University",
+    "wikidataId": "Q617433"
+  },
+  "University of Tokyo": {
+    "title": "University of Tokyo",
+    "latitude": 35.71333333,
+    "longitude": 139.76222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Tokyo",
+    "wikidataId": "Q7842"
+  },
+  "University of North Carolina - Greensboro": {
+    "title": "University of North Carolina at Greensboro",
+    "latitude": 36.0695,
+    "longitude": -79.8114,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_North_Carolina_at_Greensboro",
+    "wikidataId": "Q1321380"
+  },
+  "Brown University": {
+    "title": "Brown University",
+    "latitude": 41.826,
+    "longitude": -71.403,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brown_University",
+    "wikidataId": "Q49114"
+  },
+  "Lehigh University": {
+    "title": "Lehigh University",
+    "latitude": 40.60611111,
+    "longitude": -75.37722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lehigh_University",
+    "wikidataId": "Q622137"
+  },
+  "Massey University": {
+    "title": "Massey University",
+    "latitude": -40.3848,
+    "longitude": 175.6166,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Massey_University",
+    "wikidataId": "Q1134606"
+  },
+  "Rochester Institute of Technology": {
+    "title": "Rochester Institute of Technology",
+    "latitude": 43.08472222,
+    "longitude": -77.67611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rochester_Institute_of_Technology",
+    "wikidataId": "Q2140778"
+  },
+  "The University of Arizona": {
+    "title": "University of Arizona",
+    "latitude": 32.2319,
+    "longitude": -110.9527,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Arizona",
+    "wikidataId": "Q503419"
+  },
+  "Colby College": {
+    "title": "Colby College",
+    "latitude": 44.56416667,
+    "longitude": -69.66305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Colby_College",
+    "wikidataId": "Q1075116"
+  },
+  "Florida State University": {
+    "title": "Florida State University",
+    "latitude": 30.442,
+    "longitude": -84.298,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Florida_State_University",
+    "wikidataId": "Q861548"
+  },
+  "Swarthmore College": {
+    "title": "Swarthmore College",
+    "latitude": 39.905,
+    "longitude": -75.35388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Swarthmore_College",
+    "wikidataId": "Q1378320"
+  },
+  "Bowling Green State University": {
+    "title": "Bowling Green State University",
+    "latitude": 41.38,
+    "longitude": -83.63,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bowling_Green_State_University",
+    "wikidataId": "Q895457"
+  },
+  "University of the Cumberlands": {
+    "title": "University of the Cumberlands",
+    "latitude": 36.73713,
+    "longitude": -84.16231,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_the_Cumberlands",
+    "wikidataId": "Q7896695"
+  },
+  "Oregon State University": {
+    "title": "Oregon State University",
+    "latitude": 44.5639,
+    "longitude": -123.2747,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Oregon_State_University",
+    "wikidataId": "Q861888"
+  },
+  "De Anza College": {
+    "title": "De Anza College",
+    "latitude": 37.31916667,
+    "longitude": -122.04527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/De_Anza_College",
+    "wikidataId": "Q928272"
+  },
+  "Bard College": {
+    "title": "Bard College",
+    "latitude": 42.02027778,
+    "longitude": -73.91,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bard_College",
+    "wikidataId": "Q49109"
+  },
+  "Oberlin College": {
+    "title": "Oberlin College",
+    "latitude": 41.29305556,
+    "longitude": -82.22166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Oberlin_College",
+    "wikidataId": "Q616591"
+  },
+  "Monash University": {
+    "title": "Monash University",
+    "latitude": -37.9083,
+    "longitude": 145.138,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Monash_University",
+    "wikidataId": "Q598841"
+  },
+  "University of California - Riverside": {
+    "title": "University of California, Riverside",
+    "latitude": 33.97555556,
+    "longitude": -117.33111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_California,_Riverside",
+    "wikidataId": "Q1075148"
+  },
+  "Mississippi State University": {
+    "title": "Mississippi State University",
+    "latitude": 33.454,
+    "longitude": -88.789,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mississippi_State_University",
+    "wikidataId": "Q1939211"
+  },
+  "Hofstra University": {
+    "title": "Hofstra University",
+    "latitude": 40.71472222,
+    "longitude": -73.60055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hofstra_University",
+    "wikidataId": "Q1623314"
+  },
+  "Texas Christian University": {
+    "title": "Texas Christian University",
+    "latitude": 32.7096,
+    "longitude": -97.364,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Texas_Christian_University",
+    "wikidataId": "Q2302280"
+  },
+  "Minot State University": {
+    "title": "Minot State University",
+    "latitude": 48.246,
+    "longitude": -101.301,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Minot_State_University",
+    "wikidataId": "Q5017530"
+  },
+  "Southern Connecticut State University": {
+    "title": "Southern Connecticut State University",
+    "latitude": 41.3325,
+    "longitude": -72.9475,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southern_Connecticut_State_University",
+    "wikidataId": "Q1253123"
+  },
+  "University of Idaho": {
+    "title": "University of Idaho",
+    "latitude": 46.726,
+    "longitude": -117.011,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Idaho",
+    "wikidataId": "Q1854488"
+  },
+  "Suffolk University": {
+    "title": "Suffolk University",
+    "latitude": 42.3579,
+    "longitude": -71.061,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Suffolk_University",
+    "wikidataId": "Q1056123"
+  },
+  "University of Phoenix": {
+    "title": "University of Phoenix",
+    "latitude": 33.402339,
+    "longitude": -111.966163,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Phoenix",
+    "wikidataId": "Q1889100"
+  },
+  "Pomona College": {
+    "title": "Pomona College",
+    "latitude": 34.09805556,
+    "longitude": -117.71388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pomona_College",
+    "wikidataId": "Q7227384"
+  },
+  "University College London": {
+    "title": "University College London",
+    "latitude": 51.52472222,
+    "longitude": -0.13361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_College_London",
+    "wikidataId": "Q193196"
+  },
+  "Fairleigh Dickinson University": {
+    "title": "Fairleigh Dickinson University",
+    "latitude": 40.91774,
+    "longitude": -74.03,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fairleigh_Dickinson_University",
+    "wikidataId": "Q1393301"
+  },
+  "University of New Brunswick": {
+    "title": "University of New Brunswick",
+    "latitude": 45.94583333,
+    "longitude": -66.64166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_New_Brunswick",
+    "wikidataId": "Q1112515"
+  },
+  "University of Sheffield": {
+    "title": "University of Sheffield",
+    "latitude": 53.38138889,
+    "longitude": -1.48861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Sheffield",
+    "wikidataId": "Q823917"
+  },
+  "Seton Hall University": {
+    "title": "Seton Hall University",
+    "latitude": 40.7417,
+    "longitude": -74.2449,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Seton_Hall_University",
+    "wikidataId": "Q585828"
+  },
+  "Carleton College": {
+    "title": "Carleton College",
+    "latitude": 44.46194444,
+    "longitude": -93.15361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Carleton_College",
+    "wikidataId": "Q1041671"
+  },
+  "Idaho State University": {
+    "title": "Idaho State University",
+    "latitude": 42.861,
+    "longitude": -112.434,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Idaho_State_University",
+    "wikidataId": "Q1656608"
+  },
+  "Dickinson College": {
+    "title": "Dickinson College",
+    "latitude": 40.20262,
+    "longitude": -77.19522,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dickinson_College",
+    "wikidataId": "Q1210045"
+  },
+  "Bates College": {
+    "title": "Bates College",
+    "latitude": 44.10555556,
+    "longitude": -70.20416667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bates_College",
+    "wikidataId": "Q810771"
+  },
+  "University of Massachusetts Boston": {
+    "title": "University of Massachusetts Boston",
+    "latitude": 42.313432,
+    "longitude": -71.038445,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Massachusetts_Boston",
+    "wikidataId": "Q15144"
+  },
+  "St. Olaf College": {
+    "title": "St. Olaf College",
+    "latitude": 44.45944444,
+    "longitude": -93.18055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Olaf_College",
+    "wikidataId": "Q1515763"
+  },
+  "Indiana State University": {
+    "title": "Indiana State University",
+    "latitude": 39.47,
+    "longitude": -87.41,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indiana_State_University",
+    "wikidataId": "Q666128"
+  },
+  "University of Nebraska Lincoln": {
+    "title": "University of Nebraska–Lincoln",
+    "latitude": 40.8175,
+    "longitude": -96.70138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Nebraska–Lincoln",
+    "wikidataId": "Q1353679"
+  },
+  "Alfred University": {
+    "title": "Alfred University",
+    "latitude": 42.25555556,
+    "longitude": -77.78752778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Alfred_University",
+    "wikidataId": "Q3446091"
+  },
+  "Washington State University": {
+    "title": "Washington State University",
+    "latitude": 46.73,
+    "longitude": -117.16,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Washington_State_University",
+    "wikidataId": "Q597236"
+  },
+  "Wellesley College": {
+    "title": "Wellesley College",
+    "latitude": 42.2925,
+    "longitude": -71.3075,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wellesley_College",
+    "wikidataId": "Q49205"
+  },
+  "Maharishi International University": {
+    "title": "Maharishi International University",
+    "latitude": 41.018,
+    "longitude": -91.9688,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maharishi_International_University",
+    "wikidataId": "Q6733411"
+  },
+  "Drew University": {
+    "title": "Drew University",
+    "latitude": 40.761,
+    "longitude": -74.427,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Drew_University",
+    "wikidataId": "Q1795487"
+  },
+  "Brooklyn College": {
+    "title": "Brooklyn College",
+    "latitude": 40.63111111,
+    "longitude": -73.9525,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brooklyn_College",
+    "wikidataId": "Q371625"
+  },
+  "Art Center College of Design": {
+    "title": "ArtCenter College of Design",
+    "latitude": 34.16861111,
+    "longitude": -118.185,
+    "sourceUrl": "https://en.wikipedia.org/wiki/ArtCenter_College_of_Design",
+    "wikidataId": "Q3272069"
+  },
+  "Harvey Mudd College": {
+    "title": "Harvey Mudd College",
+    "latitude": 34.10608,
+    "longitude": -117.70919,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Harvey_Mudd_College",
+    "wikidataId": "Q12236173"
+  },
+  "University of Dayton": {
+    "title": "University of Dayton",
+    "latitude": 39.740415,
+    "longitude": -84.179213,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Dayton",
+    "wikidataId": "Q2092392"
+  },
+  "Queen Mary University of London": {
+    "title": "Queen Mary University of London",
+    "latitude": 51.523,
+    "longitude": -0.04,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Queen_Mary_University_of_London",
+    "wikidataId": "Q195668"
+  },
+  "Ontario Tech University": {
+    "title": "Ontario Tech University",
+    "latitude": 43.94484722,
+    "longitude": -78.89170278,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ontario_Tech_University",
+    "wikidataId": "Q2495899"
+  },
+  "University of Wisconsin Eau Claire": {
+    "title": "University of Wisconsin–Eau Claire",
+    "latitude": 44.79895,
+    "longitude": -91.499346,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Wisconsin–Eau_Claire",
+    "wikidataId": "Q3551771"
+  },
+  "Macquarie University": {
+    "title": "Macquarie University",
+    "latitude": -33.77527778,
+    "longitude": 151.11277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Macquarie_University",
+    "wikidataId": "Q741082"
+  },
+  "University of Northern Iowa": {
+    "title": "University of Northern Iowa",
+    "latitude": 42.515,
+    "longitude": -92.46055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Northern_Iowa",
+    "wikidataId": "Q1781094"
+  },
+  "Hunter College": {
+    "title": "Hunter College",
+    "latitude": 40.768538,
+    "longitude": -73.964741,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hunter_College",
+    "wikidataId": "Q1446181"
+  },
+  "Post University": {
+    "title": "Post University",
+    "latitude": 41.5352,
+    "longitude": -73.0795,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Post_University",
+    "wikidataId": "Q4374296"
+  },
+  "Mount Holyoke College": {
+    "title": "Mount Holyoke College",
+    "latitude": 42.2556,
+    "longitude": -72.5745,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Holyoke_College",
+    "wikidataId": "Q1140542"
+  },
+  "University of Limerick": {
+    "title": "University of Limerick",
+    "latitude": 52.674,
+    "longitude": -8.571,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Limerick",
+    "wikidataId": "Q573954"
+  },
+  "University of Iowa": {
+    "title": "University of Iowa",
+    "latitude": 41.66166667,
+    "longitude": -91.53638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Iowa",
+    "wikidataId": "Q182973"
+  },
+  "Vassar College": {
+    "title": "Vassar College",
+    "latitude": 41.6875,
+    "longitude": -73.89583333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Vassar_College",
+    "wikidataId": "Q2093794"
+  },
+  "Quinnipiac University": {
+    "title": "Quinnipiac University",
+    "latitude": 41.42014,
+    "longitude": -72.89454,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Quinnipiac_University",
+    "wikidataId": "Q1030044"
+  },
+  "Austin College": {
+    "title": "Austin College",
+    "latitude": 33.64700556,
+    "longitude": -96.59726667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Austin_College",
+    "wikidataId": "Q4823037"
+  },
+  "Smith College": {
+    "title": "Smith College",
+    "latitude": 42.3175,
+    "longitude": -72.6375,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Smith_College",
+    "wikidataId": "Q49204"
+  },
+  "Lawrence University": {
+    "title": "Lawrence University",
+    "latitude": 44.2611,
+    "longitude": -88.4,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lawrence_University",
+    "wikidataId": "Q1809286"
+  },
+  "Stockton University": {
+    "title": "Stockton University",
+    "latitude": 39.4925,
+    "longitude": -74.53194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stockton_University",
+    "wikidataId": "Q7329259"
+  },
+  "Staffordshire University": {
+    "title": "University of Staffordshire",
+    "latitude": 53.0097,
+    "longitude": -2.1817,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Staffordshire",
+    "wikidataId": "Q1534573"
+  },
+  "Montana State University": {
+    "title": "Montana State University",
+    "latitude": 45.66833333,
+    "longitude": -111.05,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Montana_State_University",
+    "wikidataId": "Q1861687"
+  },
+  "University of North Carolina at Pembroke": {
+    "title": "University of North Carolina at Pembroke",
+    "latitude": 34.6876,
+    "longitude": -79.202,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_North_Carolina_at_Pembroke",
+    "wikidataId": "Q10709746"
+  },
+  "Emporia State University": {
+    "title": "Emporia State University",
+    "latitude": 38.416023,
+    "longitude": -96.179584,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Emporia_State_University",
+    "wikidataId": "Q1339396"
+  },
+  "Bucknell University": {
+    "title": "Bucknell University",
+    "latitude": 40.95472222,
+    "longitude": -76.88361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bucknell_University",
+    "wikidataId": "Q3444679"
+  },
+  "Stetson University": {
+    "title": "Stetson University",
+    "latitude": 29.035,
+    "longitude": -81.3026,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stetson_University",
+    "wikidataId": "Q2341039"
+  },
+  "Brock University": {
+    "title": "Brock University",
+    "latitude": 43.119,
+    "longitude": -79.249,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brock_University",
+    "wikidataId": "Q923624"
+  },
+  "Musashi University": {
+    "title": "Musashi University",
+    "latitude": 35.73694444,
+    "longitude": 139.66777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Musashi_University",
+    "wikidataId": "Q1954006"
+  },
+  "Yeshiva University": {
+    "title": "Yeshiva University",
+    "latitude": 40.85055556,
+    "longitude": -73.92972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Yeshiva_University",
+    "wikidataId": "Q1048851"
+  },
+  "Canadore College": {
+    "title": "Canadore College",
+    "latitude": 46.34418889,
+    "longitude": -79.49188611,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Canadore_College",
+    "wikidataId": "Q5030938"
+  },
+  "Kansas State University": {
+    "title": "Kansas State University",
+    "latitude": 39.1914,
+    "longitude": -96.5809,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kansas_State_University",
+    "wikidataId": "Q31249"
+  },
+  "Lindenwood University": {
+    "title": "Lindenwood University",
+    "latitude": 38.787,
+    "longitude": -90.503,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lindenwood_University",
+    "wikidataId": "Q5617088"
+  },
+  "University of Hull": {
+    "title": "University of Hull",
+    "latitude": 53.770263,
+    "longitude": -0.367141,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Hull",
+    "wikidataId": "Q1474019"
+  },
+  "Bethany College (West Virginia)": {
+    "title": "Bethany College (West Virginia)",
+    "latitude": 40.20583333,
+    "longitude": -80.56027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bethany_College_(West_Virginia)",
+    "wikidataId": "Q4897734"
+  },
+  "Seton Hill University": {
+    "title": "Seton Hill University",
+    "latitude": 40.309,
+    "longitude": -79.556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Seton_Hill_University",
+    "wikidataId": "Q1949773"
+  },
+  "University of Oklahoma": {
+    "title": "University of Oklahoma",
+    "latitude": 35.2088,
+    "longitude": -97.4457,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Oklahoma",
+    "wikidataId": "Q640652"
+  },
+  "University of Padova": {
+    "title": "University of Padua",
+    "latitude": 45.40666667,
+    "longitude": 11.8775,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Padua",
+    "wikidataId": "Q193510"
+  },
+  "Kyoto University": {
+    "title": "Kyoto University",
+    "latitude": 35.026212,
+    "longitude": 135.780842,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kyoto_University",
+    "wikidataId": "Q336264"
+  },
+  "American University of Beirut": {
+    "title": "American University of Beirut",
+    "latitude": 33.89996389,
+    "longitude": 35.48228333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/American_University_of_Beirut",
+    "wikidataId": "Q469482"
+  },
+  "Hong Kong University of Science and Technology": {
+    "title": "Hong Kong University of Science and Technology",
+    "latitude": 22.338,
+    "longitude": 114.263,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hong_Kong_University_of_Science_and_Technology",
+    "wikidataId": "Q1333303"
+  },
+  "Central Washington University": {
+    "title": "Central Washington University",
+    "latitude": 47.002,
+    "longitude": -120.54,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Central_Washington_University",
+    "wikidataId": "Q1054064"
+  },
+  "California State University, Fresno": {
+    "title": "California State University, Fresno",
+    "latitude": 36.81333333,
+    "longitude": -119.75,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_State_University,_Fresno",
+    "wikidataId": "Q1026919"
+  },
+  "Manchester University": {
+    "title": "University of Manchester",
+    "latitude": 53.4661,
+    "longitude": -2.2319,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Manchester",
+    "wikidataId": "Q230899"
+  },
+  "Furman University": {
+    "title": "Furman University",
+    "latitude": 34.92583333,
+    "longitude": -82.43555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Furman_University",
+    "wikidataId": "Q1475020"
+  },
+  "Lipscomb University": {
+    "title": "Lipscomb University",
+    "latitude": 36.1058,
+    "longitude": -86.7976,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lipscomb_University",
+    "wikidataId": "Q1798619"
+  },
+  "Bishop's University": {
+    "title": "Bishop's University",
+    "latitude": 45.36671111,
+    "longitude": -71.84546389,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bishop's_University",
+    "wikidataId": "Q3551383"
+  },
+  "St. Edward's University": {
+    "title": "St. Edward's University",
+    "latitude": 30.23333333,
+    "longitude": -97.75,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Edward's_University",
+    "wikidataId": "Q3495253"
+  },
+  "Seattle Pacific University": {
+    "title": "Seattle Pacific University",
+    "latitude": 47.65019,
+    "longitude": -122.361667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Seattle_Pacific_University",
+    "wikidataId": "Q2904851"
+  },
+  "Belmont University": {
+    "title": "Belmont University",
+    "latitude": 36.133,
+    "longitude": -86.794,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Belmont_University",
+    "wikidataId": "Q3298359"
+  },
+  "University of Vermont": {
+    "title": "University of Vermont",
+    "latitude": 44.47777778,
+    "longitude": -73.19638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Vermont",
+    "wikidataId": "Q1048898"
+  },
+  "Whitman College": {
+    "title": "Whitman College",
+    "latitude": 46.0707,
+    "longitude": -118.3289,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Whitman_College",
+    "wikidataId": "Q7996607"
+  },
+  "Portland State University": {
+    "title": "Portland State University",
+    "latitude": 45.51277778,
+    "longitude": -122.68527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Portland_State_University",
+    "wikidataId": "Q1771717"
+  },
+  "University of North Carolina at Asheville": {
+    "title": "University of North Carolina at Asheville",
+    "latitude": 35.61619,
+    "longitude": -82.56614,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_North_Carolina_at_Asheville",
+    "wikidataId": "Q7895940"
+  },
+  "Fairfield University": {
+    "title": "Fairfield University",
+    "latitude": 41.16016944,
+    "longitude": -73.25806667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fairfield_University",
+    "wikidataId": "Q1393265"
+  },
+  "Saint Elizabeth University": {
+    "title": "Saint Elizabeth University",
+    "latitude": 40.781,
+    "longitude": -74.438,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saint_Elizabeth_University",
+    "wikidataId": "Q5146821"
+  },
+  "Polytechnique Montreal": {
+    "title": "Polytechnique Montréal",
+    "latitude": 45.505,
+    "longitude": -73.6125,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Polytechnique_Montréal",
+    "wikidataId": "Q273619"
+  },
+  "Curry College": {
+    "title": "Curry College",
+    "latitude": 42.23805556,
+    "longitude": -71.11638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Curry_College",
+    "wikidataId": "Q5195204"
+  },
+  "Portland Community College": {
+    "title": "Portland Community College",
+    "latitude": 45.43857,
+    "longitude": -122.73093,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Portland_Community_College",
+    "wikidataId": "Q7231908"
+  },
+  "Tennessee Technological University": {
+    "title": "Tennessee Technological University",
+    "latitude": 36.17638889,
+    "longitude": -85.50972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tennessee_Technological_University",
+    "wikidataId": "Q7700206"
+  },
+  "Dordt University": {
+    "title": "Dordt University",
+    "latitude": 43.0833,
+    "longitude": -96.1671,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dordt_University",
+    "wikidataId": "Q3112939"
+  },
+  "University of Queensland": {
+    "title": "University of Queensland",
+    "latitude": -27.49722222,
+    "longitude": 153.01305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Queensland",
+    "wikidataId": "Q866012"
+  },
+  "Adams State University": {
+    "title": "Adams State University",
+    "latitude": 37.4741464,
+    "longitude": -105.879521,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Adams_State_University",
+    "wikidataId": "Q351971"
+  },
+  "Hendrix College": {
+    "title": "Hendrix College",
+    "latitude": 35.1,
+    "longitude": -92.44,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hendrix_College",
+    "wikidataId": "Q1605137"
+  },
+  "American University in Bulgaria": {
+    "title": "American University in Bulgaria",
+    "latitude": 42.02138889,
+    "longitude": 23.095,
+    "sourceUrl": "https://en.wikipedia.org/wiki/American_University_in_Bulgaria",
+    "wikidataId": "Q469484"
+  },
+  "Millsaps College": {
+    "title": "Millsaps College",
+    "latitude": 32.32222222,
+    "longitude": -90.17944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Millsaps_College",
+    "wikidataId": "Q6860022"
+  },
+  "Upper Canada College": {
+    "title": "Upper Canada College",
+    "latitude": 43.693,
+    "longitude": -79.404,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Upper_Canada_College",
+    "wikidataId": "Q1542352"
+  },
+  "Thomas Edison State University": {
+    "title": "Thomas Edison State University",
+    "latitude": 40.2203,
+    "longitude": -74.7684,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Thomas_Edison_State_University",
+    "wikidataId": "Q7789245"
+  },
+  "Hope College": {
+    "title": "Hope College",
+    "latitude": 42.78694444,
+    "longitude": -86.10222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hope_College",
+    "wikidataId": "Q2475371"
+  },
+  "Ball State University": {
+    "title": "Ball State University",
+    "latitude": 40.1983223,
+    "longitude": -85.40894318,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ball_State_University",
+    "wikidataId": "Q805122"
+  },
+  "University of Redlands": {
+    "title": "University of Redlands",
+    "latitude": 34.06305556,
+    "longitude": -117.16388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Redlands",
+    "wikidataId": "Q1270831"
+  },
+  "Eastern Kentucky University": {
+    "title": "Eastern Kentucky University",
+    "latitude": 37.7341545,
+    "longitude": -84.30143419,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eastern_Kentucky_University",
+    "wikidataId": "Q1278206"
+  },
+  "University of Pisa": {
+    "title": "University of Pisa",
+    "latitude": 43.71650833,
+    "longitude": 10.39845833,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Pisa",
+    "wikidataId": "Q645663"
+  },
+  "Lafayette College": {
+    "title": "Lafayette College",
+    "latitude": 40.69861111,
+    "longitude": -75.20805556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lafayette_College",
+    "wikidataId": "Q1592074"
+  },
+  "University of New Hampshire": {
+    "title": "University of New Hampshire",
+    "latitude": 43.13638889,
+    "longitude": -70.93222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_New_Hampshire",
+    "wikidataId": "Q49207"
+  },
+  "Trinity University": {
+    "title": "Trinity University",
+    "latitude": 29.463794,
+    "longitude": -98.482042,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Trinity_University",
+    "wikidataId": "Q1311379"
+  },
+  "William Paterson University": {
+    "title": "William Paterson University",
+    "latitude": 40.947,
+    "longitude": -74.198,
+    "sourceUrl": "https://en.wikipedia.org/wiki/William_Paterson_University",
+    "wikidataId": "Q3444527"
+  },
+  "Peking University": {
+    "title": "Peking University",
+    "latitude": 39.99,
+    "longitude": 116.30138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Peking_University",
+    "wikidataId": "Q16952"
+  },
+  "University of California - Irvine": {
+    "title": "University of California, Irvine",
+    "latitude": 33.64555556,
+    "longitude": -117.8425,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_California,_Irvine",
+    "wikidataId": "Q868421"
+  },
+  "University of Wroclaw": {
+    "title": "University of Wrocław",
+    "latitude": 51.11361111,
+    "longitude": 17.03333333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Wrocław",
+    "wikidataId": "Q315658"
+  },
+  "Warner University": {
+    "title": "Warner University",
+    "latitude": 27.8263,
+    "longitude": -81.6022,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Warner_University",
+    "wikidataId": "Q7969774"
+  },
+  "University of Salford": {
+    "title": "University of Salford",
+    "latitude": 53.48444444,
+    "longitude": -2.27138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Salford",
+    "wikidataId": "Q2738622"
+  },
+  "Rockhurst University": {
+    "title": "Rockhurst University",
+    "latitude": 39.03162,
+    "longitude": -94.57237,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rockhurst_University",
+    "wikidataId": "Q5594651"
+  },
+  "Old Dominion University": {
+    "title": "Old Dominion University",
+    "latitude": 36.88654,
+    "longitude": -76.30522,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Old_Dominion_University",
+    "wikidataId": "Q1474100"
+  },
+  "Loras College": {
+    "title": "Loras College",
+    "latitude": 42.505,
+    "longitude": -90.68,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Loras_College",
+    "wikidataId": "Q6678799"
+  },
+  "School of the Art Institute of Chicago": {
+    "title": "School of the Art Institute of Chicago",
+    "latitude": 41.87944444,
+    "longitude": -87.62388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/School_of_the_Art_Institute_of_Chicago",
+    "wikidataId": "Q7432601"
+  },
+  "West Texas A&M University": {
+    "title": "West Texas A&M University",
+    "latitude": 34.9844,
+    "longitude": -101.9134,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Texas_A&M_University",
+    "wikidataId": "Q7986651"
+  },
+  "Vilnius University": {
+    "title": "Vilnius University",
+    "latitude": 54.6825,
+    "longitude": 25.28722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Vilnius_University",
+    "wikidataId": "Q658192"
+  },
+  "Bethany Lutheran College": {
+    "title": "Bethany Lutheran College",
+    "latitude": 44.16638,
+    "longitude": -93.99087,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bethany_Lutheran_College",
+    "wikidataId": "Q4897766"
+  },
+  "DePauw University": {
+    "title": "DePauw University",
+    "latitude": 39.64083333,
+    "longitude": -86.86305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/DePauw_University",
+    "wikidataId": "Q1179599"
+  },
+  "Phillips Academy Andover": {
+    "title": "Phillips Academy",
+    "latitude": 42.6473,
+    "longitude": -71.1316,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Phillips_Academy",
+    "wikidataId": "Q1432645"
+  },
+  "University of Montana": {
+    "title": "University of Montana",
+    "latitude": 46.86,
+    "longitude": -113.98527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Montana",
+    "wikidataId": "Q2302336"
+  },
+  "Michigan Technological University": {
+    "title": "Michigan Technological University",
+    "latitude": 47.12,
+    "longitude": -88.55,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Michigan_Technological_University",
+    "wikidataId": "Q12432"
+  },
+  "Campbell University": {
+    "title": "Campbell University",
+    "latitude": 35.40833333,
+    "longitude": -78.73944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Campbell_University",
+    "wikidataId": "Q904219"
+  },
+  "University of Wisconsin Oshkosh": {
+    "title": "University of Wisconsin–Oshkosh",
+    "latitude": 44.0267,
+    "longitude": -88.5508,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Wisconsin–Oshkosh",
+    "wikidataId": "Q2503441"
+  },
+  "CUNY Kingsborough Community College": {
+    "title": "Kingsborough Community College",
+    "latitude": 40.57805556,
+    "longitude": -73.93305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kingsborough_Community_College",
+    "wikidataId": "Q6413125"
+  },
+  "University of Portland": {
+    "title": "University of Portland",
+    "latitude": 45.5725,
+    "longitude": -122.72722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Portland",
+    "wikidataId": "Q513658"
+  },
+  "Appalachian State University": {
+    "title": "Appalachian State University",
+    "latitude": 36.213843,
+    "longitude": -81.678621,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Appalachian_State_University",
+    "wikidataId": "Q620640"
+  },
+  "University of Chester": {
+    "title": "University of Chester",
+    "latitude": 53.200326,
+    "longitude": -2.898073,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Chester",
+    "wikidataId": "Q762243"
+  },
+  "Tarleton State University": {
+    "title": "Tarleton State University",
+    "latitude": 32.2139,
+    "longitude": -98.2154,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tarleton_State_University",
+    "wikidataId": "Q3551554"
+  },
+  "Western Illinois University": {
+    "title": "Western Illinois University",
+    "latitude": 40.470392,
+    "longitude": -90.68774,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Illinois_University",
+    "wikidataId": "Q1474005"
+  },
+  "Grenoble Ecole de Management": {
+    "title": "Grenoble School of Management",
+    "latitude": 45.19,
+    "longitude": 5.714,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Grenoble_School_of_Management",
+    "wikidataId": "Q839224"
+  },
+  "Pacific School of Religion": {
+    "title": "Pacific School of Religion",
+    "latitude": 37.876594,
+    "longitude": -122.263301,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pacific_School_of_Religion",
+    "wikidataId": "Q4458746"
+  },
+  "Medgar Evers College": {
+    "title": "Medgar Evers College",
+    "latitude": 40.66630833,
+    "longitude": -73.95664722,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Medgar_Evers_College",
+    "wikidataId": "Q6805332"
+  },
+  "Bard College at Simon's Rock": {
+    "title": "Simon's Rock at Bard College",
+    "latitude": 42.003,
+    "longitude": -73.924,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Simon's_Rock_at_Bard_College",
+    "wikidataId": "Q4860034"
+  },
+  "Massachusetts College of Liberal Arts": {
+    "title": "Massachusetts College of Liberal Arts",
+    "latitude": 42.6917,
+    "longitude": -73.1039,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Massachusetts_College_of_Liberal_Arts",
+    "wikidataId": "Q6784220"
+  },
+  "Benedictine College": {
+    "title": "Benedictine College",
+    "latitude": 39.5739,
+    "longitude": -95.1147,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Benedictine_College",
+    "wikidataId": "Q4887341"
+  },
+  "University of the Ozarks": {
+    "title": "University of the Ozarks",
+    "latitude": 35.47731,
+    "longitude": -93.4672,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_the_Ozarks",
+    "wikidataId": "Q7896711"
+  },
+  "Villanova Preparatory School": {
+    "title": "Villanova Preparatory School",
+    "latitude": 34.42972222,
+    "longitude": -119.26388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Villanova_Preparatory_School",
+    "wikidataId": "Q7930878"
+  },
+  "Heritage Christian University": {
+    "title": "Heritage Christian University",
+    "latitude": 34.86054,
+    "longitude": -87.66272,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Heritage_Christian_University",
+    "wikidataId": "Q5738742"
+  },
+  "Davis & Elkins College": {
+    "title": "Davis & Elkins College",
+    "latitude": 38.93055556,
+    "longitude": -79.84666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Davis_&_Elkins_College",
+    "wikidataId": "Q5241825"
+  },
+  "CQUniversity Australia": {
+    "title": "CQUniversity Australia",
+    "latitude": -23.31805556,
+    "longitude": 150.51833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/CQUniversity_Australia",
+    "wikidataId": "Q1053985"
+  },
+  "SUNY Potsdam": {
+    "title": "State University of New York at Potsdam",
+    "latitude": 44.6625,
+    "longitude": -74.97416667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Potsdam",
+    "wikidataId": "Q7603628"
+  },
+  "South China University of Technology": {
+    "title": "South China University of Technology",
+    "latitude": 23.1513,
+    "longitude": 113.3446,
+    "sourceUrl": "https://en.wikipedia.org/wiki/South_China_University_of_Technology",
+    "wikidataId": "Q835366"
+  },
+  "South Dakota School of Mines & Technology": {
+    "title": "South Dakota School of Mines and Technology",
+    "latitude": 44.07388889,
+    "longitude": -103.20611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/South_Dakota_School_of_Mines_and_Technology",
+    "wikidataId": "Q7566983"
+  },
+  "Leeward Community College": {
+    "title": "Leeward Community College",
+    "latitude": 21.393,
+    "longitude": -157.984,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Leeward_Community_College",
+    "wikidataId": "Q6516572"
+  },
+  "State University of New York Plattsburgh": {
+    "title": "State University of New York at Plattsburgh",
+    "latitude": 44.69333333,
+    "longitude": -73.46638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Plattsburgh",
+    "wikidataId": "Q7603626"
+  },
+  "Rhode Island College": {
+    "title": "Rhode Island College",
+    "latitude": 41.842199,
+    "longitude": -71.461161,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rhode_Island_College",
+    "wikidataId": "Q1613236"
+  },
+  "Wofford College": {
+    "title": "Wofford College",
+    "latitude": 34.959,
+    "longitude": -81.935,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wofford_College",
+    "wikidataId": "Q8029049"
+  },
+  "Berry College": {
+    "title": "Berry College",
+    "latitude": 34.29,
+    "longitude": -85.189,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Berry_College",
+    "wikidataId": "Q4894781"
+  },
+  "Barnard College": {
+    "title": "Barnard College",
+    "latitude": 40.8096,
+    "longitude": -73.9635,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Barnard_College",
+    "wikidataId": "Q167733"
+  },
+  "Elizabeth City State University": {
+    "title": "Elizabeth City State University",
+    "latitude": 36.2812,
+    "longitude": -76.21512,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Elizabeth_City_State_University",
+    "wikidataId": "Q5362587"
+  },
+  "Mercer University": {
+    "title": "Mercer University",
+    "latitude": 32.82916667,
+    "longitude": -83.64861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mercer_University",
+    "wikidataId": "Q1798612"
+  },
+  "University of Houston - Victoria": {
+    "title": "Texas A&M University–Victoria",
+    "latitude": 28.8164,
+    "longitude": -96.9764,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Texas_A&M_University–Victoria",
+    "wikidataId": "Q7895510"
+  },
+  "Besant Hill School": {
+    "title": "Besant Hill School",
+    "latitude": 34.4395,
+    "longitude": -119.186,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Besant_Hill_School",
+    "wikidataId": "Q4896182"
+  },
+  "Mount Saint Vincent University": {
+    "title": "Mount Saint Vincent University",
+    "latitude": 44.67083333,
+    "longitude": -63.64638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Saint_Vincent_University",
+    "wikidataId": "Q3551457"
+  },
+  "Vermont Academy": {
+    "title": "Vermont Academy",
+    "latitude": 43.1417444,
+    "longitude": -72.5087004,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Vermont_Academy",
+    "wikidataId": "Q7921670"
+  },
+  "Rogers State University": {
+    "title": "Rogers State University",
+    "latitude": 36.31916667,
+    "longitude": -95.63916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rogers_State_University",
+    "wikidataId": "Q13582663"
+  },
+  "Carlow University": {
+    "title": "Carlow University",
+    "latitude": 40.4397,
+    "longitude": -79.9641,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Carlow_University",
+    "wikidataId": "Q5042860"
+  },
+  "SUNY at Purchase College": {
+    "title": "Purchase College",
+    "latitude": 41.047,
+    "longitude": -73.702,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Purchase_College",
+    "wikidataId": "Q4359408"
+  },
+  "Los Angeles Trade Technical College": {
+    "title": "Los Angeles Trade–Technical College",
+    "latitude": 34.0315,
+    "longitude": -118.2706,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Los_Angeles_Trade–Technical_College",
+    "wikidataId": "Q9091546"
+  },
+  "University of Tsukuba": {
+    "title": "University of Tsukuba",
+    "latitude": 36.11143,
+    "longitude": 140.10383,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Tsukuba",
+    "wikidataId": "Q743615"
+  },
+  "Dean College": {
+    "title": "Dean College",
+    "latitude": 42.08527778,
+    "longitude": -71.39888889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dean_College",
+    "wikidataId": "Q5246081"
+  },
+  "Maine College of Art & Design": {
+    "title": "Maine College of Art & Design",
+    "latitude": 43.65567,
+    "longitude": -70.26073,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maine_College_of_Art_&_Design",
+    "wikidataId": "Q3695342"
+  },
+  "Covenant College": {
+    "title": "Covenant College",
+    "latitude": 34.966,
+    "longitude": -85.374,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Covenant_College",
+    "wikidataId": "Q5178987"
+  },
+  "Judson University": {
+    "title": "Judson University",
+    "latitude": 42.06638889,
+    "longitude": -88.29527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Judson_University",
+    "wikidataId": "Q1711141"
+  },
+  "Suffield Academy": {
+    "title": "Suffield Academy",
+    "latitude": 41.9848,
+    "longitude": -72.6503,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Suffield_Academy",
+    "wikidataId": "Q7634503"
+  },
+  "Belmont Abbey College": {
+    "title": "Belmont Abbey College",
+    "latitude": 35.2595756,
+    "longitude": -81.0409625,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Belmont_Abbey_College",
+    "wikidataId": "Q4884322"
+  },
+  "University of Pikeville": {
+    "title": "University of Pikeville",
+    "latitude": 37.4791,
+    "longitude": -82.52119,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Pikeville",
+    "wikidataId": "Q7896112"
+  },
+  "SUNY Cobleskill": {
+    "title": "State University of New York at Cobleskill",
+    "latitude": 42.673005,
+    "longitude": -74.498398,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Cobleskill",
+    "wikidataId": "Q7603621"
+  },
+  "Centenary College of Louisiana": {
+    "title": "Centenary College of Louisiana",
+    "latitude": 32.484,
+    "longitude": -93.732,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Centenary_College_of_Louisiana",
+    "wikidataId": "Q5059076"
+  },
+  "Instituto Tecnologico Autonomo de Mexico": {
+    "title": "Instituto Tecnológico Autónomo de México",
+    "latitude": 19.34508,
+    "longitude": -99.200004,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Instituto_Tecnológico_Autónomo_de_México",
+    "wikidataId": "Q1665236"
+  },
+  "Asheville School": {
+    "title": "Asheville School",
+    "latitude": 35.56194444,
+    "longitude": -82.6225,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Asheville_School",
+    "wikidataId": "Q4804923"
+  },
+  "University of Birmingham": {
+    "title": "University of Birmingham",
+    "latitude": 52.45055556,
+    "longitude": -1.93055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Birmingham",
+    "wikidataId": "Q223429"
+  },
+  "Manor College": {
+    "title": "Manor College",
+    "latitude": 40.0859,
+    "longitude": -75.1043,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Manor_College",
+    "wikidataId": "Q6751309"
+  },
+  "WHU - Otto Beisheim School of Management": {
+    "title": "WHU – Otto Beisheim School of Management",
+    "latitude": 50.4003,
+    "longitude": 7.6135,
+    "sourceUrl": "https://en.wikipedia.org/wiki/WHU_–_Otto_Beisheim_School_of_Management",
+    "wikidataId": "Q316595"
+  },
+  "The Madeira School": {
+    "title": "Madeira School",
+    "latitude": 38.96527778,
+    "longitude": -77.235,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Madeira_School",
+    "wikidataId": "Q6726842"
+  },
+  "Barclay College": {
+    "title": "Barclay College",
+    "latitude": 37.621392,
+    "longitude": -99.104876,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Barclay_College",
+    "wikidataId": "Q4859925"
+  },
+  "Snow College": {
+    "title": "Snow College",
+    "latitude": 39.36111111,
+    "longitude": -111.58305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Snow_College",
+    "wikidataId": "Q7548203"
+  },
+  "Lassen Community College": {
+    "title": "Lassen Community College",
+    "latitude": 40.4315,
+    "longitude": -120.6326,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lassen_Community_College",
+    "wikidataId": "Q6493966"
+  },
+  "Indiana University South Bend": {
+    "title": "Indiana University South Bend",
+    "latitude": 41.6641,
+    "longitude": -86.2208,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indiana_University_South_Bend",
+    "wikidataId": "Q6023665"
+  },
+  "Monmouth University": {
+    "title": "Monmouth University",
+    "latitude": 40.28,
+    "longitude": -74.006,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Monmouth_University",
+    "wikidataId": "Q922647"
+  },
+  "Colby-Sawyer College": {
+    "title": "Colby–Sawyer College",
+    "latitude": 43.41222222,
+    "longitude": -71.97777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Colby–Sawyer_College",
+    "wikidataId": "Q5142055"
+  },
+  "Bennington College": {
+    "title": "Bennington College",
+    "latitude": 42.924817,
+    "longitude": -73.23673,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bennington_College",
+    "wikidataId": "Q817902"
+  },
+  "Shaw University": {
+    "title": "Shaw University",
+    "latitude": 35.77117,
+    "longitude": -78.6361,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Shaw_University",
+    "wikidataId": "Q3443493"
+  },
+  "Sam Houston State University": {
+    "title": "Sam Houston State University",
+    "latitude": 30.71388889,
+    "longitude": -95.54722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sam_Houston_State_University",
+    "wikidataId": "Q1422594"
+  },
+  "Southeastern Louisiana University": {
+    "title": "Southeastern Louisiana University",
+    "latitude": 30.51388889,
+    "longitude": -90.46833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southeastern_Louisiana_University",
+    "wikidataId": "Q615998"
+  },
+  "Maranatha Baptist University": {
+    "title": "Maranatha Baptist University",
+    "latitude": 43.1955,
+    "longitude": -88.7391,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maranatha_Baptist_University",
+    "wikidataId": "Q14714528"
+  },
+  "University of Wisconsin - Stout": {
+    "title": "University of Wisconsin–Stout Polytechnic",
+    "latitude": 44.86972222,
+    "longitude": -91.92777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Wisconsin–Stout_Polytechnic",
+    "wikidataId": "Q2590529"
+  },
+  "Union University": {
+    "title": "Union University",
+    "latitude": 35.683,
+    "longitude": -88.8565,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Union_University",
+    "wikidataId": "Q7886376"
+  },
+  "Bloomfield College": {
+    "title": "Bloomfield College",
+    "latitude": 40.795,
+    "longitude": -74.195,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bloomfield_College",
+    "wikidataId": "Q4928235"
+  },
+  "Northeastern State University": {
+    "title": "Northeastern State University",
+    "latitude": 35.9251,
+    "longitude": -94.967542,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Northeastern_State_University",
+    "wikidataId": "Q3124195"
+  },
+  "Morgan State University": {
+    "title": "Morgan State University",
+    "latitude": 39.3439,
+    "longitude": -76.5847,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Morgan_State_University",
+    "wikidataId": "Q1054905"
+  },
+  "Bronx Community College": {
+    "title": "Bronx Community College",
+    "latitude": 40.85805556,
+    "longitude": -73.9125,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bronx_Community_College",
+    "wikidataId": "Q4974180"
+  },
+  "Yukon University": {
+    "title": "Yukon University",
+    "latitude": 60.75033333,
+    "longitude": -135.09874722,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Yukon_University",
+    "wikidataId": "Q16211981"
+  },
+  "State University of New York at Delhi": {
+    "title": "State University of New York at Delhi",
+    "latitude": 42.27055556,
+    "longitude": -74.92472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Delhi",
+    "wikidataId": "Q7603622"
+  },
+  "Adrian College": {
+    "title": "Adrian College",
+    "latitude": 41.898951,
+    "longitude": -84.058424,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Adrian_College",
+    "wikidataId": "Q4684938"
+  },
+  "Chongqing University": {
+    "title": "Chongqing University",
+    "latitude": 29.5649,
+    "longitude": 106.4688,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chongqing_University",
+    "wikidataId": "Q834857"
+  },
+  "Chaminade University of Honolulu": {
+    "title": "Chaminade University of Honolulu",
+    "latitude": 21.28968333,
+    "longitude": -157.80686667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chaminade_University_of_Honolulu",
+    "wikidataId": "Q1725405"
+  },
+  "Fayetteville State University": {
+    "title": "Fayetteville State University",
+    "latitude": 35.072,
+    "longitude": -78.8945,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fayetteville_State_University",
+    "wikidataId": "Q1399078"
+  },
+  "College of San Mateo": {
+    "title": "College of San Mateo",
+    "latitude": 37.53611111,
+    "longitude": -122.33611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_San_Mateo",
+    "wikidataId": "Q18409139"
+  },
+  "The Hill School": {
+    "title": "The Hill School",
+    "latitude": 40.2449,
+    "longitude": -75.6331,
+    "sourceUrl": "https://en.wikipedia.org/wiki/The_Hill_School",
+    "wikidataId": "Q7739685"
+  },
+  "Bowie State University": {
+    "title": "Bowie State University",
+    "latitude": 39.02158,
+    "longitude": -76.75684,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bowie_State_University",
+    "wikidataId": "Q895439"
+  },
+  "Central Christian College of Kansas": {
+    "title": "Central Christian College of Kansas",
+    "latitude": 38.3575,
+    "longitude": -97.6675,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Central_Christian_College_of_Kansas",
+    "wikidataId": "Q5060545"
+  },
+  "Jamestown Community College": {
+    "title": "Jamestown Community College",
+    "latitude": 42.1132,
+    "longitude": -78.4299,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Jamestown_Community_College",
+    "wikidataId": "Q6146214"
+  },
+  "Shepherd University": {
+    "title": "Shepherd University",
+    "latitude": 39.43638889,
+    "longitude": -77.80833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Shepherd_University",
+    "wikidataId": "Q7494490"
+  },
+  "LeTourneau University": {
+    "title": "LeTourneau University",
+    "latitude": 32.467,
+    "longitude": -94.728,
+    "sourceUrl": "https://en.wikipedia.org/wiki/LeTourneau_University",
+    "wikidataId": "Q6506488"
+  },
+  "Salem College": {
+    "title": "Salem College",
+    "latitude": 36.0875,
+    "longitude": -80.24,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Salem_College",
+    "wikidataId": "Q7404072"
+  },
+  "London School of Economics and Political Science": {
+    "title": "London School of Economics",
+    "latitude": 51.51388889,
+    "longitude": -0.11666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/London_School_of_Economics",
+    "wikidataId": "Q174570"
+  },
+  "University of Detroit Mercy": {
+    "title": "University of Detroit Mercy",
+    "latitude": 42.41411,
+    "longitude": -83.137922,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Detroit_Mercy",
+    "wikidataId": "Q1320232"
+  },
+  "South Carolina State University": {
+    "title": "South Carolina State University",
+    "latitude": 33.49722222,
+    "longitude": -80.85,
+    "sourceUrl": "https://en.wikipedia.org/wiki/South_Carolina_State_University",
+    "wikidataId": "Q7566644"
+  },
+  "Alberta University of the Arts": {
+    "title": "Alberta University of the Arts",
+    "latitude": 51.06205,
+    "longitude": -114.09143,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Alberta_University_of_the_Arts",
+    "wikidataId": "Q4063387"
+  },
+  "Carroll University": {
+    "title": "Carroll University",
+    "latitude": 43.00361111,
+    "longitude": -88.22777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Carroll_University",
+    "wikidataId": "Q1045167"
+  },
+  "Olivet Nazarene University": {
+    "title": "Olivet Nazarene University",
+    "latitude": 41.154555,
+    "longitude": -87.871219,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Olivet_Nazarene_University",
+    "wikidataId": "Q7088000"
+  },
+  "University of Tennessee at Chattanooga": {
+    "title": "University of Tennessee at Chattanooga",
+    "latitude": 35.0458,
+    "longitude": -85.2999,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Tennessee_at_Chattanooga",
+    "wikidataId": "Q1781384"
+  },
+  "Community College of Denver": {
+    "title": "Community College of Denver",
+    "latitude": 39.74096944,
+    "longitude": -105.00281667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Community_College_of_Denver",
+    "wikidataId": "Q5154691"
+  },
+  "Northern Michigan University": {
+    "title": "Northern Michigan University",
+    "latitude": 46.55901,
+    "longitude": -87.40525,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Northern_Michigan_University",
+    "wikidataId": "Q624970"
+  },
+  "Mercyhurst University": {
+    "title": "Mercyhurst University",
+    "latitude": 42.1052,
+    "longitude": -80.05373,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mercyhurst_University",
+    "wikidataId": "Q6818830"
+  },
+  "Stephen F. Austin State University": {
+    "title": "Stephen F. Austin State University",
+    "latitude": 31.61916667,
+    "longitude": -94.64833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stephen_F._Austin_State_University",
+    "wikidataId": "Q2344683"
+  },
+  "Indian Springs School": {
+    "title": "Indian Springs School",
+    "latitude": 33.3409,
+    "longitude": -86.7715,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indian_Springs_School",
+    "wikidataId": "Q1661274"
+  },
+  "Calvary University": {
+    "title": "Calvary University",
+    "latitude": 38.83842,
+    "longitude": -94.54455,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Calvary_University",
+    "wikidataId": "Q5024150"
+  },
+  "University of Kansas": {
+    "title": "University of Kansas",
+    "latitude": 38.9584,
+    "longitude": -95.2478,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Kansas",
+    "wikidataId": "Q52413"
+  },
+  "University of Indianapolis": {
+    "title": "University of Indianapolis",
+    "latitude": 39.70972222,
+    "longitude": -86.13513889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Indianapolis",
+    "wikidataId": "Q7895554"
+  },
+  "University of Central Arkansas": {
+    "title": "University of Central Arkansas",
+    "latitude": 35.077,
+    "longitude": -92.457,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Central_Arkansas",
+    "wikidataId": "Q1782724"
+  },
+  "University of Alaska Anchorage": {
+    "title": "University of Alaska Anchorage",
+    "latitude": 61.18988611,
+    "longitude": -149.82701389,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Alaska_Anchorage",
+    "wikidataId": "Q1285252"
+  },
+  "Ohio Northern University": {
+    "title": "Ohio Northern University",
+    "latitude": 40.7669,
+    "longitude": -83.8249,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ohio_Northern_University",
+    "wikidataId": "Q1683585"
+  },
+  "St Bonaventure University": {
+    "title": "St. Bonaventure University",
+    "latitude": 42.078094,
+    "longitude": -78.481307,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Bonaventure_University",
+    "wikidataId": "Q93662"
+  },
+  "SUNY College of Environmental Science and Forestry": {
+    "title": "State University of New York College of Environmental Science and Forestry",
+    "latitude": 43.034793,
+    "longitude": -76.135475,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_College_of_Environmental_Science_and_Forestry",
+    "wikidataId": "Q7603610"
+  },
+  "Seminole State College of Florida": {
+    "title": "Seminole State College of Florida",
+    "latitude": 28.7444,
+    "longitude": -81.3055,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Seminole_State_College_of_Florida",
+    "wikidataId": "Q7449539"
+  },
+  "George Fox University": {
+    "title": "George Fox University",
+    "latitude": 45.3036,
+    "longitude": -122.9683,
+    "sourceUrl": "https://en.wikipedia.org/wiki/George_Fox_University",
+    "wikidataId": "Q5539406"
+  },
+  "Hostos Community College": {
+    "title": "Hostos Community College",
+    "latitude": 40.8175,
+    "longitude": -73.92722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hostos_Community_College",
+    "wikidataId": "Q5909476"
+  },
+  "North South University": {
+    "title": "North South University",
+    "latitude": 23.8152,
+    "longitude": 90.4257,
+    "sourceUrl": "https://en.wikipedia.org/wiki/North_South_University",
+    "wikidataId": "Q7056796"
+  },
+  "Universidade Federal do Rio Grande do Sul": {
+    "title": "Federal University of Rio Grande do Sul",
+    "latitude": -30.032439,
+    "longitude": -51.219313,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Federal_University_of_Rio_Grande_do_Sul",
+    "wikidataId": "Q766447"
+  },
+  "Sault College": {
+    "title": "Sault College",
+    "latitude": 46.53259444,
+    "longitude": -84.31114167,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sault_College",
+    "wikidataId": "Q7427390"
+  },
+  "Madison Area Technical College": {
+    "title": "Madison Area Technical College",
+    "latitude": 43.12180556,
+    "longitude": -89.32777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Madison_Area_Technical_College",
+    "wikidataId": "Q6727868"
+  },
+  "Vancouver Island University": {
+    "title": "Vancouver Island University",
+    "latitude": 49.15722222,
+    "longitude": -123.96638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Vancouver_Island_University",
+    "wikidataId": "Q7914214"
+  },
+  "Husson University": {
+    "title": "Husson University",
+    "latitude": 44.82696389,
+    "longitude": -68.79322222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Husson_University",
+    "wikidataId": "Q5949943"
+  },
+  "University of Maryland Eastern Shore": {
+    "title": "University of Maryland Eastern Shore",
+    "latitude": 38.21,
+    "longitude": -75.68555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Maryland_Eastern_Shore",
+    "wikidataId": "Q49089"
+  },
+  "Ferris State University": {
+    "title": "Ferris State University",
+    "latitude": 43.69739,
+    "longitude": -85.4839,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ferris_State_University",
+    "wikidataId": "Q1407897"
+  },
+  "Mt San Antonio College": {
+    "title": "Mt. San Antonio College",
+    "latitude": 34.047,
+    "longitude": -117.845,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mt._San_Antonio_College",
+    "wikidataId": "Q6930336"
+  },
+  "Manhattan College": {
+    "title": "Manhattan University",
+    "latitude": 40.88944444,
+    "longitude": -73.90194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Manhattan_University",
+    "wikidataId": "Q2749572"
+  },
+  "Indian River State College": {
+    "title": "Indian River State College",
+    "latitude": 27.4237,
+    "longitude": -80.3579,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indian_River_State_College",
+    "wikidataId": "Q6021484"
+  },
+  "Dallas Theological Seminary": {
+    "title": "Dallas Theological Seminary",
+    "latitude": 32.793611,
+    "longitude": -96.779997,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dallas_Theological_Seminary",
+    "wikidataId": "Q3269488"
+  },
+  "Hampshire College": {
+    "title": "Hampshire College",
+    "latitude": 42.325,
+    "longitude": -72.5325,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hampshire_College",
+    "wikidataId": "Q1706859"
+  },
+  "College Boreal": {
+    "title": "Collège Boréal",
+    "latitude": 46.51722778,
+    "longitude": -80.9933,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Collège_Boréal",
+    "wikidataId": "Q540183"
+  },
+  "Tacoma Community College": {
+    "title": "Tacoma Community College",
+    "latitude": 47.2467,
+    "longitude": -122.5241,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tacoma_Community_College",
+    "wikidataId": "Q7673988"
+  },
+  "Southern Nazarene University": {
+    "title": "Southern Nazarene University",
+    "latitude": 35.5139,
+    "longitude": -97.6309,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southern_Nazarene_University",
+    "wikidataId": "Q7570171"
+  },
+  "Hanover College": {
+    "title": "Hanover College",
+    "latitude": 38.71222222,
+    "longitude": -85.46083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hanover_College",
+    "wikidataId": "Q5649375"
+  },
+  "Emerson College": {
+    "title": "Emerson College",
+    "latitude": 42.351807,
+    "longitude": -71.065994,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Emerson_College",
+    "wikidataId": "Q1335573"
+  },
+  "Saint Mary's College of California": {
+    "title": "Saint Mary's College of California",
+    "latitude": 37.84138889,
+    "longitude": -122.10916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saint_Mary's_College_of_California",
+    "wikidataId": "Q7401829"
+  },
+  "Liverpool John Moores University": {
+    "title": "Liverpool John Moores University",
+    "latitude": 53.403,
+    "longitude": -2.97,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Liverpool_John_Moores_University",
+    "wikidataId": "Q1627967"
+  },
+  "Appalachian Bible College": {
+    "title": "Appalachian Bible College",
+    "latitude": 37.852633,
+    "longitude": -81.200117,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Appalachian_Bible_College",
+    "wikidataId": "Q4780834"
+  },
+  "Virginia Episcopal School": {
+    "title": "Virginia Episcopal School",
+    "latitude": 37.45263889,
+    "longitude": -79.19069444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Virginia_Episcopal_School",
+    "wikidataId": "Q7934263"
+  },
+  "Goshen College": {
+    "title": "Goshen College",
+    "latitude": 41.5637,
+    "longitude": -85.8272,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Goshen_College",
+    "wikidataId": "Q1538540"
+  },
+  "Colegio Nueva Granada": {
+    "title": "Colegio Nueva Granada",
+    "latitude": 4.647856,
+    "longitude": -74.050621,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Colegio_Nueva_Granada",
+    "wikidataId": "Q5142871"
+  },
+  "Umpqua Community College": {
+    "title": "Umpqua Community College",
+    "latitude": 43.29,
+    "longitude": -123.333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Umpqua_Community_College",
+    "wikidataId": "Q7881771"
+  },
+  "Finlandia University": {
+    "title": "Finlandia University",
+    "latitude": 47.1276,
+    "longitude": -88.5894,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Finlandia_University",
+    "wikidataId": "Q5450502"
+  },
+  "Millbrook School": {
+    "title": "Millbrook School",
+    "latitude": 41.85555556,
+    "longitude": -73.62111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Millbrook_School",
+    "wikidataId": "Q14706968"
+  },
+  "Eckerd College": {
+    "title": "Eckerd College",
+    "latitude": 27.71709722,
+    "longitude": -82.68840556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eckerd_College",
+    "wikidataId": "Q5332879"
+  },
+  "Benedict College": {
+    "title": "Benedict College",
+    "latitude": 34.012947,
+    "longitude": -81.020345,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Benedict_College",
+    "wikidataId": "Q4887262"
+  },
+  "Mission University": {
+    "title": "Mission University",
+    "latitude": 37.23995,
+    "longitude": -93.28479,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mission_University",
+    "wikidataId": "Q4857601"
+  },
+  "Chicago-Kent College of Law": {
+    "title": "Chicago-Kent College of Law",
+    "latitude": 41.87861111,
+    "longitude": -87.64222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chicago-Kent_College_of_Law",
+    "wikidataId": "Q4551377"
+  },
+  "Cazenovia College": {
+    "title": "Cazenovia College",
+    "latitude": 42.932,
+    "longitude": -75.8538,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cazenovia_College",
+    "wikidataId": "Q5055525"
+  },
+  "Holon Institute of Technology": {
+    "title": "Holon Institute of Technology",
+    "latitude": 32.01432222,
+    "longitude": 34.77381944,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Holon_Institute_of_Technology",
+    "wikidataId": "Q5884192"
+  },
+  "Universidade Presbiteriana Mackenzie": {
+    "title": "Mackenzie Presbyterian University",
+    "latitude": -23.547,
+    "longitude": -46.652,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mackenzie_Presbyterian_University",
+    "wikidataId": "Q7894395"
+  },
+  "Southwestern College (Kansas)": {
+    "title": "Southwestern College (Kansas)",
+    "latitude": 37.24944444,
+    "longitude": -96.97694444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southwestern_College_(Kansas)",
+    "wikidataId": "Q7571407"
+  },
+  "Dickinson State University": {
+    "title": "Dickinson State University",
+    "latitude": 46.88277778,
+    "longitude": -102.80027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dickinson_State_University",
+    "wikidataId": "Q5273748"
+  },
+  "Dakota Wesleyan University": {
+    "title": "Dakota Wesleyan University",
+    "latitude": 43.69861111,
+    "longitude": -98.03083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dakota_Wesleyan_University",
+    "wikidataId": "Q5210062"
+  },
+  "Mount Marty College": {
+    "title": "Mount Marty University",
+    "latitude": 42.875,
+    "longitude": -97.4102,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Marty_University",
+    "wikidataId": "Q14709772"
+  },
+  "Mid-America Christian University": {
+    "title": "Mid-America Christian University",
+    "latitude": 35.34777778,
+    "longitude": -97.57833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mid-America_Christian_University",
+    "wikidataId": "Q6840587"
+  },
+  "Coppin State University": {
+    "title": "Coppin State University",
+    "latitude": 39.31028,
+    "longitude": -76.65861,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Coppin_State_University",
+    "wikidataId": "Q5168881"
+  },
+  "Indiana University of Pennsylvania": {
+    "title": "Indiana University of Pennsylvania",
+    "latitude": 40.617,
+    "longitude": -79.16,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indiana_University_of_Pennsylvania",
+    "wikidataId": "Q1661325"
+  },
+  "Ontario College of Art and Design University": {
+    "title": "OCAD University",
+    "latitude": 43.65305556,
+    "longitude": -79.39119444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/OCAD_University",
+    "wikidataId": "Q1632007"
+  },
+  "University of Montevallo": {
+    "title": "University of Montevallo",
+    "latitude": 33.10378,
+    "longitude": -86.86497,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Montevallo",
+    "wikidataId": "Q1698206"
+  },
+  "Chulalongkorn University": {
+    "title": "Chulalongkorn University",
+    "latitude": 13.738359,
+    "longitude": 100.532097,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chulalongkorn_University",
+    "wikidataId": "Q855730"
+  },
+  "Zhejiang University": {
+    "title": "Zhejiang University",
+    "latitude": 30.26361111,
+    "longitude": 120.12083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Zhejiang_University",
+    "wikidataId": "Q197543"
+  },
+  "Hobart and William Smith Colleges": {
+    "title": "Hobart and William Smith Colleges",
+    "latitude": 42.857123,
+    "longitude": -76.985407,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hobart_and_William_Smith_Colleges",
+    "wikidataId": "Q4119316"
+  },
+  "Edith Cowan University": {
+    "title": "Edith Cowan University",
+    "latitude": -31.75009,
+    "longitude": 115.77073,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Edith_Cowan_University",
+    "wikidataId": "Q1284960"
+  },
+  "Florida SouthWestern State College": {
+    "title": "Florida SouthWestern State College",
+    "latitude": 26.5513,
+    "longitude": -81.8872,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Florida_SouthWestern_State_College",
+    "wikidataId": "Q5338425"
+  },
+  "Tennessee State University": {
+    "title": "Tennessee State University",
+    "latitude": 36.16666667,
+    "longitude": -86.83055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tennessee_State_University",
+    "wikidataId": "Q1782948"
+  },
+  "Chaffey College": {
+    "title": "Chaffey College",
+    "latitude": 34.147,
+    "longitude": -117.57,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chaffey_College",
+    "wikidataId": "Q5066795"
+  },
+  "LASALLE College of the Arts": {
+    "title": "Lasalle College of the Arts",
+    "latitude": 1.303068,
+    "longitude": 103.851852,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lasalle_College_of_the_Arts",
+    "wikidataId": "Q6457112"
+  },
+  "Christopher Newport University": {
+    "title": "Christopher Newport University",
+    "latitude": 37.06305556,
+    "longitude": -76.49305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Christopher_Newport_University",
+    "wikidataId": "Q3444675"
+  },
+  "Spring Hill College": {
+    "title": "Spring Hill College",
+    "latitude": 30.6942,
+    "longitude": -88.1372,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Spring_Hill_College",
+    "wikidataId": "Q5591503"
+  },
+  "Quest University Canada": {
+    "title": "Quest University",
+    "latitude": 49.74017778,
+    "longitude": -123.10826389,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Quest_University",
+    "wikidataId": "Q7271467"
+  },
+  "Morehead State University": {
+    "title": "Morehead State University",
+    "latitude": 38.189,
+    "longitude": -83.431,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Morehead_State_University",
+    "wikidataId": "Q633040"
+  },
+  "Susquehanna University": {
+    "title": "Susquehanna University",
+    "latitude": 40.8,
+    "longitude": -76.874,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Susquehanna_University",
+    "wikidataId": "Q7649352"
+  },
+  "Citrus College": {
+    "title": "Citrus College",
+    "latitude": 34.13504167,
+    "longitude": -117.88538889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Citrus_College",
+    "wikidataId": "Q5122883"
+  },
+  "Olin College of Engineering": {
+    "title": "Olin College of Engineering",
+    "latitude": 42.29346111,
+    "longitude": -71.26393056,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Olin_College_of_Engineering",
+    "wikidataId": "Q5492094"
+  },
+  "Ringling College of Art and Design": {
+    "title": "Ringling College of Art and Design",
+    "latitude": 27.3606697,
+    "longitude": -82.5480817,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ringling_College_of_Art_and_Design",
+    "wikidataId": "Q3936030"
+  },
+  "Toccoa Falls College": {
+    "title": "University of Toccoa Falls",
+    "latitude": 34.5957,
+    "longitude": -83.3516,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Toccoa_Falls",
+    "wikidataId": "Q7811969"
+  },
+  "Saveetha Engineering College": {
+    "title": "Saveetha Engineering College",
+    "latitude": 13.025898,
+    "longitude": 80.016443,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saveetha_Engineering_College",
+    "wikidataId": "Q7428151"
+  },
+  "Roger Williams University": {
+    "title": "Roger Williams University",
+    "latitude": 41.64944444,
+    "longitude": -71.26055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Roger_Williams_University",
+    "wikidataId": "Q3940116"
+  },
+  "Rocky Mountain College": {
+    "title": "Rocky Mountain College",
+    "latitude": 45.796386,
+    "longitude": -108.554788,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rocky_Mountain_College",
+    "wikidataId": "Q14704764"
+  },
+  "United States Military Academy": {
+    "title": "United States Military Academy",
+    "latitude": 41.3925,
+    "longitude": -73.9575,
+    "sourceUrl": "https://en.wikipedia.org/wiki/United_States_Military_Academy",
+    "wikidataId": "Q9219"
+  },
+  "California Western School of Law": {
+    "title": "California Western School of Law",
+    "latitude": 32.7225,
+    "longitude": -117.16166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_Western_School_of_Law",
+    "wikidataId": "Q5021183"
+  },
+  "Kingswood Oxford School": {
+    "title": "Kingswood Oxford School",
+    "latitude": 41.7596,
+    "longitude": -72.734,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kingswood_Oxford_School",
+    "wikidataId": "Q6413758"
+  },
+  "The College of William & Mary": {
+    "title": "College of William & Mary",
+    "latitude": 37.27083333,
+    "longitude": -76.70833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_William_&_Mary",
+    "wikidataId": "Q875637"
+  },
+  "ENSAE Paris": {
+    "title": "ENSAE Paris",
+    "latitude": 48.7110682,
+    "longitude": 2.2076585,
+    "sourceUrl": "https://en.wikipedia.org/wiki/ENSAE_Paris",
+    "wikidataId": "Q1275372"
+  },
+  "Baylor School": {
+    "title": "Baylor School",
+    "latitude": 35.087,
+    "longitude": -85.338,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Baylor_School",
+    "wikidataId": "Q4874607"
+  },
+  "Sewickley Academy": {
+    "title": "Sewickley Academy",
+    "latitude": 40.54389,
+    "longitude": -80.19083,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sewickley_Academy",
+    "wikidataId": "Q7458268"
+  },
+  "Johnson University": {
+    "title": "Johnson University",
+    "latitude": 35.9362,
+    "longitude": -83.7504,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Johnson_University",
+    "wikidataId": "Q12060891"
+  },
+  "Universidade Federal de Santa Maria": {
+    "title": "Federal University of Santa Maria",
+    "latitude": -29.7134,
+    "longitude": -53.717,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Federal_University_of_Santa_Maria",
+    "wikidataId": "Q3790133"
+  },
+  "Freed-Hardeman University": {
+    "title": "Freed–Hardeman University",
+    "latitude": 35.43844,
+    "longitude": -88.63864,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Freed–Hardeman_University",
+    "wikidataId": "Q5500864"
+  },
+  "Central State University": {
+    "title": "Central State University",
+    "latitude": 39.715255,
+    "longitude": -83.877971,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Central_State_University",
+    "wikidataId": "Q5061855"
+  },
+  "Ohio Wesleyan University": {
+    "title": "Ohio Wesleyan University",
+    "latitude": 40.2967,
+    "longitude": -83.0667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ohio_Wesleyan_University",
+    "wikidataId": "Q194266"
+  },
+  "Christian Brothers University": {
+    "title": "Christian Brothers University",
+    "latitude": 35.1274,
+    "longitude": -89.9823,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Christian_Brothers_University",
+    "wikidataId": "Q5109383"
+  },
+  "Culver Academies": {
+    "title": "Culver Academies",
+    "latitude": 41.22166667,
+    "longitude": -86.40694444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Culver_Academies",
+    "wikidataId": "Q3007488"
+  },
+  "Henderson State University": {
+    "title": "Henderson State University",
+    "latitude": 34.13067778,
+    "longitude": -93.05881111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Henderson_State_University",
+    "wikidataId": "Q1604967"
+  },
+  "Woodberry Forest School": {
+    "title": "Woodberry Forest School",
+    "latitude": 38.29219444,
+    "longitude": -78.12208333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Woodberry_Forest_School",
+    "wikidataId": "Q8032350"
+  },
+  "Friends University": {
+    "title": "Friends University",
+    "latitude": 37.67833333,
+    "longitude": -97.36666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Friends_University",
+    "wikidataId": "Q284508"
+  },
+  "Marist College": {
+    "title": "Marist University",
+    "latitude": 41.725974,
+    "longitude": -73.93354,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Marist_University",
+    "wikidataId": "Q6765664"
+  },
+  "Lander University": {
+    "title": "Lander University",
+    "latitude": 34.20027778,
+    "longitude": -82.16555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lander_University",
+    "wikidataId": "Q6484421"
+  },
+  "Olympic College": {
+    "title": "Olympic College",
+    "latitude": 47.57666667,
+    "longitude": -122.63611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Olympic_College",
+    "wikidataId": "Q7089045"
+  },
+  "Birmingham City University": {
+    "title": "Birmingham City University",
+    "latitude": 52.48222222,
+    "longitude": -1.88861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Birmingham_City_University",
+    "wikidataId": "Q3547145"
+  },
+  "Whittier College": {
+    "title": "Whittier College",
+    "latitude": 33.978,
+    "longitude": -118.0296,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Whittier_College",
+    "wikidataId": "Q7996868"
+  },
+  "Reedley College": {
+    "title": "Reedley College",
+    "latitude": 36.60722222,
+    "longitude": -119.46027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Reedley_College",
+    "wikidataId": "Q7306738"
+  },
+  "Chandler-Gilbert Community College": {
+    "title": "Chandler–Gilbert Community College",
+    "latitude": 33.29332,
+    "longitude": -111.79614,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chandler–Gilbert_Community_College",
+    "wikidataId": "Q5071217"
+  },
+  "Eastern Connecticut State University": {
+    "title": "Eastern Connecticut State University",
+    "latitude": 41.721,
+    "longitude": -72.218,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eastern_Connecticut_State_University",
+    "wikidataId": "Q1278152"
+  },
+  "Maryville College": {
+    "title": "Maryville College",
+    "latitude": 35.7516,
+    "longitude": -83.96353,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maryville_College",
+    "wikidataId": "Q4309890"
+  },
+  "University of Chichester": {
+    "title": "University of Chichester",
+    "latitude": 50.844674,
+    "longitude": -0.774429,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Chichester",
+    "wikidataId": "Q3551577"
+  },
+  "Occidental College": {
+    "title": "Occidental College",
+    "latitude": 34.1271,
+    "longitude": -118.2109,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Occidental_College",
+    "wikidataId": "Q1346110"
+  },
+  "Abington Friends School": {
+    "title": "Abington Friends School",
+    "latitude": 40.0949,
+    "longitude": -75.1205,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Abington_Friends_School",
+    "wikidataId": "Q4667870"
+  },
+  "Wartburg Theological Seminary": {
+    "title": "Wartburg Theological Seminary",
+    "latitude": 42.485424,
+    "longitude": -90.690724,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wartburg_Theological_Seminary",
+    "wikidataId": "Q13428257"
+  },
+  "Manhattanville College": {
+    "title": "Manhattanville University",
+    "latitude": 41.03206111,
+    "longitude": -73.71555833,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Manhattanville_University",
+    "wikidataId": "Q14706889"
+  },
+  "Sacred Hearts Academy": {
+    "title": "Sacred Hearts Academy",
+    "latitude": 21.28888889,
+    "longitude": -157.80777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sacred_Hearts_Academy",
+    "wikidataId": "Q7397288"
+  },
+  "Florida A&M University": {
+    "title": "Florida A&M University",
+    "latitude": 30.4178,
+    "longitude": -84.2845,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Florida_A&M_University",
+    "wikidataId": "Q1430048"
+  },
+  "Moorpark College": {
+    "title": "Moorpark College",
+    "latitude": 34.3,
+    "longitude": -118.835,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Moorpark_College",
+    "wikidataId": "Q6908463"
+  },
+  "Hawaii Community College": {
+    "title": "Hawaiʻi Community College",
+    "latitude": 19.70416667,
+    "longitude": -155.06972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hawaiʻi_Community_College",
+    "wikidataId": "Q5684264"
+  },
+  "Colorado College": {
+    "title": "Colorado College",
+    "latitude": 38.8479,
+    "longitude": -104.8228,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Colorado_College",
+    "wikidataId": "Q1111261"
+  },
+  "Simpson College": {
+    "title": "Simpson College",
+    "latitude": 41.3645,
+    "longitude": -93.565,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Simpson_College",
+    "wikidataId": "Q7521073"
+  },
+  "Emory & Henry College": {
+    "title": "Emory & Henry University",
+    "latitude": 36.77305556,
+    "longitude": -81.83194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Emory_&_Henry_University",
+    "wikidataId": "Q5373734"
+  },
+  "Hamline University": {
+    "title": "Hamline University",
+    "latitude": 44.9658,
+    "longitude": -93.1654,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hamline_University",
+    "wikidataId": "Q1366519"
+  },
+  "Chemeketa Community College": {
+    "title": "Chemeketa Community College",
+    "latitude": 44.97805556,
+    "longitude": -122.97694444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chemeketa_Community_College",
+    "wikidataId": "Q5090359"
+  },
+  "Cuesta College": {
+    "title": "Cuesta College",
+    "latitude": 35.32996944,
+    "longitude": -120.74235278,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cuesta_College",
+    "wikidataId": "Q5192620"
+  },
+  "North Carolina Agricultural and Technical State University": {
+    "title": "North Carolina A&T State University",
+    "latitude": 36.075352,
+    "longitude": -79.773628,
+    "sourceUrl": "https://en.wikipedia.org/wiki/North_Carolina_A&T_State_University",
+    "wikidataId": "Q1476484"
+  },
+  "Washburn University": {
+    "title": "Washburn University",
+    "latitude": 39.033786,
+    "longitude": -95.698975,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Washburn_University",
+    "wikidataId": "Q941551"
+  },
+  "Mount Saint Charles Academy": {
+    "title": "Mount Saint Charles Academy",
+    "latitude": 41.99611111,
+    "longitude": -71.50194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Saint_Charles_Academy",
+    "wikidataId": "Q6923393"
+  },
+  "Fisher College": {
+    "title": "Fisher College",
+    "latitude": 42.35613333,
+    "longitude": -71.074075,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fisher_College",
+    "wikidataId": "Q5454775"
+  },
+  "Lebanon Valley College": {
+    "title": "Lebanon Valley College",
+    "latitude": 40.3325,
+    "longitude": -76.515,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lebanon_Valley_College",
+    "wikidataId": "Q6511142"
+  },
+  "George School": {
+    "title": "George School",
+    "latitude": 40.21177,
+    "longitude": -74.93418,
+    "sourceUrl": "https://en.wikipedia.org/wiki/George_School",
+    "wikidataId": "Q5544356"
+  },
+  "Waseda University": {
+    "title": "Waseda University",
+    "latitude": 35.709203,
+    "longitude": 139.719333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Waseda_University",
+    "wikidataId": "Q274486"
+  },
+  "Champlain College": {
+    "title": "Champlain College",
+    "latitude": 44.475677,
+    "longitude": -73.205685,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Champlain_College",
+    "wikidataId": "Q5070172"
+  },
+  "James Madison University": {
+    "title": "James Madison University",
+    "latitude": 38.43844444,
+    "longitude": -78.87375,
+    "sourceUrl": "https://en.wikipedia.org/wiki/James_Madison_University",
+    "wikidataId": "Q258943"
+  },
+  "Pacific Northwest College of Art": {
+    "title": "Pacific Northwest College of Art",
+    "latitude": 45.5269,
+    "longitude": -122.6781,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pacific_Northwest_College_of_Art",
+    "wikidataId": "Q7122577"
+  },
+  "Barrie School": {
+    "title": "Barrie School",
+    "latitude": 39.0778674,
+    "longitude": -77.0490025,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Barrie_School",
+    "wikidataId": "Q4863557"
+  },
+  "Walters State Community College": {
+    "title": "Walters State Community College",
+    "latitude": 36.214,
+    "longitude": -83.263,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Walters_State_Community_College",
+    "wikidataId": "Q17033012"
+  },
+  "Wake Technical Community College": {
+    "title": "Wake Technical Community College",
+    "latitude": 35.6504,
+    "longitude": -78.7061,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wake_Technical_Community_College",
+    "wikidataId": "Q7960951"
+  },
+  "American Hebrew Academy": {
+    "title": "American Hebrew Academy",
+    "latitude": 36.1089,
+    "longitude": -79.8708,
+    "sourceUrl": "https://en.wikipedia.org/wiki/American_Hebrew_Academy",
+    "wikidataId": "Q4743968"
+  },
+  "Deakin University": {
+    "title": "Deakin University",
+    "latitude": -38.1979,
+    "longitude": 144.2973,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Deakin_University",
+    "wikidataId": "Q1180978"
+  },
+  "Lubbock Christian University": {
+    "title": "Lubbock Christian University",
+    "latitude": 33.57361111,
+    "longitude": -101.93361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lubbock_Christian_University",
+    "wikidataId": "Q6695115"
+  },
+  "Saddleback College": {
+    "title": "Saddleback College",
+    "latitude": 33.5525,
+    "longitude": -117.66666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saddleback_College",
+    "wikidataId": "Q7397744"
+  },
+  "University of Wisconsin Parkside": {
+    "title": "University of Wisconsin–Parkside",
+    "latitude": 42.64444444,
+    "longitude": -87.8525,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Wisconsin–Parkside",
+    "wikidataId": "Q2590739"
+  },
+  "D'Youville University": {
+    "title": "D'Youville University",
+    "latitude": 42.9025,
+    "longitude": -78.89083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/D'Youville_University",
+    "wikidataId": "Q5203187"
+  },
+  "Eikei University of Hiroshima": {
+    "title": "Hiroshima Prefecture",
+    "latitude": 34.43333333,
+    "longitude": 132.75,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hiroshima_Prefecture",
+    "wikidataId": "Q617375"
+  },
+  "Bellevue University": {
+    "title": "Bellevue University",
+    "latitude": 41.15055556,
+    "longitude": -95.91916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bellevue_University",
+    "wikidataId": "Q4883967"
+  },
+  "Benjamin Franklin Institute of Technology": {
+    "title": "Benjamin Franklin Cummings Institute of Technology",
+    "latitude": 42.3457,
+    "longitude": -71.0702,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Benjamin_Franklin_Cummings_Institute_of_Technology",
+    "wikidataId": "Q4888646"
+  },
+  "Mount Allison University": {
+    "title": "Mount Allison University",
+    "latitude": 45.89861111,
+    "longitude": -64.37361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Allison_University",
+    "wikidataId": "Q742150"
+  },
+  "Rikkyo University": {
+    "title": "Rikkyo University",
+    "latitude": 35.7305,
+    "longitude": 139.704,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rikkyo_University",
+    "wikidataId": "Q1143235"
+  },
+  "Groton School": {
+    "title": "Groton School",
+    "latitude": 42.59333333,
+    "longitude": -71.58416667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Groton_School",
+    "wikidataId": "Q872541"
+  },
+  "East Los Angeles College": {
+    "title": "East Los Angeles College",
+    "latitude": 34.0416,
+    "longitude": -118.15,
+    "sourceUrl": "https://en.wikipedia.org/wiki/East_Los_Angeles_College",
+    "wikidataId": "Q5328880"
+  },
+  "Azusa Pacific University": {
+    "title": "Azusa Pacific University",
+    "latitude": 34.12971,
+    "longitude": -117.88888,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Azusa_Pacific_University",
+    "wikidataId": "Q4583636"
+  },
+  "Saint Vincent College": {
+    "title": "Saint Vincent College",
+    "latitude": 40.2928,
+    "longitude": -79.4021,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saint_Vincent_College",
+    "wikidataId": "Q3444141"
+  },
+  "Upper Iowa University": {
+    "title": "Upper Iowa University",
+    "latitude": 42.838,
+    "longitude": -91.8,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Upper_Iowa_University",
+    "wikidataId": "Q7898705"
+  },
+  "Fort Lewis College": {
+    "title": "Fort Lewis College",
+    "latitude": 37.275,
+    "longitude": -107.869999,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fort_Lewis_College",
+    "wikidataId": "Q1438597"
+  },
+  "Sarah Lawrence College": {
+    "title": "Sarah Lawrence College",
+    "latitude": 40.935,
+    "longitude": -73.845,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sarah_Lawrence_College",
+    "wikidataId": "Q1051840"
+  },
+  "Marquette University": {
+    "title": "Marquette University",
+    "latitude": 43.03916667,
+    "longitude": -87.9325,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Marquette_University",
+    "wikidataId": "Q188370"
+  },
+  "St. Clair College": {
+    "title": "St. Clair College",
+    "latitude": 42.24667222,
+    "longitude": -83.01868333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Clair_College",
+    "wikidataId": "Q7587564"
+  },
+  "Tianjin University": {
+    "title": "Tianjin University",
+    "latitude": 39.107,
+    "longitude": 117.162,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tianjin_University",
+    "wikidataId": "Q2031560"
+  },
+  "Clarke University": {
+    "title": "Clarke University",
+    "latitude": 42.51,
+    "longitude": -90.691,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Clarke_University",
+    "wikidataId": "Q5127510"
+  },
+  "Eastern Illinois University": {
+    "title": "Eastern Illinois University",
+    "latitude": 39.48444444,
+    "longitude": -88.17527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eastern_Illinois_University",
+    "wikidataId": "Q624985"
+  },
+  "SUNY Fredonia": {
+    "title": "State University of New York at Fredonia",
+    "latitude": 42.45344,
+    "longitude": -79.33697,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Fredonia",
+    "wikidataId": "Q6487738"
+  },
+  "University Of Southern Queensland": {
+    "title": "University of Southern Queensland",
+    "latitude": -27.6042,
+    "longitude": 151.932,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Southern_Queensland",
+    "wikidataId": "Q978124"
+  },
+  "Washington & Jefferson College": {
+    "title": "Washington & Jefferson College",
+    "latitude": 40.1714,
+    "longitude": -80.2393,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Washington_&_Jefferson_College",
+    "wikidataId": "Q7971641"
+  },
+  "University of Southern Maine": {
+    "title": "University of Southern Maine",
+    "latitude": 43.6625,
+    "longitude": -70.27611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Southern_Maine",
+    "wikidataId": "Q3244049"
+  },
+  "Rift Valley Academy": {
+    "title": "Rift Valley Academy",
+    "latitude": -0.944262,
+    "longitude": 36.5963,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rift_Valley_Academy",
+    "wikidataId": "Q7333287"
+  },
+  "Brooks School": {
+    "title": "Brooks School",
+    "latitude": 42.70555556,
+    "longitude": -71.08583333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brooks_School",
+    "wikidataId": "Q4975050"
+  },
+  "Bethel University (Tennessee)": {
+    "title": "Bethel University (Tennessee)",
+    "latitude": 36.1425,
+    "longitude": -88.5151,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bethel_University_(Tennessee)",
+    "wikidataId": "Q4897957"
+  },
+  "Westtown School": {
+    "title": "Westtown School",
+    "latitude": 39.9494,
+    "longitude": -75.5379,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Westtown_School",
+    "wikidataId": "Q7989734"
+  },
+  "Western Kentucky University": {
+    "title": "Western Kentucky University",
+    "latitude": 36.98361111,
+    "longitude": -86.4575,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Kentucky_University",
+    "wikidataId": "Q1474105"
+  },
+  "Mesa Community College": {
+    "title": "Mesa Community College",
+    "latitude": 33.39083333,
+    "longitude": -111.87166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mesa_Community_College",
+    "wikidataId": "Q6821056"
+  },
+  "Finger Lakes Community College": {
+    "title": "Finger Lakes Community College",
+    "latitude": 42.8724,
+    "longitude": -77.2429,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Finger_Lakes_Community_College",
+    "wikidataId": "Q5450199"
+  },
+  "Appleby College": {
+    "title": "Appleby College",
+    "latitude": 43.4262,
+    "longitude": -79.6857,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Appleby_College",
+    "wikidataId": "Q4781306"
+  },
+  "University of Huddersfield": {
+    "title": "University of Huddersfield",
+    "latitude": 53.64324,
+    "longitude": -1.77837,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Huddersfield",
+    "wikidataId": "Q3056815"
+  },
+  "St. George's University": {
+    "title": "St. George's University",
+    "latitude": 12,
+    "longitude": -61.77375,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._George's_University",
+    "wikidataId": "Q7588178"
+  },
+  "Mitchell College": {
+    "title": "Mitchell College",
+    "latitude": 41.3296,
+    "longitude": -72.0929,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mitchell_College",
+    "wikidataId": "Q4296923"
+  },
+  "SUNY Old Westbury": {
+    "title": "State University of New York at Old Westbury",
+    "latitude": 40.7993,
+    "longitude": -73.5741,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Old_Westbury",
+    "wikidataId": "Q7603624"
+  },
+  "Juniata College": {
+    "title": "Juniata College",
+    "latitude": 40.49944444,
+    "longitude": -78.01638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Juniata_College",
+    "wikidataId": "Q6313025"
+  },
+  "Universitas Pendidikan Indonesia": {
+    "title": "Indonesia University of Education",
+    "latitude": -6.8634,
+    "longitude": 107.5943,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Indonesia_University_of_Education",
+    "wikidataId": "Q3213529"
+  },
+  "Anderson University (Indiana)": {
+    "title": "Anderson University (Indiana)",
+    "latitude": 40.11194444,
+    "longitude": -85.66611111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Anderson_University_(Indiana)",
+    "wikidataId": "Q4754216"
+  },
+  "Angelo State University": {
+    "title": "Angelo State University",
+    "latitude": 31.43777778,
+    "longitude": -100.46083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Angelo_State_University",
+    "wikidataId": "Q536709"
+  },
+  "Dawson College": {
+    "title": "Dawson College",
+    "latitude": 45.4894,
+    "longitude": -73.5883,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dawson_College",
+    "wikidataId": "Q2983587"
+  },
+  "Wittenberg University": {
+    "title": "Wittenberg University",
+    "latitude": 39.935,
+    "longitude": -83.8125,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wittenberg_University",
+    "wikidataId": "Q8028571"
+  },
+  "Northern State University": {
+    "title": "Northern State University",
+    "latitude": 45.451461,
+    "longitude": -98.483634,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Northern_State_University",
+    "wikidataId": "Q2001088"
+  },
+  "The New England Conservatory of Music": {
+    "title": "New England Conservatory of Music",
+    "latitude": 42.34111111,
+    "longitude": -71.08638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/New_England_Conservatory_of_Music",
+    "wikidataId": "Q1347162"
+  },
+  "Georg August University of Göttingen": {
+    "title": "University of Göttingen",
+    "latitude": 51.54194444,
+    "longitude": 9.93444444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Göttingen",
+    "wikidataId": "Q152838"
+  },
+  "Jacksonville State University": {
+    "title": "Jacksonville State University",
+    "latitude": 33.822,
+    "longitude": -85.766,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Jacksonville_State_University",
+    "wikidataId": "Q957995"
+  },
+  "Chukyo University": {
+    "title": "Chukyo University",
+    "latitude": 35.138252,
+    "longitude": 136.965351,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chukyo_University",
+    "wikidataId": "Q3083225"
+  },
+  "University of Roehampton": {
+    "title": "University of Roehampton",
+    "latitude": 51.4566,
+    "longitude": -0.2431,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Roehampton",
+    "wikidataId": "Q939607"
+  },
+  "Fudan University": {
+    "title": "Fudan University",
+    "latitude": 31.29888889,
+    "longitude": 121.49916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fudan_University",
+    "wikidataId": "Q495015"
+  },
+  "Pacific Lutheran University": {
+    "title": "Pacific Lutheran University",
+    "latitude": 47.1449,
+    "longitude": -122.4428,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pacific_Lutheran_University",
+    "wikidataId": "Q3439925"
+  },
+  "New Jersey City University": {
+    "title": "Kean Jersey City",
+    "latitude": 40.70944444,
+    "longitude": -74.08861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kean_Jersey_City",
+    "wikidataId": "Q11991254"
+  },
+  "Mills College": {
+    "title": "Mills College",
+    "latitude": 37.77972222,
+    "longitude": -122.18222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mills_College",
+    "wikidataId": "Q638859"
+  },
+  "Bluefield University": {
+    "title": "Bluefield University",
+    "latitude": 37.23947222,
+    "longitude": -81.252,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bluefield_University",
+    "wikidataId": "Q4930299"
+  },
+  "Masaryk University": {
+    "title": "Masaryk University",
+    "latitude": 49.19861111,
+    "longitude": 16.605,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Masaryk_University",
+    "wikidataId": "Q763586"
+  },
+  "Regis University": {
+    "title": "Regis University",
+    "latitude": 39.78925833,
+    "longitude": -105.03325556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Regis_University",
+    "wikidataId": "Q649299"
+  },
+  "Oglethorpe University": {
+    "title": "Oglethorpe University",
+    "latitude": 33.875,
+    "longitude": -84.333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Oglethorpe_University",
+    "wikidataId": "Q4400868"
+  },
+  "Medicine Hat College": {
+    "title": "Medicine Hat College",
+    "latitude": 50.01760556,
+    "longitude": -110.684275,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Medicine_Hat_College",
+    "wikidataId": "Q6806713"
+  },
+  "Houston Christian University": {
+    "title": "Houston Christian University",
+    "latitude": 29.694,
+    "longitude": -95.515,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Houston_Christian_University",
+    "wikidataId": "Q5916417"
+  },
+  "Wooster School": {
+    "title": "Wooster School",
+    "latitude": 41.3663,
+    "longitude": -73.4994,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wooster_School",
+    "wikidataId": "Q8034057"
+  },
+  "Rockland Community College": {
+    "title": "Rockland Community College",
+    "latitude": 41.13333333,
+    "longitude": -74.08638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rockland_Community_College",
+    "wikidataId": "Q7355439"
+  },
+  "Greenville University": {
+    "title": "Greenville University",
+    "latitude": 38.89361111,
+    "longitude": -89.40861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Greenville_University",
+    "wikidataId": "Q5604671"
+  },
+  "Thomas Jefferson University": {
+    "title": "Thomas Jefferson University",
+    "latitude": 40.0225,
+    "longitude": -75.1925,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Thomas_Jefferson_University",
+    "wikidataId": "Q2471216"
+  },
+  "University of Louisiana Monroe": {
+    "title": "University of Louisiana at Monroe",
+    "latitude": 32.527,
+    "longitude": -92.074,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Louisiana_at_Monroe",
+    "wikidataId": "Q1552010"
+  },
+  "Butler University": {
+    "title": "Butler University",
+    "latitude": 39.83944444,
+    "longitude": -86.17138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Butler_University",
+    "wikidataId": "Q1017974"
+  },
+  "Pasadena City College": {
+    "title": "Pasadena City College",
+    "latitude": 34.14444444,
+    "longitude": -118.11805556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pasadena_City_College",
+    "wikidataId": "Q7141532"
+  },
+  "Francis Marion University": {
+    "title": "Francis Marion University",
+    "latitude": 34.1904,
+    "longitude": -79.6542,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Francis_Marion_University",
+    "wikidataId": "Q1441652"
+  },
+  "Texas Wesleyan University": {
+    "title": "Texas Wesleyan University",
+    "latitude": 32.733,
+    "longitude": -97.28,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Texas_Wesleyan_University",
+    "wikidataId": "Q7708205"
+  },
+  "College of Saint Benedict": {
+    "title": "College of Saint Benedict and Saint John's University",
+    "latitude": 45.5611,
+    "longitude": -94.3219,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_Saint_Benedict_and_Saint_John's_University",
+    "wikidataId": "Q5146820"
+  },
+  "Greensboro College": {
+    "title": "Greensboro College",
+    "latitude": 36.0710595,
+    "longitude": -79.8001921,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Greensboro_College",
+    "wikidataId": "Q5604445"
+  },
+  "Saint Xavier University": {
+    "title": "Saint Xavier University",
+    "latitude": 41.70861111,
+    "longitude": -87.71472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Saint_Xavier_University",
+    "wikidataId": "Q3945126"
+  },
+  "Solebury School": {
+    "title": "Solebury School",
+    "latitude": 40.3802,
+    "longitude": -74.9892,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Solebury_School",
+    "wikidataId": "Q7557489"
+  },
+  "Sweet Briar College": {
+    "title": "Sweet Briar College",
+    "latitude": 37.55555556,
+    "longitude": -79.08055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sweet_Briar_College",
+    "wikidataId": "Q7655237"
+  },
+  "Fuller Theological Seminary": {
+    "title": "Fuller Theological Seminary",
+    "latitude": 34.14861111,
+    "longitude": -118.14,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fuller_Theological_Seminary",
+    "wikidataId": "Q262617"
+  },
+  "SUNY Genesee Community College": {
+    "title": "Genesee Community College",
+    "latitude": 43.0159,
+    "longitude": -78.1404,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Genesee_Community_College",
+    "wikidataId": "Q5532715"
+  },
+  "Charleston Southern University": {
+    "title": "Charleston Southern University",
+    "latitude": 32.98083333,
+    "longitude": -80.07111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Charleston_Southern_University",
+    "wikidataId": "Q5084184"
+  },
+  "Carroll College": {
+    "title": "Carroll College",
+    "latitude": 46.600867,
+    "longitude": -112.039153,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Carroll_College",
+    "wikidataId": "Q5046531"
+  },
+  "University of Mobile": {
+    "title": "University of Mobile",
+    "latitude": 30.793325,
+    "longitude": -88.128789,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Mobile",
+    "wikidataId": "Q7895847"
+  },
+  "Lake Ridge Academy": {
+    "title": "Lake Ridge Academy",
+    "latitude": 41.38138889,
+    "longitude": -82.03944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lake_Ridge_Academy",
+    "wikidataId": "Q6477522"
+  },
+  "Blair Academy": {
+    "title": "Blair Academy",
+    "latitude": 40.985,
+    "longitude": -74.96388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Blair_Academy",
+    "wikidataId": "Q4924038"
+  },
+  "Young Harris College": {
+    "title": "Young Harris College",
+    "latitude": 34.9328,
+    "longitude": -83.8468,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Young_Harris_College",
+    "wikidataId": "Q14686966"
+  },
+  "York College of Pennsylvania": {
+    "title": "York College of Pennsylvania",
+    "latitude": 39.9467,
+    "longitude": -76.7295,
+    "sourceUrl": "https://en.wikipedia.org/wiki/York_College_of_Pennsylvania",
+    "wikidataId": "Q8055408"
+  },
+  "Sandy Spring Friends School": {
+    "title": "Sandy Spring Friends School",
+    "latitude": 39.13412222,
+    "longitude": -77.02879444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sandy_Spring_Friends_School",
+    "wikidataId": "Q7417481"
+  },
+  "Emlyon Business School": {
+    "title": "Emlyon Business School",
+    "latitude": 45.78611111,
+    "longitude": 4.76388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Emlyon_Business_School",
+    "wikidataId": "Q1795504"
+  },
+  "Kyushu University": {
+    "title": "Kyushu University",
+    "latitude": 33.62784,
+    "longitude": 130.42297,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kyushu_University",
+    "wikidataId": "Q1188786"
+  },
+  "Quinsigamond Community College": {
+    "title": "Quinsigamond Community College",
+    "latitude": 42.31480278,
+    "longitude": -71.79363056,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Quinsigamond_Community_College",
+    "wikidataId": "Q7272348"
+  },
+  "Los Angeles City College": {
+    "title": "Los Angeles City College",
+    "latitude": 34.087025,
+    "longitude": -118.2929,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Los_Angeles_City_College",
+    "wikidataId": "Q1727138"
+  },
+  "Chiang Mai University": {
+    "title": "Chiang Mai University",
+    "latitude": 18.802587,
+    "longitude": 98.951556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Chiang_Mai_University",
+    "wikidataId": "Q1071609"
+  },
+  "William Jewell College": {
+    "title": "William Jewell College",
+    "latitude": 39.246263,
+    "longitude": -94.412159,
+    "sourceUrl": "https://en.wikipedia.org/wiki/William_Jewell_College",
+    "wikidataId": "Q3307837"
+  },
+  "University of Shanghai for Science and Technology": {
+    "title": "University of Shanghai for Science and Technology",
+    "latitude": 31.290124,
+    "longitude": 121.552256,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Shanghai_for_Science_and_Technology",
+    "wikidataId": "Q864879"
+  },
+  "The Thacher School": {
+    "title": "The Thacher School",
+    "latitude": 34.465,
+    "longitude": -119.1825,
+    "sourceUrl": "https://en.wikipedia.org/wiki/The_Thacher_School",
+    "wikidataId": "Q7768608"
+  },
+  "The Taft School": {
+    "title": "Taft School",
+    "latitude": 41.60444444,
+    "longitude": -73.12416667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Taft_School",
+    "wikidataId": "Q7675047"
+  },
+  "Agnes Scott College": {
+    "title": "Agnes Scott College",
+    "latitude": 33.77016,
+    "longitude": -84.29325,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Agnes_Scott_College",
+    "wikidataId": "Q2826926"
+  },
+  "Guilford College": {
+    "title": "Guilford College",
+    "latitude": 36.09527778,
+    "longitude": -79.88861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Guilford_College",
+    "wikidataId": "Q5615915"
+  },
+  "Glendale Community College (Arizona)": {
+    "title": "Glendale Community College (Arizona)",
+    "latitude": 33.57,
+    "longitude": -112.1892,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Glendale_Community_College_(Arizona)",
+    "wikidataId": "Q5568352"
+  },
+  "Farmingdale State College": {
+    "title": "Farmingdale State College",
+    "latitude": 40.7529,
+    "longitude": -73.4266,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Farmingdale_State_College",
+    "wikidataId": "Q5435862"
+  },
+  "McMurry University": {
+    "title": "McMurry University",
+    "latitude": 32.43,
+    "longitude": -99.75,
+    "sourceUrl": "https://en.wikipedia.org/wiki/McMurry_University",
+    "wikidataId": "Q6802425"
+  },
+  "Trinity College School": {
+    "title": "Trinity College School",
+    "latitude": 43.9616,
+    "longitude": -78.2863,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Trinity_College_School",
+    "wikidataId": "Q3539292"
+  },
+  "Cleveland Institute of Art": {
+    "title": "Cleveland Institute of Art",
+    "latitude": 41.51047222,
+    "longitude": -81.602475,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cleveland_Institute_of_Art",
+    "wikidataId": "Q4166619"
+  },
+  "Howard College": {
+    "title": "Howard College",
+    "latitude": 32.2506,
+    "longitude": -101.4511,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Howard_College",
+    "wikidataId": "Q5919327"
+  },
+  "Marlboro College": {
+    "title": "Marlboro College",
+    "latitude": 42.83916667,
+    "longitude": -72.73527778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Marlboro_College",
+    "wikidataId": "Q5688765"
+  },
+  "Westminster University (Utah)": {
+    "title": "Westminster University (Utah)",
+    "latitude": 40.7318,
+    "longitude": -111.855,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Westminster_University_(Utah)",
+    "wikidataId": "Q11288507"
+  },
+  "East Georgia State College": {
+    "title": "Georgia Southern University–East Georgia Campus",
+    "latitude": 32.59527778,
+    "longitude": -82.30833333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Georgia_Southern_University–East_Georgia_Campus",
+    "wikidataId": "Q5328416"
+  },
+  "Missouri Western State University": {
+    "title": "Missouri Western State University",
+    "latitude": 39.7581,
+    "longitude": -94.7856,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Missouri_Western_State_University",
+    "wikidataId": "Q1939221"
+  },
+  "Utah Valley University": {
+    "title": "Utah Valley University",
+    "latitude": 40.27777778,
+    "longitude": -111.71388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Utah_Valley_University",
+    "wikidataId": "Q940919"
+  },
+  "Auckland Grammar School": {
+    "title": "Auckland Grammar School",
+    "latitude": -36.86916667,
+    "longitude": 174.76944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Auckland_Grammar_School",
+    "wikidataId": "Q37819"
+  },
+  "Santa Catalina School": {
+    "title": "Santa Catalina School",
+    "latitude": 36.5925,
+    "longitude": -121.86861111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Santa_Catalina_School",
+    "wikidataId": "Q7419270"
+  },
+  "York University (Nebraska)": {
+    "title": "York University (Nebraska)",
+    "latitude": 40.86972222,
+    "longitude": -97.58,
+    "sourceUrl": "https://en.wikipedia.org/wiki/York_University_(Nebraska)",
+    "wikidataId": "Q8055402"
+  },
+  "Paul Smith's College": {
+    "title": "Paul Smith's College",
+    "latitude": 44.435,
+    "longitude": -74.25222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Paul_Smith's_College",
+    "wikidataId": "Q7153646"
+  },
+  "Illinois Wesleyan University": {
+    "title": "Illinois Wesleyan University",
+    "latitude": 40.49055556,
+    "longitude": -88.99138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Illinois_Wesleyan_University",
+    "wikidataId": "Q2159219"
+  },
+  "Goethe University": {
+    "title": "Goethe University Frankfurt",
+    "latitude": 50.12777778,
+    "longitude": 8.66666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Goethe_University_Frankfurt",
+    "wikidataId": "Q50662"
+  },
+  "Peddie School": {
+    "title": "Peddie School",
+    "latitude": 40.264,
+    "longitude": -74.522,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Peddie_School",
+    "wikidataId": "Q7159068"
+  },
+  "Adelaide University": {
+    "title": "Adelaide University",
+    "latitude": -34.552572,
+    "longitude": 138.352591,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Adelaide_University",
+    "wikidataId": "Q123125135"
+  },
+  "Universidade de São Paulo": {
+    "title": "University of São Paulo",
+    "latitude": -23.55972222,
+    "longitude": -46.72916667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_São_Paulo",
+    "wikidataId": "Q835960"
+  },
+  "Georgian Court University": {
+    "title": "Georgian Court University",
+    "latitude": 40.098889,
+    "longitude": -74.228889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Georgian_Court_University",
+    "wikidataId": "Q5548012"
+  },
+  "Oakwood University": {
+    "title": "Oakwood University",
+    "latitude": 34.756,
+    "longitude": -86.653,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Oakwood_University",
+    "wikidataId": "Q1056848"
+  },
+  "Tokyo Metropolitan University": {
+    "title": "Tokyo Metropolitan University",
+    "latitude": 35.61666667,
+    "longitude": 139.37722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tokyo_Metropolitan_University",
+    "wikidataId": "Q1148334"
+  },
+  "Metropolitan State University": {
+    "title": "Metropolitan State University",
+    "latitude": 44.95694444,
+    "longitude": -93.07388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Metropolitan_State_University",
+    "wikidataId": "Q6825262"
+  },
+  "Sacred Heart School of Halifax": {
+    "title": "Sacred Heart School of Halifax",
+    "latitude": 44.64105556,
+    "longitude": -63.58261111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Sacred_Heart_School_of_Halifax",
+    "wikidataId": "Q7397266"
+  },
+  "California State University, Chico": {
+    "title": "California State University, Chico",
+    "latitude": 39.73,
+    "longitude": -121.8475,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_State_University,_Chico",
+    "wikidataId": "Q1026912"
+  },
+  "Shanghai University": {
+    "title": "Shanghai University",
+    "latitude": 31.31833333,
+    "longitude": 121.38722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Shanghai_University",
+    "wikidataId": "Q1343386"
+  },
+  "Monmouth College": {
+    "title": "Monmouth College",
+    "latitude": 40.91444444,
+    "longitude": -90.63722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Monmouth_College",
+    "wikidataId": "Q6901065"
+  },
+  "Henry Ford College": {
+    "title": "Henry Ford College",
+    "latitude": 42.324,
+    "longitude": -83.236,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Henry_Ford_College",
+    "wikidataId": "Q5721408"
+  },
+  "Tohoku University": {
+    "title": "Tohoku University",
+    "latitude": 38.25416667,
+    "longitude": 140.87361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tohoku_University",
+    "wikidataId": "Q1062129"
+  },
+  "RCSI University of Medicine and Health Sciences": {
+    "title": "Royal College of Surgeons in Ireland",
+    "latitude": 53.33918,
+    "longitude": -6.26257,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Royal_College_of_Surgeons_in_Ireland",
+    "wikidataId": "Q1124228"
+  },
+  "Miss Porter's School": {
+    "title": "Miss Porter's School",
+    "latitude": 41.7225,
+    "longitude": -72.82944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Miss_Porter's_School",
+    "wikidataId": "Q1250108"
+  },
+  "Loma Linda University": {
+    "title": "Loma Linda University",
+    "latitude": 34.053,
+    "longitude": -117.261,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Loma_Linda_University",
+    "wikidataId": "Q1057447"
+  },
+  "Antioch College": {
+    "title": "Antioch College",
+    "latitude": 39.7999,
+    "longitude": -83.888,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Antioch_College",
+    "wikidataId": "Q4775012"
+  },
+  "Daemen University": {
+    "title": "Daemen University",
+    "latitude": 42.9654,
+    "longitude": -78.7888,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Daemen_University",
+    "wikidataId": "Q5208240"
+  },
+  "The College of Idaho": {
+    "title": "College of Idaho",
+    "latitude": 43.653,
+    "longitude": -116.676,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_Idaho",
+    "wikidataId": "Q5146733"
+  },
+  "The Kiski School": {
+    "title": "The Kiski School",
+    "latitude": 40.4868,
+    "longitude": -79.4571,
+    "sourceUrl": "https://en.wikipedia.org/wiki/The_Kiski_School",
+    "wikidataId": "Q7744724"
+  },
+  "Valley Forge Military Academy": {
+    "title": "Valley Forge Military Academy",
+    "latitude": 40.0542,
+    "longitude": -75.3835,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Valley_Forge_Military_Academy",
+    "wikidataId": "Q136410979"
+  },
+  "Le Moyne College": {
+    "title": "Le Moyne College",
+    "latitude": 43.048098,
+    "longitude": -76.086441,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Le_Moyne_College",
+    "wikidataId": "Q5591138"
+  },
+  "St. Johnsbury Academy": {
+    "title": "St. Johnsbury Academy",
+    "latitude": 44.41651,
+    "longitude": -72.01952,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Johnsbury_Academy",
+    "wikidataId": "Q7589032"
+  },
+  "Bluffton University": {
+    "title": "Bluffton University",
+    "latitude": 40.896,
+    "longitude": -83.898,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bluffton_University",
+    "wikidataId": "Q886141"
+  },
+  "Johnson University Florida": {
+    "title": "Johnson University Florida",
+    "latitude": 28.30280556,
+    "longitude": -81.3625,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Johnson_University_Florida",
+    "wikidataId": "Q5461269"
+  },
+  "Stevenson School": {
+    "title": "Stevenson School",
+    "latitude": 36.58277778,
+    "longitude": -121.95166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stevenson_School",
+    "wikidataId": "Q7615533"
+  },
+  "Ozark Christian College": {
+    "title": "Ozark Christian College",
+    "latitude": 37.1035,
+    "longitude": -94.51102,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ozark_Christian_College",
+    "wikidataId": "Q7116478"
+  },
+  "Salem University": {
+    "title": "Salem University",
+    "latitude": 39.28277778,
+    "longitude": -80.55805556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Salem_University",
+    "wikidataId": "Q7404130"
+  },
+  "Taipei Medical University": {
+    "title": "Taipei Medical University",
+    "latitude": 25.025,
+    "longitude": 121.561,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Taipei_Medical_University",
+    "wikidataId": "Q701818"
+  },
+  "John Cabot University": {
+    "title": "John Cabot University",
+    "latitude": 41.892787,
+    "longitude": 12.468341,
+    "sourceUrl": "https://en.wikipedia.org/wiki/John_Cabot_University",
+    "wikidataId": "Q1314405"
+  },
+  "Marietta College": {
+    "title": "Marietta College",
+    "latitude": 39.41666667,
+    "longitude": -81.45,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Marietta_College",
+    "wikidataId": "Q6763222"
+  },
+  "Golden West College": {
+    "title": "Golden West College",
+    "latitude": 33.7338,
+    "longitude": -118.0031,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Golden_West_College",
+    "wikidataId": "Q5579962"
+  },
+  "Bryan College": {
+    "title": "Bryan College",
+    "latitude": 35.4976,
+    "longitude": -84.9991,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bryan_College",
+    "wikidataId": "Q4980029"
+  },
+  "Palomar Community College District": {
+    "title": "Palomar College",
+    "latitude": 33.1494,
+    "longitude": -117.1848,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Palomar_College",
+    "wikidataId": "Q7128599"
+  },
+  "City of London Freemen's School": {
+    "title": "City of London Freemen's School",
+    "latitude": 51.30777778,
+    "longitude": -0.28722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/City_of_London_Freemen's_School",
+    "wikidataId": "Q5123771"
+  },
+  "North Idaho College": {
+    "title": "North Idaho College",
+    "latitude": 47.676,
+    "longitude": -116.799,
+    "sourceUrl": "https://en.wikipedia.org/wiki/North_Idaho_College",
+    "wikidataId": "Q7055690"
+  },
+  "Northwestern State University of Louisiana": {
+    "title": "Northwestern State University of Louisiana",
+    "latitude": 31.75,
+    "longitude": -93.0972,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Northwestern_State_University_of_Louisiana",
+    "wikidataId": "Q2001231"
+  },
+  "Valdosta State University": {
+    "title": "Valdosta State University",
+    "latitude": 30.847,
+    "longitude": -83.2896,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Valdosta_State_University",
+    "wikidataId": "Q2508061"
+  },
+  "Bemidji State University": {
+    "title": "Bemidji State University",
+    "latitude": 47.48175,
+    "longitude": -94.87557,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bemidji_State_University",
+    "wikidataId": "Q816377"
+  },
+  "Birmingham Southern College": {
+    "title": "Birmingham–Southern College",
+    "latitude": 33.515,
+    "longitude": -86.853,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Birmingham–Southern_College",
+    "wikidataId": "Q4916871"
+  },
+  "Florida State College at Jacksonville": {
+    "title": "Florida State College at Jacksonville",
+    "latitude": 30.33472222,
+    "longitude": -81.65972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Florida_State_College_at_Jacksonville",
+    "wikidataId": "Q5461608"
+  },
+  "Jackson College": {
+    "title": "Jackson College",
+    "latitude": 42.16442,
+    "longitude": -84.4035,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Jackson_College",
+    "wikidataId": "Q6116999"
+  },
+  "Lewis & Clark College": {
+    "title": "Lewis & Clark College",
+    "latitude": 45.451,
+    "longitude": -122.67,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lewis_&_Clark_College",
+    "wikidataId": "Q4227955"
+  },
+  "Minneapolis College of Art and Design": {
+    "title": "Minneapolis College of Art and Design",
+    "latitude": 44.95720833,
+    "longitude": -93.27488889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Minneapolis_College_of_Art_and_Design",
+    "wikidataId": "Q6867974"
+  },
+  "Central Connecticut State University": {
+    "title": "Central Connecticut State University",
+    "latitude": 41.693,
+    "longitude": -72.765,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Central_Connecticut_State_University",
+    "wikidataId": "Q1053764"
+  },
+  "New Mexico Military Institute": {
+    "title": "New Mexico Military Institute",
+    "latitude": 33.409896,
+    "longitude": -104.524698,
+    "sourceUrl": "https://en.wikipedia.org/wiki/New_Mexico_Military_Institute",
+    "wikidataId": "Q7010214"
+  },
+  "Xavier University of Louisiana": {
+    "title": "Xavier University of Louisiana",
+    "latitude": 29.9652,
+    "longitude": -90.107,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Xavier_University_of_Louisiana",
+    "wikidataId": "Q390087"
+  },
+  "Rider University": {
+    "title": "Rider University",
+    "latitude": 40.28,
+    "longitude": -74.738,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Rider_University",
+    "wikidataId": "Q3551664"
+  },
+  "Western Oregon University": {
+    "title": "Western Oregon University",
+    "latitude": 44.85277778,
+    "longitude": -123.23944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Oregon_University",
+    "wikidataId": "Q1629641"
+  },
+  "Siena Heights University": {
+    "title": "Siena Heights University",
+    "latitude": 41.90566667,
+    "longitude": -84.01569444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Siena_Heights_University",
+    "wikidataId": "Q7511074"
+  },
+  "Truman State University": {
+    "title": "Truman State University",
+    "latitude": 40.18917,
+    "longitude": -92.58239,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Truman_State_University",
+    "wikidataId": "Q7847734"
+  },
+  "Shippensburg University": {
+    "title": "Shippensburg University",
+    "latitude": 40.06166667,
+    "longitude": -77.52277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Shippensburg_University",
+    "wikidataId": "Q7498066"
+  },
+  "Shenandoah University": {
+    "title": "Shenandoah University",
+    "latitude": 39.166,
+    "longitude": -78.158,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Shenandoah_University",
+    "wikidataId": "Q1799245"
+  },
+  "University of South Carolina Aiken": {
+    "title": "University of South Carolina Aiken",
+    "latitude": 33.57330833,
+    "longitude": -81.76842778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_South_Carolina_Aiken",
+    "wikidataId": "Q7896316"
+  },
+  "Thammasat University": {
+    "title": "Thammasat University",
+    "latitude": 13.7575,
+    "longitude": 100.49,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Thammasat_University",
+    "wikidataId": "Q1209733"
+  },
+  "Fairmont State University": {
+    "title": "Fairmont State University",
+    "latitude": 39.485798,
+    "longitude": -80.163019,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fairmont_State_University",
+    "wikidataId": "Q4981651"
+  },
+  "El Camino Community College District": {
+    "title": "El Camino College",
+    "latitude": 33.885881,
+    "longitude": -118.330457,
+    "sourceUrl": "https://en.wikipedia.org/wiki/El_Camino_College",
+    "wikidataId": "Q5350875"
+  },
+  "Salem Academy": {
+    "title": "Salem Academy",
+    "latitude": 36.0874,
+    "longitude": -80.2393,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Salem_Academy",
+    "wikidataId": "Q7404032"
+  },
+  "Swansea University": {
+    "title": "Swansea University",
+    "latitude": 51.60972222,
+    "longitude": -3.98055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Swansea_University",
+    "wikidataId": "Q1420500"
+  },
+  "Wagner College": {
+    "title": "Wagner College",
+    "latitude": 40.615,
+    "longitude": -74.094,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wagner_College",
+    "wikidataId": "Q1605513"
+  },
+  "West Virginia Wesleyan College": {
+    "title": "West Virginia Wesleyan College",
+    "latitude": 38.98861111,
+    "longitude": -80.22166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Virginia_Wesleyan_College",
+    "wikidataId": "Q12010547"
+  },
+  "Oklahoma City University": {
+    "title": "Oklahoma City University",
+    "latitude": 35.49472222,
+    "longitude": -97.54138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Oklahoma_City_University",
+    "wikidataId": "Q3443498"
+  },
+  "Mount Marty University": {
+    "title": "Mount Marty University",
+    "latitude": 42.875,
+    "longitude": -97.4102,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mount_Marty_University",
+    "wikidataId": "Q14709772"
+  },
+  "Los Angeles Pierce College": {
+    "title": "Los Angeles Pierce College",
+    "latitude": 34.183921,
+    "longitude": -118.5750531,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Los_Angeles_Pierce_College",
+    "wikidataId": "Q10863000"
+  },
+  "Bournemouth University": {
+    "title": "Bournemouth University",
+    "latitude": 50.743213,
+    "longitude": -1.896901,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bournemouth_University",
+    "wikidataId": "Q3182943"
+  },
+  "Maryknoll School": {
+    "title": "Maryknoll School",
+    "latitude": 21.30138889,
+    "longitude": -157.83388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maryknoll_School",
+    "wikidataId": "Q6781222"
+  },
+  "Lancaster Bible College": {
+    "title": "Lancaster Bible College",
+    "latitude": 40.075,
+    "longitude": -76.28805556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lancaster_Bible_College",
+    "wikidataId": "Q6483113"
+  },
+  "Hebron Academy": {
+    "title": "Hebron Academy",
+    "latitude": 44.1992,
+    "longitude": -70.4095,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hebron_Academy",
+    "wikidataId": "Q5696017"
+  },
+  "West Liberty University": {
+    "title": "West Liberty University",
+    "latitude": 40.16333333,
+    "longitude": -80.60222222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Liberty_University",
+    "wikidataId": "Q7985746"
+  },
+  "University of Sydney": {
+    "title": "University of Sydney",
+    "latitude": -33.8875,
+    "longitude": 151.19,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Sydney",
+    "wikidataId": "Q487556"
+  },
+  "University of Southern Indiana": {
+    "title": "University of Southern Indiana",
+    "latitude": 37.9625,
+    "longitude": -87.6775,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Southern_Indiana",
+    "wikidataId": "Q940289"
+  },
+  "Williams Baptist University": {
+    "title": "Williams Baptist University",
+    "latitude": 36.12544,
+    "longitude": -90.94023,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Williams_Baptist_University",
+    "wikidataId": "Q8020982"
+  },
+  "Kansas City Art Institute": {
+    "title": "Kansas City Art Institute",
+    "latitude": 39.046253,
+    "longitude": -94.58308,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Kansas_City_Art_Institute",
+    "wikidataId": "Q6364655"
+  },
+  "Daito Bunka University": {
+    "title": "Daito Bunka University",
+    "latitude": 35.78213889,
+    "longitude": 139.66794444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Daito_Bunka_University",
+    "wikidataId": "Q860574"
+  },
+  "The University of Hong Kong": {
+    "title": "University of Hong Kong",
+    "latitude": 22.28416667,
+    "longitude": 114.13777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Hong_Kong",
+    "wikidataId": "Q15568"
+  },
+  "Augsburg College": {
+    "title": "Augsburg University",
+    "latitude": 44.9659,
+    "longitude": -93.2416,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Augsburg_University",
+    "wikidataId": "Q760516"
+  },
+  "Williston Northampton School": {
+    "title": "Williston Northampton School",
+    "latitude": 42.26675833,
+    "longitude": -72.67178056,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Williston_Northampton_School",
+    "wikidataId": "Q8022149"
+  },
+  "St. Norbert College": {
+    "title": "St. Norbert College",
+    "latitude": 44.4453,
+    "longitude": -88.0685,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Norbert_College",
+    "wikidataId": "Q7590859"
+  },
+  "Colorado Mountain College": {
+    "title": "Colorado Mountain College",
+    "latitude": 39.5465,
+    "longitude": -107.3244,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Colorado_Mountain_College",
+    "wikidataId": "Q5148844"
+  },
+  "Grand View University": {
+    "title": "Grand View University",
+    "latitude": 41.620546,
+    "longitude": -93.604279,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Grand_View_University",
+    "wikidataId": "Q5595242"
+  },
+  "Trafalgar Castle School": {
+    "title": "Trafalgar Castle School",
+    "latitude": 43.87856,
+    "longitude": -78.93289,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Trafalgar_Castle_School",
+    "wikidataId": "Q7832409"
+  },
+  "Golden Gate University": {
+    "title": "Golden Gate University",
+    "latitude": 37.7893,
+    "longitude": -122.3989,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Golden_Gate_University",
+    "wikidataId": "Q1534879"
+  },
+  "Mary Baldwin University": {
+    "title": "Mary Baldwin University",
+    "latitude": 38.15466667,
+    "longitude": -79.06752778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Mary_Baldwin_University",
+    "wikidataId": "Q6778997"
+  },
+  "Universidad de Guadalajara": {
+    "title": "University of Guadalajara",
+    "latitude": 20.675,
+    "longitude": -103.35888889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Guadalajara",
+    "wikidataId": "Q164028"
+  },
+  "Harding University": {
+    "title": "Harding University",
+    "latitude": 35.24785,
+    "longitude": -91.72711,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Harding_University",
+    "wikidataId": "Q5656138"
+  },
+  "University of Puerto Rico": {
+    "title": "University of Puerto Rico",
+    "latitude": 18.40305556,
+    "longitude": -66.05055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Puerto_Rico",
+    "wikidataId": "Q2075365"
+  },
+  "University of Mount Union": {
+    "title": "University of Mount Union",
+    "latitude": 40.90472222,
+    "longitude": -81.11055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Mount_Union",
+    "wikidataId": "Q3551642"
+  },
+  "McDaniel College": {
+    "title": "McDaniel College",
+    "latitude": 39.58472222,
+    "longitude": -77.00194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/McDaniel_College",
+    "wikidataId": "Q6800835"
+  },
+  "Nelson Mandela University": {
+    "title": "Nelson Mandela University",
+    "latitude": -34.009,
+    "longitude": 25.67,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Nelson_Mandela_University",
+    "wikidataId": "Q1331614"
+  },
+  "Universidade Federal Fluminense": {
+    "title": "Fluminense Federal University",
+    "latitude": -22.90416667,
+    "longitude": -43.11666667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Fluminense_Federal_University",
+    "wikidataId": "Q280247"
+  },
+  "Hillsdale College": {
+    "title": "Hillsdale College",
+    "latitude": 41.93305556,
+    "longitude": -84.63361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hillsdale_College",
+    "wikidataId": "Q5763774"
+  },
+  "San Diego Mesa College": {
+    "title": "San Diego Mesa College",
+    "latitude": 32.80444444,
+    "longitude": -117.17027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/San_Diego_Mesa_College",
+    "wikidataId": "Q7413692"
+  },
+  "University of Chemistry and Technology, Prague": {
+    "title": "University of Chemistry and Technology, Prague",
+    "latitude": 50.10331944,
+    "longitude": 14.38989167,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Chemistry_and_Technology,_Prague",
+    "wikidataId": "Q1476341"
+  },
+  "The Hotchkiss School": {
+    "title": "Hotchkiss School",
+    "latitude": 41.94527778,
+    "longitude": -73.43972222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hotchkiss_School",
+    "wikidataId": "Q1630782"
+  },
+  "Harper College": {
+    "title": "Harper College",
+    "latitude": 42.081,
+    "longitude": -88.071,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Harper_College",
+    "wikidataId": "Q2983593"
+  },
+  "Willamette University": {
+    "title": "Willamette University",
+    "latitude": 44.93583333,
+    "longitude": -123.03138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Willamette_University",
+    "wikidataId": "Q930291"
+  },
+  "St. Mary's College of Maryland": {
+    "title": "St. Mary's College of Maryland",
+    "latitude": 38.1867,
+    "longitude": -76.4309,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._Mary's_College_of_Maryland",
+    "wikidataId": "Q7590249"
+  },
+  "Eastern Mennonite University": {
+    "title": "Eastern Mennonite University",
+    "latitude": 38.470966,
+    "longitude": -78.879519,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eastern_Mennonite_University",
+    "wikidataId": "Q1278210"
+  },
+  "Cushing Academy": {
+    "title": "Cushing Academy",
+    "latitude": 42.63333333,
+    "longitude": -71.91333333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cushing_Academy",
+    "wikidataId": "Q5196182"
+  },
+  "Presbyterian College": {
+    "title": "Presbyterian College",
+    "latitude": 34.46444444,
+    "longitude": -81.87,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Presbyterian_College",
+    "wikidataId": "Q7240768"
+  },
+  "Belhaven University": {
+    "title": "Belhaven University",
+    "latitude": 32.319829,
+    "longitude": -90.169392,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Belhaven_University",
+    "wikidataId": "Q4882717"
+  },
+  "West Shore Community College": {
+    "title": "West Shore Community College",
+    "latitude": 44.0089,
+    "longitude": -86.3371,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Shore_Community_College",
+    "wikidataId": "Q14716344"
+  },
+  "Lake Superior State University": {
+    "title": "Lake Superior State University",
+    "latitude": 46.493,
+    "longitude": -84.363,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lake_Superior_State_University",
+    "wikidataId": "Q1591654"
+  },
+  "West Valley College": {
+    "title": "West Valley College",
+    "latitude": 37.263429,
+    "longitude": -122.01,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Valley_College",
+    "wikidataId": "Q7986758"
+  },
+  "Doshisha University": {
+    "title": "Doshisha University",
+    "latitude": 35.029737,
+    "longitude": 135.760725,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Doshisha_University",
+    "wikidataId": "Q921088"
+  },
+  "Arapahoe Community College": {
+    "title": "Arapahoe Community College",
+    "latitude": 39.6084,
+    "longitude": -105.0196,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Arapahoe_Community_College",
+    "wikidataId": "Q4784195"
+  },
+  "Pennsylvania College of Technology": {
+    "title": "Pennsylvania College of Technology",
+    "latitude": 41.235,
+    "longitude": -77.021,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Pennsylvania_College_of_Technology",
+    "wikidataId": "Q15265909"
+  },
+  "College of Southern Idaho": {
+    "title": "College of Southern Idaho",
+    "latitude": 42.58,
+    "longitude": -114.475,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_Southern_Idaho",
+    "wikidataId": "Q5146837"
+  },
+  "Ithaca College": {
+    "title": "Ithaca College",
+    "latitude": 42.4218,
+    "longitude": -76.4947,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ithaca_College",
+    "wikidataId": "Q3540690"
+  },
+  "University of Providence": {
+    "title": "University of Providence",
+    "latitude": 47.4916,
+    "longitude": -111.2706,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Providence",
+    "wikidataId": "Q7895472"
+  },
+  "Atlantic Cape Community College": {
+    "title": "Atlantic Cape Community College",
+    "latitude": 39.4614,
+    "longitude": -74.6808,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Atlantic_Cape_Community_College",
+    "wikidataId": "Q4816324"
+  },
+  "SUNY Oneonta": {
+    "title": "State University of New York at Oneonta",
+    "latitude": 42.4695,
+    "longitude": -75.064,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Oneonta",
+    "wikidataId": "Q4146980"
+  },
+  "Augsburg University": {
+    "title": "Augsburg University",
+    "latitude": 44.9659,
+    "longitude": -93.2416,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Augsburg_University",
+    "wikidataId": "Q760516"
+  },
+  "La Trobe University": {
+    "title": "La Trobe University",
+    "latitude": -37.72179,
+    "longitude": 145.047909,
+    "sourceUrl": "https://en.wikipedia.org/wiki/La_Trobe_University",
+    "wikidataId": "Q1478723"
+  },
+  "Bryant University": {
+    "title": "Bryant University",
+    "latitude": 41.92545,
+    "longitude": -71.53241,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bryant_University",
+    "wikidataId": "Q1012699"
+  },
+  "Franciscan University of Steubenville": {
+    "title": "Franciscan University of Steubenville",
+    "latitude": 40.377274,
+    "longitude": -80.620467,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Franciscan_University_of_Steubenville",
+    "wikidataId": "Q5483039"
+  },
+  "University of South Carolina Upstate": {
+    "title": "University of South Carolina Upstate",
+    "latitude": 34.9975,
+    "longitude": -81.97055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_South_Carolina_Upstate",
+    "wikidataId": "Q7896324"
+  },
+  "Western Reserve Academy": {
+    "title": "Western Reserve Academy",
+    "latitude": 41.248685,
+    "longitude": -81.435494,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Reserve_Academy",
+    "wikidataId": "Q7988234"
+  },
+  "Ursinus College": {
+    "title": "Ursinus College",
+    "latitude": 40.1934,
+    "longitude": -75.4559,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Ursinus_College",
+    "wikidataId": "Q7901181"
+  },
+  "Dunwoody College of Technology": {
+    "title": "Dunwoody College of Technology",
+    "latitude": 44.9725,
+    "longitude": -93.29027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Dunwoody_College_of_Technology",
+    "wikidataId": "Q5315811"
+  },
+  "Brigham Young University": {
+    "title": "Brigham Young University",
+    "latitude": 40.2497,
+    "longitude": -111.6492,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brigham_Young_University",
+    "wikidataId": "Q332498"
+  },
+  "Landmark College": {
+    "title": "Landmark College",
+    "latitude": 42.97666667,
+    "longitude": -72.51194444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Landmark_College",
+    "wikidataId": "Q6484763"
+  },
+  "Gonzaga University": {
+    "title": "Gonzaga University",
+    "latitude": 47.6675,
+    "longitude": -117.4025,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Gonzaga_University",
+    "wikidataId": "Q1537303"
+  },
+  "Redeemer University": {
+    "title": "Redeemer University",
+    "latitude": 43.20716944,
+    "longitude": -79.94894722,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Redeemer_University",
+    "wikidataId": "Q7305718"
+  },
+  "Bullis School": {
+    "title": "Bullis School",
+    "latitude": 39.02833333,
+    "longitude": -77.2,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bullis_School",
+    "wikidataId": "Q4996949"
+  },
+  "The Stony Brook School": {
+    "title": "Stony Brook School",
+    "latitude": 40.92277778,
+    "longitude": -73.13083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Stony_Brook_School",
+    "wikidataId": "Q7766655"
+  },
+  "Vincennes University": {
+    "title": "Vincennes University",
+    "latitude": 38.68833333,
+    "longitude": -87.52,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Vincennes_University",
+    "wikidataId": "Q2526468"
+  },
+  "Northern Essex Community College": {
+    "title": "Northern Essex Community College",
+    "latitude": 42.79598611,
+    "longitude": -71.04763889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Northern_Essex_Community_College",
+    "wikidataId": "Q7058332"
+  },
+  "Princeton Theological Seminary": {
+    "title": "Princeton Theological Seminary",
+    "latitude": 40.34444444,
+    "longitude": -74.66444444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Princeton_Theological_Seminary",
+    "wikidataId": "Q909696"
+  },
+  "World Maritime University": {
+    "title": "World Maritime University",
+    "latitude": 55.60775,
+    "longitude": 12.99657,
+    "sourceUrl": "https://en.wikipedia.org/wiki/World_Maritime_University",
+    "wikidataId": "Q1630459"
+  },
+  "Tribhuvan University": {
+    "title": "Tribhuvan University",
+    "latitude": 27.68184,
+    "longitude": 85.28646,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Tribhuvan_University",
+    "wikidataId": "Q588239"
+  },
+  "New Garden Friends School": {
+    "title": "Greensboro, North Carolina",
+    "latitude": 36.0725,
+    "longitude": -79.79027778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Greensboro,_North_Carolina",
+    "wikidataId": "Q49238"
+  },
+  "Western Washington University": {
+    "title": "Western Washington University",
+    "latitude": 48.734,
+    "longitude": -122.486,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Washington_University",
+    "wikidataId": "Q284777"
+  },
+  "Cornell College": {
+    "title": "Cornell College",
+    "latitude": 41.92611111,
+    "longitude": -91.42583333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cornell_College",
+    "wikidataId": "Q5171517"
+  },
+  "Goldsmiths, University of London": {
+    "title": "Goldsmiths, University of London",
+    "latitude": 51.4739,
+    "longitude": -0.0354,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Goldsmiths,_University_of_London",
+    "wikidataId": "Q528231"
+  },
+  "Craven Community College": {
+    "title": "Craven Community College",
+    "latitude": 35.1115,
+    "longitude": -77.1032,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Craven_Community_College",
+    "wikidataId": "Q5182720"
+  },
+  "Bryn Mawr College": {
+    "title": "Bryn Mawr College",
+    "latitude": 40.02638889,
+    "longitude": -75.31361111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bryn_Mawr_College",
+    "wikidataId": "Q995265"
+  },
+  "University of Science and Arts of Oklahoma": {
+    "title": "University of Science and Arts of Oklahoma",
+    "latitude": 35.03138889,
+    "longitude": -97.95472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Science_and_Arts_of_Oklahoma",
+    "wikidataId": "Q7896279"
+  },
+  "Moravian University": {
+    "title": "Moravian University",
+    "latitude": 40.63016667,
+    "longitude": -75.38166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Moravian_University",
+    "wikidataId": "Q4571902"
+  },
+  "University of St Gallen": {
+    "title": "University of St. Gallen",
+    "latitude": 47.43166667,
+    "longitude": 9.37472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_St._Gallen",
+    "wikidataId": "Q673354"
+  },
+  "Hampton University": {
+    "title": "Hampton University",
+    "latitude": 37.0225,
+    "longitude": -76.33472222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hampton_University",
+    "wikidataId": "Q1797817"
+  },
+  "Elon University": {
+    "title": "Elon University",
+    "latitude": 36.10638889,
+    "longitude": -79.50083333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Elon_University",
+    "wikidataId": "Q4568893"
+  },
+  "University of Prince Edward Island": {
+    "title": "University of Prince Edward Island",
+    "latitude": 46.259,
+    "longitude": -63.138,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_Prince_Edward_Island",
+    "wikidataId": "Q1030305"
+  },
+  "San Francisco Art Institute": {
+    "title": "San Francisco Art Institute",
+    "latitude": 37.803456,
+    "longitude": -122.417144,
+    "sourceUrl": "https://en.wikipedia.org/wiki/San_Francisco_Art_Institute",
+    "wikidataId": "Q586735"
+  },
+  "University of North Carolina School of the Arts": {
+    "title": "University of North Carolina School of the Arts",
+    "latitude": 36.0755,
+    "longitude": -80.2364,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_North_Carolina_School_of_the_Arts",
+    "wikidataId": "Q7895938"
+  },
+  "Loyalist College": {
+    "title": "Loyalist College",
+    "latitude": 44.15411389,
+    "longitude": -77.43055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Loyalist_College",
+    "wikidataId": "Q2983869"
+  },
+  "University of California, Santa Cruz": {
+    "title": "University of California, Santa Cruz",
+    "latitude": 37,
+    "longitude": -122.06,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_of_California,_Santa_Cruz",
+    "wikidataId": "Q1047293"
+  },
+  "Randolph-Macon College": {
+    "title": "Randolph–Macon College",
+    "latitude": 37.763,
+    "longitude": -77.477,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Randolph–Macon_College",
+    "wikidataId": "Q7291901"
+  },
+  "Yokohama National University": {
+    "title": "Yokohama National University",
+    "latitude": 35.474,
+    "longitude": 139.59,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Yokohama_National_University",
+    "wikidataId": "Q1192619"
+  },
+  "Capitol Technology University": {
+    "title": "Capitol Technology University",
+    "latitude": 39.0475,
+    "longitude": -76.8515,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Capitol_Technology_University",
+    "wikidataId": "Q5035867"
+  },
+  "John Jay College": {
+    "title": "John Jay College of Criminal Justice",
+    "latitude": 40.7703,
+    "longitude": -73.9883,
+    "sourceUrl": "https://en.wikipedia.org/wiki/John_Jay_College_of_Criminal_Justice",
+    "wikidataId": "Q1700617"
+  },
+  "Evergreen State College": {
+    "title": "Evergreen State College",
+    "latitude": 47.073,
+    "longitude": -122.976,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Evergreen_State_College",
+    "wikidataId": "Q941731"
+  },
+  "SUNY Broome Community College": {
+    "title": "SUNY Broome Community College",
+    "latitude": 42.134999,
+    "longitude": -75.91012,
+    "sourceUrl": "https://en.wikipedia.org/wiki/SUNY_Broome_Community_College",
+    "wikidataId": "Q4975271"
+  },
+  "Confederation College": {
+    "title": "Confederation College",
+    "latitude": 48.40279722,
+    "longitude": -89.26666111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Confederation_College",
+    "wikidataId": "Q5159779"
+  },
+  "SUNY Maritime College": {
+    "title": "State University of New York Maritime College",
+    "latitude": 40.80527778,
+    "longitude": -73.7925,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_Maritime_College",
+    "wikidataId": "Q7603615"
+  },
+  "Hartwick College": {
+    "title": "Hartwick College",
+    "latitude": 42.45805556,
+    "longitude": -75.07138889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hartwick_College",
+    "wikidataId": "Q2653975"
+  },
+  "Western Connecticut State University": {
+    "title": "Western Connecticut State University",
+    "latitude": 41.4009,
+    "longitude": -73.4448,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Western_Connecticut_State_University",
+    "wikidataId": "Q1552113"
+  },
+  "Cayuga Community College": {
+    "title": "Cayuga Community College",
+    "latitude": 42.945079,
+    "longitude": -76.542783,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cayuga_Community_College",
+    "wikidataId": "Q5055461"
+  },
+  "Texas Southern University": {
+    "title": "Texas Southern University",
+    "latitude": 29.72222222,
+    "longitude": -95.36111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Texas_Southern_University",
+    "wikidataId": "Q626591"
+  },
+  "Castleton University": {
+    "title": "Castleton University",
+    "latitude": 43.607,
+    "longitude": -73.18,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Castleton_University",
+    "wikidataId": "Q1049687"
+  },
+  "College of the Atlantic": {
+    "title": "College of the Atlantic",
+    "latitude": 44.39643611,
+    "longitude": -68.22368611,
+    "sourceUrl": "https://en.wikipedia.org/wiki/College_of_the_Atlantic",
+    "wikidataId": "Q5146880"
+  },
+  "North Central College": {
+    "title": "North Central College",
+    "latitude": 41.77555556,
+    "longitude": -88.14277778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/North_Central_College",
+    "wikidataId": "Q7054728"
+  },
+  "Samford University": {
+    "title": "Samford University",
+    "latitude": 33.4649,
+    "longitude": -86.7937,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Samford_University",
+    "wikidataId": "Q6381586"
+  },
+  "Georgetown College": {
+    "title": "Georgetown College",
+    "latitude": 38.207,
+    "longitude": -84.554,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Georgetown_College",
+    "wikidataId": "Q5546985"
+  },
+  "Trinity Christian College": {
+    "title": "Trinity Christian College",
+    "latitude": 41.66894444,
+    "longitude": -87.78297222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Trinity_Christian_College",
+    "wikidataId": "Q7842639"
+  },
+  "Southwest Minnesota State University": {
+    "title": "Southwest Minnesota State University",
+    "latitude": 44.45444444,
+    "longitude": -95.75944444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southwest_Minnesota_State_University",
+    "wikidataId": "Q7571324"
+  },
+  "South Plains College": {
+    "title": "South Plains College",
+    "latitude": 33.576243,
+    "longitude": -102.367642,
+    "sourceUrl": "https://en.wikipedia.org/wiki/South_Plains_College",
+    "wikidataId": "Q7568230"
+  },
+  "St. John Fisher College": {
+    "title": "St. John Fisher University",
+    "latitude": 43.11611111,
+    "longitude": -77.51166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/St._John_Fisher_University",
+    "wikidataId": "Q7588902"
+  },
+  "Austin Peay State University": {
+    "title": "Austin Peay State University",
+    "latitude": 36.5323,
+    "longitude": -87.35457,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Austin_Peay_State_University",
+    "wikidataId": "Q781153"
+  },
+  "Adam Mickiewicz University": {
+    "title": "Adam Mickiewicz University in Poznań",
+    "latitude": 52.40777778,
+    "longitude": 16.91555556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Adam_Mickiewicz_University_in_Poznań",
+    "wikidataId": "Q348402"
+  },
+  "Milligan College": {
+    "title": "Milligan University",
+    "latitude": 36.3017,
+    "longitude": -82.2951,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Milligan_University",
+    "wikidataId": "Q6859616"
+  },
+  "Maynooth University": {
+    "title": "Maynooth University",
+    "latitude": 53.3835,
+    "longitude": -6.5996,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Maynooth_University",
+    "wikidataId": "Q2601879"
+  },
+  "Cleveland Clinic": {
+    "title": "Cleveland Clinic",
+    "latitude": 41.5025,
+    "longitude": -81.62111111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cleveland_Clinic",
+    "wikidataId": "Q4117596"
+  },
+  "Bob Jones University": {
+    "title": "Bob Jones University",
+    "latitude": 34.873,
+    "longitude": -82.364,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Bob_Jones_University",
+    "wikidataId": "Q2740389"
+  },
+  "Eastern Washington University": {
+    "title": "Eastern Washington University",
+    "latitude": 47.49138889,
+    "longitude": -117.58305556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eastern_Washington_University",
+    "wikidataId": "Q1278253"
+  },
+  "Batten University": {
+    "title": "Batten University",
+    "latitude": 36.868,
+    "longitude": -76.18761111,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Batten_University",
+    "wikidataId": "Q7934661"
+  },
+  "Cal Poly Humboldt": {
+    "title": "California State Polytechnic University, Humboldt",
+    "latitude": 40.876,
+    "longitude": -124.079,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_State_Polytechnic_University,_Humboldt",
+    "wikidataId": "Q624560"
+  },
+  "Worcester State University": {
+    "title": "Worcester State University",
+    "latitude": 42.267586,
+    "longitude": -71.84376,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Worcester_State_University",
+    "wikidataId": "Q3446068"
+  },
+  "University College of the North": {
+    "title": "University College of the North",
+    "latitude": 53.81972222,
+    "longitude": -101.23777778,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_College_of_the_North",
+    "wikidataId": "Q7894664"
+  },
+  "Mount Hutt College": {
+    "title": "Methven, New Zealand",
+    "latitude": -43.63333333,
+    "longitude": 171.65,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Methven,_New_Zealand",
+    "wikidataId": "Q1925567"
+  },
+  "Hardin-Simmons University": {
+    "title": "Hardin–Simmons University",
+    "latitude": 32.477,
+    "longitude": -99.734,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hardin–Simmons_University",
+    "wikidataId": "Q6356958"
+  },
+  "Central New Mexico Community College": {
+    "title": "Central New Mexico Community College",
+    "latitude": 35.07388889,
+    "longitude": -106.62638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Central_New_Mexico_Community_College",
+    "wikidataId": "Q5061506"
+  },
+  "'Iolani School": {
+    "title": "ʻIolani School",
+    "latitude": 21.2865,
+    "longitude": -157.82456667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/ʻIolani_School",
+    "wikidataId": "Q4164446"
+  },
+  "Technische Universität Berlin": {
+    "title": "Technische Universität Berlin",
+    "latitude": 52.51194444,
+    "longitude": 13.32638889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Technische_Universität_Berlin",
+    "wikidataId": "Q51985"
+  },
+  "Grand Rapids Community College": {
+    "title": "Grand Rapids Community College",
+    "latitude": 42.9665,
+    "longitude": -85.6666,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Grand_Rapids_Community_College",
+    "wikidataId": "Q1771451"
+  },
+  "Wheeling University": {
+    "title": "Wheeling University",
+    "latitude": 40.0731,
+    "longitude": -80.6895,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Wheeling_University",
+    "wikidataId": "Q2566683"
+  },
+  "The Scripps Research Institute": {
+    "title": "Scripps Research",
+    "latitude": 32.8929,
+    "longitude": -117.2427,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Scripps_Research",
+    "wikidataId": "Q793867"
+  },
+  "Gordon-Conwell Theological Seminary": {
+    "title": "Gordon–Conwell Theological Seminary",
+    "latitude": 42.6129,
+    "longitude": -70.8453,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Gordon–Conwell_Theological_Seminary",
+    "wikidataId": "Q5586069"
+  },
+  "Hawkeye Community College": {
+    "title": "Hawkeye Community College",
+    "latitude": 42.431009,
+    "longitude": -92.3296993,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Hawkeye_Community_College",
+    "wikidataId": "Q5685070"
+  },
+  "Nicholls State University": {
+    "title": "Nicholls State University",
+    "latitude": 29.7903,
+    "longitude": -90.8027,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Nicholls_State_University",
+    "wikidataId": "Q11884307"
+  },
+  "Germanna Community College": {
+    "title": "Germanna Community College",
+    "latitude": 38.23183333,
+    "longitude": -77.493,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Germanna_Community_College",
+    "wikidataId": "Q5551972"
+  },
+  "Cameron University": {
+    "title": "Cameron University",
+    "latitude": 34.6087,
+    "longitude": -98.4345,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cameron_University",
+    "wikidataId": "Q3444292"
+  },
+  "West Los Angeles College": {
+    "title": "West Los Angeles College",
+    "latitude": 34.00411389,
+    "longitude": -118.3866,
+    "sourceUrl": "https://en.wikipedia.org/wiki/West_Los_Angeles_College",
+    "wikidataId": "Q7985808"
+  },
+  "Messiah University": {
+    "title": "Messiah University",
+    "latitude": 40.1553,
+    "longitude": -76.9933,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Messiah_University",
+    "wikidataId": "Q3307047"
+  },
+  "Universidade Federal de Rondônia": {
+    "title": "Federal University of Rondônia",
+    "latitude": -8.8356,
+    "longitude": -63.9389,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Federal_University_of_Rondônia",
+    "wikidataId": "Q7894377"
+  },
+  "Montana State University Billings": {
+    "title": "Montana State University Billings",
+    "latitude": 45.79666667,
+    "longitude": -108.52388889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Montana_State_University_Billings",
+    "wikidataId": "Q6904332"
+  },
+  "Gustavus Adolphus College": {
+    "title": "Gustavus Adolphus College",
+    "latitude": 44.3235555,
+    "longitude": -93.971738,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Gustavus_Adolphus_College",
+    "wikidataId": "Q5621541"
+  },
+  "Nebraska Wesleyan University": {
+    "title": "Nebraska Wesleyan University",
+    "latitude": 40.83925,
+    "longitude": -96.65095,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Nebraska_Wesleyan_University",
+    "wikidataId": "Q6984798"
+  },
+  "Florida College": {
+    "title": "Florida College",
+    "latitude": 28.0345593,
+    "longitude": -82.383495,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Florida_College",
+    "wikidataId": "Q5461285"
+  },
+  "Boise State University": {
+    "title": "Boise State University",
+    "latitude": 43.604,
+    "longitude": -116.204,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Boise_State_University",
+    "wikidataId": "Q891082"
+  },
+  "Eureka College": {
+    "title": "Eureka College",
+    "latitude": 40.7139,
+    "longitude": -89.2675,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Eureka_College",
+    "wikidataId": "Q5411163"
+  },
+  "Longy School of Music of Bard College": {
+    "title": "Longy School of Music of Bard College",
+    "latitude": 42.37846,
+    "longitude": -71.12335,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Longy_School_of_Music_of_Bard_College",
+    "wikidataId": "Q6674563"
+  },
+  "SUNY College at Oswego": {
+    "title": "State University of New York at Oswego",
+    "latitude": 43.451361,
+    "longitude": -76.544044,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Oswego",
+    "wikidataId": "Q7603627"
+  },
+  "Southwest Baptist University": {
+    "title": "Southwest Baptist University",
+    "latitude": 37.60186,
+    "longitude": -93.40911,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Southwest_Baptist_University",
+    "wikidataId": "Q7571224"
+  },
+  "SUNY Cortland": {
+    "title": "State University of New York at Cortland",
+    "latitude": 42.597,
+    "longitude": -76.18933333,
+    "sourceUrl": "https://en.wikipedia.org/wiki/State_University_of_New_York_at_Cortland",
+    "wikidataId": "Q7603623"
+  },
+  "Missouri Southern State University": {
+    "title": "Missouri Southern State University",
+    "latitude": 37.09595,
+    "longitude": -94.4622,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Missouri_Southern_State_University",
+    "wikidataId": "Q6879708"
+  },
+  "Elizabethtown College": {
+    "title": "Elizabethtown College",
+    "latitude": 40.15,
+    "longitude": -76.5919444,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Elizabethtown_College",
+    "wikidataId": "Q5363873"
+  },
+  "Providence College": {
+    "title": "Providence College",
+    "latitude": 41.84388889,
+    "longitude": -71.435,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Providence_College",
+    "wikidataId": "Q1439629"
+  },
+  "Houghton University": {
+    "title": "Houghton University",
+    "latitude": 42.426111,
+    "longitude": -78.155278,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Houghton_University",
+    "wikidataId": "Q4500472"
+  },
+  "Cabrillo College": {
+    "title": "Cabrillo College",
+    "latitude": 36.9883,
+    "longitude": -121.925,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Cabrillo_College",
+    "wikidataId": "Q1024969"
+  },
+  "Anna Maria College": {
+    "title": "Anna Maria College",
+    "latitude": 42.3294,
+    "longitude": -71.9194,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Anna_Maria_College",
+    "wikidataId": "Q4767291"
+  },
+  "University Liggett School": {
+    "title": "University Liggett School",
+    "latitude": 42.42649722,
+    "longitude": -82.89931389,
+    "sourceUrl": "https://en.wikipedia.org/wiki/University_Liggett_School",
+    "wikidataId": "Q7894804"
+  },
+  "La Sierra University": {
+    "title": "La Sierra University",
+    "latitude": 33.91138889,
+    "longitude": -117.50166667,
+    "sourceUrl": "https://en.wikipedia.org/wiki/La_Sierra_University",
+    "wikidataId": "Q6465284"
+  },
+  "California Lutheran University": {
+    "title": "California Lutheran University",
+    "latitude": 34.22472222,
+    "longitude": -118.87888889,
+    "sourceUrl": "https://en.wikipedia.org/wiki/California_Lutheran_University",
+    "wikidataId": "Q1026831"
+  },
+  "Taylor University": {
+    "title": "Taylor University",
+    "latitude": 40.45805556,
+    "longitude": -85.49722222,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Taylor_University",
+    "wikidataId": "Q7690168"
+  },
+  "Lingnan University": {
+    "title": "Lingnan University",
+    "latitude": 22.41,
+    "longitude": 113.983,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Lingnan_University",
+    "wikidataId": "Q1541161"
+  },
+  "Scripps College": {
+    "title": "Scripps College",
+    "latitude": 34.10361111,
+    "longitude": -117.71055556,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Scripps_College",
+    "wikidataId": "Q10664609"
+  },
+  "Waldorf University": {
+    "title": "Waldorf University",
+    "latitude": 43.263365,
+    "longitude": -93.639992,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Waldorf_University",
+    "wikidataId": "Q7961606"
+  },
+  "Brescia University": {
+    "title": "Brescia University",
+    "latitude": 37.76895,
+    "longitude": -87.112075,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Brescia_University",
+    "wikidataId": "Q4961841"
+  },
+  "University of New Orleans": {
+    "title": "LSU New Orleans",
+    "latitude": 30.0275,
+    "longitude": -90.0671,
+    "sourceUrl": "https://en.wikipedia.org/wiki/LSU_New_Orleans",
+    "wikidataId": "Q1474157"
+  },
+  "Villa Maria College": {
+    "title": "Villa Maria College",
+    "latitude": 42.913408,
+    "longitude": -78.797223,
+    "sourceUrl": "https://en.wikipedia.org/wiki/Villa_Maria_College",
+    "wikidataId": "Q7930417"
+  }
+}
