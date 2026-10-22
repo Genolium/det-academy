@@ -64,12 +64,11 @@ git log --oneline -1
 
 if [ "$BACKUP" = true ]; then
   log "Backing up PostgreSQL"
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-  DATABASE_URL="${DATABASE_URL}" BACKUP_DIR="${BACKUP_DIR:-/var/backups/det}" \
-    ./scripts/backup_postgres.sh
+  # The effective connection string is taken from the running container, so the
+  # script never has to parse the .env file itself.
+  DATABASE_URL="$(docker compose exec -T backend printenv DATABASE_URL | tr -d '\r')"
+  export DATABASE_URL
+  BACKUP_DIR="${BACKUP_DIR:-/var/backups/det}" ./scripts/backup_postgres.sh
 fi
 
 log "Rebuilding and restarting the stack"
@@ -80,14 +79,12 @@ docker compose exec -T backend /app/server migrate || true
 
 if [ "$SEED" = true ]; then
   log "Applying the content and vocabulary seeds"
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-  docker compose exec -T postgres psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-det_academy}" \
-    -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/03-content-seed.sql
-  docker compose exec -T postgres psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-det_academy}" \
-    -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/04-vocabulary-seed.sql
+  db_user="$(docker compose exec -T postgres printenv POSTGRES_USER | tr -d '\r')"
+  db_name="$(docker compose exec -T postgres printenv POSTGRES_DB | tr -d '\r')"
+  for seed in 03-content-seed.sql 04-vocabulary-seed.sql; do
+    docker compose exec -T postgres psql -U "$db_user" -d "$db_name" \
+      -v ON_ERROR_STOP=1 -f "/docker-entrypoint-initdb.d/$seed"
+  done
 fi
 
 log "Waiting for the backend to become healthy"
