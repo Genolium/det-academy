@@ -29,21 +29,19 @@ func (s *PostgresStorage) RunMigrations(dir string) error {
 	}
 	sort.Strings(names)
 
-	// A brand-new database has no base tables yet. Apply the canonical
-	// bootstrap schema before the incremental migrations.
-	var usersTable bool
-	if err := s.db.QueryRow(`SELECT to_regclass('users') IS NOT NULL`).Scan(&usersTable); err != nil {
-		return fmt.Errorf("inspect base schema: %w", err)
+	// The canonical base schema is idempotent: every statement uses
+	// CREATE ... IF NOT EXISTS and the seed uses ON CONFLICT DO NOTHING. It is
+	// applied on every start so that a database which was created from an
+	// older revision of init.sql gets the tables that were added later.
+	// Without this a drifted database keeps missing tables and the first
+	// migration that touches them fails.
+	initPath := filepath.Join(filepath.Dir(dir), "init.sql")
+	body, err := os.ReadFile(initPath)
+	if err != nil {
+		return fmt.Errorf("base schema %s is required: %w", initPath, err)
 	}
-	if !usersTable {
-		initPath := filepath.Join(filepath.Dir(dir), "init.sql")
-		body, err := os.ReadFile(initPath)
-		if err != nil {
-			return fmt.Errorf("base schema %s is required for an empty database: %w", initPath, err)
-		}
-		if _, err := s.db.Exec(string(body)); err != nil {
-			return fmt.Errorf("apply base schema %s: %w", initPath, err)
-		}
+	if _, err := s.db.Exec(string(body)); err != nil {
+		return fmt.Errorf("apply base schema %s: %w", initPath, err)
 	}
 
 	if _, err := s.db.Exec(`

@@ -9,12 +9,17 @@ rebuild; the repository ships an idempotent script for it:
 cd /path/to/det-academy
 ./scripts/deploy_production.sh --backup     # backup, pull, rebuild, migrate, verify
 ./scripts/deploy_production.sh --with-nginx # additionally install nginx/det-academy.ru.conf
+./scripts/deploy_production.sh --seed       # additionally re-apply the content and vocabulary seeds
 ```
 
 The script pulls `origin/master`, rebuilds the stack, applies the migrations
 through the backend container (`docker compose exec backend /app/server migrate`),
 waits for `/api/v1/health` and verifies `/api/v1/ready` and `/api/v1/vocabulary`.
 It never drops the database.
+
+`--seed` re-applies `03-content-seed.sql` and `04-vocabulary-seed.sql`. It is
+opt-in because the vocabulary seed resets the publication status of the
+vocabulary entries, which is managed by the editorial workflow.
 
 Manual equivalent:
 
@@ -47,6 +52,18 @@ Apply every file in `backend/db/migrations/` in order before starting a new
 backend version. `init.sql` is only for a fresh database. The backend container
 applies them on start-up and records them in `schema_migrations`; the same can
 be triggered manually with `docker compose exec backend /app/server migrate`.
+
+The canonical schema in `backend/db/init.sql` is applied on every start as
+well. It is idempotent (`CREATE ... IF NOT EXISTS`, `ON CONFLICT DO NOTHING`),
+so a database that was created from an older revision of the schema gets the
+tables that were added later. Columns that were added to `init.sql` after a
+database was created need an explicit migration — the regression test
+`TestMigrationsConvergeLegacyDatabaseToCanonicalSchema` in
+`backend/tests/schema_convergence_test.go` fails when that is forgotten.
+
+A failing migration is logged but never stops the service, so a broken
+migration cannot take the API down. Migrations that need attention are visible
+in the container log.
 
 ## Backup
 

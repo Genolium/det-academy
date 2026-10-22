@@ -6,10 +6,11 @@
 # the critical endpoints before it reports success.
 #
 # Usage:
-#   ./scripts/deploy_production.sh [--with-nginx] [--backup] [--force]
+#   ./scripts/deploy_production.sh [--with-nginx] [--backup] [--seed] [--force]
 #
 #   --with-nginx  also install nginx/det-academy.ru.conf and reload nginx
 #   --backup      create a PostgreSQL backup before deploying
+#   --seed        re-apply the content and vocabulary seeds
 #   --force       deploy even when the working tree has local modifications
 set -euo pipefail
 
@@ -18,13 +19,15 @@ cd "$REPO_ROOT"
 
 WITH_NGINX=false
 BACKUP=false
+SEED=false
 FORCE=false
 for arg in "$@"; do
   case "$arg" in
     --with-nginx) WITH_NGINX=true ;;
     --backup) BACKUP=true ;;
+    --seed) SEED=true ;;
     --force) FORCE=true ;;
-    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -74,6 +77,18 @@ docker compose up -d --build --remove-orphans
 
 log "Applying migrations explicitly (the backend also runs them on start)"
 docker compose exec -T backend /app/server migrate || true
+
+if [ "$SEED" = true ]; then
+  log "Applying the content and vocabulary seeds"
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+  docker compose exec -T postgres psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-det_academy}" \
+    -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/03-content-seed.sql
+  docker compose exec -T postgres psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-det_academy}" \
+    -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/04-vocabulary-seed.sql
+fi
 
 log "Waiting for the backend to become healthy"
 healthy=false
