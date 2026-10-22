@@ -1,5 +1,7 @@
 import duolingoInstitutions from '@/data/duolingoInstitutions.json';
 import verifiedCoordinates from '@/data/verified-university-coordinates.json';
+import institutionLocations from '@/data/institution-locations.json';
+import institutionMetadata from '@/data/institution-metadata.json';
 import type { Institution } from '@/lib/api';
 
 export type InstitutionSource = 'duolingo' | 'extended';
@@ -29,62 +31,79 @@ interface VerifiedCoordinate {
   wikidataId: string;
 }
 
+interface InstitutionLocation {
+  city: string;
+  state: string;
+  country: string;
+}
+
+interface InstitutionMetadata {
+  minScore?: number;
+  minLiteracy?: number;
+  minComprehension?: number;
+  minProduction?: number;
+  minConversation?: number;
+  subscoreReqs?: string;
+  category?: string;
+  acceptanceRate?: string;
+}
+
+const coordinates = verifiedCoordinates as Record<string, VerifiedCoordinate>;
+const locations = institutionLocations as Record<string, InstitutionLocation>;
+const metadata = institutionMetadata as Record<string, InstitutionMetadata>;
+
+function normalizeWebsite(url?: string): string {
+  const value = (url || '').trim();
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (value.startsWith('www.')) return `https://${value}`;
+  const match = value.match(/^(https?):(.+)$/);
+  if (match) return `${match[1]}://${match[2]}`;
+  return `https://${value}`;
+}
+
 function catalogKey(name: string, country: string): string {
   return `${name.toLowerCase().trim()}|${String(country || '').toLowerCase().trim()}`;
 }
 
 /**
- * Builds the map catalogue from the official Duolingo registry only.
+ * Builds the map catalogue from the official Duolingo registry.
  *
- * Coordinates are admitted only when an exact-name or redirect match exists on
- * the English Wikipedia page and that page publishes a primary coordinate.
- * Extended/generated rows are deliberately not used: a wrong pin is worse than
- * a missing one.
+ * A university reaches the map only when its exact registry name matches a
+ * Wikipedia article that publishes a primary campus coordinate. City, state
+ * and country come from Wikidata (P131/P17) for the same article. DET score
+ * thresholds and categories come from the platform catalogue and are labelled
+ * as unconfirmed, because the official registry does not publish them.
  */
-// A few official registry names differ from the Wikipedia page only by a
-// parenthetical/leading article. These coordinates were checked manually
-// against the corresponding Wikipedia page and are kept as an explicit alias
-// list rather than fuzzy-matched.
-const manualVerifiedCoordinates: Record<string, VerifiedCoordinate> = {
-  'The University of Chicago': {
-    title: 'University of Chicago',
-    latitude: 41.78972222,
-    longitude: -87.59972222,
-    sourceUrl: 'https://en.wikipedia.org/wiki/University_of_Chicago',
-    wikidataId: 'Q131252',
-  },
-  'Westminster College (Pennsylvania)': {
-    title: 'Westminster College (Pennsylvania)',
-    latitude: 41.11777778,
-    longitude: -80.32944444,
-    sourceUrl: 'https://en.wikipedia.org/wiki/Westminster_College_(Pennsylvania)',
-    wikidataId: 'Q7989148',
-  },
-};
-
 export function buildInstitutionMapCatalog(): CatalogInstitution[] {
-  const coordinates = verifiedCoordinates as Record<string, VerifiedCoordinate>;
   const byKey = new Map<string, CatalogInstitution>();
 
   for (const official of duolingoInstitutions as OfficialInstitution[]) {
-    const coordinate = coordinates[official.name] || manualVerifiedCoordinates[official.name];
+    const coordinate = coordinates[official.name];
     if (!coordinate) continue;
     if (!Number.isFinite(coordinate.latitude) || !Number.isFinite(coordinate.longitude)) continue;
     if (coordinate.latitude === 0 && coordinate.longitude === 0) continue;
 
+    const location = locations[official.name] || { city: '', state: '', country: '' };
+    const meta = metadata[official.name] || {};
+
     const entry: CatalogInstitution = {
       id: official.id,
       name: official.name,
-      country: official.country,
-      city: '',
-      state: official.state || '',
-      minScore: 0,
-      subscoreReqs: '',
+      country: location.country || official.country,
+      city: location.city || '',
+      state: location.state || official.state || '',
+      minScore: meta.minScore || 0,
+      minLiteracy: meta.minLiteracy,
+      minComprehension: meta.minComprehension,
+      minProduction: meta.minProduction,
+      minConversation: meta.minConversation,
+      subscoreReqs: meta.subscoreReqs || '',
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
-      websiteUrl: official.websiteUrl || '',
-      category: 'Official DET',
-      acceptanceRate: '',
+      websiteUrl: normalizeWebsite(official.websiteUrl),
+      category: meta.category || 'Official DET',
+      acceptanceRate: meta.acceptanceRate || '',
       programs: official.programTypes || [],
       createdAt: '2026-01-01T00:00:00.000Z',
       source: 'duolingo',
@@ -101,6 +120,10 @@ export function buildInstitutionMapCatalog(): CatalogInstitution[] {
 }
 
 export function getInstitutionMapStats(catalog: CatalogInstitution[]) {
+  const categories: Record<string, number> = {};
+  for (const item of catalog) {
+    categories[item.category] = (categories[item.category] || 0) + 1;
+  }
   return {
     total: catalog.length,
     official: catalog.filter((item) => item.source === 'duolingo').length,
@@ -109,5 +132,8 @@ export function getInstitutionMapStats(catalog: CatalogInstitution[]) {
     withCoordinates: catalog.filter(
       (item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude)
     ).length,
+    withCity: catalog.filter((item) => Boolean(item.city)).length,
+    withScore: catalog.filter((item) => item.minScore > 0).length,
+    categories,
   };
 }

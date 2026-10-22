@@ -19,6 +19,21 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, '&#39;');
 }
 
+interface CatalogStats {
+  total: number;
+  official: number;
+  extended: number;
+  countries: number;
+  withCity: number;
+  withScore: number;
+  categories: Record<string, number>;
+}
+
+function formatLocation(inst: { city?: string; state?: string; country?: string }): string {
+  const parts = [inst.city, inst.state].filter(Boolean);
+  return parts.length ? parts.join(', ') : inst.country || '';
+}
+
 function safeExternalUrl(value?: string): string {
   if (!value) return '#';
   try {
@@ -35,7 +50,7 @@ export const InstitutionsMap: React.FC = () => {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [catalogStats, setCatalogStats] = useState<{ total: number; official: number; extended: number; countries: number } | null>(null);
+  const [catalogStats, setCatalogStats] = useState<CatalogStats | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -63,7 +78,7 @@ export const InstitutionsMap: React.FC = () => {
 
         // The full catalogue is served by a server route so the 12k+ records
         // never enter the JavaScript bundle.
-        let catalog: { institutions?: Institution[]; stats?: { total: number; official: number; extended: number; countries: number } } | null = null;
+        let catalog: { institutions?: Institution[]; stats?: CatalogStats } | null = null;
         for (let attempt = 0; attempt < 3 && !catalog; attempt += 1) {
           try {
             const catalogResponse = await fetch('/registry/institutions-map', { cache: 'no-store' });
@@ -284,10 +299,10 @@ export const InstitutionsMap: React.FC = () => {
           ${escapeHtml(inst.name)}
         </div>
         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
-          📍 ${escapeHtml(inst.city)}${inst.state ? ', ' + escapeHtml(inst.state) : ''}
+          📍 ${escapeHtml(formatLocation(inst))}
         </div>
         <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
-          ${inst.minScore > 0 ? `<strong>Минимальный балл DET:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>` : '<strong>Минимальный балл DET:</strong> <span style="color: #475569;">не подтверждён</span>'}
+          ${inst.minScore > 0 ? `<strong>Минимальный балл DET (ориентир):</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>` : '<strong>Минимальный балл DET:</strong> <span style="color: #475569;">не подтверждён</span>'}
           ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(inst.subscoreReqs)}</div>` : ''}
         </div>
         <a href="${safeExternalUrl(inst.websiteUrl)}" target="_blank" rel="noopener noreferrer" style="
@@ -467,18 +482,22 @@ export const InstitutionsMap: React.FC = () => {
     return ['All', ...priority.filter((p) => set.has(p)), ...rest];
   }, [institutions]);
 
-  const categories = [
-    'All',
-    'Official DET',
-    'Ivy League',
-    'Top Global',
-    'Top STEM',
-    'Public Research',
-    'Private Research',
-    'Public University',
-    'Liberal Arts',
-    'Community College',
-  ];
+  const categories = useMemo(() => {
+    const preferred = [
+      'Ivy League',
+      'Top Global',
+      'Top STEM',
+      'Public Research',
+      'Private Research',
+      'Public University',
+      'National University',
+      'Liberal Arts',
+      'Community College',
+      'Official DET',
+    ];
+    const available = new Set(catalogStats ? Object.keys(catalogStats.categories) : []);
+    return ['All', ...preferred.filter((item) => available.has(item)), ...Array.from(available).filter((item) => !preferred.includes(item)).sort()];
+  }, [catalogStats]);
 
   return (
     <div className="space-y-8">
@@ -522,10 +541,10 @@ export const InstitutionsMap: React.FC = () => {
         </div>
 
         {catalogStats && (
-          <p className="text-[11px] text-neutral-500">
+          <p className="text-[11px] text-neutral-500 leading-relaxed">
             {locale === 'ru'
-              ? `На карте: ${catalogStats.total.toLocaleString('ru-RU')} официальных вузов Duolingo, ${catalogStats.countries} стран. Координаты подтверждены по Wikipedia; баллы и требования проверяйте на сайте вуза.`
-              : `Mapped: ${catalogStats.total.toLocaleString('en-US')} official Duolingo institutions, ${catalogStats.countries} countries. Coordinates are verified against Wikipedia; verify scores and requirements with the university.`}
+              ? `На карте ${catalogStats.total.toLocaleString('ru-RU')} официальных вузов Duolingo в ${catalogStats.countries} странах. Координаты и города подтверждены по Wikipedia/Wikidata. Пороги DET и категории — ориентировочные данные каталога: проверяйте их на сайте приёмной комиссии.`
+              : `${catalogStats.total.toLocaleString('en-US')} official Duolingo institutions in ${catalogStats.countries} countries. Coordinates and cities are verified against Wikipedia/Wikidata. DET score thresholds and categories are catalogue estimates — verify them with the university.`}
           </p>
         )}
 
@@ -587,7 +606,7 @@ export const InstitutionsMap: React.FC = () => {
                   {selectedInstitution.name}
                 </h4>
                 <p className="text-xs text-neutral-500">
-                  📍 {selectedInstitution.state ? `${selectedInstitution.state}, ` : ''}{selectedInstitution.country} • {t.minScoreLabel}{' '}
+                  📍 {formatLocation(selectedInstitution)} • {t.minScoreLabel}{' '}
                   <strong className="text-emerald-700">
                     {selectedInstitution.minScore > 0 ? `${selectedInstitution.minScore}+` : (locale === 'ru' ? 'не подтверждён' : 'not confirmed')}
                   </strong>
@@ -669,7 +688,7 @@ export const InstitutionsMap: React.FC = () => {
                             : 'bg-neutral-900 text-white'
                         }`}
                       >
-                        {inst.minScore}
+                        {inst.minScore > 0 ? inst.minScore : '—'}
                       </span>
                     </div>
 
@@ -684,7 +703,7 @@ export const InstitutionsMap: React.FC = () => {
                     )}
 
                     <div className={`text-xs flex items-center justify-between ${isSelected ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                      <span>📍 {inst.city}, {inst.country}</span>
+                      <span>📍 {formatLocation(inst)}</span>
                       {inst.acceptanceRate && (
                         <span>{t.acceptanceLabel} {inst.acceptanceRate}</span>
                       )}

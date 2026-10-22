@@ -1,14 +1,32 @@
 import { test, expect } from '@playwright/test';
 
-test('the map catalogue contains only verified official institutions', async ({ request }) => {
-  const response = await request.get('/registry/institutions-map');
+const CATALOG_URL = '/registry/institutions-map';
+
+test('the map catalogue is verified and complete', async ({ request }) => {
+  const response = await request.get(CATALOG_URL);
   expect(response.ok()).toBe(true);
   const payload = await response.json();
-  expect(payload.institutions.length).toBeGreaterThanOrEqual(700);
+
+  expect(payload.institutions.length).toBeGreaterThanOrEqual(2000);
   expect(payload.stats.withCoordinates).toBe(payload.institutions.length);
-  expect(payload.stats.countries).toBeGreaterThanOrEqual(30);
+  expect(payload.stats.withCity).toBeGreaterThanOrEqual(1900);
+  expect(payload.stats.withScore).toBeGreaterThanOrEqual(1300);
+  expect(payload.stats.countries).toBeGreaterThanOrEqual(80);
   expect(payload.stats.official).toBe(payload.institutions.length);
   expect(payload.stats.extended).toBe(0);
+
+  for (const category of [
+    'Ivy League',
+    'Top Global',
+    'Top STEM',
+    'Public Research',
+    'Private Research',
+    'Public University',
+    'Liberal Arts',
+    'Community College',
+  ]) {
+    expect(payload.stats.categories[category] || 0).toBeGreaterThan(0);
+  }
 
   const sample = payload.institutions[0];
   expect(Number.isFinite(sample.latitude)).toBe(true);
@@ -17,29 +35,47 @@ test('the map catalogue contains only verified official institutions', async ({ 
   expect(sample.verified).toBe(true);
   expect(sample.coordinateSource).toContain('wikipedia.org');
 
-  // The old generated catalogue pinned these institutions in Los Angeles.
-  // University of Illinois remains excluded because the registry name is
-  // ambiguous between the system and its campuses.
-  expect(payload.institutions.some((item: { name: string }) => item.name === 'University of Illinois')).toBe(false);
-  const westminster = payload.institutions.find((item: { name: string }) => item.name === 'Westminster College (Pennsylvania)');
-  expect(Math.abs(westminster.latitude - 41.1178)).toBeLessThan(0.01);
-  expect(Math.abs(westminster.longitude - -80.3294)).toBeLessThan(0.01);
-  const chicago = payload.institutions.find((item: { name: string }) => item.name === 'The University of Chicago');
-  expect(Math.abs(chicago.latitude - 41.7897)).toBeLessThan(0.01);
-  expect(Math.abs(chicago.longitude - -87.5997)).toBeLessThan(0.01);
+  const byName = (name: string) =>
+    payload.institutions.find((item: { name: string }) => item.name === name);
+
+  const harvard = byName('Harvard University');
+  expect(harvard.city).toBe('Cambridge');
+  expect(harvard.state).toBe('Massachusetts');
+  expect(harvard.minScore).toBeGreaterThan(0);
+  expect(harvard.latitude).toBeCloseTo(42.3744, 2);
+  expect(harvard.longitude).toBeCloseTo(-71.1169, 2);
+
+  const stanford = byName('Stanford University');
+  expect(stanford.city).toBe('Stanford');
+  expect(stanford.latitude).toBeCloseTo(37.4275, 2);
+  expect(stanford.longitude).toBeCloseTo(-122.1703, 2);
+
+  const westminster = byName('Westminster College (Pennsylvania)');
+  expect(westminster.city).toBe('New Wilmington');
+  expect(westminster.state).toBe('Pennsylvania');
+  expect(westminster.latitude).toBeCloseTo(41.1178, 2);
+  expect(westminster.longitude).toBeCloseTo(-80.3294, 2);
+
+  // The old generated catalogue pinned this institution in Los Angeles.
+  expect(byName('University of Illinois')).toBeUndefined();
 });
 
-test('the map loads the catalogue and filters it', async ({ page }) => {
+test('the map shows scores, cities and working category filters', async ({ page }) => {
   await page.goto('/institutions');
   await page.getByRole('button', { name: /Интерактивная карта/ }).click();
   await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
 
   const found = page.locator('[data-testid="map-found-count"]');
-  await expect(found).toContainText('771');
+  await expect(found).toContainText('2185');
 
-  await page.getByPlaceholder(/Поиск/).fill('Harvard');
-  await expect(found).not.toContainText('771');
+  for (const category of ['Ivy League', 'Top Global', 'Community College', 'Liberal Arts']) {
+    await expect(page.getByRole('button', { name: new RegExp(category) })).toBeVisible();
+  }
 
-  await page.getByLabel('Страна').selectOption({ index: 1 });
-  await expect(found).toContainText(/\d/);
+  await page.getByPlaceholder(/Поиск/).fill('Harvard University');
+  const card = page.locator('h4', { hasText: 'Harvard University' }).first();
+  await expect(card).toBeVisible();
+  const cardRow = page.locator('div').filter({ has: card }).last();
+  await expect(cardRow).toContainText('125');
+  await expect(cardRow).toContainText('Cambridge');
 });
