@@ -620,6 +620,45 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+// CoachEvidence is one actionable observation from an evaluation:
+// the quoted span, the rule it violates and the concrete fix.
+type CoachEvidence struct {
+	Span string `json:"span"`
+	Rule string `json:"rule"`
+	Fix  string `json:"fix"`
+}
+
+// CoachItem is the coaching view of one speaking or writing answer.
+type CoachItem struct {
+	QuestionID       string          `json:"questionId"`
+	QuestionType     string          `json:"questionType"`
+	Status           string          `json:"status"` // COMPLETED, FAILED, PENDING, EMPTY
+	Score            float64         `json:"score"`
+	CEFRLevel        string          `json:"cefrLevel"`
+	Provider         string          `json:"provider"`
+	EvaluatorVersion string          `json:"evaluatorVersion"`
+	Feedback         string          `json:"feedback"`
+	Recommendations  []string        `json:"recommendations"`
+	Evidence         []CoachEvidence `json:"evidence"`
+	// PreviousScore and ScoreDelta compare the answer with the previous attempt
+	// at the same task type, when one exists.
+	PreviousScore *float64 `json:"previousScore,omitempty"`
+	ScoreDelta    *float64 `json:"scoreDelta,omitempty"`
+	Improvements  []string `json:"improvements"`
+	// PracticeURL lets the student rewrite or record the same task again.
+	PracticeURL string `json:"practiceUrl"`
+}
+
+// CoachReport is the speaking/writing coaching summary of an attempt.
+type CoachReport struct {
+	SessionID string      `json:"sessionId"`
+	Available bool        `json:"available"`
+	Items     []CoachItem `json:"items"`
+	// Notice explains why coaching is unavailable (for example when the
+	// provider failed) instead of showing a zero skill.
+	Notice string `json:"notice,omitempty"`
+}
+
 type EvaluationQueueStats struct {
 	Queued                 int   `json:"queued"`
 	Processing             int   `json:"processing"`

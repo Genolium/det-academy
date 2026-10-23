@@ -1922,6 +1922,21 @@ func (r *sessionMemoryRepo) SaveMediaAsset(ctx context.Context, asset *models.Me
 	return nil
 }
 
+func (r *sessionMemoryRepo) DeleteMediaAssetsBySession(ctx context.Context, sessionID string) ([]string, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	paths := []string{}
+	for id, asset := range r.s.mediaAssets {
+		if asset.SessionID == sessionID {
+			if asset.FilePath != "" {
+				paths = append(paths, asset.FilePath)
+			}
+			delete(r.s.mediaAssets, id)
+		}
+	}
+	return paths, nil
+}
+
 func (r *sessionMemoryRepo) GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()

@@ -78,6 +78,9 @@ type TestSessionRepository interface {
 	UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
 	GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error)
+	// DeleteMediaAssetsBySession removes the media rows of a session and
+	// returns their file paths so the caller can delete the files.
+	DeleteMediaAssetsBySession(ctx context.Context, sessionID string) ([]string, error)
 }
 
 type CertificateRepository interface {

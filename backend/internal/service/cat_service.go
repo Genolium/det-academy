@@ -1197,6 +1197,15 @@ func (s *CATService) recordAudioResponseLocked(
 }
 
 // GetSessionEvaluations returns rubric feedback and recommendations for all evaluated questions in a session.
+// DeleteSessionAudioAssets removes the audio rows of an attempt and returns
+// the file paths so the caller can delete the files themselves.
+func (s *CATService) DeleteSessionAudioAssets(ctx context.Context, sessionID, userID string) ([]string, error) {
+	if err := s.VerifySessionOwner(ctx, sessionID, userID); err != nil {
+		return nil, err
+	}
+	return s.sessionRepo.DeleteMediaAssetsBySession(ctx, sessionID)
+}
+
 func (s *CATService) GetSessionEvaluations(ctx context.Context, sessionID, userID string) ([]models.EvaluationResult, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {

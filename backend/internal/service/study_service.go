@@ -938,6 +938,230 @@ func (s *StudyService) GetWeeklyReport(ctx context.Context, userID string) (*mod
 	return report, nil
 }
 
+// coachTypes are the productive skills that have a coaching view.
+var coachTypes = map[string]bool{
+	"WRITE_PHOTO":          true,
+	"INTERACTIVE_WRITING":  true,
+	"WRITING_SAMPLE":       true,
+	"SPEAK_PHOTO":          true,
+	"READ_THEN_SPEAK":      true,
+	"INTERACTIVE_SPEAKING": true,
+	"SPEAKING_SAMPLE":      true,
+}
+
+// BuildCoachReport compares the speaking/writing answers of an attempt with
+// the student's previous attempt at the same task type. Provider failures are
+// reported as unavailable instead of being turned into a zero skill.
+func (s *StudyService) BuildCoachReport(ctx context.Context, sessionID, userID string) (*models.CoachReport, error) {
+	session, err := s.catService.GetSession(ctx, sessionID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if session == nil {
+		return nil, errors.New("session not found")
+	}
+
+	evaluations, err := s.catService.GetSessionEvaluations(ctx, sessionID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Previous evaluations of the same task type from the student's other
+	// sessions, newest first.
+	previous := make(map[string]*models.EvaluationResult)
+	if sessions, err := s.catService.GetUserSessions(ctx, userID); err == nil {
+		for _, other := range sessions {
+			if other.ID == sessionID {
+				continue
+			}
+			if other.CompletedAt == nil {
+				continue
+			}
+			items, evalErr := s.catService.GetSessionEvaluations(ctx, other.ID, userID)
+			if evalErr != nil {
+				continue
+			}
+			for index := range items {
+				item := items[index]
+				if !coachTypes[item.QuestionType] || item.Status != "COMPLETED" {
+					continue
+				}
+				if _, exists := previous[item.QuestionType]; !exists {
+					previous[item.QuestionType] = &item
+				}
+			}
+		}
+	}
+
+	report := &models.CoachReport{SessionID: sessionID, Items: []models.CoachItem{}}
+	failed := 0
+
+	for _, evaluation := range evaluations {
+		if !coachTypes[evaluation.QuestionType] {
+			continue
+		}
+		if evaluation.Status != "COMPLETED" {
+			failed++
+			report.Items = append(report.Items, models.CoachItem{
+				QuestionID:   evaluation.QuestionID,
+				QuestionType: evaluation.QuestionType,
+				Status:       evaluation.Status,
+				Provider:     evaluation.Provider,
+				PracticeURL:  coachPracticeURL(evaluation.QuestionType),
+			})
+			continue
+		}
+
+		item := models.CoachItem{
+			QuestionID:       evaluation.QuestionID,
+			QuestionType:     evaluation.QuestionType,
+			Status:           evaluation.Status,
+			Score:            evaluation.Score,
+			CEFRLevel:        evaluation.CEFRLevel,
+			Provider:         evaluation.Provider,
+			EvaluatorVersion: evaluation.EvaluatorVersion,
+			Feedback:         evaluation.Feedback,
+			Recommendations:  evaluation.Recommendations,
+			PracticeURL:      coachPracticeURL(evaluation.QuestionType),
+		}
+		for _, span := range evaluation.EvidenceSpans {
+			item.Evidence = append(item.Evidence, models.CoachEvidence{
+				Span: span.Text,
+				Rule: span.Label,
+				Fix:  span.Suggestion,
+			})
+		}
+
+		if prior, ok := previous[evaluation.QuestionType]; ok {
+			previousScore := prior.Score
+			delta := evaluation.Score - prior.Score
+			item.PreviousScore = &previousScore
+			item.ScoreDelta = &delta
+			if delta > 0.001 {
+				item.Improvements = append(item.Improvements, fmt.Sprintf(
+					"Оценка выросла на %.2f по сравнению с прошлой попыткой (%.2f → %.2f).",
+					delta, prior.Score, evaluation.Score,
+				))
+			} else if delta < -0.001 {
+				item.Improvements = append(item.Improvements, fmt.Sprintf(
+					"Оценка снизилась на %.2f по сравнению с прошлой попыткой (%.2f → %.2f).",
+					-delta, prior.Score, evaluation.Score,
+				))
+			} else {
+				item.Improvements = append(item.Improvements, "Оценка не изменилась относительно прошлой попытки.")
+			}
+			if evaluation.CEFRLevel != "" && prior.CEFRLevel != "" && evaluation.CEFRLevel != prior.CEFRLevel {
+				item.Improvements = append(item.Improvements, fmt.Sprintf(
+					"Уровень CEFR: %s → %s.", prior.CEFRLevel, evaluation.CEFRLevel,
+				))
+			}
+			if prior.UniqueWords > 0 {
+				if diff := evaluation.UniqueWords - prior.UniqueWords; diff != 0 {
+					item.Improvements = append(item.Improvements, fmt.Sprintf(
+						"Уникальных слов: %+d (было %d, стало %d).", diff, prior.UniqueWords, evaluation.UniqueWords,
+					))
+				}
+			}
+		} else {
+			item.Improvements = append(item.Improvements, "Это первая попытка по этому типу задания — сравнение появится после следующей.")
+		}
+
+		report.Items = append(report.Items, item)
+	}
+
+	report.Available = len(report.Items) > 0
+	if !report.Available {
+		report.Notice = "В этой попытке нет ответов Speaking или Writing."
+	} else if failed == len(report.Items) {
+		report.Notice = "Оценка недоступна: провайдер оценивания не ответил. Это не нулевой навык — попробуйте переоценить ответ позже."
+	}
+
+	return report, nil
+}
+
+// SaveCoachErrors turns the weakest coaching observations into repeatable
+// Error Notebook entries. It is idempotent: identical active errors are not
+// duplicated by SaveError.
+func (s *StudyService) SaveCoachErrors(ctx context.Context, sessionID, userID string) (int, error) {
+	report, err := s.BuildCoachReport(ctx, sessionID, userID)
+	if err != nil {
+		return 0, err
+	}
+
+	created := 0
+	for _, item := range report.Items {
+		if item.Status != "COMPLETED" {
+			continue
+		}
+		if len(item.Evidence) == 0 && len(item.Recommendations) == 0 {
+			continue
+		}
+
+		prompt := fmt.Sprintf("%s: %s", item.QuestionType, coachTaskTitle(item.QuestionType))
+		correct := ""
+		explanation := ""
+		if len(item.Evidence) > 0 {
+			correct = item.Evidence[0].Fix
+			explanation = fmt.Sprintf("Наблюдение: %s. Правило: %s.", item.Evidence[0].Span, item.Evidence[0].Rule)
+		}
+		if correct == "" && len(item.Recommendations) > 0 {
+			correct = item.Recommendations[0]
+		}
+		if correct == "" {
+			correct = item.Feedback
+		}
+		if strings.TrimSpace(correct) == "" {
+			continue
+		}
+
+		_, saveErr := s.SaveError(ctx, userID, models.SaveErrorRequest{
+			QuestionType:  item.QuestionType,
+			Prompt:        prompt,
+			UserAnswer:    item.Feedback,
+			CorrectAnswer: correct,
+			Explanation:   explanation,
+		})
+		if saveErr != nil {
+			continue
+		}
+		created++
+	}
+
+	return created, nil
+}
+
+func coachPracticeURL(questionType string) string {
+	switch questionType {
+	case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
+		return "/practice"
+	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+		return "/practice"
+	default:
+		return "/practice"
+	}
+}
+
+func coachTaskTitle(questionType string) string {
+	switch questionType {
+	case "WRITE_PHOTO":
+		return "Write about the photo"
+	case "INTERACTIVE_WRITING":
+		return "Interactive writing"
+	case "WRITING_SAMPLE":
+		return "Writing sample"
+	case "SPEAK_PHOTO":
+		return "Speak about the photo"
+	case "READ_THEN_SPEAK":
+		return "Read then speak"
+	case "INTERACTIVE_SPEAKING":
+		return "Interactive speaking"
+	case "SPEAKING_SAMPLE":
+		return "Speaking sample"
+	default:
+		return questionType
+	}
+}
+
 // minInt returns the smaller of two integers.
 func minInt(a, b int) int {
 	if a < b {

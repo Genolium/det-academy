@@ -297,3 +297,46 @@ func (h *StudyHandler) CompletePlanTask(w http.ResponseWriter, r *http.Request) 
 	}
 	RespondJSON(w, http.StatusOK, map[string]string{"status": "completed"})
 }
+
+// GetCoachReport returns the speaking/writing coaching view of an attempt.
+func (h *StudyHandler) GetCoachReport(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	sessionID := chi.URLParam(r, "sessionId")
+	if sessionID == "" {
+		RespondError(w, http.StatusBadRequest, "session id is required")
+		return
+	}
+
+	report, err := h.studyService.BuildCoachReport(r.Context(), sessionID, userID)
+	if err != nil {
+		RespondError(w, http.StatusForbidden, "attempt is not available")
+		return
+	}
+	RespondJSON(w, http.StatusOK, report)
+}
+
+// SaveCoachErrors creates repeatable Error Notebook entries from the coaching
+// report of an attempt.
+func (h *StudyHandler) SaveCoachErrors(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	sessionID := chi.URLParam(r, "sessionId")
+	if sessionID == "" {
+		RespondError(w, http.StatusBadRequest, "session id is required")
+		return
+	}
+
+	created, err := h.studyService.SaveCoachErrors(r.Context(), sessionID, userID)
+	if err != nil {
+		RespondError(w, http.StatusForbidden, "attempt is not available")
+		return
+	}
+	RespondJSON(w, http.StatusOK, map[string]int{"created": created})
+}

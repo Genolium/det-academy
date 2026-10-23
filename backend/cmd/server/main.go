@@ -284,6 +284,12 @@ func main() {
 			r.Post("/activity", studyHandler.RecordActivity)
 			r.Get("/srs", studyHandler.GetSRSState)
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
+
+			// Speaking/Writing Coach: attempt comparison, repeatable errors
+			// and audio deletion for the student's own recordings.
+			r.Get("/coach/{sessionId}", studyHandler.GetCoachReport)
+			r.Post("/coach/{sessionId}/errors", studyHandler.SaveCoachErrors)
+			r.Delete("/coach/{sessionId}/audio", mediaHandler.DeleteSessionAudio)
 		})
 
 		// Theory routes (Strictly authenticated progress)

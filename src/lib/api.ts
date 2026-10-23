@@ -919,6 +919,42 @@ class ApiClient {
     return res.json();
   }
 
+
+  async getCoachReport(sessionId: string): Promise<CoachReport> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить коучинг', res.status);
+    }
+    return res.json();
+  }
+
+  async saveCoachErrors(sessionId: string): Promise<{ created: number }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}/errors`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось добавить ошибки в тетрадь', res.status);
+    }
+    return res.json();
+  }
+
+  async deleteCoachAudio(sessionId: string): Promise<{ deletedAssets: number; deletedFiles: number }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}/audio`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось удалить аудио', res.status);
+    }
+    return res.json();
+  }
+
   // --- Certificates ---
 
   async getCertificate(id: string): Promise<BackendCertificate> {
@@ -1344,6 +1380,37 @@ class ApiClient {
     }
     return res.json();
   }
+}
+
+
+export interface CoachEvidence {
+  span: string;
+  rule: string;
+  fix: string;
+}
+
+export interface CoachItem {
+  questionId: string;
+  questionType: string;
+  status: 'COMPLETED' | 'FAILED' | 'PENDING' | 'EMPTY' | string;
+  score: number;
+  cefrLevel: string;
+  provider: string;
+  evaluatorVersion: string;
+  feedback: string;
+  recommendations: string[];
+  evidence: CoachEvidence[];
+  previousScore?: number;
+  scoreDelta?: number;
+  improvements: string[];
+  practiceUrl: string;
+}
+
+export interface CoachReport {
+  sessionId: string;
+  available: boolean;
+  items: CoachItem[];
+  notice?: string;
 }
 
 export interface ArenaLeaderboardEntry {

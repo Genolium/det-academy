@@ -230,3 +230,42 @@ func (h *MediaHandler) ServeAudio(w http.ResponseWriter, r *http.Request) {
 func minF(a, b float64) float64 {
 	return math.Min(a, b)
 }
+
+// DeleteSessionAudio removes the audio recordings of an attempt. The rows are
+// deleted first; files are removed only when they live inside the upload
+// directory, so a corrupt path can never delete an unrelated file.
+func (h *MediaHandler) DeleteSessionAudio(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(UserIDKey).(string)
+	if !ok || userID == "" {
+		RespondError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	sessionID := chi.URLParam(r, "sessionId")
+	if sessionID == "" {
+		RespondError(w, http.StatusBadRequest, "session id is required")
+		return
+	}
+
+	paths, err := h.catService.DeleteSessionAudioAssets(r.Context(), sessionID, userID)
+	if err != nil {
+		RespondError(w, http.StatusForbidden, "Session does not belong to user")
+		return
+	}
+
+	root := filepath.Clean(h.uploadDir)
+	deletedFiles := 0
+	for _, path := range paths {
+		clean := filepath.Clean(path)
+		if !strings.HasPrefix(clean, root+string(os.PathSeparator)) {
+			continue
+		}
+		if err := os.Remove(clean); err == nil {
+			deletedFiles++
+		}
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]int{
+		"deletedAssets": len(paths),
+		"deletedFiles":  deletedFiles,
+	})
+}

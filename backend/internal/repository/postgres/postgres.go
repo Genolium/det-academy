@@ -974,6 +974,26 @@ func (r *SessionRepo) SaveMediaAsset(ctx context.Context, asset *models.MediaAss
 	return err
 }
 
+func (r *SessionRepo) DeleteMediaAssetsBySession(ctx context.Context, sessionID string) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `DELETE FROM media_assets WHERE session_id = $1 RETURNING file_path`, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	paths := []string{}
+	for rows.Next() {
+		var path sql.NullString
+		if err := rows.Scan(&path); err != nil {
+			return nil, err
+		}
+		if path.Valid && path.String != "" {
+			paths = append(paths, path.String)
+		}
+	}
+	return paths, rows.Err()
+}
+
 func (r *SessionRepo) GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error) {
 	query := `
 		SELECT id, user_id, COALESCE(session_id::text, ''), question_id, file_type, file_path, url, file_size, duration_sec, created_at

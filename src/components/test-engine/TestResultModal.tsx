@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalculatedScores } from '@/lib/scoring';
-import { api, EvaluationResult, ReviewItem } from '@/lib/api';
+import { api, CoachReport, EvaluationResult, ReviewItem } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { Award, RotateCcw, CheckCircle2, ShieldCheck, Sparkles, FileText } from 'lucide-react';
+import { Award, RotateCcw, CheckCircle2, ShieldCheck, Sparkles, FileText, Lightbulb, BookOpen, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SubscoresRadarChart } from '@/components/analytics/SubscoresRadarChart';
 import { RubricFeedbackCard } from '@/components/audio/RubricFeedbackCard';
@@ -37,6 +37,9 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
   const [loadingEvals, setLoadingEvals] = useState(false);
   const [review, setReview] = useState<ReviewItem[]>([]);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [coach, setCoach] = useState<CoachReport | null>(null);
+  const [coachBusy, setCoachBusy] = useState(false);
+  const [coachMessage, setCoachMessage] = useState<string | null>(null);
 
   const notMeasured = scores.notMeasured || [];
   const overallMeasured = (scores.overall || 0) > 0 && !notMeasured.includes('overall');
@@ -91,6 +94,14 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
       // ignore
     }
   }, [overallMeasured]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    api
+      .getCoachReport(sessionId)
+      .then((report) => setCoach(report))
+      .catch(() => setCoach(null));
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -415,6 +426,117 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             </p>
           )}
         </div>
+
+        {/* Speaking/Writing Coach */}
+        {coach?.available && coach.items.length > 0 && (
+          <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-[#D2F544]" />
+                <h3 className="text-base font-bold text-white">Коучинг Speaking / Writing</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={coachBusy}
+                  onClick={async () => {
+                    if (!sessionId) return;
+                    setCoachBusy(true);
+                    try {
+                      const result = await api.saveCoachErrors(sessionId);
+                      setCoachMessage(
+                        result.created > 0
+                          ? `Добавлено в тетрадь ошибок: ${result.created}.`
+                          : 'Все наблюдения уже есть в тетради ошибок.'
+                      );
+                    } catch {
+                      setCoachMessage('Не удалось добавить наблюдения в тетрадь ошибок.');
+                    } finally {
+                      setCoachBusy(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0E1012] bg-[#D2F544] hover:bg-[#C4F22C] px-3 py-1.5 rounded-full disabled:opacity-60"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  В тетрадь ошибок
+                </button>
+                <button
+                  type="button"
+                  disabled={coachBusy}
+                  onClick={async () => {
+                    if (!sessionId) return;
+                    setCoachBusy(true);
+                    try {
+                      const result = await api.deleteCoachAudio(sessionId);
+                      setCoachMessage(
+                        result.deletedAssets > 0
+                          ? `Аудио удалено: ${result.deletedAssets}.`
+                          : 'Аудиозаписей для удаления нет.'
+                      );
+                    } catch {
+                      setCoachMessage('Не удалось удалить аудио.');
+                    } finally {
+                      setCoachBusy(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-neutral-300 border border-neutral-700 hover:border-rose-500 hover:text-rose-300 px-3 py-1.5 rounded-full disabled:opacity-60"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Удалить аудио
+                </button>
+              </div>
+            </div>
+
+            {coach.notice && <p className="text-xs text-amber-300">{coach.notice}</p>}
+            {coachMessage && <p className="text-xs text-neutral-300">{coachMessage}</p>}
+
+            <div className="space-y-3">
+              {coach.items.map((item) => (
+                <div key={item.questionId} className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                      {item.questionType.replaceAll('_', ' ')}
+                    </span>
+                    {item.status === 'COMPLETED' ? (
+                      <span className="text-xs font-black text-[#D2F544]">
+                        {Math.round(item.score * 100)}% · {item.cefrLevel}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-amber-300">оценка недоступна</span>
+                    )}
+                  </div>
+
+                  {item.status === 'COMPLETED' ? (
+                    <>
+                      {item.improvements.map((line, index) => (
+                        <p key={index} className="text-xs text-neutral-300">{line}</p>
+                      ))}
+                      {item.evidence.map((evidence, index) => (
+                        <p key={index} className="text-[11px] text-neutral-400">
+                          <span className="text-neutral-500">«{evidence.span}»</span> · {evidence.rule} →{' '}
+                          <span className="text-neutral-200">{evidence.fix}</span>
+                        </p>
+                      ))}
+                      {item.feedback && <p className="text-[11px] text-neutral-400">{item.feedback}</p>}
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <span className="text-[10px] text-neutral-500">
+                          {item.provider || 'provider'} · {item.evaluatorVersion || 'version'}
+                        </span>
+                        <Link href={item.practiceUrl} className="text-[11px] font-bold text-[#D2F544] hover:underline">
+                          Переписать / перезаписать
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-neutral-400">
+                      Провайдер оценивания не вернул результат. Это не нулевой навык — ответ можно оценить позже.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Attempt review */}
         <div className="bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 mb-8 space-y-4">
