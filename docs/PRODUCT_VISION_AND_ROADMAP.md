@@ -468,7 +468,6 @@ PostgreSQL — обязательный production source of truth. Основн
 - learning plans and activities;
 - XP/streak/rating ledger;
 - institutions, programs, requirements and sources;
-- subscriptions and entitlements;
 - audit/security events.
 
 ### Object storage
@@ -531,8 +530,6 @@ CMS управляет редакционным контентом, но не п
 - `RequirementSource`
 - `ArenaMatch`
 - `RatingTransaction`
-- `Subscription`
-- `Entitlement`
 - `AuditEvent`
 
 Для изменяемых сущностей нужны version/revision и timestamps. Для денежных, рейтинговых и учебных начислений нужен ledger, а не перезаписываемый счётчик.
@@ -607,42 +604,33 @@ AI не должен самостоятельно:
 
 ## 11. Бизнес-модель
 
-### Бесплатный уровень
+### Полностью бесплатная открытая платформа (100% Free Educational Software)
 
-- знакомство со структурой;
-- ограниченная диагностика;
-- часть теории;
-- дневной лимит практики;
-- базовая тетрадь ошибок;
-- один ограниченный отчёт прогресса.
-
-### Premium
+Платформа DET Academy полностью бесплатна для всех пользователей. Никаких платных тарифов, пейволлов, подписок, пробных периодов с ограничением функций или платных заграждений:
 
 - полный персональный план;
-- неограниченная практика;
-- Speaking/Writing Coach;
-- полные пробные тесты;
-- расширенный анализ;
-- weekly reports;
-- университетский shortlist;
-- приоритетная обработка productive skills.
+- неограниченная практика всех типов заданий;
+- Speaking/Writing AI Coach с разбором ошибок;
+- полные адаптивные пробные тесты и честная серверная оценка;
+- расширенный анализ и детализация навыков;
+- weekly reports и персональный трекинг;
+- полный каталог и университетский shortlist;
+- полная тетрадь ошибок и SRS-интервальное повторение;
+- соревновательная Арена и лиги.
 
-### Teacher/School
+### Teacher/School (Образовательные организации)
 
-- группы;
-- назначения;
-- отчёты;
-- teacher review;
-- административные роли;
-- лицензии по местам;
-- организация контента.
+- группы и когорты;
+- совместные назначения;
+- сводные отчёты успеваемости;
+- teacher review письменных и устных работ;
+- открытые роли преподавателей без лицензионных ограничений.
 
 ### Дополнительные направления
 
-- разовые пакеты mock tests;
-- expert review письменного/устного ответа;
-- партнёрские услуги поступления только с прозрачной маркировкой;
-- B2B white-label после стабилизации ядра.
+- открытое академическое сотрудничество;
+- совместные исследования и калибровка моделей с преподавателями;
+- Open Source / Open Data инициативы по подготовке к тесту.
 
 Монетизация не должна ограничивать базовую безопасность, доступ к собственным данным и исправление ошибочно начисленных результатов.
 
@@ -884,10 +872,8 @@ Gate:
 - cohorts;
 - assignments;
 - teacher review;
-- seat licensing;
 - organization reports;
 - audit trail;
-- billing and entitlements;
 - support/admin tooling;
 - privacy and data retention controls.
 
@@ -895,8 +881,6 @@ Gate:
 
 - преподаватель видит только свои группы;
 - роли проверяются сервером;
-- subscription changes идемпотентны;
-- entitlement нельзя получить изменением клиента;
 - отчёты совпадают с source events.
 
 ### Фаза 7. Калибровка и зрелость
@@ -978,14 +962,13 @@ Gate:
 - university sources;
 - quality analytics.
 
-### Growth and Commercial
+### Growth and Community
 
 - analytics;
-- paywall/entitlements;
 - lifecycle communication;
 - teacher/school;
 - support;
-- experiments.
+- learning experiments.
 
 Зависимости фиксируются явно. Assessment не должен ждать новых лендингов, а Growth не должен строить воронку на ложных success states.
 
@@ -1025,8 +1008,7 @@ Gate:
 4. Лиги.
 5. Server Arena.
 6. Teacher portal.
-7. Billing/entitlements.
-8. Расширенная локализация.
+7. Расширенная локализация.
 
 ## 16. Что не нужно делать сейчас
 

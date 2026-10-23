@@ -80,7 +80,7 @@ Production preflight заблокирован:
 | Университеты | 5% | 45% | 12.5k official registry, verified coordinates, no fake map fallback | `UniversityMatchWidget` содержит ручные пороги; backend seed возвращает неподтверждённые требования; нет program-level source/check date workflow |
 | Мотивация и Arena | 5% | 45% | Server WebSocket, leaderboard, reconnect, server result, bot marked as Bot | Рейтинг против бот-соперника можно использовать как игровую механику; нет полноценного activity ledger, league periods и anti-abuse analytics |
 | Production/operations | 10% | 45% | Health/readiness, metrics, migrations, backups, deploy script, CI, a11y tests, PWA/offline | Critical Next.js advisory; audits non-blocking; migration errors ignored; security headers absent; Directus TLS broken; no Sentry/external provider verification |
-| Teacher/B2B/monetization | 5% | 10% | Admin dashboard and roles foundation | Нет organizations, cohorts, teacher review, subscriptions, billing, entitlements и seat licensing |
+| Teacher/B2B/community | 5% | 10% | Admin dashboard and roles foundation | Нет organizations, cohorts и teacher review (платформа 100% бесплатная, биллинг и подписки исключены) |
 
 Взвешенная оценка: около **57%**.
 
@@ -194,9 +194,9 @@ theory progress × 40% + latest mock / target × 60%
 
 Playwright config запускает `next dev`, который требует native SWC/Turbopack. На проверяемом macOS ARM окружении E2E не стартовал. CI на Linux может быть зелёным, но локальная разработка остаётся хрупкой.
 
-### Нет коммерческого и teacher-контура
+### Нет учительского контура
 
-В продукте нет subscriptions, payments, entitlements, organizations, cohorts и teacher review. Это соответствует текущему этапу, но составляет заметную часть финального видения.
+В продукте пока нет organizations, cohorts и teacher review. Платформа является полностью бесплатной (100% Free), поэтому биллинг, подписки, пейволлы и платные лицензии намеренно исключены из скоупа.
 
 ## 7. План разработки: 10 двухнедельных спринтов
 
@@ -457,29 +457,27 @@ Playwright config запускает `next dev`, который требует n
 
 ---
 
-## Спринт 10. Commercial beta и выпускной gate
+## Спринт 10. Open Beta и выпускной gate
 
 ### Цель
 
-Подготовить продукт к ограниченной платной beta и следующему этапу B2B.
+Подготовить продукт к открытой публичной beta и контуру для преподавателей и школ (100% Free).
 
 ### Работы
 
-1. Добавить subscriptions, entitlements и webhook ledger.
-2. Разделить Free/Premium без ограничения безопасности и доступа к своим данным.
-3. Подготовить organization/cohort data model.
-4. Сделать минимальный teacher progress view и review queue.
-5. Провести privacy review текстов и аудио.
-6. Провести внешний security review.
-7. Выполнить backup/restore drill.
-8. Выполнить load test и capacity plan.
-9. Пройти ручной critical path на телефоне и компьютере.
-10. Выпустить beta только после прохождения release checklist.
+1. Проверить отсутствие любых пейволлов, платных ограничений и скрытых тарифов — весь функционал открыт.
+2. Подготовить organization/cohort data model для преподавателей и учебных заведений.
+3. Сделать минимальный teacher progress view и review queue.
+4. Провести privacy review текстов и аудио.
+5. Провести внешний security review.
+6. Выполнить backup/restore drill.
+7. Выполнить load test и capacity plan.
+8. Пройти ручной critical path на телефоне и компьютере.
+9. Выпустить beta только после прохождения release checklist.
 
 ### Приёмка
 
-- entitlement нельзя получить изменением клиента;
-- payment webhook идемпотентен;
+- весь функционал доступен бесплатно любому зарегистрированному студенту;
 - teacher видит только свой cohort;
 - restore проверен на отдельной БД;
 - P0/P1 security findings закрыты;
