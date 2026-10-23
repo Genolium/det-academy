@@ -204,7 +204,12 @@ func (s *AuthService) Register(ctx context.Context, req models.RegisterRequest) 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, "", fmt.Errorf("failed to create user: %w", err)
 	}
-	s.sendVerificationEmailAsync(user)
+	link, err := s.prepareVerificationEmail(ctx, user)
+	if err != nil {
+		log.Printf("[Auth] failed to prepare verification email: %v", err)
+	} else {
+		s.deliverVerificationEmailAsync(user.Email, link)
+	}
 
 	token, err := s.GenerateToken(user)
 	if err != nil {
@@ -1310,37 +1315,49 @@ func min(a, b int) int {
 
 var ErrEmailNotVerified = errors.New("email is not verified")
 
-func (s *AuthService) sendVerificationEmail(ctx context.Context, user *models.User) error {
+// prepareVerificationEmail stores a fresh verification token and returns the
+// link that has to be delivered. The database write stays synchronous so the
+// verification flow is consistent as soon as Register returns; only the
+// network delivery is asynchronous.
+func (s *AuthService) prepareVerificationEmail(ctx context.Context, user *models.User) (string, error) {
 	if user.EmailVerified || user.Email == "" {
-		return nil
+		return "", nil
 	}
 	token, err := randomHex(32)
 	if err != nil {
-		return err
+		return "", err
 	}
 	expires := time.Now().UTC().Add(24 * time.Hour)
 	if err := s.userRepo.SetEmailVerification(ctx, user.ID, hashState(token), expires); err != nil {
+		return "", err
+	}
+	return s.publicAppURL + "/auth/verify-email?token=" + token, nil
+}
+
+func (s *AuthService) sendVerificationEmail(ctx context.Context, user *models.User) error {
+	link, err := s.prepareVerificationEmail(ctx, user)
+	if err != nil || link == "" {
 		return err
 	}
-	link := s.publicAppURL + "/auth/verify-email?token=" + token
 	return s.emailSender.SendVerification(ctx, user.Email, link)
 }
 
 // emailDeliveryTimeout bounds one delivery attempt in the background.
 const emailDeliveryTimeout = 10 * time.Second
 
-// sendVerificationEmailAsync delivers the verification email in the
+// deliverVerificationEmailAsync sends an already prepared link in the
 // background. A mail server that is slow or unreachable must not block the
 // registration request, so the delivery runs with its own timeout and a
-// bounded number of parallel attempts.
-func (s *AuthService) sendVerificationEmailAsync(user *models.User) {
-	if user == nil || user.EmailVerified || user.Email == "" {
+// bounded number of parallel attempts. It never touches the repository, which
+// keeps it free of data races with the request handler.
+func (s *AuthService) deliverVerificationEmailAsync(emailAddress, link string) {
+	if link == "" || emailAddress == "" {
 		return
 	}
 	select {
 	case s.mailSlots <- struct{}{}:
 	default:
-		log.Printf("[Auth] verification email for %s skipped: too many pending deliveries", user.Email)
+		log.Printf("[Auth] verification email for %s skipped: too many pending deliveries", emailAddress)
 		return
 	}
 
@@ -1348,7 +1365,7 @@ func (s *AuthService) sendVerificationEmailAsync(user *models.User) {
 		defer func() { <-s.mailSlots }()
 		ctx, cancel := context.WithTimeout(context.Background(), emailDeliveryTimeout)
 		defer cancel()
-		if err := s.sendVerificationEmail(ctx, user); err != nil {
+		if err := s.emailSender.SendVerification(ctx, emailAddress, link); err != nil {
 			log.Printf("[Auth] failed to send verification email: %v", err)
 		}
 	}()
