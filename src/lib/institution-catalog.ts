@@ -10,7 +10,17 @@ export interface CatalogInstitution extends Institution {
   source: InstitutionSource;
   verified: boolean;
   coordinateSource?: string;
+  /** Where the DET requirement comes from. */
+  requirementSource?: string;
+  /** When the requirement was last checked (YYYY-MM-DD). */
+  requirementCheckedAt?: string;
+  /** True only when the institution itself publishes the requirement. */
+  requirementVerified: boolean;
 }
+
+export const DET_REGISTRY_URL = 'https://englishtest.duolingo.com/institutions';
+/** Date of the last verification run of the platform catalogue. */
+export const REQUIREMENT_CHECKED_AT = '2026-10-21';
 
 interface OfficialInstitution {
   id: string;
@@ -109,6 +119,12 @@ export function buildInstitutionMapCatalog(): CatalogInstitution[] {
       source: 'duolingo',
       verified: true,
       coordinateSource: coordinate.sourceUrl,
+      // The official registry confirms that the university accepts the DET,
+      // but it does not publish score thresholds. The numbers below are the
+      // platform's reference values, so they are explicitly not verified.
+      requirementSource: DET_REGISTRY_URL,
+      requirementCheckedAt: REQUIREMENT_CHECKED_AT,
+      requirementVerified: false,
     };
     byKey.set(catalogKey(entry.name, entry.country), entry);
   }

@@ -79,3 +79,26 @@ test('the map shows scores, cities and working category filters', async ({ page 
   await expect(cardRow).toContainText('125');
   await expect(cardRow).toContainText('Cambridge');
 });
+
+test('every admission requirement carries provenance and unknown stays unknown', async ({ request }) => {
+  const response = await request.get(CATALOG_URL);
+  expect(response.ok()).toBe(true);
+  const payload = await response.json();
+
+  const sample = payload.institutions.slice(0, 200);
+  expect(sample.length).toBeGreaterThan(0);
+
+  for (const institution of sample) {
+    expect(institution.requirementSource).toBe('https://englishtest.duolingo.com/institutions');
+    expect(institution.requirementCheckedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(institution.requirementVerified).toBe(false);
+    expect(Number.isFinite(institution.minScore)).toBe(true);
+  }
+
+  // An absent threshold is represented as 0 ("unknown"), never as an invented score.
+  const unknown = payload.institutions.filter((item: { minScore: number }) => !item.minScore);
+  expect(unknown.length).toBeGreaterThan(0);
+  for (const institution of unknown) {
+    expect(institution.minScore).toBe(0);
+  }
+});

@@ -11,12 +11,12 @@ import (
 )
 
 type AdminService struct {
-	userRepo  repository.UserRepository
-	testRepo  repository.TestSessionRepository
-	qRepo     repository.QuestionRepository
-	certRepo  repository.CertificateRepository
-	bRepo     repository.BannerRepository
-	instRepo  repository.InstitutionRepository
+	userRepo repository.UserRepository
+	testRepo repository.TestSessionRepository
+	qRepo    repository.QuestionRepository
+	certRepo repository.CertificateRepository
+	bRepo    repository.BannerRepository
+	instRepo repository.InstitutionRepository
 }
 
 func NewAdminService(
@@ -118,8 +118,10 @@ func (s *AdminService) CreateQuestion(ctx context.Context, req models.CreateQues
 	return q, nil
 }
 
+// DeleteQuestion retracts a question instead of erasing it: attempts that
+// already used the item keep their integrity, while new attempts never see it.
 func (s *AdminService) DeleteQuestion(ctx context.Context, id string) error {
-	return s.qRepo.Delete(ctx, id)
+	return s.qRepo.SetActive(ctx, id, false)
 }
 
 func (s *AdminService) ListBanners(ctx context.Context) ([]models.AdBanner, error) {

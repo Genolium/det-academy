@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Building2,
@@ -27,165 +27,40 @@ interface RankedInstitution {
   name: string;
   country: string;
   state?: string;
+  /** 0 means the threshold is unknown. */
   minScore: number;
-  tier: 'IVY_LEAGUE' | 'GLOBAL_TOP100' | 'STANDARD';
-  programsCount?: number;
+  category: string;
   websiteUrl?: string;
-  notes?: string;
+  requirementSource?: string;
+  requirementCheckedAt?: string;
+  requirementVerified: boolean;
+  acceptanceRate?: string;
 }
 
-// Curated Ivy League & World Elite benchmarks
-const ELITE_INSTITUTIONS_BENCHMARKS: RankedInstitution[] = [
-  {
-    id: 'ivy-columbia',
-    name: 'Columbia University',
-    country: 'USA',
-    state: 'New York',
-    minScore: 130,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://undergrad.admissions.columbia.edu',
-    notes: 'Ivy League • Minimum 125 Literacy & Comprehension',
-  },
-  {
-    id: 'ivy-yale',
-    name: 'Yale University',
-    country: 'USA',
-    state: 'Connecticut',
-    minScore: 135,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://admissions.yale.edu',
-    notes: 'Ivy League • Most competitive applicants score 135+',
-  },
-  {
-    id: 'ivy-upenn',
-    name: 'University of Pennsylvania (UPenn)',
-    country: 'USA',
-    state: 'Pennsylvania',
-    minScore: 130,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://admissions.upenn.edu',
-    notes: 'Ivy League • Recommended 130+ composite',
-  },
-  {
-    id: 'ivy-dartmouth',
-    name: 'Dartmouth College',
-    country: 'USA',
-    state: 'New Hampshire',
-    minScore: 130,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://admissions.dartmouth.edu',
-    notes: 'Ivy League • 130+ accepted for undergraduate entry',
-  },
-  {
-    id: 'ivy-cornell',
-    name: 'Cornell University',
-    country: 'USA',
-    state: 'New York',
-    minScore: 130,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://admissions.cornell.edu',
-    notes: 'Ivy League • 130+ DET score requirement',
-  },
-  {
-    id: 'ivy-brown',
-    name: 'Brown University',
-    country: 'USA',
-    state: 'Rhode Island',
-    minScore: 135,
-    tier: 'IVY_LEAGUE',
-    websiteUrl: 'https://admission.brown.edu',
-    notes: 'Ivy League • Highly competitive profile',
-  },
-  {
-    id: 'top-mit',
-    name: 'Massachusetts Institute of Technology (MIT)',
-    country: 'USA',
-    state: 'Massachusetts',
-    minScore: 130,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://oge.mit.edu',
-    notes: 'Global #1 QS • Undergraduate & Graduate Admissions',
-  },
-  {
-    id: 'top-stanford',
-    name: 'Stanford University',
-    country: 'USA',
-    state: 'California',
-    minScore: 135,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://admission.stanford.edu',
-    notes: 'Global Top-5 • Fulfills full language requirement',
-  },
-  {
-    id: 'top-oxford',
-    name: 'University of Oxford',
-    country: 'UK',
-    minScore: 135,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://ox.ac.uk',
-    notes: 'Global Top-3 • Minimum 130 in each subscore',
-  },
-  {
-    id: 'top-toronto',
-    name: 'University of Toronto',
-    country: 'Canada',
-    state: 'Ontario',
-    minScore: 125,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://future.utoronto.ca',
-    notes: 'Global Top-25 • Direct bachelor admission from 125',
-  },
-  {
-    id: 'top-mcgill',
-    name: 'McGill University',
-    country: 'Canada',
-    state: 'Quebec',
-    minScore: 120,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://mcgill.ca/undergraduate-admissions',
-    notes: 'Global Top-30 • Direct admission threshold 120',
-  },
-  {
-    id: 'top-melbourne',
-    name: 'University of Melbourne',
-    country: 'Australia',
-    state: 'Victoria',
-    minScore: 115,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://study.unimelb.edu.au',
-    notes: 'Group of Eight (Australia) • 115+ DET required',
-  },
-  {
-    id: 'top-nyu',
-    name: 'New York University (NYU)',
-    country: 'USA',
-    state: 'New York',
-    minScore: 130,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://nyu.edu/admissions',
-    notes: 'Global Top-30 • 130+ composite strongly advised',
-  },
-  {
-    id: 'top-ucla',
-    name: 'University of California, Los Angeles (UCLA)',
-    country: 'USA',
-    state: 'California',
-    minScore: 125,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://admission.ucla.edu',
-    notes: 'UC System Flagship • 125+ DET accepted',
-  },
-  {
-    id: 'top-ubc',
-    name: 'University of British Columbia (UBC)',
-    country: 'Canada',
-    state: 'British Columbia',
-    minScore: 125,
-    tier: 'GLOBAL_TOP100',
-    websiteUrl: 'https://you.ubc.ca',
-    notes: 'Global Top-40 • 125 overall with min subscores',
-  },
-];
+const DET_REGISTRY_URL = 'https://englishtest.duolingo.com/institutions';
+const REQUIREMENT_CHECKED_AT = '2026-10-21';
+
+function matchesTier(university: RankedInstitution, tier: 'ALL' | 'IVY' | 'TOP100'): boolean {
+  if (tier === 'IVY') return university.category === 'Ivy League';
+  if (tier === 'TOP100') return ['Ivy League', 'Top Global', 'Top STEM'].includes(university.category);
+  return true;
+}
+
+interface CatalogPayload {
+  institutions?: Array<{
+    id: string;
+    name: string;
+    country: string;
+    state?: string;
+    minScore?: number;
+    category?: string;
+    websiteUrl?: string;
+    requirementSource?: string;
+    requirementCheckedAt?: string;
+    requirementVerified?: boolean;
+    acceptanceRate?: string;
+  }>;
+}
 
 export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
   currentPredictedScore = 0,
@@ -194,8 +69,54 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
   const [simulatedScore, setSimulatedScore] = useState<number>(currentPredictedScore > 0 ? currentPredictedScore : 95);
   const [activeTier, setActiveTier] = useState<'ALL' | 'IVY' | 'TOP100'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [catalog, setCatalog] = useState<RankedInstitution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  // The matcher uses the same catalogue as the interactive map: one model of
+  // data, one set of verified coordinates and thresholds.
+  useEffect(() => {
+    let mounted = true;
+    fetch('/registry/institutions-map', { cache: 'force-cache' })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('catalog unavailable'))))
+      .then((payload: CatalogPayload) => {
+        if (!mounted || !Array.isArray(payload.institutions)) return;
+        setCatalog(
+          payload.institutions.map((item) => ({
+            id: item.id,
+            name: item.name,
+            country: item.country,
+            state: item.state,
+            minScore: Number(item.minScore) || 0,
+            category: item.category || 'Official DET',
+            websiteUrl: item.websiteUrl,
+            requirementSource: item.requirementSource,
+            requirementCheckedAt: item.requirementCheckedAt,
+            requirementVerified: Boolean(item.requirementVerified),
+            acceptanceRate: item.acceptanceRate,
+          }))
+        );
+      })
+      .catch(() => {
+        if (mounted) setLoadError(true);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const calculateMatch = (minScore: number) => {
+    if (!minScore) {
+      return {
+        label: 'Порог неизвестен',
+        labelEn: 'Threshold unknown',
+        color: 'text-neutral-300 bg-neutral-900 border-neutral-700',
+        badgeColor: 'bg-neutral-500',
+      };
+    }
     const diff = simulatedScore - minScore;
     if (diff >= 10) {
       return {
@@ -230,10 +151,8 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
   };
 
   const filteredUniversities = useMemo(() => {
-    return ELITE_INSTITUTIONS_BENCHMARKS.filter((uni) => {
-      if (activeTier === 'IVY' && uni.tier !== 'IVY_LEAGUE') return false;
-      if (activeTier === 'TOP100' && uni.tier === 'STANDARD') return false;
-
+    const result = catalog.filter((uni) => {
+      if (!matchesTier(uni, activeTier)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -244,10 +163,14 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
       }
       return true;
     });
-  }, [activeTier, searchQuery]);
+    // Keep the panel responsive: the catalogue has thousands of entries.
+    return result.slice(0, 60);
+  }, [catalog, activeTier, searchQuery]);
 
-  // Overall match stats
-  const eligibleCount = filteredUniversities.filter((u) => simulatedScore >= u.minScore).length;
+  // Overall match stats: only confirmed thresholds can be compared.
+  const comparable = filteredUniversities.filter((u) => u.minScore > 0);
+  const eligibleCount = comparable.filter((u) => simulatedScore >= u.minScore).length;
+  const unknownCount = filteredUniversities.length - comparable.length;
 
   return (
     <div className={`bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden ${className}`}>
@@ -269,7 +192,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
             Пороги собраны как ориентир. Это не вероятность поступления и не гарантия: проверяйте требования на официальном сайте вуза.
           </p>
           <p className="text-[11px] text-amber-300/90 mt-2">
-            Ориентировочные данные без подтверждённого источника и даты. Не используйте их как единственное основание для подачи документов.
+            Источник: официальный реестр DET, проверено {REQUIREMENT_CHECKED_AT}. Пороги баллов — ориентир платформы, а не официальное требование вуза. Проверяйте приёмную страницу перед подачей документов.
           </p>
         </div>
 
@@ -277,8 +200,13 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
         <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right shrink-0">
           <span className="text-[10px] font-bold text-neutral-400 uppercase block">Выше ориентира:</span>
           <div className="text-lg font-black text-[#D2F544]">
-            {eligibleCount} из {filteredUniversities.length} вузов
+            {eligibleCount} из {comparable.length}
           </div>
+          {unknownCount > 0 && (
+            <span className="text-[10px] text-neutral-500">
+              у {unknownCount} порог неизвестен
+            </span>
+          )}
         </div>
       </div>
 
@@ -376,9 +304,14 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      {uni.tier === 'IVY_LEAGUE' && (
+                      {uni.category === 'Ivy League' && (
                         <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
                           Ivy League
+                        </span>
+                      )}
+                      {uni.category && uni.category !== 'Ivy League' && (
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-neutral-800 text-neutral-300 border border-neutral-700">
+                          {uni.category}
                         </span>
                       )}
                       <span className="text-[10px] text-neutral-400 flex items-center gap-1">
@@ -393,13 +326,22 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
 
                   <div className="text-right shrink-0">
                     <span className="text-[9px] uppercase font-bold text-neutral-500 block">Порог DET</span>
-                    <span className="text-base font-black text-white">{uni.minScore}+</span>
+                    <span className="text-base font-black text-white">
+                      {uni.minScore > 0 ? `${uni.minScore}+` : 'неизвестно'}
+                    </span>
                   </div>
                 </div>
 
-                {uni.notes && (
+                {uni.minScore > 0 ? (
                   <p className="text-[11px] text-neutral-400 mt-1 line-clamp-1">
-                    {uni.notes}
+                    {uni.requirementVerified
+                      ? 'Требование подтверждено вузом'
+                      : 'Ориентировочный порог платформы, не официальное требование вуза'}
+                    {uni.requirementCheckedAt ? ` · проверено ${uni.requirementCheckedAt}` : ''}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-neutral-500 mt-1 line-clamp-1">
+                    Балл DET не опубликован в проверенном источнике — сравнение недоступно.
                   </p>
                 )}
               </div>
@@ -412,17 +354,30 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                   <span className="text-neutral-400 font-mono">({match.labelEn})</span>
                 </div>
 
-                {uni.websiteUrl && (
-                  <a
-                    href={uni.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-bold text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
-                  >
-                    <span>Приемная комиссия</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+                <div className="flex items-center gap-3">
+                  {uni.requirementSource && (
+                    <a
+                      href={uni.requirementSource}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-neutral-500 hover:text-neutral-300 flex items-center gap-1 transition-colors"
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>Источник</span>
+                    </a>
+                  )}
+                  {uni.websiteUrl && (
+                    <a
+                      href={uni.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <span>Приемная комиссия</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           );

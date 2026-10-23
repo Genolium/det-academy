@@ -455,6 +455,17 @@ func (r *QuestionRepo) Create(ctx context.Context, q *models.Question) error {
 	return err
 }
 
+func (r *QuestionRepo) SetActive(ctx context.Context, id string, active bool) error {
+	result, err := r.db.ExecContext(ctx, `UPDATE questions SET is_active = $2 WHERE id = $1`, id, active)
+	if err != nil {
+		return err
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		return fmt.Errorf("question %s not found", id)
+	}
+	return nil
+}
+
 func (r *QuestionRepo) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM questions WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)

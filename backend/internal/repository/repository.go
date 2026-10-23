@@ -46,6 +46,9 @@ type QuestionRepository interface {
 	ListAllActive(ctx context.Context) ([]models.Question, error)
 	Create(ctx context.Context, q *models.Question) error
 	Delete(ctx context.Context, id string) error
+	// SetActive retracts (false) or restores (true) a question without
+	// deleting the history of attempts that already used it.
+	SetActive(ctx context.Context, id string, active bool) error
 	Count(ctx context.Context) (int, error)
 }
 

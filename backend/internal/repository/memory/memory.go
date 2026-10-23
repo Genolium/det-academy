@@ -1553,6 +1553,17 @@ func (r *questionMemoryRepo) Create(ctx context.Context, q *models.Question) err
 	return nil
 }
 
+func (r *questionMemoryRepo) SetActive(ctx context.Context, id string, active bool) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	q, ok := r.s.questions[id]
+	if !ok {
+		return errors.New("question not found")
+	}
+	q.IsActive = active
+	return nil
+}
+
 func (r *questionMemoryRepo) Delete(ctx context.Context, id string) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
