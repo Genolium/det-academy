@@ -107,3 +107,34 @@ DATABASE_URL=... ./scripts/restore_postgres.sh /var/backups/det/det_academy_....
 - result + review
 - certificate lookup (known/unknown)
 - second device login
+
+## Learning, coaching and retention endpoints
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/user/xp` | total and weekly XP, league derived from the ledger, next threshold and the rule |
+| `GET /api/v1/user/coach/{sessionId}` | speaking/writing coaching: comparison with the previous attempt, evidence → rule → fix, provider and evaluator version |
+| `POST /api/v1/user/coach/{sessionId}/errors` | copies the coaching observations into the Error Notebook (idempotent) |
+| `DELETE /api/v1/user/coach/{sessionId}/audio` | deletes the recordings of the student's own attempt (rows first, files only inside the upload directory) |
+
+Rules that the tests enforce:
+
+- an account without a goal gets `configured: false` and never a fabricated
+  target score, deadline, daily budget or university;
+- readiness is reported only after at least two completed mock tests and always
+  explains its basis;
+- the daily plan is trimmed to the available minutes and every task states why
+  it was assigned;
+- a provider failure is reported as "оценка недоступна", never as a zero skill;
+- XP is awarded once per `(user, idempotency key)`;
+- bot duels are unranked and never change the rating;
+- a retracted question (`is_active = false`) is not served to students but its
+  history stays intact.
+
+## Content retraction
+
+`DELETE /api/v1/admin/questions/{id}` retracts a question instead of deleting
+it: the row is kept (so finished attempts keep their integrity) and
+`is_active = false` removes it from every new attempt. The public question
+endpoint only serves active items, which is covered by
+`TestPublicQuestionEndpointExcludesInactive`.
