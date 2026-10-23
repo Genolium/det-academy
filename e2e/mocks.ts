@@ -156,6 +156,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (path.endsWith('/user/plan')) {
       return json(route, 200, {
+        configured: true,
         targetScore: 125,
         targetDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
         daysRemaining: 30,
@@ -163,7 +164,9 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         currentEstimate: 0,
         weakestSkill: 'reading',
         weeklyHoursNeeded: 5,
+        readinessAvailable: false,
         readinessPercent: 0,
+        readinessBasis: 'Not enough data: at least two completed mock tests are required.',
         statusMessage: '',
         tasksToday: [],
       });
@@ -191,11 +194,14 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     }
     if (path.endsWith('/user/goals')) {
       return json(route, 200, {
-        userId: user.id,
-        targetScore: 125,
-        targetDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-        dailyMinutes: 45,
-        updatedAt: new Date().toISOString(),
+        configured: true,
+        goal: {
+          userId: user.id,
+          targetScore: 125,
+          targetDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+          dailyMinutes: 45,
+          updatedAt: new Date().toISOString(),
+        },
       });
     }
     if (path.endsWith('/user/analytics/skills')) {

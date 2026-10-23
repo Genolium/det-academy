@@ -2146,7 +2146,8 @@ func (r *studyMemoryRepo) GetGoals(ctx context.Context, userID string) (*models.
 	defer r.s.mu.RUnlock()
 	g, ok := r.s.goals[userID]
 	if !ok {
-		return nil, errors.New("goals not found")
+		// "No goal yet" is a normal state: the student has not chosen a target.
+		return nil, nil
 	}
 	cp := *g
 	return &cp, nil

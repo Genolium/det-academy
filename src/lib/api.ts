@@ -252,7 +252,17 @@ export interface DailyTask {
   actionUrl: string;
   count?: number;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** Planning cost, used to fit the task into the available time. */
+  estimatedMinutes: number;
+  /** Why the task was assigned. */
+  reason: string;
   completed: boolean;
+  completedAt?: string;
+}
+
+export interface UserGoalsResponse {
+  configured: boolean;
+  goal: UserGoal | null;
 }
 
 export interface WeeklyReport {
@@ -272,6 +282,8 @@ export interface WeeklyReport {
 }
 
 export interface StudyPlanResponse {
+  /** False until the student has chosen a target. */
+  configured: boolean;
   targetScore: number;
   targetDate: string;
   daysRemaining: number;
@@ -279,7 +291,10 @@ export interface StudyPlanResponse {
   currentEstimate: number;
   weakestSkill: string;
   weeklyHoursNeeded: number;
+  /** Readiness is only reported after enough completed attempts. */
+  readinessAvailable: boolean;
   readinessPercent: number;
+  readinessBasis: string;
   statusMessage: string;
   tasksToday: DailyTask[];
 }
@@ -1163,7 +1178,7 @@ class ApiClient {
 
   // --- Stage D: Study Plan, SRS, Error Notebook & Skills ---
 
-  async getUserGoals(): Promise<UserGoal> {
+  async getUserGoals(): Promise<UserGoalsResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/goals`, {
       headers: this.getHeaders(),
     });

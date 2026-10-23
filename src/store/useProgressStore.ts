@@ -44,6 +44,8 @@ interface ProgressState {
   targetScore: number;
   targetDate: string;
   dailyMinutes: number;
+  /** True once the student has chosen a target on the server. */
+  goalsConfigured: boolean;
   studyPlan: StudyPlanResponse | null;
   streakDays: number;
   lastActiveDate: string;
@@ -54,6 +56,7 @@ interface ProgressState {
   setTargetDate: (date: string) => Promise<void>;
   setDailyMinutes: (minutes: number) => Promise<void>;
   loadStudyPlan: () => Promise<void>;
+  saveGoals: (goals: { targetScore: number; targetDate: string; dailyMinutes: number }) => Promise<void>;
   completeDailyTask: (taskId: string) => Promise<void>;
   toggleLessonCompleted: (slug: string) => Promise<void>;
   syncWithBackend: (userId?: string | null) => Promise<void>;
@@ -90,6 +93,7 @@ const getInitialState = (userId?: string | null) => {
       targetScore: 125,
       targetDate: getDefaultTargetDate(),
       dailyMinutes: 45,
+      goalsConfigured: false,
       studyPlan: null,
       streakDays: 0,
       lastActiveDate: '',
@@ -138,6 +142,7 @@ const getInitialState = (userId?: string | null) => {
     targetScore,
     targetDate,
     dailyMinutes,
+    goalsConfigured: false,
     studyPlan: null,
     streakDays,
     lastActiveDate,
@@ -158,6 +163,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       targetScore: 125,
       targetDate: getDefaultTargetDate(),
       dailyMinutes: 45,
+      goalsConfigured: false,
       studyPlan: null,
       streakDays: 0,
       lastActiveDate: '',
@@ -235,18 +241,43 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     if (hasAuthSession()) {
       try {
         const plan = await api.getUserStudyPlan();
-        if (plan) {
-          set({
-            studyPlan: plan,
-            targetScore: plan.targetScore || get().targetScore,
-            targetDate: plan.targetDate || get().targetDate,
-            dailyMinutes: plan.dailyMinutes || get().dailyMinutes,
-          });
+        if (!plan || plan.configured === false) {
+          // No target yet: show onboarding instead of fabricated plan values.
+          set({ goalsConfigured: false, studyPlan: null });
+          return;
         }
+        set({
+          goalsConfigured: true,
+          studyPlan: plan,
+          targetScore: plan.targetScore || get().targetScore,
+          targetDate: plan.targetDate || get().targetDate,
+          dailyMinutes: plan.dailyMinutes || get().dailyMinutes,
+        });
       } catch {
         // ignore
       }
     }
+  },
+
+  saveGoals: async (goals) => {
+    await api.updateUserGoals({
+      targetScore: goals.targetScore,
+      targetDate: goals.targetDate,
+      dailyMinutes: goals.dailyMinutes,
+    });
+    const uid = get().userId;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(getScopedKey('target_score', uid), String(goals.targetScore));
+      localStorage.setItem(getScopedKey('target_date', uid), goals.targetDate);
+      localStorage.setItem(getScopedKey('daily_minutes', uid), String(goals.dailyMinutes));
+    }
+    set({
+      targetScore: goals.targetScore,
+      targetDate: goals.targetDate,
+      dailyMinutes: goals.dailyMinutes,
+      goalsConfigured: true,
+    });
+    await get().loadStudyPlan();
   },
 
   completeDailyTask: async (taskId) => {

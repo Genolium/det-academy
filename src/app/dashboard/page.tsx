@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore, TOTAL_LESSONS } from '@/store/useProgressStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import { lessonsData, LessonGuide } from '@/data/theoryContent';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
 import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget';
 import { WeeklyReportCard } from '@/components/dashboard/WeeklyReportCard';
 import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
+import { GoalOnboarding } from '@/components/dashboard/GoalOnboarding';
 import {
   GraduationCap,
   Sparkles,
@@ -55,6 +57,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 function DashboardContent() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
+  const locale = useSettingsStore((state) => state.locale);
   const {
     completedLessons,
     testResults,
@@ -63,6 +66,7 @@ function DashboardContent() {
     targetDate,
     dailyMinutes,
     studyPlan,
+    goalsConfigured,
     setTargetScore,
     setTargetDate,
     setDailyMinutes,
@@ -89,7 +93,13 @@ function DashboardContent() {
   }, [syncWithBackend, loadErrorsForUser, user?.id]);
 
   const bestScore = getBestMockScore();
-  const readiness = getReadinessPercentage();
+  const readinessAvailable = Boolean(studyPlan?.readinessAvailable);
+  const readiness = readinessAvailable ? (studyPlan?.readinessPercent ?? 0) : 0;
+  const readinessBasis =
+    studyPlan?.readinessBasis ||
+    (locale === 'ru'
+      ? 'Недостаточно данных: нужен минимум 2 завершённых mock-теста.'
+      : 'Not enough data: at least two completed mock tests are required.');
   const latestTest = testResults.length > 0 ? testResults[0] : null;
 
   const remainingLessonsCount = Math.max(0, TOTAL_LESSONS - completedLessons.length);
@@ -230,6 +240,8 @@ function DashboardContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {!goalsConfigured && <GoalOnboarding />}
+
         {/* 1. Top Welcome & Progress Cockpit */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Hero Card: Student Readiness Meter */}
@@ -257,10 +269,13 @@ function DashboardContent() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Готовность к экзамену: <span className="text-[#D2F544]">{readiness}%</span>
+                {locale === 'ru' ? 'Готовность к экзамену: ' : 'Exam readiness: '}
+                <span className="text-[#D2F544]">
+                  {readinessAvailable ? `${readiness}%` : locale === 'ru' ? 'нет данных' : 'no data'}
+                </span>
               </h1>
               <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl leading-relaxed">
-                Комплексная оценка на основе освоения 16 модулей академической теории, результатов адаптивного симулятора теста и скорости ввода ответов.
+                {readinessBasis}
               </p>
             </div>
 
@@ -269,7 +284,7 @@ function DashboardContent() {
               <div className="w-full bg-neutral-900 rounded-full h-3 overflow-hidden border border-neutral-800/80 p-0.5">
                 <div
                   className="bg-gradient-to-r from-[#8be320] to-[#D2F544] h-full rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(210,245,68,0.4)]"
-                  style={{ width: `${Math.max(4, readiness)}%` }}
+                  style={{ width: `${readinessAvailable ? Math.max(4, readiness) : 0}%` }}
                 />
               </div>
 
@@ -363,6 +378,12 @@ function DashboardContent() {
                           <p className="text-[10px] text-neutral-400 truncate max-w-[240px]">
                             {task.description}
                           </p>
+                          {task.reason && (
+                            <p className="text-[10px] text-neutral-500 truncate max-w-[240px]">
+                              {task.reason}
+                              {task.estimatedMinutes ? ` · ${task.estimatedMinutes} ${locale === 'ru' ? 'мин' : 'min'}` : ''}
+                            </p>
+                          )}
                         </div>
                       </Link>
                       <button

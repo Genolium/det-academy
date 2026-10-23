@@ -4,6 +4,7 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/service"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -29,11 +30,21 @@ func (h *StudyHandler) GetGoals(w http.ResponseWriter, r *http.Request) {
 
 	goal, err := h.studyService.GetGoals(r.Context(), userID)
 	if err != nil {
+		if errors.Is(err, service.ErrGoalsNotConfigured) {
+			RespondJSON(w, http.StatusOK, map[string]interface{}{
+				"configured": false,
+				"goal":       nil,
+			})
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, goal)
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"configured": true,
+		"goal":       goal,
+	})
 }
 
 func (h *StudyHandler) UpdateGoals(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +78,10 @@ func (h *StudyHandler) GetStudyPlan(w http.ResponseWriter, r *http.Request) {
 
 	plan, err := h.studyService.GetStudyPlan(r.Context(), userID)
 	if err != nil {
+		if errors.Is(err, service.ErrGoalsNotConfigured) {
+			RespondJSON(w, http.StatusOK, models.StudyPlanResponse{Configured: false})
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

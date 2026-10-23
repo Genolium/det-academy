@@ -941,6 +941,18 @@ func TestPlanTaskCompletionPersists(t *testing.T) {
 	var regResp models.AuthResponse
 	_ = json.Unmarshal(regW.Body.Bytes(), &regResp)
 
+	// A plan only exists after the student has chosen a target.
+	goalBody, _ := json.Marshal(models.UpdateGoalsRequest{
+		TargetScore: 125, TargetDate: "2027-03-01", DailyMinutes: 45,
+	})
+	goalReq := httptest.NewRequest("PUT", "/api/v1/user/goals", bytes.NewReader(goalBody))
+	goalReq.Header.Set("Authorization", "Bearer "+regResp.Token)
+	goalW := httptest.NewRecorder()
+	r.ServeHTTP(goalW, goalReq)
+	if goalW.Code != http.StatusOK {
+		t.Fatalf("expected 200 on put goals, got %d: %s", goalW.Code, goalW.Body.String())
+	}
+
 	completeReq := httptest.NewRequest("POST", "/api/v1/user/plan/tasks/task-srs/complete", nil)
 	completeReq.Header.Set("Authorization", "Bearer "+regResp.Token)
 	completeW := httptest.NewRecorder()
@@ -1630,10 +1642,24 @@ func TestStudyPlanAndSRSEngine(t *testing.T) {
 	if getGoalBW.Code != http.StatusOK {
 		t.Fatalf("expected 200 on get goals for user B, got %d", getGoalBW.Code)
 	}
-	var goalB models.UserGoal
+	var goalB struct {
+		Configured bool             `json:"configured"`
+		Goal       *models.UserGoal `json:"goal"`
+	}
 	_ = json.Unmarshal(getGoalBW.Body.Bytes(), &goalB)
-	if goalB.TargetScore != 125 || goalB.DailyMinutes != 45 {
-		t.Fatalf("expected default goals for user B, got targetScore=%d, dailyMinutes=%d", goalB.TargetScore, goalB.DailyMinutes)
+	if goalB.Configured || goalB.Goal != nil {
+		t.Fatalf("user B must not receive fabricated goals: %s", getGoalBW.Body.String())
+	}
+
+	// A plan is not built before the goal is chosen.
+	planeB := httptest.NewRequest("GET", "/api/v1/user/plan", nil)
+	planeB.Header.Set("Authorization", "Bearer "+tokenB)
+	planBW := httptest.NewRecorder()
+	r.ServeHTTP(planBW, planeB)
+	var planB models.StudyPlanResponse
+	_ = json.Unmarshal(planBW.Body.Bytes(), &planB)
+	if planB.Configured {
+		t.Fatalf("user B must not receive a plan before choosing a goal: %s", planBW.Body.String())
 	}
 
 	// 4. Test Study Plan for User A

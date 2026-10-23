@@ -44,34 +44,33 @@ func timeVal(p *time.Time) time.Time {
 
 // --- Goals & Personalized Study Plan ---
 
+// ErrGoalsNotConfigured means the student has not chosen a target yet. The
+// service never invents a target score, a deadline or a university for them.
+var ErrGoalsNotConfigured = errors.New("study goals are not configured")
+
 func (s *StudyService) GetGoals(ctx context.Context, userID string) (*models.UserGoal, error) {
 	goal, err := s.storage.Study().GetGoals(ctx, userID)
-	if err != nil || goal == nil {
-		// Default goal: 125 target score, 30 days from now, 45 min/day, Toronto
-		defaultDate := time.Now().AddDate(0, 1, 0).Format("2006-01-02")
-		defaultGoal := &models.UserGoal{
-			UserID:             userID,
-			TargetScore:        125,
-			TargetDate:         defaultDate,
-			DailyMinutes:       45,
-			TargetUniversityID: "toronto",
-			UpdatedAt:          time.Now(),
-		}
-		_ = s.storage.Study().UpsertGoals(ctx, defaultGoal)
-		return defaultGoal, nil
+	if err != nil {
+		return nil, err
+	}
+	if goal == nil {
+		return nil, ErrGoalsNotConfigured
 	}
 	return goal, nil
 }
 
 func (s *StudyService) UpdateGoals(ctx context.Context, userID string, req models.UpdateGoalsRequest) (*models.UserGoal, error) {
 	if req.TargetScore < 60 || req.TargetScore > 160 {
-		req.TargetScore = 125
+		return nil, errors.New("targetScore must be between 60 and 160")
 	}
 	if req.DailyMinutes < 15 || req.DailyMinutes > 240 {
-		req.DailyMinutes = 45
+		return nil, errors.New("dailyMinutes must be between 15 and 240")
 	}
 	if req.TargetDate == "" {
-		req.TargetDate = time.Now().AddDate(0, 1, 0).Format("2006-01-02")
+		return nil, errors.New("targetDate is required")
+	}
+	if _, err := time.Parse("2006-01-02", req.TargetDate); err != nil {
+		return nil, errors.New("targetDate must use the YYYY-MM-DD format")
 	}
 
 	goal := &models.UserGoal{
@@ -176,7 +175,21 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	if currentEstimate > 0 {
 		mockRatio = math.Min(1.0, float64(currentEstimate)/float64(goal.TargetScore))
 	}
-	readinessPercent := int(math.Round(theoryPct*40.0 + mockRatio*60.0))
+	// A single attempt is not evidence. Readiness is only reported once there
+	// are at least two completed mock tests.
+	readinessAvailable := len(completedSessions) >= 2
+	readinessPercent := 0
+	readinessBasis := fmt.Sprintf(
+		"Недостаточно данных: нужен минимум 2 завершённых mock-теста (сейчас %d).",
+		len(completedSessions),
+	)
+	if readinessAvailable {
+		readinessPercent = int(math.Round(theoryPct*40.0 + mockRatio*60.0))
+		readinessBasis = fmt.Sprintf(
+			"Расчёт по %d завершённым mock-тестам (%d%% теории и лучший ориентир %d из %d).",
+			len(completedSessions), int(math.Round(theoryPct*100)), currentEstimate, goal.TargetScore,
+		)
+	}
 
 	weeklyHours := float64(goal.DailyMinutes*7) / 60.0
 
@@ -192,25 +205,29 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	if totalDue > 0 {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-srs",
-			Type:        "srs",
-			Title:       "Интервальное повторение AWL",
-			Description: fmt.Sprintf("К повторению сегодня: %d карточек академической лексики по алгоритму SuperMemo SM-2", totalDue),
-			ActionURL:   "/practice/flashcards",
-			Count:       totalDue,
-			Priority:    "HIGH",
-			Completed:   false,
+			ID:               "task-srs",
+			Type:             "srs",
+			Title:            "Интервальное повторение AWL",
+			Description:      fmt.Sprintf("К повторению сегодня: %d карточек академической лексики по алгоритму SuperMemo SM-2", totalDue),
+			ActionURL:        "/practice/flashcards",
+			Count:            totalDue,
+			Priority:         "HIGH",
+			EstimatedMinutes: 5 + minInt(totalDue/10, 10),
+			Reason:           fmt.Sprintf("Пора повторить %d карточек: интервал SRS подошёл к концу.", totalDue),
+			Completed:        false,
 		})
 	} else {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-srs",
-			Type:        "srs",
-			Title:       "Изучение новых слов AWL",
-			Description: "Все карточки на сегодня повторены! Изучите 10 новых терминов C1/C2",
-			ActionURL:   "/practice/flashcards",
-			Count:       10,
-			Priority:    "MEDIUM",
-			Completed:   true,
+			ID:               "task-srs",
+			Type:             "srs",
+			Title:            "Изучение новых слов AWL",
+			Description:      "Все карточки на сегодня повторены! Изучите 10 новых терминов C1/C2",
+			ActionURL:        "/practice/flashcards",
+			Count:            10,
+			Priority:         "MEDIUM",
+			EstimatedMinutes: 10,
+			Reason:           "Все карточки на сегодня повторены — добавьте новые термины, чтобы поддерживать словарный запас.",
+			Completed:        true,
 		})
 	}
 
@@ -225,57 +242,67 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	if unmasteredCount > 0 {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-errors",
-			Type:        "error_recall",
-			Title:       "Тетрадь ошибок: повторная отработка",
-			Description: fmt.Sprintf("%d сложных заданий ждут решения (требуется 2 верных ответа подряд для усвоения)", unmasteredCount),
-			ActionURL:   "/dashboard#errors",
-			Count:       unmasteredCount,
-			Priority:    "HIGH",
-			Completed:   false,
+			ID:               "task-errors",
+			Type:             "error_recall",
+			Title:            "Тетрадь ошибок: повторная отработка",
+			Description:      fmt.Sprintf("%d сложных заданий ждут решения (требуется 2 верных ответа подряд для усвоения)", unmasteredCount),
+			ActionURL:        "/dashboard#errors",
+			Count:            unmasteredCount,
+			Priority:         "HIGH",
+			EstimatedMinutes: 3 + minInt(unmasteredCount, 12),
+			Reason:           fmt.Sprintf("%d ошибок ещё не закреплены двумя верными повторами.", unmasteredCount),
+			Completed:        false,
 		})
 	}
 
 	// Task 3: Targeted Weakest Skill Drill
 	if strings.Contains(weakestSkill, "Speaking") {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-drill",
-			Type:        "practice_drill",
-			Title:       "Интенсив: Устная речь (Speaking)",
-			Description: "Отработайте упражнения Interactive Speaking и Speak About Photo для роста беглости (WPM) и диверсификации лексики",
-			ActionURL:   "/practice",
-			Priority:    "HIGH",
-			Completed:   false,
+			ID:               "task-drill",
+			Type:             "practice_drill",
+			Title:            "Интенсив: Устная речь (Speaking)",
+			Description:      "Отработайте упражнения Interactive Speaking и Speak About Photo для роста беглости (WPM) и диверсификации лексики",
+			ActionURL:        "/practice",
+			Priority:         "HIGH",
+			EstimatedMinutes: 15,
+			Reason:           "Speaking — самый слабый навык по последнему mock-тесту.",
+			Completed:        false,
 		})
 	} else if strings.Contains(weakestSkill, "Writing") {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-drill",
-			Type:        "practice_drill",
-			Title:       "Интенсив: Академическое письмо (Writing)",
-			Description: "Напишите развернутый Writing Sample с использованием академических коннекторов и академического вокабуляра",
-			ActionURL:   "/practice",
-			Priority:    "HIGH",
-			Completed:   false,
+			ID:               "task-drill",
+			Type:             "practice_drill",
+			Title:            "Интенсив: Академическое письмо (Writing)",
+			Description:      "Напишите развернутый Writing Sample с использованием академических коннекторов и академического вокабуляра",
+			ActionURL:        "/practice",
+			Priority:         "HIGH",
+			EstimatedMinutes: 15,
+			Reason:           "Writing — самый слабый навык по последнему mock-тесту.",
+			Completed:        false,
 		})
 	} else if strings.Contains(weakestSkill, "Reading") {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-drill",
-			Type:        "practice_drill",
-			Title:       "Интенсив: Чтение и C-Test (Reading)",
-			Description: "Пройдите тренировку Read and Complete для автоматизма восстановления морфем в академическом контексте",
-			ActionURL:   "/practice",
-			Priority:    "MEDIUM",
-			Completed:   false,
+			ID:               "task-drill",
+			Type:             "practice_drill",
+			Title:            "Интенсив: Чтение и C-Test (Reading)",
+			Description:      "Пройдите тренировку Read and Complete для автоматизма восстановления морфем в академическом контексте",
+			ActionURL:        "/practice",
+			Priority:         "MEDIUM",
+			EstimatedMinutes: 15,
+			Reason:           "Reading — самый слабый навык по последнему mock-тесту.",
+			Completed:        false,
 		})
 	} else {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-drill",
-			Type:        "practice_drill",
-			Title:       "Адаптивный контрольный тест DET",
-			Description: "Пройдите симулятор тестирования (13 типов заданий) для калибровки текущей готовности",
-			ActionURL:   "/test",
-			Priority:    "MEDIUM",
-			Completed:   false,
+			ID:               "task-drill",
+			Type:             "practice_drill",
+			Title:            "Адаптивный контрольный тест DET",
+			Description:      "Пройдите симулятор тестирования (13 типов заданий) для калибровки текущей готовности",
+			ActionURL:        "/test",
+			Priority:         "MEDIUM",
+			EstimatedMinutes: 30,
+			Reason:           "Пока нет завершённого mock-теста — полный прогон даст ориентир и выявит слабый навык.",
+			Completed:        false,
 		})
 	}
 
@@ -294,13 +321,15 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	if nextLessonSlug != "" {
 		tasks = append(tasks, models.DailyTask{
-			ID:          "task-theory",
-			Type:        "theory",
-			Title:       fmt.Sprintf("Урок теории: %s", nextLessonSlug),
-			Description: "Изучите формат, официальные рубрики оценки и типичные ловушки прокторов",
-			ActionURL:   fmt.Sprintf("/theory/%s", nextLessonSlug),
-			Priority:    "MEDIUM",
-			Completed:   false,
+			ID:               "task-theory",
+			Type:             "theory",
+			Title:            fmt.Sprintf("Урок теории: %s", nextLessonSlug),
+			Description:      "Изучите формат, официальные рубрики оценки и типичные ловушки прокторов",
+			ActionURL:        fmt.Sprintf("/theory/%s", nextLessonSlug),
+			Priority:         "MEDIUM",
+			EstimatedMinutes: 10,
+			Reason:           "Следующий непройденный урок программы.",
+			Completed:        false,
 		})
 	}
 
@@ -314,6 +343,10 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 			currentEstimate, goal.TargetScore, goal.TargetScore-currentEstimate)
 	}
 
+	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
+
+	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
+
 	today := time.Now().UTC().Format("2006-01-02")
 	completions, _ := s.storage.Study().GetPlanTaskCompletions(ctx, userID, today)
 	for index := range tasks {
@@ -324,16 +357,19 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	}
 
 	return &models.StudyPlanResponse{
-		TargetScore:       goal.TargetScore,
-		TargetDate:        goal.TargetDate,
-		DaysRemaining:     daysRemaining,
-		DailyMinutes:      goal.DailyMinutes,
-		CurrentEstimate:   currentEstimate,
-		WeakestSkill:      weakestSkill,
-		WeeklyHoursNeeded: weeklyHours,
-		ReadinessPercent:  readinessPercent,
-		StatusMessage:     statusMsg,
-		TasksToday:        tasks,
+		Configured:         true,
+		TargetScore:        goal.TargetScore,
+		TargetDate:         goal.TargetDate,
+		DaysRemaining:      daysRemaining,
+		DailyMinutes:       goal.DailyMinutes,
+		CurrentEstimate:    currentEstimate,
+		WeakestSkill:       weakestSkill,
+		WeeklyHoursNeeded:  weeklyHours,
+		ReadinessAvailable: readinessAvailable,
+		ReadinessPercent:   readinessPercent,
+		ReadinessBasis:     readinessBasis,
+		StatusMessage:      statusMsg,
+		TasksToday:         tasks,
 	}, nil
 }
 
@@ -800,6 +836,7 @@ func (s *StudyService) CompletePlanTask(ctx context.Context, userID, taskID stri
 	if !allowed[taskID] {
 		return errors.New("unknown plan task")
 	}
+
 	today := time.Now().UTC().Format("2006-01-02")
 	return s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, "manual")
 }
@@ -899,4 +936,38 @@ func (s *StudyService) GetWeeklyReport(ctx context.Context, userID string) (*mod
 	}
 
 	return report, nil
+}
+
+// minInt returns the smaller of two integers.
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// fitTasksToBudget keeps only the tasks that fit into the time the student has
+// available today. The highest-priority tasks win; if even the shortest task
+// does not fit, the plan stays empty instead of pretending the time is enough.
+func fitTasksToBudget(tasks []models.DailyTask, budgetMinutes int) []models.DailyTask {
+	if len(tasks) == 0 {
+		return tasks
+	}
+	if budgetMinutes <= 0 {
+		return tasks
+	}
+	kept := make([]models.DailyTask, 0, len(tasks))
+	used := 0
+	for _, task := range tasks {
+		minutes := task.EstimatedMinutes
+		if minutes <= 0 {
+			minutes = 10
+		}
+		if used+minutes > budgetMinutes {
+			continue
+		}
+		kept = append(kept, task)
+		used += minutes
+	}
+	return kept
 }

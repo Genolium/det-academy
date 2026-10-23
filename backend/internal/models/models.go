@@ -672,21 +672,32 @@ type DailyTask struct {
 	ActionURL   string `json:"actionUrl"`
 	Count       int    `json:"count,omitempty"`
 	Priority    string `json:"priority"` // "HIGH", "MEDIUM", "LOW"
+	// EstimatedMinutes is the planning cost of the task, so the plan can fit
+	// the time the student actually has.
+	EstimatedMinutes int `json:"estimatedMinutes"`
+	// Reason explains why this task was assigned.
+	Reason      string `json:"reason"`
 	Completed   bool   `json:"completed"`
 	CompletedAt string `json:"completedAt,omitempty"`
 }
 
 type StudyPlanResponse struct {
-	TargetScore       int         `json:"targetScore"`
-	TargetDate        string      `json:"targetDate"`
-	DaysRemaining     int         `json:"daysRemaining"`
-	DailyMinutes      int         `json:"dailyMinutes"`
-	CurrentEstimate   int         `json:"currentEstimate"`
-	WeakestSkill      string      `json:"weakestSkill"`
-	WeeklyHoursNeeded float64     `json:"weeklyHoursNeeded"`
-	ReadinessPercent  int         `json:"readinessPercent"`
-	StatusMessage     string      `json:"statusMessage"`
-	TasksToday        []DailyTask `json:"tasksToday"`
+	// Configured is false until the student has chosen a target.
+	Configured        bool    `json:"configured"`
+	TargetScore       int     `json:"targetScore"`
+	TargetDate        string  `json:"targetDate"`
+	DaysRemaining     int     `json:"daysRemaining"`
+	DailyMinutes      int     `json:"dailyMinutes"`
+	CurrentEstimate   int     `json:"currentEstimate"`
+	WeakestSkill      string  `json:"weakestSkill"`
+	WeeklyHoursNeeded float64 `json:"weeklyHoursNeeded"`
+	// ReadinessAvailable is false until there is enough evidence. A single
+	// attempt never produces a readiness percentage.
+	ReadinessAvailable bool        `json:"readinessAvailable"`
+	ReadinessPercent   int         `json:"readinessPercent"`
+	ReadinessBasis     string      `json:"readinessBasis"`
+	StatusMessage      string      `json:"statusMessage"`
+	TasksToday         []DailyTask `json:"tasksToday"`
 }
 
 type UserErrorItem struct {

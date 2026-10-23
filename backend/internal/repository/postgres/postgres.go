@@ -6,6 +6,7 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -1268,6 +1269,10 @@ func (r *StudyRepo) GetGoals(ctx context.Context, userID string) (*models.UserGo
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&g.UserID, &g.TargetScore, &g.TargetDate, &g.DailyMinutes, &g.TargetUniversityID, &g.UpdatedAt,
 	)
+	if errors.Is(err, sql.ErrNoRows) {
+		// "No goal yet" is a normal state: the student has not chosen a target.
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
