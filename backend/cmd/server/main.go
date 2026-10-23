@@ -241,17 +241,7 @@ func main() {
 				"time":   time.Now().UTC().Format(time.RFC3339),
 			})
 		})
-		r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
-			if err := store.Ping(r.Context()); err != nil {
-				handlers.RespondError(w, http.StatusServiceUnavailable, "storage is not ready")
-				return
-			}
-			if schemaErr != nil {
-				handlers.RespondError(w, http.StatusServiceUnavailable, "schema migrations failed; see the service log")
-				return
-			}
-			handlers.RespondJSON(w, http.StatusOK, map[string]string{"status": "ready"})
-		})
+		r.Get("/ready", handlers.ReadinessHandler(store.Ping, schemaErr))
 
 		// Auth routes
 		r.Get("/metrics", handlers.MetricsHandler)
