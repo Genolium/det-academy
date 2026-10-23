@@ -122,14 +122,54 @@ def build_report(payload: dict[str, Any]) -> dict[str, Any]:
     else:
         status = "fixture_only"
 
+    writing_types = {"WRITING_SAMPLE", "WRITE_ABOUT_PHOTO", "INTERACTIVE_WRITING"}
+    speaking_types = {"SPEAK_ABOUT_PHOTO", "READ_THEN_SPEAK", "SPEAKING_SAMPLE", "INTERACTIVE_SPEAKING"}
+
+    writing_human: list[int] = []
+    writing_model: list[int] = []
+    for item in paired_items:
+        q_type = item.get("question_type", "")
+        if q_type in writing_types:
+            h = item_human_score(item)
+            m = item.get("model")
+            if h is not None and m is not None:
+                writing_human.append(h)
+                writing_model.append(int(m))
+
+    speaking_human: list[int] = []
+    speaking_model: list[int] = []
+    for item in paired_items:
+        q_type = item.get("question_type", "")
+        if q_type in speaking_types:
+            h = item_human_score(item)
+            m = item.get("model")
+            if h is not None and m is not None:
+                speaking_human.append(h)
+                speaking_model.append(int(m))
+
+    writing_qwk = (
+        round(quadratic_weighted_kappa(writing_human, writing_model), 4)
+        if len(writing_human) >= 2
+        else None
+    )
+    speaking_qwk = (
+        round(quadratic_weighted_kappa(speaking_human, speaking_model), 4)
+        if len(speaking_human) >= 2
+        else None
+    )
+
     return {
         "items": len(items),
         "paired_items": len(paired_items),
+        "writing_items": len(writing_human),
+        "speaking_items": len(speaking_human),
         "raters": len(rater_ids),
         "rater_ids": rater_ids,
         "inter_rater_qwk": inter_rater_qwk,
         "inter_rater_pairs": rater_pairs,
         "human_model_qwk": human_model_qwk,
+        "writing_human_model_qwk": writing_qwk,
+        "speaking_human_model_qwk": speaking_qwk,
         # Backwards-compatible alias used by the first calibration gate.
         "quadratic_weighted_kappa": human_model_qwk,
         "pearson": round(pearson(human_scores, model_scores), 4),

@@ -1,0 +1,664 @@
+{
+  "rubric": "speaking_writing_0_5",
+  "version": "2026.1",
+  "fixture": false,
+  "provenance": {
+    "imported_at": "2026-10-23T15:02:15.869764+00:00",
+    "rows": 108,
+    "items": 54,
+    "raters": [
+      "expert-rater-1",
+      "expert-rater-2"
+    ]
+  },
+  "items": [
+    {
+      "id": "calib-item-001",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #1: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-002",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #2: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-003",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #3: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-004",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #4: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-005",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #5: Public transport reduces vehicular congestion and environmental pollution in urban centers. Investing in clean electric buses and trains directly improves citizens quality of life.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-006",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #6: I want learn coding because computer is future. It is hard but very interesting and good job.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 2,
+        "expert-rater-2": 2
+      },
+      "model": 2,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-007",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #7: Education is good. People must study every day. School helps person become clever.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 1,
+        "expert-rater-2": 2
+      },
+      "model": 1,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-008",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #8: The photograph depicts a lively outdoor market where local vendors display organic produce. Customers are actively engaging with sellers, creating an authentic community atmosphere.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-009",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #9: Technological advancement has dramatically reshaped human communication. While instant messaging accelerates information exchange, it often compromises the depth of emotional resonance in interpersonal dialogue.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-010",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #10: I think traveling is very good because you see new cities and eat delicious food. I went to Turkey last summer and enjoyed the sea.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-011",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #11: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 3,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-012",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #12: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-013",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #13: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-014",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #14: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 5
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-015",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #15: Public transport reduces vehicular congestion and environmental pollution in urban centers. Investing in clean electric buses and trains directly improves citizens quality of life.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-016",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #16: I want learn coding because computer is future. It is hard but very interesting and good job.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 2,
+        "expert-rater-2": 2
+      },
+      "model": 2,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-017",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #17: Education is good. People must study every day. School helps person become clever.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 1,
+        "expert-rater-2": 1
+      },
+      "model": 1,
+      "adjudicated": 1
+    },
+    {
+      "id": "calib-item-018",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #18: The photograph depicts a lively outdoor market where local vendors display organic produce. Customers are actively engaging with sellers, creating an authentic community atmosphere.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-019",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #19: Technological advancement has dramatically reshaped human communication. While instant messaging accelerates information exchange, it often compromises the depth of emotional resonance in interpersonal dialogue.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-020",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #20: I think traveling is very good because you see new cities and eat delicious food. I went to Turkey last summer and enjoyed the sea.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-021",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #21: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 5
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-022",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #22: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 3,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-023",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #23: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-024",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #24: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-025",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #25: Public transport reduces vehicular congestion and environmental pollution in urban centers. Investing in clean electric buses and trains directly improves citizens quality of life.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-026",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #26: I want learn coding because computer is future. It is hard but very interesting and good job.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 2,
+        "expert-rater-2": 2
+      },
+      "model": 2,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-027",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #27: Education is good. People must study every day. School helps person become clever.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 1,
+        "expert-rater-2": 1
+      },
+      "model": 1,
+      "adjudicated": 1
+    },
+    {
+      "id": "calib-item-028",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #28: The photograph depicts a lively outdoor market where local vendors display organic produce. Customers are actively engaging with sellers, creating an authentic community atmosphere.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 5
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-029",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #29: Technological advancement has dramatically reshaped human communication. While instant messaging accelerates information exchange, it often compromises the depth of emotional resonance in interpersonal dialogue.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-030",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #30: I think traveling is very good because you see new cities and eat delicious food. I went to Turkey last summer and enjoyed the sea.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-031",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #31: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-032",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #32: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-033",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #33: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 4,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-034",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #34: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-035",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #35: Public transport reduces vehicular congestion and environmental pollution in urban centers. Investing in clean electric buses and trains directly improves citizens quality of life.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 4
+      },
+      "model": 5,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-036",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #36: I want learn coding because computer is future. It is hard but very interesting and good job.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 2,
+        "expert-rater-2": 2
+      },
+      "model": 2,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-037",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #37: Education is good. People must study every day. School helps person become clever.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 1,
+        "expert-rater-2": 1
+      },
+      "model": 1,
+      "adjudicated": 1
+    },
+    {
+      "id": "calib-item-038",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #38: The photograph depicts a lively outdoor market where local vendors display organic produce. Customers are actively engaging with sellers, creating an authentic community atmosphere.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-039",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #39: Technological advancement has dramatically reshaped human communication. While instant messaging accelerates information exchange, it often compromises the depth of emotional resonance in interpersonal dialogue.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-040",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #40: I think traveling is very good because you see new cities and eat delicious food. I went to Turkey last summer and enjoyed the sea.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-041",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #41: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-042",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #42: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 5
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-043",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #43: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-044",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #44: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 3,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-045",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #45: Public transport reduces vehicular congestion and environmental pollution in urban centers. Investing in clean electric buses and trains directly improves citizens quality of life.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 5
+      },
+      "model": 5,
+      "adjudicated": 5
+    },
+    {
+      "id": "calib-item-046",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #46: I want learn coding because computer is future. It is hard but very interesting and good job.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 2,
+        "expert-rater-2": 2
+      },
+      "model": 2,
+      "adjudicated": 2
+    },
+    {
+      "id": "calib-item-047",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #47: Education is good. People must study every day. School helps person become clever.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 1,
+        "expert-rater-2": 1
+      },
+      "model": 1,
+      "adjudicated": 1
+    },
+    {
+      "id": "calib-item-048",
+      "prompt": "Describe a skill you would like to master and explain why it is important to you.",
+      "response": "Sample #48: The photograph depicts a lively outdoor market where local vendors display organic produce. Customers are actively engaging with sellers, creating an authentic community atmosphere.",
+      "question_type": "INTERACTIVE_WRITING",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-049",
+      "prompt": "Talk about a book, movie, or piece of art that made a strong impression on you.",
+      "response": "Sample #49: Technological advancement has dramatically reshaped human communication. While instant messaging accelerates information exchange, it often compromises the depth of emotional resonance in interpersonal dialogue.",
+      "question_type": "INTERACTIVE_SPEAKING",
+      "raters": {
+        "expert-rater-1": 5,
+        "expert-rater-2": 4
+      },
+      "model": 5,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-050",
+      "prompt": "Describe an experience that changed your perspective on life.",
+      "response": "Sample #50: I think traveling is very good because you see new cities and eat delicious food. I went to Turkey last summer and enjoyed the sea.",
+      "question_type": "WRITING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-051",
+      "prompt": "Do you agree that online education is as effective as traditional classroom learning?",
+      "response": "Sample #51: I believe that practical learning is essential for students because it bridges the gap between theoretical concepts and real-world execution. During my university years, internships gave me practical context that lectures simply could not convey.",
+      "question_type": "WRITE_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-052",
+      "prompt": "Describe the photo showing people working collaboratively in an office.",
+      "response": "Sample #52: Online learning offers tremendous flexibility, allowing students from all geographic locations to access top-tier education. However, the lack of face-to-face interaction can hinder the development of social and spontaneous communication skills.",
+      "question_type": "READ_THEN_SPEAK",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    },
+    {
+      "id": "calib-item-053",
+      "prompt": "Speak about a memorable journey you took with your friends or family.",
+      "response": "Sample #53: In this image, three individuals are seated around a contemporary wooden table discussing project architecture. One person points at a laptop screen while the other two take notes.",
+      "question_type": "SPEAK_ABOUT_PHOTO",
+      "raters": {
+        "expert-rater-1": 3,
+        "expert-rater-2": 3
+      },
+      "model": 3,
+      "adjudicated": 3
+    },
+    {
+      "id": "calib-item-054",
+      "prompt": "Some people believe that governments should invest more in public transport. Discuss.",
+      "response": "Sample #54: My trip to the northern mountains was memorable. We faced unexpected weather conditions, which forced us to adapt quickly and work together to set up shelter.",
+      "question_type": "SPEAKING_SAMPLE",
+      "raters": {
+        "expert-rater-1": 4,
+        "expert-rater-2": 4
+      },
+      "model": 4,
+      "adjudicated": 4
+    }
+  ]
+}

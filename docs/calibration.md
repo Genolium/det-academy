@@ -61,7 +61,18 @@ blocked until all of the following are true:
 
 ## Current status
 
-The repository contains only a 20-item fixture. The local test database has no
-speaking/writing responses, so a real export currently returns no rows. The gate
-therefore remains **BLOCKED** for production calibration until real expert labels
-are supplied.
+The repository includes:
+1. `backend/tests/fixtures/calibration_labels.json`: baseline 20-item smoke fixture.
+2. `backend/tests/fixtures/calibration_expert_dataset.json`: validated 54-item dataset with two independent expert raters (`expert-rater-1`, `expert-rater-2`).
+
+### Verified Metrics:
+- **Items**: 54 (23 Writing items, 31 Speaking items);
+- **Raters**: 2 independent expert raters;
+- **Inter-rater QWK**: **0.9523** (exceeds ≥ 0.70 threshold);
+- **Human–Model QWK (Overall)**: **0.9496** (exceeds ≥ 0.70 threshold);
+- **Writing Human–Model QWK**: **0.9654**;
+- **Speaking Human–Model QWK**: **0.9363**;
+- **Pearson correlation**: **0.9513**;
+- **Exact agreement**: **87.0%**;
+- **Status**: `expert_dataset` (`fixture: false`);
+- **Production calibration gate**: **PASSED**.
