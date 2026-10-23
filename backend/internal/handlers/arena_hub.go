@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/rand"
 	"net/http"
@@ -382,11 +381,21 @@ func (h *ArenaHub) evaluateMatch(room *ArenaRoom) {
 	p1NewElo := p1.ELO + deltaEloP1
 	p2NewElo := p2.ELO - deltaEloP1
 
+	// A duel against the matchmaking bot is a practice round: it never changes
+	// the rating and it is reported as unranked.
+	ranked := !room.IsBot
+	if !ranked {
+		deltaEloP1 = 0
+		p1NewElo = p1.ELO
+		p2NewElo = p2.ELO
+	}
+
 	// Send result to P1
 	res1, _ := json.Marshal(map[string]interface{}{
 		"type": "match_result",
 		"payload": map[string]interface{}{
 			"won":         p1Won,
+			"ranked":      ranked,
 			"yourElo":     p1NewElo,
 			"deltaElo":    deltaEloP1,
 			"opponentElo": p2NewElo,
@@ -402,6 +411,7 @@ func (h *ArenaHub) evaluateMatch(room *ArenaRoom) {
 			"type": "match_result",
 			"payload": map[string]interface{}{
 				"won":         !p1Won,
+				"ranked":      ranked,
 				"yourElo":     p2NewElo,
 				"deltaElo":    -deltaEloP1,
 				"opponentElo": p1NewElo,
@@ -421,6 +431,12 @@ type LeaderboardEntry struct {
 	League  string `json:"league"`
 	WinRate string `json:"winRate"`
 	Avatar  string `json:"avatar,omitempty"`
+	// RatingSource explains where the rating comes from. Arena matches are not
+	// persisted yet, so the rating is derived from the best completed mock test
+	// and the board never invents win rates or opponents.
+	RatingSource string `json:"ratingSource"`
+	// BestScore is the best completed mock score behind the rating.
+	BestScore int `json:"bestScore"`
 }
 
 type ArenaHandler struct {
@@ -444,28 +460,19 @@ func (h *ArenaHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		users, _, err := h.userRepo.ListAll(r.Context(), 1, 50, "", "")
 		if err == nil {
 			for _, u := range users {
-				bestScore := 105
-				winRate := "62%"
+				bestScore := 0
 				if h.sessionRepo != nil {
 					sessions, _ := h.sessionRepo.GetUserSessions(r.Context(), u.ID)
-					if len(sessions) > 0 {
-						completedCount := 0
-						for _, s := range sessions {
-							if s.Status == "COMPLETED" && s.OverallScore != nil {
-								completedCount++
-								if *s.OverallScore > bestScore {
-									bestScore = *s.OverallScore
-								}
-							}
-						}
-						if completedCount > 0 {
-							pct := 55 + ((bestScore * 7) % 38)
-							winRate = fmt.Sprintf("%d%%", pct)
+					for _, s := range sessions {
+						if s.Status == "COMPLETED" && s.OverallScore != nil && *s.OverallScore > bestScore {
+							bestScore = *s.OverallScore
 						}
 					}
 				}
 
-				// Calibrated Elo: baseline 1200 + (bestScore - 95) * 16
+				// Rating is derived from the best completed mock test. It is
+				// not a match rating: duels are not persisted yet, so no win
+				// rate is reported for anyone.
 				elo := 1200 + (bestScore-95)*16
 				if elo < 1000 {
 					elo = 1000
@@ -485,35 +492,15 @@ func (h *ArenaHandler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 				}
 
 				entries = append(entries, LeaderboardEntry{
-					UserID:  u.ID,
-					Name:    u.Name,
-					Elo:     elo,
-					League:  league,
-					WinRate: winRate,
-					Avatar:  u.AvatarURL,
+					UserID:       u.ID,
+					Name:         u.Name,
+					Elo:          elo,
+					League:       league,
+					WinRate:      "",
+					Avatar:       u.AvatarURL,
+					RatingSource: "practice",
+					BestScore:    bestScore,
 				})
-			}
-		}
-	}
-
-	// If fewer than 5 users in DB, supplement with calibrated seeds so board is competitive
-	if len(entries) < 5 {
-		seedPresets := []LeaderboardEntry{
-			{UserID: "seed-1", Name: "Sultan_KZ", Elo: 1845, League: "Master", WinRate: "78%"},
-			{UserID: "seed-2", Name: "Elena_DET", Elo: 1720, League: "Diamond", WinRate: "72%"},
-			{UserID: "seed-3", Name: "Max_PiedPiper", Elo: 1690, League: "Platinum", WinRate: "69%"},
-			{UserID: "seed-4", Name: "Sarah_Toronto", Elo: 1380, League: "Silver", WinRate: "58%"},
-		}
-		for _, sp := range seedPresets {
-			alreadyExists := false
-			for _, e := range entries {
-				if e.Name == sp.Name {
-					alreadyExists = true
-					break
-				}
-			}
-			if !alreadyExists {
-				entries = append(entries, sp)
 			}
 		}
 	}

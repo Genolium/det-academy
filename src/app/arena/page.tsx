@@ -43,14 +43,6 @@ interface Challenge {
   durationSec: number;
 }
 
-const LEADERBOARD_PRESET = [
-  { rank: 1, name: 'Sultan_KZ', elo: 1845, league: 'Grandmaster', winRate: '78%' },
-  { rank: 2, name: 'Elena_DET', elo: 1720, league: 'Master', winRate: '72%' },
-  { rank: 3, name: 'Max_PiedPiper', elo: 1690, league: 'Diamond', winRate: '69%' },
-  { rank: 4, name: 'Ilya Vasiunin (Вы)', elo: 1420, league: 'Gold', winRate: '65%' },
-  { rank: 5, name: 'Sarah_Toronto', elo: 1380, league: 'Gold', winRate: '58%' },
-];
-
 export default function MultiplayerArenaPage() {
   const { user, isAuthenticated } = useAuthStore();
   const { locale } = useSettingsStore();
@@ -81,29 +73,19 @@ export default function MultiplayerArenaPage() {
   }, []);
 
   const leaderboard = useMemo(() => {
-    if (dbLeaderboard.length > 0) {
-      return dbLeaderboard.map((item) => {
-        const isCurrentUser = user && (item.userId === user.id || item.name === user.name);
-        return {
-          rank: item.rank,
-          name: isCurrentUser ? `${item.name} (${locale === 'ru' ? 'Вы' : 'You'})` : item.name,
-          elo: isCurrentUser ? userElo : item.elo,
-          league: item.league,
-          winRate: item.winRate,
-        };
-      });
-    }
-    return LEADERBOARD_PRESET.map((p) => {
-      if (p.rank === 4) {
-        return {
-          ...p,
-          name: `${currentCandidateName} (${locale === 'ru' ? 'Вы' : 'You'})`,
-          elo: userElo,
-        };
-      }
-      return p;
+    return dbLeaderboard.map((item) => {
+      const isCurrentUser = user && (item.userId === user.id || item.name === user.name);
+      return {
+        rank: item.rank,
+        name: isCurrentUser ? `${item.name} (${locale === 'ru' ? 'Вы' : 'You'})` : item.name,
+        elo: isCurrentUser ? userElo : item.elo,
+        league: item.league,
+        winRate: item.winRate,
+        ratingSource: item.ratingSource,
+        bestScore: item.bestScore,
+      };
     });
-  }, [dbLeaderboard, user, userElo, currentCandidateName, locale]);
+  }, [dbLeaderboard, user, userElo, locale]);
 
   useEffect(() => {
     if (pvpElo) setUserElo(pvpElo);
@@ -135,6 +117,7 @@ export default function MultiplayerArenaPage() {
   // Result
   const [won, setWon] = useState<boolean>(false);
   const [deltaElo, setDeltaElo] = useState<number>(0);
+  const [rankedMatch, setRankedMatch] = useState<boolean>(true);
 
   const socketRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -216,6 +199,7 @@ export default function MultiplayerArenaPage() {
           } else if (msg.type === 'match_result') {
             setWon(msg.payload.won);
             setDeltaElo(msg.payload.deltaElo);
+            setRankedMatch(msg.payload.ranked !== false);
             setUserElo(msg.payload.yourElo);
             setPvpElo(msg.payload.yourElo);
             recordDailyActivity();
@@ -510,6 +494,13 @@ export default function MultiplayerArenaPage() {
               </div>
 
               <div className="space-y-2">
+                {leaderboard.length === 0 && (
+                  <p className="text-xs text-neutral-500 leading-relaxed py-6 text-center">
+                    {locale === 'ru'
+                      ? 'Пока нет результатов. Пройдите mock-тест — рейтинг строится по лучшему завершённому тесту.'
+                      : 'No results yet. Complete a mock test — the rating is built from your best completed test.'}
+                  </p>
+                )}
                 {leaderboard.map((p) => (
                   <div
                     key={p.rank}
@@ -535,7 +526,13 @@ export default function MultiplayerArenaPage() {
                       </span>
                       <div>
                         <div className="text-xs font-bold text-white">{p.name}</div>
-                        <div className="text-[10px] text-neutral-500">Винрейт: {p.winRate}</div>
+                        <div className="text-[10px] text-neutral-500">
+                          {p.winRate
+                            ? `Винрейт: ${p.winRate}`
+                            : locale === 'ru'
+                            ? 'Рейтинг по лучшему mock-тесту'
+                            : 'Rating from the best mock test'}
+                        </div>
                       </div>
                     </div>
 
@@ -830,13 +827,19 @@ export default function MultiplayerArenaPage() {
             {/* ELO Delta Banner */}
             <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-around">
               <div>
-                <span className="text-[10px] uppercase font-bold text-neutral-500">Дельта ELO</span>
+                <span className="text-[10px] uppercase font-bold text-neutral-500">
+                  {rankedMatch ? 'Дельта ELO' : 'Нерейтинговый бой'}
+                </span>
                 <div
                   className={`text-2xl font-black ${
-                    deltaElo >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                    !rankedMatch
+                      ? 'text-neutral-500'
+                      : deltaElo >= 0
+                      ? 'text-emerald-400'
+                      : 'text-rose-400'
                   }`}
                 >
-                  {deltaElo >= 0 ? `+${deltaElo}` : deltaElo}
+                  {!rankedMatch ? '0' : deltaElo >= 0 ? `+${deltaElo}` : deltaElo}
                 </div>
               </div>
 

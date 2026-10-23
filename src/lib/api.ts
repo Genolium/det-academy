@@ -1339,6 +1339,10 @@ export interface ArenaLeaderboardEntry {
   league: string;
   winRate: string;
   avatar?: string;
+  /** Where the rating comes from. Arena duels are not persisted yet. */
+  ratingSource?: string;
+  /** Best completed mock score behind the rating. */
+  bestScore?: number;
 }
 
 export const api = new ApiClient();
