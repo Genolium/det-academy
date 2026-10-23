@@ -73,3 +73,28 @@ on the `/directus/` location block above:
 - the directus subdomain and its certificate remain a separate, optional
   concern (a dedicated hostname for editors);
 - the security headers still require the nginx server block to be deployed.
+
+## Application-level security headers
+
+The application sets the baseline headers in `next.config.ts`, so a deployment
+that has not installed the nginx server block yet is not unprotected:
+
+| Header | Value |
+|---|---|
+| `Strict-Transport-Security` | `max-age=31536000` |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `SAMEORIGIN` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=()` |
+| `X-DNS-Prefetch-Control` | `on` |
+
+nginx adds the same headers plus a Content-Security-Policy once the server block
+is installed. The Permissions-Policy allows the microphone and the camera for
+the same origin because the speaking tasks record audio and the video interview
+is planned.
+
+## Uptime monitoring
+
+`.github/workflows/uptime.yml` checks `/api/v1/health`, `/api/v1/ready`, the
+marketing page and the institutions catalogue every 15 minutes. A failing check
+raises a normal GitHub Actions notification for the repository owner.

@@ -84,7 +84,9 @@ DATABASE_URL=... ./scripts/restore_postgres.sh /var/backups/det/det_academy_....
 
 - `GET /api/v1/health` — process is alive.
 - `GET /api/v1/ready` — storage is reachable.
-- `GET /api/v1/metrics` — request/error counters.
+- `GET /api/v1/metrics` — request/error counters. Set `METRICS_TOKEN` to
+  require `Authorization: Bearer <token>` (or `?token=<token>`); without the
+  variable the endpoint stays public.
 
 ## Rollback
 

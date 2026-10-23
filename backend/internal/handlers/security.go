@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"bufio"
+	"crypto/subtle"
 	"det-academy-backend/internal/service"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -144,7 +146,29 @@ func MetricsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// metricsAuthorized accepts a bearer token (or ?token=) when METRICS_TOKEN is
+// configured. Without the variable the endpoint keeps its historical public
+// behaviour so existing monitoring is not broken by the upgrade.
+func metricsAuthorized(r *http.Request) bool {
+	expected := strings.TrimSpace(os.Getenv("METRICS_TOKEN"))
+	if expected == "" {
+		return true
+	}
+	provided := ""
+	if header := r.Header.Get("Authorization"); strings.HasPrefix(header, "Bearer ") {
+		provided = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+	}
+	if provided == "" {
+		provided = r.URL.Query().Get("token")
+	}
+	return subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1
+}
+
 func MetricsHandler(w http.ResponseWriter, r *http.Request) {
+	if !metricsAuthorized(r) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 	fmt.Fprintf(w, "# HELP det_requests_total Total HTTP requests\n")
 	fmt.Fprintf(w, "# TYPE det_requests_total counter\n")

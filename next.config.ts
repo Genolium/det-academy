@@ -2,6 +2,27 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  async headers() {
+    // Security headers are set by the application as well as by nginx, so they
+    // are present even on a deployment where the nginx server block has not
+    // been installed yet. HSTS is ignored by browsers over plain HTTP.
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=()',
+          },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     const apiTarget = process.env.API_PROXY_TARGET || 'http://localhost:18080';
     // The CMS is reached through the same origin. The proxy target points at

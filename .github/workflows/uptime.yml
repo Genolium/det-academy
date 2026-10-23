@@ -1,0 +1,30 @@
+name: Uptime
+
+# Cheap external monitor: a scheduled check of the public endpoints. A failure
+# sends the standard GitHub Actions notification to the repository owner, which
+# is enough until a dedicated monitoring provider is configured.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Public endpoints
+        run: |
+          set -euo pipefail
+          for url in \
+            https://det-academy.ru/api/v1/health \
+            https://det-academy.ru/api/v1/ready \
+            https://det-academy.ru/ \
+            https://det-academy.ru/registry/institutions-map
+          do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "$url" || echo 000)
+            echo "$url -> $status"
+            if [ "$status" != "200" ]; then
+              echo "::error::$url returned $status"
+              exit 1
+            fi
+          done
