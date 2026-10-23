@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { CalculatedScores } from '@/lib/scoring';
-import { updateTheta2PL, DIFFICULTY_THETA_MAP } from '@/lib/irtCatEngine';
 import { BackendQuestion } from '@/lib/api';
 
 export type StageName =
@@ -45,7 +44,6 @@ interface TestSessionState {
   candidateName: string;
   currentStage: StageName;
   difficultyLevel: 'A2' | 'B1' | 'B2' | 'C1';
-  thetaAbility: number; // IRT 2PL latent trait [-3.0 .. +3.0]
   deadlineAt: number | null; // Milliseconds timestamp
   serverQuestions: BackendQuestion[];
 
@@ -117,7 +115,6 @@ const INITIAL_ATTEMPT = {
   backendSessionId: null as string | null,
   currentStage: 'READ_SELECT' as StageName,
   difficultyLevel: 'B1' as const,
-  thetaAbility: 0.0,
   deadlineAt: null as number | null,
   serverQuestions: [] as BackendQuestion[],
   attemptStatus: 'starting' as AttemptStatus,
@@ -205,28 +202,13 @@ export const useTestStore = create<TestSessionState>((set, get) => ({
     });
   },
 
-  recordReadSelectResult: (correct, total) => {
-    const accuracy = total > 0 ? correct / total : 0;
-    const currentState = get();
-
-    // 2-Parameter Logistic (2PL) Item Response Theory θ update:
-    const itemThetaB = DIFFICULTY_THETA_MAP[currentState.difficultyLevel] || 0.0;
-    const nextTheta = updateTheta2PL(currentState.thetaAbility, itemThetaB, accuracy, 1.3);
-
-    // Map latent ability theta to CEFR difficulty band
-    let nextDiff: 'A2' | 'B1' | 'B2' | 'C1' = 'B2';
-    if (nextTheta >= 1.0) nextDiff = 'C1';
-    else if (nextTheta >= 0.0) nextDiff = 'B2';
-    else if (nextTheta >= -1.0) nextDiff = 'B1';
-    else nextDiff = 'A2';
-
+  recordReadSelectResult: (correct, total) =>
+    // Only the counters are kept locally. The difficulty band and the item
+    // selection are owned by the server and arrive with the stage response.
     set((state) => ({
       readSelectCorrect: state.readSelectCorrect + correct,
       readSelectTotal: state.readSelectTotal + total,
-      thetaAbility: nextTheta,
-      difficultyLevel: nextDiff,
-    }));
-  },
+    })),
 
   recordFillBlanksResult: (correct, total) =>
     set((state) => ({
