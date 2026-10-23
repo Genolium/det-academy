@@ -134,6 +134,12 @@ type StudyRepository interface {
 	// Daily activity / streak
 	RecordActivity(ctx context.Context, userID, activityDate, source string) error
 	GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error)
+	// AwardXP inserts a reward once per (user, idempotency key). It reports
+	// whether the event was new, so callers can distinguish a retry.
+	AwardXP(ctx context.Context, event *models.XPEvent) (bool, error)
+	XPTotal(ctx context.Context, userID string) (int, error)
+	XPBetween(ctx context.Context, userID string, from, to time.Time) (int, error)
+	XPHistory(ctx context.Context, userID string, limit int) ([]models.XPEvent, error)
 	CompletePlanTask(ctx context.Context, userID, taskID, taskDate, source string) error
 	GetPlanTaskCompletions(ctx context.Context, userID, taskDate string) (map[string]time.Time, error)
 

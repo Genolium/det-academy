@@ -920,6 +920,18 @@ class ApiClient {
   }
 
 
+
+  async getXPProfile(): Promise<XPProfile> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/xp`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить XP', res.status);
+    }
+    return res.json();
+  }
+
   async getCoachReport(sessionId: string): Promise<CoachReport> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}`, {
       headers: this.getHeaders(),
@@ -1382,6 +1394,27 @@ class ApiClient {
   }
 }
 
+
+
+export interface XPEvent {
+  id: string;
+  userId: string;
+  eventType: string;
+  idempotencyKey: string;
+  xp: number;
+  createdAt: string;
+}
+
+export interface XPProfile {
+  total: number;
+  weekly: number;
+  weekStart: string;
+  league: string;
+  nextLeague?: string;
+  nextAt?: number;
+  leagueBasis: string;
+  history: XPEvent[];
+}
 
 export interface CoachEvidence {
   span: string;

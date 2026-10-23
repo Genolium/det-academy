@@ -340,3 +340,18 @@ func (h *StudyHandler) SaveCoachErrors(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, map[string]int{"created": created})
 }
+
+// GetXPProfile returns the XP total, the weekly league and the ledger history.
+func (h *StudyHandler) GetXPProfile(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	profile, err := h.studyService.GetXPProfile(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to load xp profile")
+		return
+	}
+	RespondJSON(w, http.StatusOK, profile)
+}

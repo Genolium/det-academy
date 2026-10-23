@@ -13,6 +13,7 @@ import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget'
 import { WeeklyReportCard } from '@/components/dashboard/WeeklyReportCard';
 import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
 import { GoalOnboarding } from '@/components/dashboard/GoalOnboarding';
+import { XpLeagueCard } from '@/components/dashboard/XpLeagueCard';
 import {
   GraduationCap,
   Sparkles,
@@ -241,6 +242,7 @@ function DashboardContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {!goalsConfigured && <GoalOnboarding />}
+        <XpLeagueCard />
 
         {/* 1. Top Welcome & Progress Cockpit */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

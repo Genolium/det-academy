@@ -26,6 +26,7 @@ type MemoryStorage struct {
 	evaluations       map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
 	evaluationJobs    map[string]*models.EvaluationJob
 	mediaAssets       map[string]*models.MediaAsset // assetID -> *MediaAsset
+	xpEvents          map[string][]models.XPEvent   // userID -> ledger
 	certificates      map[string]*models.Certificate
 	banners           map[string]*models.AdBanner
 	institutions      map[string]*models.Institution
@@ -2245,6 +2246,57 @@ func (r *studyMemoryRepo) RecordActivity(ctx context.Context, userID, activityDa
 	}
 	r.s.activity[userID][activityDate] = true
 	return nil
+}
+
+func (r *studyMemoryRepo) AwardXP(ctx context.Context, event *models.XPEvent) (bool, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if r.s.xpEvents == nil {
+		r.s.xpEvents = make(map[string][]models.XPEvent)
+	}
+	for _, existing := range r.s.xpEvents[event.UserID] {
+		if existing.IdempotencyKey == event.IdempotencyKey {
+			return false, nil
+		}
+	}
+	if event.CreatedAt.IsZero() {
+		event.CreatedAt = time.Now().UTC()
+	}
+	r.s.xpEvents[event.UserID] = append(r.s.xpEvents[event.UserID], *event)
+	return true, nil
+}
+
+func (r *studyMemoryRepo) XPTotal(ctx context.Context, userID string) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	total := 0
+	for _, event := range r.s.xpEvents[userID] {
+		total += event.XP
+	}
+	return total, nil
+}
+
+func (r *studyMemoryRepo) XPBetween(ctx context.Context, userID string, from, to time.Time) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	total := 0
+	for _, event := range r.s.xpEvents[userID] {
+		if !event.CreatedAt.Before(from) && event.CreatedAt.Before(to) {
+			total += event.XP
+		}
+	}
+	return total, nil
+}
+
+func (r *studyMemoryRepo) XPHistory(ctx context.Context, userID string, limit int) ([]models.XPEvent, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	events := append([]models.XPEvent(nil), r.s.xpEvents[userID]...)
+	sort.Slice(events, func(i, j int) bool { return events[i].CreatedAt.After(events[j].CreatedAt) })
+	if limit > 0 && len(events) > limit {
+		events = events[:limit]
+	}
+	return events, nil
 }
 
 func (r *studyMemoryRepo) GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error) {

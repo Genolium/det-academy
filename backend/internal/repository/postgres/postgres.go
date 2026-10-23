@@ -1416,6 +1416,66 @@ func (r *StudyRepo) RecordActivity(ctx context.Context, userID, activityDate, so
 	return err
 }
 
+func (r *StudyRepo) AwardXP(ctx context.Context, event *models.XPEvent) (bool, error) {
+	metadata := event.Metadata
+	if len(metadata) == 0 {
+		metadata = []byte(`{}`)
+	}
+	result, err := r.db.ExecContext(ctx, `
+		INSERT INTO xp_events (id, user_id, event_type, idempotency_key, xp, metadata, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		ON CONFLICT (user_id, idempotency_key) DO NOTHING
+	`, event.ID, event.UserID, event.EventType, event.IdempotencyKey, event.XP, metadata)
+	if err != nil {
+		return false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
+func (r *StudyRepo) XPTotal(ctx context.Context, userID string) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(xp), 0) FROM xp_events WHERE user_id = $1`, userID).Scan(&total)
+	return total, err
+}
+
+func (r *StudyRepo) XPBetween(ctx context.Context, userID string, from, to time.Time) (int, error) {
+	var total int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(xp), 0) FROM xp_events
+		WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
+	`, userID, from, to).Scan(&total)
+	return total, err
+}
+
+func (r *StudyRepo) XPHistory(ctx context.Context, userID string, limit int) ([]models.XPEvent, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, event_type, idempotency_key, xp, metadata, created_at
+		FROM xp_events WHERE user_id = $1
+		ORDER BY created_at DESC LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	events := []models.XPEvent{}
+	for rows.Next() {
+		var event models.XPEvent
+		if err := rows.Scan(&event.ID, &event.UserID, &event.EventType, &event.IdempotencyKey, &event.XP, &event.Metadata, &event.CreatedAt); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	return events, rows.Err()
+}
+
 func (r *StudyRepo) GetActivityDates(ctx context.Context, userID string, limit int) ([]string, error) {
 	query := `
 		SELECT activity_date::text

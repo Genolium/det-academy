@@ -192,6 +192,18 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalLearned: 0,
       });
     }
+    if (path.endsWith('/user/xp')) {
+      return json(route, 200, {
+        total: 320,
+        weekly: 320,
+        weekStart: '2026-10-19',
+        league: 'Gold',
+        nextLeague: 'Platinum',
+        nextAt: 700,
+        leagueBasis: 'Лига считается по XP за текущую неделю (с понедельника 00:00 UTC, начало 2026-10-19).',
+        history: [],
+      });
+    }
     if (path.endsWith('/user/goals')) {
       return json(route, 200, {
         configured: true,

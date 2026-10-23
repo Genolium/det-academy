@@ -373,6 +373,92 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	}, nil
 }
 
+// --- Server-side XP ledger and leagues ---
+
+// leagueThresholds are ordered from the highest league to Bronze. The league
+// is fully reproducible from the ledger: weekly XP is the only input.
+var leagueThresholds = []struct {
+	Name string
+	Min  int
+}{
+	{"Diamond", 1500},
+	{"Platinum", 700},
+	{"Gold", 300},
+	{"Silver", 100},
+	{"Bronze", 0},
+}
+
+// AwardXP records a reward once per idempotency key.
+func (s *StudyService) AwardXP(ctx context.Context, userID, eventType, idempotencyKey string, xp int) (bool, error) {
+	if strings.TrimSpace(idempotencyKey) == "" {
+		return false, errors.New("idempotency key is required")
+	}
+	if xp <= 0 {
+		return false, errors.New("xp must be positive")
+	}
+	event := &models.XPEvent{
+		ID:             uuid.NewString(),
+		UserID:         userID,
+		EventType:      eventType,
+		IdempotencyKey: idempotencyKey,
+		XP:             xp,
+		Metadata:       []byte(`{}`),
+		CreatedAt:      time.Now().UTC(),
+	}
+	return s.storage.Study().AwardXP(ctx, event)
+}
+
+// GetXPProfile builds the retention view from the ledger.
+func (s *StudyService) GetXPProfile(ctx context.Context, userID string) (*models.XPProfile, error) {
+	total, err := s.storage.Study().XPTotal(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	weekStart := now.AddDate(0, 0, -((int(now.Weekday()) + 6) % 7))
+	weekStart = time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 0, 0, 0, 0, time.UTC)
+
+	weekly, err := s.storage.Study().XPBetween(ctx, userID, weekStart, now.Add(time.Minute))
+	if err != nil {
+		return nil, err
+	}
+
+	profile := &models.XPProfile{
+		Total:     total,
+		Weekly:    weekly,
+		WeekStart: weekStart.Format("2006-01-02"),
+		History:   []models.XPEvent{},
+	}
+	for _, league := range leagueThresholds {
+		if weekly >= league.Min {
+			profile.League = league.Name
+			break
+		}
+	}
+	if profile.League == "" {
+		profile.League = "Bronze"
+	}
+	for index := len(leagueThresholds) - 1; index >= 0; index-- {
+		league := leagueThresholds[index]
+		if league.Min > weekly {
+			profile.NextLeague = league.Name
+			profile.NextAt = league.Min
+			break
+		}
+	}
+
+	profile.LeagueBasis = fmt.Sprintf(
+		"Лига считается по XP за текущую неделю (с понедельника 00:00 UTC, начало %s). Повторное событие с тем же ключом награду не начисляет.",
+		weekStart.Format("2006-01-02"),
+	)
+
+	if history, err := s.storage.Study().XPHistory(ctx, userID, 20); err == nil {
+		profile.History = history
+	}
+	return profile, nil
+}
+
 // --- Error Notebook with 2-Recall Cycle ---
 
 func (s *StudyService) GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error) {
@@ -838,7 +924,13 @@ func (s *StudyService) CompletePlanTask(ctx context.Context, userID, taskID stri
 	}
 
 	today := time.Now().UTC().Format("2006-01-02")
-	return s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, "manual")
+	if err := s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, "manual"); err != nil {
+		return err
+	}
+	// The key contains the task and the day, so a double click or a retry can
+	// never award the same reward twice.
+	_, _ = s.AwardXP(ctx, userID, "plan_task", "task:"+taskID+":"+today, 10)
+	return nil
 }
 
 func (s *StudyService) GetWeeklyReport(ctx context.Context, userID string) (*models.WeeklyReport, error) {

@@ -102,6 +102,9 @@ test('readiness is explained and tasks carry a reason and a time estimate', asyn
   await page.goto('/dashboard');
 
   await expect(page.getByText(/Недостаточно данных: нужен минимум 2 завершённых mock-теста/)).toBeVisible();
+  await expect(page.getByText('Лига недели')).toBeVisible();
+  await expect(page.getByText('Gold', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Лига считается по XP за текущую неделю/)).toBeVisible();
   await expect(page.getByText(/Пора повторить 12 карточек/)).toBeVisible();
   await expect(page.getByText(/Бюджет:/)).toBeVisible();
 });

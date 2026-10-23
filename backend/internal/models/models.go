@@ -620,6 +620,30 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+// XPEvent is one immutable reward in the server-side ledger.
+type XPEvent struct {
+	ID             string          `json:"id"`
+	UserID         string          `json:"userId"`
+	EventType      string          `json:"eventType"`
+	IdempotencyKey string          `json:"idempotencyKey"`
+	XP             int             `json:"xp"`
+	Metadata       json.RawMessage `json:"metadata,omitempty"`
+	CreatedAt      time.Time       `json:"createdAt"`
+}
+
+// XPProfile is the retention view derived from the ledger.
+type XPProfile struct {
+	Total int `json:"total"`
+	// Weekly is the XP of the current week (Monday 00:00 UTC).
+	Weekly      int       `json:"weekly"`
+	WeekStart   string    `json:"weekStart"`
+	League      string    `json:"league"`
+	NextLeague  string    `json:"nextLeague,omitempty"`
+	NextAt      int       `json:"nextAt,omitempty"`
+	LeagueBasis string    `json:"leagueBasis"`
+	History     []XPEvent `json:"history"`
+}
+
 // CoachEvidence is one actionable observation from an evaluation:
 // the quoted span, the rule it violates and the concrete fix.
 type CoachEvidence struct {

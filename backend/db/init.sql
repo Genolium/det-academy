@@ -383,6 +383,20 @@ CREATE INDEX IF NOT EXISTS idx_vocabulary_status_level ON vocabulary_entries(sta
 CREATE INDEX IF NOT EXISTS idx_oauth_transactions_state ON oauth_transactions(state_hash);
 CREATE INDEX IF NOT EXISTS idx_oauth_transactions_expiry ON oauth_transactions(expires_at);
 
+-- Server-side XP ledger (one immutable reward per idempotency key).
+CREATE TABLE IF NOT EXISTS xp_events (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    idempotency_key VARCHAR(160) NOT NULL,
+    xp INT NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_xp_events_user_key UNIQUE (user_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_xp_events_user_created ON xp_events(user_id, created_at DESC);
+
 -- Seed Initial Questions Bank for 13 Modern DET Question Types
 INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
 VALUES
