@@ -92,6 +92,10 @@ func main() {
 
 	// Initialize Storage: Try Postgres, fallback to Memory (strictly disallow fallback in production)
 	var store repository.Storage
+	// schemaErr records a failed migration. The API keeps serving the schema it
+	// already has, but /ready reports the failure so a deployment cannot pass
+	// silently with a broken schema.
+	var schemaErr error
 	pgStore, err := postgres.New(cfg.DatabaseURL)
 	if err != nil {
 		if cfg.Env == "production" || os.Getenv("ENV") == "production" || os.Getenv("NODE_ENV") == "production" {
@@ -111,9 +115,11 @@ func main() {
 				log.Printf("[Migrations] no migrations directory found; set MIGRATIONS_DIR to enable automatic migrations")
 			} else if err := pgStore.RunMigrations(migrationsDir); err != nil {
 				// A failed migration must never take the whole API down. The
-				// service keeps serving the schema it already has and the
-				// error is reported for an operator to fix.
+				// service keeps serving the schema it already has, the error is
+				// reported for an operator to fix and /ready turns unhealthy so
+				// the deployment fails instead of passing silently.
 				log.Printf("[Migrations] failed: %v (continuing with the existing schema)", err)
+				schemaErr = err
 			} else {
 				log.Printf("[Migrations] applied from %s", migrationsDir)
 			}
@@ -238,6 +244,10 @@ func main() {
 		r.Get("/ready", func(w http.ResponseWriter, r *http.Request) {
 			if err := store.Ping(r.Context()); err != nil {
 				handlers.RespondError(w, http.StatusServiceUnavailable, "storage is not ready")
+				return
+			}
+			if schemaErr != nil {
+				handlers.RespondError(w, http.StatusServiceUnavailable, "schema migrations failed; see the service log")
 				return
 			}
 			handlers.RespondJSON(w, http.StatusOK, map[string]string{"status": "ready"})

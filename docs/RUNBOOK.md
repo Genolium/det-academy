@@ -62,8 +62,11 @@ database was created need an explicit migration — the regression test
 `backend/tests/schema_convergence_test.go` fails when that is forgotten.
 
 A failing migration is logged but never stops the service, so a broken
-migration cannot take the API down. Migrations that need attention are visible
-in the container log.
+migration cannot take the API down. The failure is also reported by
+`GET /api/v1/ready`, which returns `503` until the schema is repaired — the
+deploy script checks that endpoint, so a deployment with a broken migration
+fails loudly instead of passing silently. Migrations that need attention are
+visible in the container log.
 
 ## Backup
 

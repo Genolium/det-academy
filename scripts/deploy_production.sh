@@ -81,8 +81,8 @@ fi
 log "Rebuilding and restarting the stack"
 docker compose up -d --build --remove-orphans
 
-log "Applying migrations explicitly (the backend also runs them on start)"
-docker compose exec -T backend /app/server migrate || true
+log "Applying migrations (a failed migration aborts the deployment)"
+docker compose exec -T backend /app/server migrate
 
 if [ "$SEED" = true ]; then
   log "Applying the content and vocabulary seeds"

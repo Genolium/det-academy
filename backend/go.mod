@@ -1,8 +1,6 @@
 module det-academy-backend
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.26.10
 
 require (
 	github.com/getsentry/sentry-go v0.45.0
@@ -17,5 +15,5 @@ require (
 
 require (
 	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
