@@ -356,6 +356,23 @@ func (h *StudyHandler) GetXPProfile(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, http.StatusOK, profile)
 }
 
+// GetPracticeAssignment returns a server-issued practice drill assignment without answer keys.
+func (h *StudyHandler) GetPracticeAssignment(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	questionType := r.URL.Query().Get("type")
+	if questionType == "" {
+		RespondError(w, http.StatusBadRequest, "type query parameter is required")
+		return
+	}
+
+	asgn, err := h.studyService.CreatePracticeAssignment(r.Context(), userID, questionType)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, asgn)
+}
+
 // RecordPracticeAttempt records an exercise attempt from Practice Hub.
 func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
@@ -365,16 +382,24 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req struct {
+		AssignmentID  string          `json:"assignmentId"`
 		QuestionType  string          `json:"questionType"`
+		QuestionID    string          `json:"questionId"`
 		PromptContext string          `json:"promptContext"`
 		UserResponse  json.RawMessage `json:"userResponse"`
-		IsCorrect     bool            `json:"isCorrect"`
-		Score         float64         `json:"score"`
 		TimeSpentSec  int             `json:"timeSpentSec"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request payload")
 		return
+	}
+	if req.QuestionID == "" && req.AssignmentID != "" {
+		if asgn, err := h.studyService.GetPracticeAssignment(r.Context(), req.AssignmentID); err == nil && asgn != nil {
+			req.QuestionID = asgn.QuestionID
+			if req.QuestionType == "" {
+				req.QuestionType = asgn.QuestionType
+			}
+		}
 	}
 	if req.QuestionType == "" {
 		RespondError(w, http.StatusBadRequest, "questionType is required")
@@ -382,8 +407,8 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 	}
 
 	attempt, err := h.studyService.RecordPracticeAttempt(
-		r.Context(), userID, req.QuestionType, req.PromptContext,
-		req.UserResponse, req.IsCorrect, req.Score, req.TimeSpentSec,
+		r.Context(), userID, req.QuestionType, req.QuestionID, req.PromptContext,
+		req.UserResponse, req.TimeSpentSec,
 	)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, err.Error())

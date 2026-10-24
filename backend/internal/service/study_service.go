@@ -29,6 +29,24 @@ func NewStudyService(storage repository.Storage, theoryService *TheoryService, c
 	}
 }
 
+func emitLearningEvent(ctx context.Context, repo repository.StudyRepository, userID, eventType, key string, payload any) {
+	if repo == nil || userID == "" || key == "" {
+		return
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil || len(raw) == 0 {
+		raw = []byte(`{}`)
+	}
+	_, _ = repo.RecordLearningEvent(ctx, &models.LearningEvent{
+		ID:             uuid.NewString(),
+		UserID:         userID,
+		EventType:      eventType,
+		Payload:        raw,
+		IdempotencyKey: key,
+		CreatedAt:      time.Now().UTC(),
+	})
+}
+
 func intVal(p *int) int {
 	if p == nil {
 		return 0
@@ -383,8 +401,6 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		statusMsg += fmt.Sprintf(" Текущий ориентир: %d баллов. До целевого балла %d осталось набрать %d баллов.",
 			currentEstimate, goal.TargetScore, goal.TargetScore-currentEstimate)
 	}
-
-	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
 
 	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
 
@@ -802,6 +818,9 @@ func (s *StudyService) ReviewSRSCard(ctx context.Context, userID string, req mod
 	_ = s.storage.Study().RecordActivity(ctx, userID, todayStr, "srs")
 	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-srs", todayStr, "srs_review")
 	_, _ = s.AwardXP(ctx, userID, "srs", "srs:"+req.CardID+":"+todayStr, 5)
+	emitLearningEvent(ctx, s.storage.Study(), userID, "srs_reviewed", "srs:"+req.CardID+":"+todayStr, map[string]any{
+		"cardId": req.CardID,
+	})
 
 	return &models.ReviewSRSCardResponse{
 		CardID:         req.CardID,
@@ -992,9 +1011,8 @@ func (s *StudyService) CompletePlanTaskWithSource(ctx context.Context, userID, t
 	if err := s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, source); err != nil {
 		return err
 	}
-	// The key contains the task and the day, so a double click or a retry can
-	// never award the same reward twice.
-	_, _ = s.AwardXP(ctx, userID, "plan_task", "task:"+taskID+":"+today, 10)
+	// Plan-task completion is a bookkeeping flag. XP comes only from domain
+	// events (practice, SRS, lesson, mock) so a checkbox cannot farm the league.
 	return nil
 }
 
@@ -1353,16 +1371,106 @@ func fitTasksToBudget(tasks []models.DailyTask, budgetMinutes int) []models.Dail
 	return kept
 }
 
-// RecordPracticeAttempt saves a student practice attempt and awards XP once per attempt ID.
-func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questionType, promptContext string, userResponse json.RawMessage, isCorrect bool, score float64, timeSpentSec int) (*models.PracticeAttempt, error) {
+// CreatePracticeAssignment issues a clean, server-side practice assignment without revealing correct answers.
+func (s *StudyService) CreatePracticeAssignment(ctx context.Context, userID, questionType string) (*models.PracticeAssignment, error) {
 	if questionType == "" {
 		return nil, errors.New("questionType is required")
 	}
+
+	questions, err := s.storage.Questions().ListByTypeAndDifficulty(ctx, questionType, "")
+	if err != nil || len(questions) == 0 {
+		return nil, fmt.Errorf("no active questions found for type: %s", questionType)
+	}
+
+	selected := questions[0]
+	if len(questions) > 1 && userID != "" {
+		recent, _ := s.storage.Study().GetPracticeAttempts(ctx, userID, questionType, 1)
+		if len(recent) > 0 {
+			for _, q := range questions {
+				if q.ID != recent[0].QuestionID {
+					selected = q
+					break
+				}
+			}
+		}
+	}
+
+	sanitizedPayload := sanitizeContentPayload(selected.Type, selected.ContentPayload)
+	asgn := &models.PracticeAssignment{
+		AssignmentID:   "asgn-" + uuid.NewString()[:12],
+		QuestionID:     selected.ID,
+		QuestionType:   selected.Type,
+		DifficultyBand: selected.DifficultyBand,
+		ContentPayload: sanitizedPayload,
+		TimeLimitSec:   selected.TimeLimitSec,
+		CreatedAt:      time.Now().UTC(),
+	}
+
+	_ = s.storage.Study().CreatePracticeAssignment(ctx, asgn)
+	return asgn, nil
+}
+
+// GetPracticeAssignment returns a previously issued practice assignment.
+func (s *StudyService) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+	if assignmentID == "" {
+		return nil, errors.New("assignmentId is required")
+	}
+	return s.storage.Study().GetPracticeAssignment(ctx, assignmentID)
+}
+
+// RecordPracticeAttempt grades a drill on the server when a question ID is
+// supplied. Client-reported isCorrect/score are ignored.
+func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questionType, questionID, promptContext string, userResponse json.RawMessage, timeSpentSec int) (*models.PracticeAttempt, error) {
+	if (questionID == "" || questionType == "") && strings.HasPrefix(promptContext, "asgn-") {
+		if asgn, err := s.GetPracticeAssignment(ctx, promptContext); err == nil && asgn != nil {
+			if questionID == "" {
+				questionID = asgn.QuestionID
+			}
+			if questionType == "" {
+				questionType = asgn.QuestionType
+			}
+		}
+	}
+	if questionType == "" {
+		return nil, errors.New("questionType is required")
+	}
+
+	isCorrect := false
+	score := 0.0
+	serverGraded := false
+	var correctAnswers json.RawMessage
+
+	if questionID != "" && s.catService != nil {
+		if q, err := s.catService.QuestionByID(ctx, questionID); err == nil && q != nil {
+			correctAnswers = q.CorrectAnswers
+			if closedCorrect, closedScore, handled := GradeClosedItem(q, userResponse); handled {
+				isCorrect = closedCorrect
+				score = closedScore
+				serverGraded = true
+			} else if isOpenEndedQuestionType(q.Type) {
+				userText, transcript, _, durationSec := extractUserText(userResponse)
+				var eval models.EvaluationResult
+				if transcript != "" || durationSec > 0 {
+					eval = NewEvaluator().EvaluateSpeaking("", questionID, q.Type, transcript, durationSec, extractContextKeywords(q.ContentPayload))
+				} else {
+					eval = NewEvaluator().EvaluateWriting("", questionID, q.Type, userText, extractContextKeywords(q.ContentPayload))
+				}
+				score = eval.Score
+				isCorrect = eval.Score >= 0.6
+				serverGraded = true
+			}
+			if q.Type != "" {
+				questionType = q.Type
+			}
+		}
+	}
+
 	attemptID := uuid.NewString()
 	attempt := &models.PracticeAttempt{
 		ID:            attemptID,
 		UserID:        userID,
 		QuestionType:  questionType,
+		QuestionID:    questionID,
 		PromptContext: promptContext,
 		UserResponse:  userResponse,
 		IsCorrect:     isCorrect,
@@ -1375,19 +1483,38 @@ func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questi
 		return nil, fmt.Errorf("failed to record practice attempt: %w", err)
 	}
 
-	// Update skill mastery
-	skill := MapQuestionTypeToSkill(questionType)
-	_ = s.storage.Study().UpdateSkillMastery(ctx, userID, skill, score)
-
-	// Record daily activity
 	today := time.Now().UTC().Format("2006-01-02")
 	_ = s.storage.Study().RecordActivity(ctx, userID, today, "practice")
-
-	// Complete daily drill task automatically if in study plan
 	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-drill", today, "practice_attempt")
+	if serverGraded {
+		skill := MapQuestionTypeToSkill(questionType)
+		_ = s.storage.Study().UpdateSkillMastery(ctx, userID, skill, score)
+		if isCorrect {
+			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 15)
+		} else {
+			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 5)
 
-	// Award XP for practice (15 XP for a verified drill submission)
-	_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 15)
+			explanation := "Practice drill error"
+			correctStr := "Check correct solution"
+			if len(correctAnswers) > 0 {
+				correctStr = string(correctAnswers)
+			}
+			_, _ = s.SaveError(ctx, userID, models.SaveErrorRequest{
+				QuestionType:  questionType,
+				Prompt:        promptContext,
+				UserAnswer:    string(userResponse),
+				CorrectAnswer: correctStr,
+				Explanation:   explanation,
+			})
+		}
+	}
+	emitLearningEvent(ctx, s.storage.Study(), userID, "practice_submitted", "practice:"+attemptID, map[string]any{
+		"questionType": questionType,
+		"questionId":   questionID,
+		"score":        score,
+		"isCorrect":    isCorrect,
+		"serverGraded": serverGraded,
+	})
 
 	return attempt, nil
 }
@@ -1429,6 +1556,10 @@ func (s *StudyService) RecordTypingAttempt(ctx context.Context, userID string, w
 	if accuracy >= 70.0 && wpm >= 20 {
 		_, _ = s.AwardXP(ctx, userID, "typing", "typing:"+attemptID, 10)
 	}
+	emitLearningEvent(ctx, s.storage.Study(), userID, "typing_submitted", "typing:"+attemptID, map[string]any{
+		"wpm":      wpm,
+		"accuracy": accuracy,
+	})
 
 	return attempt, nil
 }

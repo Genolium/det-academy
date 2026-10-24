@@ -42,8 +42,9 @@ type MemoryStorage struct {
 	vocabulary        map[string]models.VocabularyEntry   // entryID -> entry
 	oauthTransactions map[string]models.OAuthTransaction  // stateHash -> transaction
 	refreshTokens     map[string]models.RefreshToken
-	learningEvents    map[string][]models.LearningEvent  // userID -> events
-	practiceAttempts  map[string][]models.PracticeAttempt // userID -> attempts
+	learningEvents      map[string][]models.LearningEvent  // userID -> events
+	practiceAssignments map[string]*models.PracticeAssignment // assignmentID -> assignment
+	practiceAttempts    map[string][]models.PracticeAttempt // userID -> attempts
 	typingAttempts    map[string][]models.TypingAttempt   // userID -> attempts
 	skillMastery      map[string]map[string]*models.UserSkillMastery // userID -> skill -> mastery
 	sessionLockMu     sync.Mutex
@@ -75,9 +76,10 @@ func New() *MemoryStorage {
 		sessionQuestions:  make(map[string][]models.SessionQuestion),
 		vocabulary:        make(map[string]models.VocabularyEntry),
 		oauthTransactions: make(map[string]models.OAuthTransaction),
-		refreshTokens:     make(map[string]models.RefreshToken),
-		learningEvents:    make(map[string][]models.LearningEvent),
-		practiceAttempts:  make(map[string][]models.PracticeAttempt),
+		refreshTokens:       make(map[string]models.RefreshToken),
+		learningEvents:      make(map[string][]models.LearningEvent),
+		practiceAssignments: make(map[string]*models.PracticeAssignment),
+		practiceAttempts:    make(map[string][]models.PracticeAttempt),
 		typingAttempts:    make(map[string][]models.TypingAttempt),
 		skillMastery:      make(map[string]map[string]*models.UserSkillMastery),
 		sessionLocks:      make(map[string]*sync.Mutex),
@@ -2408,6 +2410,40 @@ func (r *studyMemoryRepo) RecordLearningEvent(ctx context.Context, event *models
 	}
 	r.s.learningEvents[event.UserID] = append(r.s.learningEvents[event.UserID], *event)
 	return true, nil
+}
+
+func (r *studyMemoryRepo) ListLearningEvents(ctx context.Context, userID string, limit int) ([]models.LearningEvent, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	events := r.s.learningEvents[userID]
+	if limit <= 0 || limit > len(events) {
+		limit = len(events)
+	}
+	out := make([]models.LearningEvent, limit)
+	copy(out, events[len(events)-limit:])
+	return out, nil
+}
+
+func (r *studyMemoryRepo) CreatePracticeAssignment(ctx context.Context, assignment *models.PracticeAssignment) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if assignment.CreatedAt.IsZero() {
+		assignment.CreatedAt = time.Now().UTC()
+	}
+	cp := *assignment
+	r.s.practiceAssignments[assignment.AssignmentID] = &cp
+	return nil
+}
+
+func (r *studyMemoryRepo) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	asgn, ok := r.s.practiceAssignments[assignmentID]
+	if !ok {
+		return nil, errors.New("practice assignment not found")
+	}
+	cp := *asgn
+	return &cp, nil
 }
 
 func (r *studyMemoryRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {

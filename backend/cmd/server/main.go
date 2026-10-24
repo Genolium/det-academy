@@ -114,11 +114,10 @@ func main() {
 			if migrationsDir == "" {
 				log.Printf("[Migrations] no migrations directory found; set MIGRATIONS_DIR to enable automatic migrations")
 			} else if err := pgStore.RunMigrations(migrationsDir); err != nil {
-				// A failed migration must never take the whole API down. The
-				// service keeps serving the schema it already has, the error is
-				// reported for an operator to fix and /ready turns unhealthy so
-				// the deployment fails instead of passing silently.
-				log.Printf("[Migrations] failed: %v (continuing with the existing schema)", err)
+				log.Printf("[Migrations] failed: %v", err)
+				if cfg.Env == "production" || os.Getenv("ENV") == "production" || os.Getenv("NODE_ENV") == "production" {
+					log.Fatalf("[Migrations FATAL] refusing to serve with an incomplete schema: %v", err)
+				}
 				schemaErr = err
 			} else {
 				log.Printf("[Migrations] applied from %s", migrationsDir)
@@ -235,12 +234,7 @@ func main() {
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
 		// Health check
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			handlers.RespondJSON(w, http.StatusOK, map[string]string{
-				"status": "ok",
-				"time":   time.Now().UTC().Format(time.RFC3339),
-			})
-		})
+		r.Get("/health", handlers.HealthHandler(schemaErr))
 		r.Get("/ready", handlers.ReadinessHandler(store.Ping, schemaErr))
 
 		// Auth routes
@@ -286,6 +280,7 @@ func main() {
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
 
 			// Practice, Typing, and Mastery events
+			r.Get("/practice/assignment", studyHandler.GetPracticeAssignment)
 			r.Post("/practice/attempts", studyHandler.RecordPracticeAttempt)
 			r.Post("/typing/attempts", studyHandler.RecordTypingAttempt)
 			r.Get("/typing/history", studyHandler.GetTypingHistory)
@@ -308,7 +303,7 @@ func main() {
 
 		// Test and CAT routes (Strictly authenticated sessions)
 		r.Route("/test", func(r chi.Router) {
-			r.Get("/questions", testHandler.GetQuestions)
+			r.With(handlers.AuthMiddleware(authService)).Get("/questions", testHandler.GetQuestions)
 
 			// Session routes strictly require authentication
 			r.Group(func(r chi.Router) {

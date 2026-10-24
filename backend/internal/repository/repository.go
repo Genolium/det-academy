@@ -151,6 +151,9 @@ type StudyRepository interface {
 
 	// Learning Events & Practice History
 	RecordLearningEvent(ctx context.Context, event *models.LearningEvent) (bool, error)
+	ListLearningEvents(ctx context.Context, userID string, limit int) ([]models.LearningEvent, error)
+	CreatePracticeAssignment(ctx context.Context, assignment *models.PracticeAssignment) error
+	GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error)
 	RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error
 	GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error)
 	RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error

@@ -38,16 +38,18 @@ func TestPracticeAttemptRecordsMasteryAndAwardsXP(t *testing.T) {
 	store, study, _, _, userID := learningEventsFixture(t)
 	ctx := context.Background()
 
-	rawResp, _ := json.Marshal(map[string]interface{}{"typed": "ambiguous", "isReal": true})
-	attempt, err := study.RecordPracticeAttempt(ctx, userID, "READ_SELECT", "word: ambiguous", rawResp, true, 1.0, 4)
+	rawResp, _ := json.Marshal(map[string]interface{}{"isReal": true})
+	attempt, err := study.RecordPracticeAttempt(ctx, userID, "READ_SELECT", "q-rs-01", "word: ambiguous", rawResp, 4)
 	if err != nil {
 		t.Fatalf("record practice attempt: %v", err)
 	}
 	if attempt.ID == "" {
 		t.Fatal("expected non-empty attempt ID")
 	}
+	if !attempt.IsCorrect || attempt.Score != 1 {
+		t.Fatalf("server grade = correct=%v score=%v, want true/1", attempt.IsCorrect, attempt.Score)
+	}
 
-	// Verify mastery
 	mastery, err := study.GetSkillMastery(ctx, userID)
 	if err != nil {
 		t.Fatalf("get mastery: %v", err)
@@ -58,13 +60,29 @@ func TestPracticeAttemptRecordsMasteryAndAwardsXP(t *testing.T) {
 		t.Fatalf("unexpected mastery: %+v", m)
 	}
 
-	// Verify XP awarded: 15 XP for practice attempt + 10 XP for auto-completing daily drill task = 25 XP
 	totalXP, err := store.Study().XPTotal(ctx, userID)
 	if err != nil {
 		t.Fatalf("total xp: %v", err)
 	}
-	if totalXP != 25 {
-		t.Fatalf("expected 25 XP for practice attempt with daily task completion, got %d", totalXP)
+	if totalXP != 15 {
+		t.Fatalf("expected 15 XP for a server-graded practice attempt, got %d", totalXP)
+	}
+
+	events, err := store.Study().ListLearningEvents(ctx, userID, 10)
+	if err != nil {
+		t.Fatalf("list events: %v", err)
+	}
+	if len(events) == 0 || events[len(events)-1].EventType != "practice_submitted" {
+		t.Fatalf("expected a practice_submitted learning event, got %+v", events)
+	}
+
+	liar, _ := json.Marshal(map[string]interface{}{"isReal": false, "isCorrect": true, "score": 1})
+	cheated, err := study.RecordPracticeAttempt(ctx, userID, "READ_SELECT", "q-rs-01", "word: ambiguous", liar, 2)
+	if err != nil {
+		t.Fatalf("record lying attempt: %v", err)
+	}
+	if cheated.IsCorrect {
+		t.Fatal("client-claimed correctness must not grade a wrong answer")
 	}
 }
 

@@ -1691,15 +1691,71 @@ func (r *StudyRepo) RecordLearningEvent(ctx context.Context, event *models.Learn
 	return affected > 0, nil
 }
 
+func (r *StudyRepo) ListLearningEvents(ctx context.Context, userID string, limit int) ([]models.LearningEvent, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, event_type, payload, idempotency_key, created_at
+		FROM learning_events
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var events []models.LearningEvent
+	for rows.Next() {
+		var event models.LearningEvent
+		if err := rows.Scan(&event.ID, &event.UserID, &event.EventType, &event.Payload, &event.IdempotencyKey, &event.CreatedAt); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	if events == nil {
+		events = []models.LearningEvent{}
+	}
+	return events, rows.Err()
+}
+
+func (r *StudyRepo) CreatePracticeAssignment(ctx context.Context, assignment *models.PracticeAssignment) error {
+	payload := assignment.ContentPayload
+	if len(payload) == 0 {
+		payload = []byte(`{}`)
+	}
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO practice_assignments (id, user_id, question_id, question_type, difficulty_band, content_payload, time_limit_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+	`, assignment.AssignmentID, assignment.AssignmentID, assignment.QuestionID, assignment.QuestionType, assignment.DifficultyBand, payload, assignment.TimeLimitSec)
+	return err
+}
+
+func (r *StudyRepo) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, question_id, question_type, difficulty_band, content_payload, time_limit_sec, created_at
+		FROM practice_assignments
+		WHERE id = $1
+	`, assignmentID)
+
+	var a models.PracticeAssignment
+	err := row.Scan(&a.AssignmentID, &a.QuestionID, &a.QuestionType, &a.DifficultyBand, &a.ContentPayload, &a.TimeLimitSec, &a.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
 func (r *StudyRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {
 	userResp := attempt.UserResponse
 	if len(userResp) == 0 {
 		userResp = []byte(`{}`)
 	}
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO practice_attempts (id, user_id, question_type, prompt_context, user_response, is_correct, score, time_spent_sec, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-	`, attempt.ID, attempt.UserID, attempt.QuestionType, attempt.PromptContext, userResp, attempt.IsCorrect, attempt.Score, attempt.TimeSpentSec)
+		INSERT INTO practice_attempts (id, user_id, question_type, question_id, prompt_context, user_response, is_correct, score, time_spent_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+	`, attempt.ID, attempt.UserID, attempt.QuestionType, attempt.QuestionID, attempt.PromptContext, userResp, attempt.IsCorrect, attempt.Score, attempt.TimeSpentSec)
 	return err
 }
 
@@ -1708,7 +1764,7 @@ func (r *StudyRepo) GetPracticeAttempts(ctx context.Context, userID, questionTyp
 		limit = 50
 	}
 	query := `
-		SELECT id, user_id, question_type, prompt_context, user_response, is_correct, score, time_spent_sec, created_at
+		SELECT id, user_id, question_type, COALESCE(question_id, ''), prompt_context, user_response, is_correct, score, time_spent_sec, created_at
 		FROM practice_attempts
 		WHERE user_id = $1
 	`
@@ -1732,7 +1788,7 @@ func (r *StudyRepo) GetPracticeAttempts(ctx context.Context, userID, questionTyp
 	for rows.Next() {
 		var att models.PracticeAttempt
 		if err := rows.Scan(
-			&att.ID, &att.UserID, &att.QuestionType, &att.PromptContext,
+			&att.ID, &att.UserID, &att.QuestionType, &att.QuestionID, &att.PromptContext,
 			&att.UserResponse, &att.IsCorrect, &att.Score, &att.TimeSpentSec, &att.CreatedAt,
 		); err != nil {
 			return nil, err

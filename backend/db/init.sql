@@ -422,6 +422,7 @@ CREATE TABLE IF NOT EXISTS practice_attempts (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     question_type VARCHAR(50) NOT NULL,
+    question_id VARCHAR(100),
     prompt_context TEXT NOT NULL DEFAULT '',
     user_response JSONB NOT NULL DEFAULT '{}',
     is_correct BOOLEAN NOT NULL DEFAULT FALSE,
@@ -432,6 +433,20 @@ CREATE TABLE IF NOT EXISTS practice_attempts (
 
 CREATE INDEX IF NOT EXISTS idx_practice_attempts_user_type
     ON practice_attempts(user_id, question_type, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS practice_assignments (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    question_id VARCHAR(100) NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    question_type VARCHAR(50) NOT NULL,
+    difficulty_band VARCHAR(20) NOT NULL DEFAULT 'B1',
+    content_payload JSONB NOT NULL DEFAULT '{}',
+    time_limit_sec INT NOT NULL DEFAULT 60,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_assignments_user_created
+    ON practice_assignments(user_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS typing_attempts (
     id UUID PRIMARY KEY,

@@ -195,3 +195,74 @@ func TestVersionedSessionAndQuestionSnapshots(t *testing.T) {
 		t.Errorf("scoring version mismatch: got %s, want %s", retrieved.ScoringVersion, session.ScoringVersion)
 	}
 }
+
+func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
+	store := memory.New()
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	study := NewStudyService(store, theory, cat)
+	ctx := context.Background()
+
+	// 1. Issue Practice Assignment for READ_SELECT
+	asgn, err := study.CreatePracticeAssignment(ctx, "user-pr-1", "READ_SELECT")
+	if err != nil {
+		t.Fatalf("failed to create practice assignment: %v", err)
+	}
+	if asgn.AssignmentID == "" || asgn.QuestionID == "" {
+		t.Fatalf("expected non-empty assignmentID and questionID")
+	}
+	if asgn.QuestionType != "READ_SELECT" {
+		t.Fatalf("expected questionType READ_SELECT, got %s", asgn.QuestionType)
+	}
+
+	// Verify assignment can be retrieved
+	retrievedAsgn, err := study.GetPracticeAssignment(ctx, asgn.AssignmentID)
+	if err != nil {
+		t.Fatalf("failed to get practice assignment: %v", err)
+	}
+	if retrievedAsgn.QuestionID != asgn.QuestionID {
+		t.Errorf("expected question ID %s, got %s", asgn.QuestionID, retrievedAsgn.QuestionID)
+	}
+
+	// 2. Submit Correct Attempt
+	// q-rs-01 has answer {"isReal": true}
+	correctResp := []byte(`{"isReal": true}`)
+	attCorrect, err := study.RecordPracticeAttempt(ctx, "user-pr-1", "READ_SELECT", asgn.QuestionID, asgn.AssignmentID, correctResp, 12)
+	if err != nil {
+		t.Fatalf("failed to record correct attempt: %v", err)
+	}
+	if !attCorrect.IsCorrect || attCorrect.Score != 1.0 {
+		t.Errorf("expected correct attempt with score 1.0, got isCorrect=%v, score=%f", attCorrect.IsCorrect, attCorrect.Score)
+	}
+	if attCorrect.QuestionID != asgn.QuestionID {
+		t.Errorf("expected QuestionID to be preserved in attempt: %s", attCorrect.QuestionID)
+	}
+
+	// Verify XP was awarded (15 XP)
+	xp, err := study.GetXPProfile(ctx, "user-pr-1")
+	if err != nil {
+		t.Fatalf("failed to get xp profile: %v", err)
+	}
+	if xp.Total != 15 {
+		t.Errorf("expected 15 XP for verified correct practice, got %d", xp.Total)
+	}
+
+	// 3. Submit Incorrect Attempt with assignment ID in promptContext
+	wrongResp := []byte(`{"isReal": false}`)
+	attWrong, err := study.RecordPracticeAttempt(ctx, "user-pr-1", "READ_SELECT", asgn.QuestionID, asgn.AssignmentID, wrongResp, 10)
+	if err != nil {
+		t.Fatalf("failed to record wrong attempt: %v", err)
+	}
+	if attWrong.IsCorrect || attWrong.Score != 0.0 {
+		t.Errorf("expected incorrect attempt with score 0.0, got isCorrect=%v, score=%f", attWrong.IsCorrect, attWrong.Score)
+	}
+
+	// Verify error was auto-saved into Error Notebook
+	errList, err := study.GetErrors(ctx, "user-pr-1")
+	if err != nil {
+		t.Fatalf("failed to get errors: %v", err)
+	}
+	if len(errList) == 0 {
+		t.Errorf("expected error to be auto-saved into error notebook on failed practice")
+	}
+}

@@ -35,6 +35,7 @@ var legacyMissingTables = []string{
 	"vocabulary_entries",
 	"learning_events",
 	"practice_attempts",
+	"practice_assignments",
 	"typing_attempts",
 	"user_skill_mastery",
 }
@@ -63,6 +64,7 @@ var legacyMissingColumns = []struct {
 	{"user_errors", "error_category"},
 	{"user_errors", "error_rule"},
 	{"user_errors", "context_variants"},
+	{"practice_attempts", "question_id"},
 	{"users", "token_version"},
 	{"users", "email_verified"},
 	{"users", "email_verification_token_hash"},

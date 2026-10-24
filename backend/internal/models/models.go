@@ -663,12 +663,37 @@ type PracticeAttempt struct {
 	ID            string          `json:"id"`
 	UserID        string          `json:"userId"`
 	QuestionType  string          `json:"questionType"`
+	QuestionID    string          `json:"questionId,omitempty"`
 	PromptContext string          `json:"promptContext"`
 	UserResponse  json.RawMessage `json:"userResponse"`
 	IsCorrect     bool            `json:"isCorrect"`
 	Score         float64         `json:"score"`
 	TimeSpentSec  int             `json:"timeSpentSec"`
 	CreatedAt     time.Time       `json:"createdAt"`
+}
+
+// PracticeAssignment is a server-issued drill assignment without private answers.
+type PracticeAssignment struct {
+	AssignmentID   string          `json:"assignmentId"`
+	QuestionID     string          `json:"questionId"`
+	QuestionType   string          `json:"questionType"`
+	DifficultyBand string          `json:"difficultyBand"`
+	ContentPayload json.RawMessage `json:"contentPayload"`
+	TimeLimitSec   int             `json:"timeLimitSec"`
+	CreatedAt      time.Time       `json:"createdAt"`
+}
+
+// PracticeGradingResponse is the confirmed server evaluation of a practice assignment.
+type PracticeGradingResponse struct {
+	AttemptID      string          `json:"attemptId"`
+	QuestionID     string          `json:"questionId"`
+	QuestionType   string          `json:"questionType"`
+	IsCorrect      bool            `json:"isCorrect"`
+	Score          float64         `json:"score"`
+	ServerGraded   bool            `json:"serverGraded"`
+	XPAwarded      int             `json:"xpAwarded"`
+	CorrectAnswers json.RawMessage `json:"correctAnswers,omitempty"`
+	Feedback       string          `json:"feedback,omitempty"`
 }
 
 // TypingAttempt records one completed typing test.

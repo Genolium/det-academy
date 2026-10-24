@@ -486,6 +486,28 @@ export class ApiError extends Error {
   }
 }
 
+export interface PracticeAssignment {
+  assignmentId: string;
+  questionId: string;
+  questionType: string;
+  difficultyBand: string;
+  contentPayload: Record<string, unknown>;
+  timeLimitSec: number;
+  cefrLevel?: string;
+  createdAt: string;
+}
+
+export interface PracticeAttemptResult {
+  id: string;
+  userId: string;
+  questionType: string;
+  questionId?: string;
+  isCorrect: boolean;
+  score: number;
+  timeSpentSec: number;
+  createdAt: string;
+}
+
 class ApiClient {
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
@@ -1259,14 +1281,28 @@ class ApiClient {
     }
   }
 
+  async getPracticeAssignment(type: string): Promise<PracticeAssignment> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/assignment?type=${encodeURIComponent(type)}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to get practice assignment', res.status);
+    }
+    return res.json();
+  }
+
   async recordPracticeAttempt(data: {
+    assignmentId?: string;
     questionType: string;
+    questionId?: string;
     promptContext?: string;
     userResponse: Record<string, unknown>;
-    isCorrect: boolean;
-    score: number;
+    isCorrect?: boolean;
+    score?: number;
     timeSpentSec?: number;
-  }): Promise<{ id: string }> {
+  }): Promise<PracticeAttemptResult> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/attempts`, {
       method: 'POST',
       headers: this.getHeaders(),

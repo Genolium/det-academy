@@ -18,7 +18,7 @@ import { sound } from '@/lib/sound';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Button } from '@/components/ui/Button';
 import { PillBadge } from '@/components/ui/PillBadge';
-import { api } from '@/lib/api';
+import { api, PracticeAssignment } from '@/lib/api';
 import { 
   Sparkles, 
   CheckCircle2, 
@@ -97,6 +97,40 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
 
   // General State
   const [drillCompleted, setDrillCompleted] = useState(false);
+  const [assignment, setAssignment] = useState<PracticeAssignment | null>(null);
+  const [isServerGrading, setIsServerGrading] = useState(false);
+  const [serverGradeError, setServerGradeError] = useState<string | null>(null);
+  const [serverGradedBadge, setServerGradedBadge] = useState<{ isCorrect: boolean; score: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchAssignment = async () => {
+      let qType = '';
+      if (isCTest) qType = 'C_TEST';
+      else if (isReadSelect) qType = 'READ_SELECT';
+      else if (isListenSelect) qType = 'LISTEN_SELECT';
+      else if (isFillBlanks) qType = 'FILL_BLANKS';
+      else if (isListenType) qType = 'LISTEN_TYPE';
+      else if (isReadAloud) qType = 'READ_ALOUD';
+      else if (isInteractiveReading) qType = 'INTERACTIVE_READING';
+      else if (isInteractiveListening) qType = 'INTERACTIVE_LISTENING';
+      else if (isPhotoWriting) qType = 'WRITE_PHOTO';
+      else if (isInteractiveWriting || isWritingSample) qType = 'WRITING_SAMPLE';
+      else if (isPhotoSpeaking || isReadListenSpeak || isSpeakingSample) qType = 'SPEAKING_SAMPLE';
+
+      if (!qType) return;
+      try {
+        const asgn = await api.getPracticeAssignment(qType);
+        if (active && asgn) {
+          setAssignment(asgn);
+        }
+      } catch {
+        // Guest mode fallback
+      }
+    };
+    void fetchAssignment();
+    return () => { active = false; };
+  }, [lessonSlug, isCTest, isReadSelect, isListenSelect, isFillBlanks, isListenType, isReadAloud, isInteractiveReading, isInteractiveListening, isPhotoWriting, isInteractiveWriting, isWritingSample, isPhotoSpeaking, isReadListenSpeak, isSpeakingSample]);
 
   // 1. C-Test Drill State
   const [cTest, setCTest] = useState<GeneratedCTest>(() => getRandomGeneratedCTest());
@@ -279,7 +313,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   // -------------------------------------------------------------
   // HANDLERS: C-Test
   // -------------------------------------------------------------
-  const handleCTestCheck = () => {
+  const handleCTestCheck = async () => {
     let correct = 0;
     cTest.gaps.forEach((gap) => {
       const userVal = (cTestInputs[gap.index] || '').trim().toLowerCase();
@@ -288,16 +322,32 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setCTestScore(correct);
     setCTestChecked(true);
     const scoreRatio = cTest.gaps.length > 0 ? correct / cTest.gaps.length : 0;
-    void api.recordPracticeAttempt({
-      questionType: 'C_TEST',
-      promptContext: cTest.title || 'C-Test text reconstruction',
-      userResponse: { inputs: cTestInputs, correctCount: correct, total: cTest.gaps.length },
-      isCorrect: correct === cTest.gaps.length,
-      score: scoreRatio,
-    }).catch(() => {});
-    if (correct >= Math.floor(cTest.gaps.length * 0.5)) {
-      setDrillCompleted(true);
-      onDrillCompleted?.();
+    const clientPassed = correct >= Math.floor(cTest.gaps.length * 0.5);
+
+    setIsServerGrading(true);
+    setServerGradeError(null);
+    try {
+      const res = await api.recordPracticeAttempt({
+        assignmentId: assignment?.assignmentId,
+        questionId: assignment?.questionId,
+        questionType: 'C_TEST',
+        promptContext: cTest.title || 'C-Test text reconstruction',
+        userResponse: { inputs: cTestInputs, correctCount: correct, total: cTest.gaps.length },
+        isCorrect: correct === cTest.gaps.length,
+        score: scoreRatio,
+      });
+      setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
+      if (res.isCorrect || res.score >= 0.5 || clientPassed) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } catch {
+      if (clientPassed) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } finally {
+      setIsServerGrading(false);
     }
   };
 
@@ -306,6 +356,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setCTestInputs({});
     setCTestChecked(false);
     setCTestScore(null);
+    setServerGradedBadge(null);
+    setServerGradeError(null);
   };
 
   // -------------------------------------------------------------
@@ -325,17 +377,35 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       setRsFinished(true);
       const correctTotal = newAnswers.filter(Boolean).length;
       const scoreRatio = rsWords.length > 0 ? correctTotal / rsWords.length : 0;
-      void api.recordPracticeAttempt({
-        questionType: 'READ_SELECT',
-        promptContext: 'Read and Select vocabulary drill',
-        userResponse: { answers: newAnswers, choices: newChoices, total: rsWords.length },
-        isCorrect: correctTotal === rsWords.length,
-        score: scoreRatio,
-      }).catch(() => {});
-      if (correctTotal >= Math.floor(rsWords.length * 0.6)) {
-        setDrillCompleted(true);
-        onDrillCompleted?.();
-      }
+      const clientPassed = correctTotal >= Math.floor(rsWords.length * 0.6);
+
+      setIsServerGrading(true);
+      setServerGradeError(null);
+      void (async () => {
+        try {
+          const res = await api.recordPracticeAttempt({
+            assignmentId: assignment?.assignmentId,
+            questionId: assignment?.questionId,
+            questionType: 'READ_SELECT',
+            promptContext: 'Read and Select vocabulary drill',
+            userResponse: { answers: newAnswers, choices: newChoices, total: rsWords.length },
+            isCorrect: correctTotal === rsWords.length,
+            score: scoreRatio,
+          });
+          setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
+          if (res.isCorrect || res.score >= 0.5 || clientPassed) {
+            setDrillCompleted(true);
+            onDrillCompleted?.();
+          }
+        } catch {
+          if (clientPassed) {
+            setDrillCompleted(true);
+            onDrillCompleted?.();
+          }
+        } finally {
+          setIsServerGrading(false);
+        }
+      })();
     }
   };
 
@@ -345,6 +415,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setRsAnswers([]);
     setRsUserChoices([]);
     setRsFinished(false);
+    setServerGradedBadge(null);
+    setServerGradeError(null);
   };
 
   // -------------------------------------------------------------
@@ -364,17 +436,35 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       setLsFinished(true);
       const correctTotal = newAnswers.filter(Boolean).length;
       const scoreRatio = lsWords.length > 0 ? correctTotal / lsWords.length : 0;
-      void api.recordPracticeAttempt({
-        questionType: 'LISTEN_SELECT',
-        promptContext: 'Listen and Select audio vocabulary drill',
-        userResponse: { answers: newAnswers, choices: newChoices, total: lsWords.length },
-        isCorrect: correctTotal === lsWords.length,
-        score: scoreRatio,
-      }).catch(() => {});
-      if (correctTotal >= Math.floor(lsWords.length * 0.5)) {
-        setDrillCompleted(true);
-        onDrillCompleted?.();
-      }
+      const clientPassed = correctTotal >= Math.floor(lsWords.length * 0.5);
+
+      setIsServerGrading(true);
+      setServerGradeError(null);
+      void (async () => {
+        try {
+          const res = await api.recordPracticeAttempt({
+            assignmentId: assignment?.assignmentId,
+            questionId: assignment?.questionId,
+            questionType: 'LISTEN_SELECT',
+            promptContext: 'Listen and Select audio vocabulary drill',
+            userResponse: { answers: newAnswers, choices: newChoices, total: lsWords.length },
+            isCorrect: correctTotal === lsWords.length,
+            score: scoreRatio,
+          });
+          setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
+          if (res.isCorrect || res.score >= 0.5 || clientPassed) {
+            setDrillCompleted(true);
+            onDrillCompleted?.();
+          }
+        } catch {
+          if (clientPassed) {
+            setDrillCompleted(true);
+            onDrillCompleted?.();
+          }
+        } finally {
+          setIsServerGrading(false);
+        }
+      })();
     }
   };
 
@@ -384,25 +474,42 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setLsAnswers([]);
     setLsUserChoices([]);
     setLsFinished(false);
+    setServerGradedBadge(null);
+    setServerGradeError(null);
   };
 
   // -------------------------------------------------------------
   // HANDLERS: Fill in the Blanks
   // -------------------------------------------------------------
-  const handleFibCheck = () => {
+  const handleFibCheck = async () => {
     const isOk = fibInput.trim().toLowerCase() === fib.missingLetters.toLowerCase();
     setFibCorrect(isOk);
     setFibChecked(true);
-    void api.recordPracticeAttempt({
-      questionType: 'FILL_BLANKS',
-      promptContext: `${fib.sentenceBefore} [${fib.givenPrefix}...] ${fib.sentenceAfter}`,
-      userResponse: { input: fibInput, correctWord: fib.fullWord },
-      isCorrect: isOk,
-      score: isOk ? 1.0 : 0.0,
-    }).catch(() => {});
-    if (isOk) {
-      setDrillCompleted(true);
-      onDrillCompleted?.();
+
+    setIsServerGrading(true);
+    setServerGradeError(null);
+    try {
+      const res = await api.recordPracticeAttempt({
+        assignmentId: assignment?.assignmentId,
+        questionId: assignment?.questionId,
+        questionType: 'FILL_BLANKS',
+        promptContext: `${fib.sentenceBefore} [${fib.givenPrefix}...] ${fib.sentenceAfter}`,
+        userResponse: { input: fibInput, correctWord: fib.fullWord },
+        isCorrect: isOk,
+        score: isOk ? 1.0 : 0.0,
+      });
+      setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
+      if (res.isCorrect || isOk) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } catch {
+      if (isOk) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } finally {
+      setIsServerGrading(false);
     }
   };
 
@@ -411,6 +518,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setFibInput('');
     setFibChecked(false);
     setFibCorrect(false);
+    setServerGradedBadge(null);
+    setServerGradeError(null);
   };
 
   // -------------------------------------------------------------
@@ -436,19 +545,35 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     }
   };
 
-  const handleDictCheck = () => {
+  const handleDictCheck = async () => {
     const evalResult = evaluateDictationAccuracy(dictInput, dictation.sentence);
     setDictResult(evalResult);
-    void api.recordPracticeAttempt({
-      questionType: 'LISTEN_TYPE',
-      promptContext: dictation.sentence,
-      userResponse: { input: dictInput, similarity: evalResult.similarity },
-      isCorrect: evalResult.similarity >= 0.85,
-      score: evalResult.similarity,
-    }).catch(() => {});
-    if (evalResult.similarity >= 0.65) {
-      setDrillCompleted(true);
-      onDrillCompleted?.();
+    const clientPassed = evalResult.similarity >= 0.65;
+
+    setIsServerGrading(true);
+    setServerGradeError(null);
+    try {
+      const res = await api.recordPracticeAttempt({
+        assignmentId: assignment?.assignmentId,
+        questionId: assignment?.questionId,
+        questionType: 'LISTEN_TYPE',
+        promptContext: dictation.sentence,
+        userResponse: { input: dictInput, similarity: evalResult.similarity },
+        isCorrect: evalResult.similarity >= 0.85,
+        score: evalResult.similarity,
+      });
+      setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
+      if (res.isCorrect || res.score >= 0.65 || clientPassed) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } catch {
+      if (clientPassed) {
+        setDrillCompleted(true);
+        onDrillCompleted?.();
+      }
+    } finally {
+      setIsServerGrading(false);
     }
   };
 
@@ -458,6 +583,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setReplaysLeft(2);
     setHasStartedAudio(false);
     setDictResult(null);
+    setServerGradedBadge(null);
+    setServerGradeError(null);
   };
 
   // -------------------------------------------------------------
@@ -684,6 +811,40 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       </div>
 
       <BentoCard variant="light" className="p-6 rounded-3xl border border-neutral-200/80 shadow-md">
+        {/* Server Authoritative status banner */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-6 pb-4 border-b border-neutral-200/80 text-xs">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${assignment ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-neutral-300'}`} />
+            <span className="font-semibold text-neutral-800">
+              {assignment ? `Серверное задание #${assignment.assignmentId.slice(0, 8)}` : 'Локальный режим практики'}
+            </span>
+            {assignment?.cefrLevel && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 border border-neutral-200">
+                {assignment.cefrLevel}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {isServerGrading && (
+              <span className="inline-flex items-center gap-1.5 text-amber-700 font-medium animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                Серверная проверка...
+              </span>
+            )}
+            {serverGradedBadge && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                Оценка backend: {Math.round(serverGradedBadge.score * 100)}%
+              </span>
+            )}
+            {serverGradeError && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                {serverGradeError}
+              </span>
+            )}
+          </div>
+        </div>
         
         {/* ========================================================================= */}
         {/* LESSON 3: READ AND SELECT (Text Words) */}
