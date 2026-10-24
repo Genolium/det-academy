@@ -67,8 +67,8 @@ func TestEvaluationQueueUsesServerTranscript(t *testing.T) {
 	if result.Score <= 0 || result.FeedbackStatus != "completed" {
 		t.Fatalf("expected completed scored evaluation, got score %.2f status %s", result.Score, result.FeedbackStatus)
 	}
-	if result.Provider != "rule-based" {
-		t.Fatalf("expected rule-based provider, got %s", result.Provider)
+	if result.Provider != "practice_feedback" {
+		t.Fatalf("expected practice_feedback provider, got %s", result.Provider)
 	}
 }
 

@@ -51,7 +51,7 @@ func coachEvaluation(t *testing.T, store *memory.MemoryStorage, sessionID, quest
 	evaluation := &models.EvaluationResult{
 		ID: uuid.NewString(), SessionID: sessionID, QuestionID: "q-" + uuid.NewString()[:8],
 		QuestionType: questionType, Status: status, Score: score, CEFRLevel: "B2",
-		UniqueWords: 40, Provider: "rule-based", EvaluatorVersion: "2026.1",
+		UniqueWords: 40, Provider: "practice_feedback", EvaluatorVersion: "2026.1",
 		Feedback:        "Усильте аргументацию примерами.",
 		Recommendations: []string{"Добавьте конкретный пример в каждый абзац."},
 		EvidenceSpans: []models.EvidenceSpan{

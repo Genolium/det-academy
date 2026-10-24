@@ -61,6 +61,109 @@ var PhotoSpatialTokens = []string{
 var wordTokenRegex = regexp.MustCompile(`[a-zA-Z0-9'-]+`)
 var sentenceSplitRegex = regexp.MustCompile(`[.!?]+\s*`)
 
+// Function words extracted from a prompt must not count as “on topic”.
+// Otherwise an OREO essay about any subject matches “the/a/of” and looks relevant.
+var englishStopwords = map[string]bool{
+	"a": true, "an": true, "the": true, "and": true, "or": true, "but": true,
+	"in": true, "on": true, "at": true, "to": true, "for": true, "of": true,
+	"with": true, "by": true, "from": true, "as": true, "is": true, "are": true,
+	"was": true, "were": true, "be": true, "been": true, "being": true,
+	"it": true, "this": true, "that": true, "these": true, "those": true,
+	"i": true, "you": true, "we": true, "they": true, "he": true, "she": true,
+	"my": true, "your": true, "our": true, "their": true, "not": true, "no": true,
+	"do": true, "does": true, "did": true, "have": true, "has": true, "had": true,
+	"will": true, "would": true, "can": true, "could": true, "should": true,
+	"may": true, "about": true, "into": true, "than": true, "then": true,
+	"so": true, "if": true, "what": true, "which": true, "who": true, "how": true,
+	"when": true, "where": true, "why": true, "there": true, "here": true,
+	"also": true, "just": true, "more": true, "most": true, "some": true,
+	"any": true, "all": true, "each": true, "other": true, "such": true,
+	"only": true, "own": true, "same": true, "too": true, "very": true,
+	"describe": true, "please": true, "following": true, "using": true,
+	"based": true, "below": true, "above": true, "after": true, "before": true,
+	"speak": true, "write": true, "seconds": true, "minute": true,
+}
+
+// ContentKeywords drops stopwords and tiny tokens so topical scoring uses
+// the prompt’s actual subject, not grammar words.
+func ContentKeywords(raw []string) []string {
+	seen := make(map[string]struct{}, len(raw))
+	out := make([]string, 0, len(raw))
+	for _, kw := range raw {
+		w := strings.ToLower(strings.TrimSpace(kw))
+		if w == "" || englishStopwords[w] {
+			continue
+		}
+		if len(w) < 4 && !AcademicWordList[w] {
+			continue
+		}
+		if _, ok := seen[w]; ok {
+			continue
+		}
+		seen[w] = struct{}{}
+		out = append(out, w)
+	}
+	return out
+}
+
+func keywordOverlap(text string, keywords []string) (matched int, ratio float64, topicKnown bool) {
+	keys := ContentKeywords(keywords)
+	if len(keys) == 0 {
+		return 0, 0, false
+	}
+	lower := strings.ToLower(text)
+	for _, kw := range keys {
+		if strings.Contains(lower, kw) {
+			matched++
+		}
+	}
+	return matched, float64(matched) / float64(len(keys)), true
+}
+
+func tokenLooksEnglish(w string) bool {
+	if AcademicWordList[w] || englishStopwords[w] {
+		return true
+	}
+	if len(w) < 2 || !strings.ContainsAny(w, "aeiouy") {
+		return false
+	}
+	for i := 1; i < len(w); i++ {
+		if w[i] != w[0] {
+			return true
+		}
+	}
+	return false
+}
+
+func looksLikeEnglish(words []string) bool {
+	if len(words) == 0 {
+		return false
+	}
+	hits := 0
+	for _, w := range words {
+		if tokenLooksEnglish(w) {
+			hits++
+		}
+	}
+	return float64(hits)/float64(len(words)) >= 0.45
+}
+
+func applyTopicFidelity(score, overlap float64, topicKnown bool) (float64, string) {
+	if !topicKnown {
+		return score, ""
+	}
+	if overlap <= 0 {
+		if score > 0.12 {
+			score = 0.12
+		}
+		return score, "Ответ не по теме задания. Шаблон или другой сюжет не засчитываются как выполнение задачи."
+	}
+	if overlap < 0.15 && score > 0.25 {
+		return 0.25, "Слабая связь с темой. Нужно отвечать на конкретный вопрос или описывать это изображение, а не общий шаблон."
+	}
+	return score, ""
+}
+
 func TokenizeWords(text string) []string {
 	raw := wordTokenRegex.FindAllString(strings.ToLower(text), -1)
 	words := make([]string, 0, len(raw))
@@ -133,7 +236,7 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		RelevanceScore:   0.0,
 		CEFRLevel:        "Pre-A1",
 		Recommendations:  []string{},
-		Provider:         "rule-based",
+		Provider:         "practice_feedback",
 		EvaluatorVersion: "2026.1",
 		FeedbackStatus:   "completed",
 		EvidenceSpans:    []models.EvidenceSpan{},
@@ -158,6 +261,16 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		result.CEFRLevel = "A1"
 		result.Recommendations = []string{
 			"Ответ слишком короткий (менее 5 слов) для оценки уровня владения языком. Сформулируйте развернутый ответ.",
+		}
+		return result
+	}
+
+	if !looksLikeEnglish(words) {
+		result.Status = "INSUFFICIENT"
+		result.Score = 0.05
+		result.CEFRLevel = "Pre-A1"
+		result.Recommendations = []string{
+			"Текст не похож на связный английский ответ. Навык оценивается только по речи по теме задания.",
 		}
 		return result
 	}
@@ -189,14 +302,7 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		}
 	}
 
-	// Calculate topical relevance
-	var matchedKeywords int
-	for _, kw := range contextKeywords {
-		kwLower := strings.ToLower(strings.TrimSpace(kw))
-		if kwLower != "" && strings.Contains(lowerText, kwLower) {
-			matchedKeywords++
-		}
-	}
+	matchedKeywords, overlapRatio, topicKnown := keywordOverlap(userText, contextKeywords)
 
 	// Task-specific rubric weighting
 	var volumeScore, relevanceScore, diversityScore, finalScore float64
@@ -223,8 +329,14 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 				spatialHits++
 			}
 		}
-		semanticHits := matchedKeywords + spatialHits
-		relevanceScore = math.Min(1.0, math.Max(0.2, float64(semanticHits)/3.0))
+		if !topicKnown {
+			relevanceScore = 0.40
+		} else {
+			relevanceScore = overlapRatio
+			if matchedKeywords > 0 {
+				relevanceScore = math.Min(1.0, relevanceScore+math.Min(0.25, float64(spatialHits)/8.0))
+			}
+		}
 
 		diversityScore = math.Min(1.0, math.Max(0.3, result.LexicalDiversity*1.2))
 
@@ -243,8 +355,11 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		volumeRatio := float64(wordCount) / targetWords
 		volumeScore = math.Min(1.0, math.Max(0.2, volumeRatio))
 
-		refTarget := math.Max(1.0, float64(len(contextKeywords)))
-		relevanceScore = math.Min(1.0, math.Max(0.3, (float64(matchedKeywords)/refTarget)+0.3))
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
+		}
 
 		diversityScore = math.Min(1.0, math.Max(0.3, result.LexicalDiversity*1.25))
 		structureBonus := math.Min(0.15, float64(len(result.Connectors))*0.04+float64(len(result.AcademicWords))*0.03)
@@ -267,9 +382,10 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 		volumeRatio := float64(wordCount) / targetWords
 		volumeScore = math.Min(1.0, math.Max(0.2, volumeRatio))
 
-		relevanceScore = 0.85
-		if len(contextKeywords) > 0 {
-			relevanceScore = math.Min(1.0, math.Max(0.3, float64(matchedKeywords)/float64(len(contextKeywords))+0.2))
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
 		}
 
 		diversityScore = math.Min(1.0, math.Max(0.3, result.LexicalDiversity*1.3))
@@ -287,9 +403,18 @@ func (e *Evaluator) EvaluateWriting(sessionID, questionID, qType string, userTex
 	default:
 		// Generic open-ended writing fallback
 		volumeScore = math.Min(1.0, math.Max(0.2, float64(wordCount)/50.0))
-		relevanceScore = 0.70
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
+		}
 		diversityScore = math.Min(1.0, result.LexicalDiversity)
 		finalScore = (volumeScore * 0.5) + (relevanceScore * 0.3) + (diversityScore * 0.2)
+	}
+
+	finalScore, topicNote := applyTopicFidelity(finalScore, overlapRatio, topicKnown)
+	if topicNote != "" {
+		result.Recommendations = append([]string{topicNote}, result.Recommendations...)
 	}
 
 	result.RelevanceScore = math.Round(relevanceScore*100) / 100
@@ -323,6 +448,8 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 		WPM:              0.0,
 		Recommendations:  []string{},
 		Transcript:       transcript,
+		Provider:         "practice_feedback",
+		EvaluatorVersion: "2026.1",
 		CreatedAt:        now,
 	}
 
@@ -344,6 +471,16 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 		result.CEFRLevel = "A1"
 		result.Recommendations = []string{
 			"Записанный фрагмент слишком короткий для оценки беглости и произношения. Говорите непрерывно до окончания таймера.",
+		}
+		return result
+	}
+
+	if wordCount >= 5 && !looksLikeEnglish(words) {
+		result.Status = "INSUFFICIENT"
+		result.Score = 0.05
+		result.CEFRLevel = "Pre-A1"
+		result.Recommendations = []string{
+			"Расшифровка не похожа на связную английскую речь. Оценка ставится за ответ по теме, а не за заполнение таймера.",
 		}
 		return result
 	}
@@ -377,14 +514,7 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 		}
 	}
 
-	// Calculate topical relevance
-	var matchedKeywords int
-	for _, kw := range contextKeywords {
-		kwLower := strings.ToLower(strings.TrimSpace(kw))
-		if kwLower != "" && strings.Contains(lowerTranscript, kwLower) {
-			matchedKeywords++
-		}
-	}
+	matchedKeywords, overlapRatio, topicKnown := keywordOverlap(transcript, contextKeywords)
 
 	var volumeScore, fluencyScore, relevanceScore, finalScore float64
 
@@ -410,7 +540,14 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 				spatialHits++
 			}
 		}
-		relevanceScore = math.Min(1.0, math.Max(0.3, float64(spatialHits+matchedKeywords)/3.0))
+		if !topicKnown {
+			relevanceScore = 0.40
+		} else {
+			relevanceScore = overlapRatio
+			if matchedKeywords > 0 {
+				relevanceScore = math.Min(1.0, relevanceScore+math.Min(0.25, float64(spatialHits)/8.0))
+			}
+		}
 
 		finalScore = (volumeScore * 0.40) + (fluencyScore * 0.35) + (relevanceScore * 0.25)
 
@@ -435,9 +572,10 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 			fluencyScore = 0.50
 		}
 
-		relevanceScore = 0.80
-		if len(contextKeywords) > 0 {
-			relevanceScore = math.Min(1.0, math.Max(0.3, float64(matchedKeywords)/float64(len(contextKeywords))+0.2))
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
 		}
 
 		structureBonus := math.Min(0.15, float64(len(result.Connectors))*0.04+float64(len(result.AcademicWords))*0.03)
@@ -461,7 +599,11 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 			fluencyScore = 0.40
 		}
 
-		relevanceScore = 0.85
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
+		}
 		finalScore = (volumeScore * 0.45) + (fluencyScore * 0.40) + (relevanceScore * 0.15)
 
 		if durationSec < 20.0 {
@@ -483,7 +625,11 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 		}
 
 		structureBonus := math.Min(0.15, float64(len(result.Connectors))*0.04+float64(len(result.AcademicWords))*0.03)
-		relevanceScore = 0.85
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
+		}
 		finalScore = math.Min(1.0, (volumeScore*0.40)+(fluencyScore*0.35)+(relevanceScore*0.15)+structureBonus)
 
 		if durationSec < 90.0 {
@@ -493,8 +639,17 @@ func (e *Evaluator) EvaluateSpeaking(sessionID, questionID, qType string, transc
 	default:
 		volumeScore = math.Min(1.0, float64(wordCount)/50.0)
 		fluencyScore = 0.75
-		relevanceScore = 0.70
+		if topicKnown {
+			relevanceScore = overlapRatio
+		} else {
+			relevanceScore = 0.40
+		}
 		finalScore = (volumeScore * 0.4) + (fluencyScore * 0.3) + (relevanceScore * 0.3)
+	}
+
+	finalScore, topicNote := applyTopicFidelity(finalScore, overlapRatio, topicKnown)
+	if topicNote != "" {
+		result.Recommendations = append([]string{topicNote}, result.Recommendations...)
 	}
 
 	result.RelevanceScore = math.Round(relevanceScore*100) / 100

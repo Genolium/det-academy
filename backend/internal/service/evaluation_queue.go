@@ -136,7 +136,7 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 		evaluation.TranscriptSource = "none"
 		evaluation.FeedbackStatus = "unsupported"
 		evaluation.LastError = "server-side transcription is not configured"
-		evaluation.Provider = "rule-based"
+		evaluation.Provider = "practice_feedback"
 		evaluation.EvaluatorVersion = "2026.1"
 		_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
 		_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
@@ -157,7 +157,7 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 	result.AudioURL = evaluation.AudioURL
 	result.Transcript = transcript
 	result.TranscriptSource = transcriptSource
-	result.Provider = "rule-based"
+	result.Provider = "practice_feedback"
 	result.EvaluatorVersion = "2026.1"
 	result.FeedbackStatus = "completed"
 	result.RetryCount = job.Attempts
@@ -258,7 +258,7 @@ func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.Eva
 	} else {
 		result = q.evaluator.EvaluateWriting(job.SessionID, job.QuestionID, questionType, responseText, keywords)
 		result.ID = evaluation.ID
-		result.Provider = "rule-based"
+		result.Provider = "practice_feedback"
 		result.EvaluatorVersion = "2026.1"
 		result.FeedbackStatus = "completed"
 		result.RetryCount = job.Attempts

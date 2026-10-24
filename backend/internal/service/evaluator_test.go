@@ -31,6 +31,20 @@ func TestEvaluatorWriting(t *testing.T) {
 	if resGood.CEFRLevel != "B2" && resGood.CEFRLevel != "C1" {
 		t.Fatalf("expected B2 or C1 CEFR level, got %s", resGood.CEFRLevel)
 	}
+
+	oreoOffTopic := "In my opinion, higher education is a pivotal catalyst for socioeconomic mobility. This is primarily because university curricula foster advanced critical thinking. For instance, recent studies demonstrate that graduates adapt substantially faster. Ultimately, governments must prioritize equitable access to tertiary learning."
+	resOff := eval.EvaluateWriting("session-1", "q-1", "WRITE_PHOTO", oreoOffTopic, []string{"park", "bench", "picnic", "trees"})
+	if resOff.Score > 0.12 {
+		t.Fatalf("off-topic OREO template must be capped, got %f", resOff.Score)
+	}
+	if resOff.RelevanceScore > 0.01 {
+		t.Fatalf("off-topic writing must not look relevant, got %f", resOff.RelevanceScore)
+	}
+
+	resGibberish := eval.EvaluateWriting("session-1", "q-1", "WRITING_SAMPLE", "qwx zrtpl nkfvd brrr xzqpm vntk", []string{"university", "education"})
+	if resGibberish.Score > 0.05 || resGibberish.Status != "INSUFFICIENT" {
+		t.Fatalf("gibberish must be insufficient, got %f %s", resGibberish.Score, resGibberish.Status)
+	}
 }
 
 func TestEvaluatorSpeaking(t *testing.T) {
@@ -53,5 +67,11 @@ func TestEvaluatorSpeaking(t *testing.T) {
 	}
 	if len(resGood.Connectors) < 2 {
 		t.Fatalf("expected discourse connectors detected, got %d", len(resGood.Connectors))
+	}
+
+	offTopic := "In my opinion, higher education is a pivotal catalyst for socioeconomic mobility. Furthermore, university curricula foster empirical inquiry. Consequently, governments must prioritize equitable access."
+	resOff := eval.EvaluateSpeaking("session-1", "sp-1", "SPEAK_PHOTO", offTopic, 70.0, []string{"bicycle", "bridge", "river", "sunset"})
+	if resOff.Score > 0.12 {
+		t.Fatalf("off-topic speaking template must be capped, got %f", resOff.Score)
 	}
 }
