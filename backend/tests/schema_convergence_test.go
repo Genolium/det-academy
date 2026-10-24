@@ -33,6 +33,10 @@ var legacyMissingTables = []string{
 	"user_srs_cards",
 	"user_srs_stats",
 	"vocabulary_entries",
+	"learning_events",
+	"practice_attempts",
+	"typing_attempts",
+	"user_skill_mastery",
 }
 
 // legacyMissingColumns lists the columns that were added to the initial

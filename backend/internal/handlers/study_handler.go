@@ -355,3 +355,104 @@ func (h *StudyHandler) GetXPProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, profile)
 }
+
+// RecordPracticeAttempt records an exercise attempt from Practice Hub.
+func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	var req struct {
+		QuestionType  string          `json:"questionType"`
+		PromptContext string          `json:"promptContext"`
+		UserResponse  json.RawMessage `json:"userResponse"`
+		IsCorrect     bool            `json:"isCorrect"`
+		Score         float64         `json:"score"`
+		TimeSpentSec  int             `json:"timeSpentSec"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request payload")
+		return
+	}
+	if req.QuestionType == "" {
+		RespondError(w, http.StatusBadRequest, "questionType is required")
+		return
+	}
+
+	attempt, err := h.studyService.RecordPracticeAttempt(
+		r.Context(), userID, req.QuestionType, req.PromptContext,
+		req.UserResponse, req.IsCorrect, req.Score, req.TimeSpentSec,
+	)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, attempt)
+}
+
+// RecordTypingAttempt records a completed typing trainer session.
+func (h *StudyHandler) RecordTypingAttempt(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	var req struct {
+		WPM         int     `json:"wpm"`
+		Accuracy    float64 `json:"accuracy"`
+		Mode        string  `json:"mode"`
+		DurationSec int     `json:"durationSec"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request payload")
+		return
+	}
+
+	attempt, err := h.studyService.RecordTypingAttempt(
+		r.Context(), userID, req.WPM, req.Accuracy, req.Mode, req.DurationSec,
+	)
+	if err != nil {
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, attempt)
+}
+
+// GetTypingHistory returns best WPM and recent typing attempts.
+func (h *StudyHandler) GetTypingHistory(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	bestWPM, attempts, err := h.studyService.GetTypingHistory(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"bestWpm":  bestWPM,
+		"attempts": attempts,
+	})
+}
+
+// GetSkillMastery returns aggregated mastery scores across skills.
+func (h *StudyHandler) GetSkillMastery(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+
+	mastery, err := h.studyService.GetSkillMastery(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, mastery)
+}

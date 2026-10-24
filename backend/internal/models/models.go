@@ -644,6 +644,49 @@ type XPProfile struct {
 	History     []XPEvent `json:"history"`
 }
 
+// LearningEvent is an immutable domain event representing a learning action.
+type LearningEvent struct {
+	ID             string          `json:"id"`
+	UserID         string          `json:"userId"`
+	EventType      string          `json:"eventType"`
+	Payload        json.RawMessage `json:"payload"`
+	IdempotencyKey string          `json:"idempotencyKey"`
+	CreatedAt      time.Time       `json:"createdAt"`
+}
+
+// PracticeAttempt records one exercise submission in the Practice Hub.
+type PracticeAttempt struct {
+	ID            string          `json:"id"`
+	UserID        string          `json:"userId"`
+	QuestionType  string          `json:"questionType"`
+	PromptContext string          `json:"promptContext"`
+	UserResponse  json.RawMessage `json:"userResponse"`
+	IsCorrect     bool            `json:"isCorrect"`
+	Score         float64         `json:"score"`
+	TimeSpentSec  int             `json:"timeSpentSec"`
+	CreatedAt     time.Time       `json:"createdAt"`
+}
+
+// TypingAttempt records one completed typing test.
+type TypingAttempt struct {
+	ID          string    `json:"id"`
+	UserID      string    `json:"userId"`
+	WPM         int       `json:"wpm"`
+	Accuracy    float64   `json:"accuracy"`
+	Mode        string    `json:"mode"`
+	DurationSec int       `json:"durationSec"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+// UserSkillMastery tracks mastery levels across specific skill dimensions.
+type UserSkillMastery struct {
+	UserID        string    `json:"userId"`
+	Skill         string    `json:"skill"`
+	MasteryScore  float64   `json:"masteryScore"`
+	AttemptsCount int       `json:"attemptsCount"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
 // CoachEvidence is one actionable observation from an evaluation:
 // the quoted span, the rule it violates and the concrete fix.
 type CoachEvidence struct {

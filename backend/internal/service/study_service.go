@@ -4,6 +4,7 @@ import (
 	"context"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -742,6 +743,10 @@ func (s *StudyService) ReviewSRSCard(ctx context.Context, userID string, req mod
 		return nil, fmt.Errorf("failed to save srs stats: %w", err)
 	}
 
+	_ = s.storage.Study().RecordActivity(ctx, userID, todayStr, "srs")
+	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-srs", todayStr, "srs_review")
+	_, _ = s.AwardXP(ctx, userID, "srs", "srs:"+req.CardID+":"+todayStr, 5)
+
 	return &models.ReviewSRSCardResponse{
 		CardID:         req.CardID,
 		IntervalDays:   intervalDays,
@@ -924,7 +929,11 @@ func (s *StudyService) CompletePlanTask(ctx context.Context, userID, taskID stri
 	}
 
 	today := time.Now().UTC().Format("2006-01-02")
-	if err := s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, "manual"); err != nil {
+	return s.CompletePlanTaskWithSource(ctx, userID, taskID, today, "manual")
+}
+
+func (s *StudyService) CompletePlanTaskWithSource(ctx context.Context, userID, taskID, today, source string) error {
+	if err := s.storage.Study().CompletePlanTask(ctx, userID, taskID, today, source); err != nil {
 		return err
 	}
 	// The key contains the task and the day, so a double click or a retry can
@@ -1286,4 +1295,100 @@ func fitTasksToBudget(tasks []models.DailyTask, budgetMinutes int) []models.Dail
 		used += minutes
 	}
 	return kept
+}
+
+// RecordPracticeAttempt saves a student practice attempt and awards XP once per attempt ID.
+func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questionType, promptContext string, userResponse json.RawMessage, isCorrect bool, score float64, timeSpentSec int) (*models.PracticeAttempt, error) {
+	if questionType == "" {
+		return nil, errors.New("questionType is required")
+	}
+	attemptID := uuid.NewString()
+	attempt := &models.PracticeAttempt{
+		ID:            attemptID,
+		UserID:        userID,
+		QuestionType:  questionType,
+		PromptContext: promptContext,
+		UserResponse:  userResponse,
+		IsCorrect:     isCorrect,
+		Score:         score,
+		TimeSpentSec:  timeSpentSec,
+		CreatedAt:     time.Now().UTC(),
+	}
+
+	if err := s.storage.Study().RecordPracticeAttempt(ctx, attempt); err != nil {
+		return nil, fmt.Errorf("failed to record practice attempt: %w", err)
+	}
+
+	// Update skill mastery
+	skill := MapQuestionTypeToSkill(questionType)
+	_ = s.storage.Study().UpdateSkillMastery(ctx, userID, skill, score)
+
+	// Record daily activity
+	today := time.Now().UTC().Format("2006-01-02")
+	_ = s.storage.Study().RecordActivity(ctx, userID, today, "practice")
+
+	// Complete daily drill task automatically if in study plan
+	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-drill", today, "practice_attempt")
+
+	// Award XP for practice (15 XP for a verified drill submission)
+	_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 15)
+
+	return attempt, nil
+}
+
+// RecordTypingAttempt saves a student typing trainer test and updates best WPM.
+func (s *StudyService) RecordTypingAttempt(ctx context.Context, userID string, wpm int, accuracy float64, mode string, durationSec int) (*models.TypingAttempt, error) {
+	if wpm < 0 || wpm > 250 {
+		return nil, errors.New("invalid wpm value")
+	}
+	if accuracy < 0 || accuracy > 100 {
+		return nil, errors.New("invalid accuracy value")
+	}
+	if durationSec <= 0 {
+		durationSec = 30
+	}
+	if mode == "" {
+		mode = "time"
+	}
+
+	attemptID := uuid.NewString()
+	attempt := &models.TypingAttempt{
+		ID:          attemptID,
+		UserID:      userID,
+		WPM:         wpm,
+		Accuracy:    accuracy,
+		Mode:        mode,
+		DurationSec: durationSec,
+		CreatedAt:   time.Now().UTC(),
+	}
+
+	if err := s.storage.Study().RecordTypingAttempt(ctx, attempt); err != nil {
+		return nil, fmt.Errorf("failed to record typing attempt: %w", err)
+	}
+
+	today := time.Now().UTC().Format("2006-01-02")
+	_ = s.storage.Study().RecordActivity(ctx, userID, today, "typing")
+
+	// Award XP for typing: 10 XP if accuracy >= 70% and WPM >= 20
+	if accuracy >= 70.0 && wpm >= 20 {
+		_, _ = s.AwardXP(ctx, userID, "typing", "typing:"+attemptID, 10)
+	}
+
+	return attempt, nil
+}
+
+func (s *StudyService) GetTypingHistory(ctx context.Context, userID string) (int, []models.TypingAttempt, error) {
+	bestWPM, err := s.storage.Study().GetBestTypingWPM(ctx, userID)
+	if err != nil {
+		return 0, nil, err
+	}
+	attempts, err := s.storage.Study().GetTypingAttempts(ctx, userID, 20)
+	if err != nil {
+		return 0, nil, err
+	}
+	return bestWPM, attempts, nil
+}
+
+func (s *StudyService) GetSkillMastery(ctx context.Context, userID string) (map[string]models.UserSkillMastery, error) {
+	return s.storage.Study().GetSkillMastery(ctx, userID)
 }

@@ -148,6 +148,16 @@ type StudyRepository interface {
 	SaveSRSStats(ctx context.Context, userID string, stats *models.SRSStats) error
 	GetSRSCards(ctx context.Context, userID string) (map[string]models.SRSCardProgress, error)
 	SaveSRSCard(ctx context.Context, userID string, card *models.SRSCardProgress) error
+
+	// Learning Events & Practice History
+	RecordLearningEvent(ctx context.Context, event *models.LearningEvent) (bool, error)
+	RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error
+	GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error)
+	RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error
+	GetTypingAttempts(ctx context.Context, userID string, limit int) ([]models.TypingAttempt, error)
+	GetBestTypingWPM(ctx context.Context, userID string) (int, error)
+	UpdateSkillMastery(ctx context.Context, userID, skill string, score float64) error
+	GetSkillMastery(ctx context.Context, userID string) (map[string]models.UserSkillMastery, error)
 }
 
 type VocabularyRepository interface {

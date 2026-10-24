@@ -428,6 +428,22 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     try {
       await get().loadStudyPlan();
     } catch {}
+
+    // 5. Sync Typing history & best WPM from server
+    if (hasAuthSession()) {
+      try {
+        const typingData = await api.getTypingHistory();
+        if (typingData && typeof typingData.bestWpm === 'number' && typingData.bestWpm > 0) {
+          set({ bestTypingWpm: typingData.bestWpm });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              getScopedKey('best_wpm', activeUserId),
+              typingData.bestWpm.toString()
+            );
+          }
+        }
+      } catch {}
+    }
   },
 
   toggleLessonCompleted: async (slug: string) => {

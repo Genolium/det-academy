@@ -5,6 +5,9 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
 	"errors"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 const TotalTheoryLessons = 16
@@ -57,10 +60,15 @@ func ValidCompletedLessons(completed []string) []string {
 
 type TheoryService struct {
 	theoryRepo repository.TheoryRepository
+	studyRepo  repository.StudyRepository
 }
 
-func NewTheoryService(theoryRepo repository.TheoryRepository) *TheoryService {
-	return &TheoryService{theoryRepo: theoryRepo}
+func NewTheoryService(theoryRepo repository.TheoryRepository, studyRepos ...repository.StudyRepository) *TheoryService {
+	ts := &TheoryService{theoryRepo: theoryRepo}
+	if len(studyRepos) > 0 {
+		ts.studyRepo = studyRepos[0]
+	}
+	return ts
 }
 
 func (s *TheoryService) GetProgress(ctx context.Context, userID string) (*models.TheoryProgressResponse, error) {
@@ -93,10 +101,25 @@ func (s *TheoryService) ToggleCompletion(ctx context.Context, userID, lessonSlug
 	if !IsValidLessonSlug(lessonSlug) {
 		return nil, ErrUnknownTheoryLesson
 	}
-	_, err := s.theoryRepo.ToggleProgress(ctx, userID, lessonSlug)
+	completed, err := s.theoryRepo.ToggleProgress(ctx, userID, lessonSlug)
 	if err != nil {
 		return nil, err
 	}
+
+	if completed && s.studyRepo != nil {
+		today := time.Now().UTC().Format("2006-01-02")
+		_ = s.studyRepo.RecordActivity(ctx, userID, today, "theory")
+		_ = s.studyRepo.CompletePlanTask(ctx, userID, "task-theory", today, "theory_lesson")
+		_, _ = s.studyRepo.AwardXP(ctx, &models.XPEvent{
+			ID:             uuid.NewString(),
+			UserID:         userID,
+			EventType:      "lesson",
+			IdempotencyKey: "lesson:" + lessonSlug,
+			XP:             20,
+			CreatedAt:      time.Now().UTC(),
+		})
+	}
+
 	return s.GetProgress(ctx, userID)
 }
 

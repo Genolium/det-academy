@@ -1825,6 +1825,21 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 		}
 	}
 
+	if s.studyRepo != nil {
+		today := now.UTC().Format("2006-01-02")
+		_ = s.studyRepo.RecordActivity(ctx, session.UserID, today, "mock_test")
+		_ = s.studyRepo.CompletePlanTask(ctx, session.UserID, "task-mock", today, "mock_test")
+		// Award XP for completing an official CAT mock simulation (100 XP)
+		_, _ = s.studyRepo.AwardXP(ctx, &models.XPEvent{
+			ID:             uuid.NewString(),
+			UserID:         session.UserID,
+			EventType:      "mock_test",
+			IdempotencyKey: "mock:" + session.ID,
+			XP:             100,
+			CreatedAt:      now,
+		})
+	}
+
 	return &models.SessionCompleteResponse{
 		Session:             *session,
 		Scores:              scores,

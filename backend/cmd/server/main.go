@@ -139,7 +139,7 @@ func main() {
 	); err != nil {
 		log.Printf("[Bootstrap] Failed to create bootstrap admin: %v", err)
 	}
-	theoryService := service.NewTheoryService(store.Theory())
+	theoryService := service.NewTheoryService(store.Theory(), store.Study())
 	catService := service.NewCATService(
 		store.Sessions(),
 		store.Questions(),
@@ -284,6 +284,12 @@ func main() {
 			r.Post("/activity", studyHandler.RecordActivity)
 			r.Get("/srs", studyHandler.GetSRSState)
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
+
+			// Practice, Typing, and Mastery events
+			r.Post("/practice/attempts", studyHandler.RecordPracticeAttempt)
+			r.Post("/typing/attempts", studyHandler.RecordTypingAttempt)
+			r.Get("/typing/history", studyHandler.GetTypingHistory)
+			r.Get("/mastery", studyHandler.GetSkillMastery)
 
 			// Speaking/Writing Coach: attempt comparison, repeatable errors
 			// and audio deletion for the student's own recordings.

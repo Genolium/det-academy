@@ -1247,6 +1247,66 @@ class ApiClient {
     }
   }
 
+  async recordPracticeAttempt(data: {
+    questionType: string;
+    promptContext?: string;
+    userResponse: Record<string, unknown>;
+    isCorrect: boolean;
+    score: number;
+    timeSpentSec?: number;
+  }): Promise<{ id: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/attempts`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to record practice attempt', res.status);
+    }
+    return res.json();
+  }
+
+  async recordTypingAttempt(data: {
+    wpm: number;
+    accuracy: number;
+    mode?: string;
+    durationSec?: number;
+  }): Promise<{ id: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/typing/attempts`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to record typing attempt', res.status);
+    }
+    return res.json();
+  }
+
+  async getTypingHistory(): Promise<{ bestWpm: number; attempts: Array<{ id: string; wpm: number; accuracy: number; createdAt: string }> }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/typing/history`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to get typing history', res.status);
+    }
+    return res.json();
+  }
+
+  async getSkillMastery(): Promise<Record<string, { skill: string; masteryScore: number; attemptsCount: number }>> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/mastery`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Failed to get skill mastery', res.status);
+    }
+    return res.json();
+  }
+
   async updateUserGoals(data: UpdateGoalsRequest): Promise<UserGoal> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/goals`, {
       method: 'PUT',

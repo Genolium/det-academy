@@ -10,6 +10,7 @@ import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
 import { Keyboard, RotateCcw, Volume2, VolumeX, Trophy, Zap, Clock, Hash } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { api } from '@/lib/api';
 
 type Mode = 'time' | 'words';
 type VocabPack = 'det' | 'standard';
@@ -135,8 +136,16 @@ export const TypingEngine: React.FC = () => {
   useEffect(() => {
     if (isFinished && finalWpm > 0) {
       setBestTypingWpm(finalWpm);
+      void api.recordTypingAttempt({
+        wpm: finalWpm,
+        accuracy,
+        mode,
+        durationSec: mode === 'time' ? timeLimit : Math.round(getElapsedMinutes() * 60),
+      }).catch(() => {
+        // Fallback gracefully for guests/offline mode
+      });
     }
-  }, [isFinished, finalWpm, setBestTypingWpm]);
+  }, [isFinished, finalWpm, accuracy, mode, timeLimit, setBestTypingWpm]);
 
   // Handle typing input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

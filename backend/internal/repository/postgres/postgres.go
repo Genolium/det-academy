@@ -1608,6 +1608,155 @@ func (r *StudyRepo) SaveSRSCard(ctx context.Context, userID string, card *models
 	return err
 }
 
+func (r *StudyRepo) RecordLearningEvent(ctx context.Context, event *models.LearningEvent) (bool, error) {
+	payload := event.Payload
+	if len(payload) == 0 {
+		payload = []byte(`{}`)
+	}
+	result, err := r.db.ExecContext(ctx, `
+		INSERT INTO learning_events (id, user_id, event_type, payload, idempotency_key, created_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		ON CONFLICT (user_id, idempotency_key) DO NOTHING
+	`, event.ID, event.UserID, event.EventType, payload, event.IdempotencyKey)
+	if err != nil {
+		return false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
+func (r *StudyRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {
+	userResp := attempt.UserResponse
+	if len(userResp) == 0 {
+		userResp = []byte(`{}`)
+	}
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO practice_attempts (id, user_id, question_type, prompt_context, user_response, is_correct, score, time_spent_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+	`, attempt.ID, attempt.UserID, attempt.QuestionType, attempt.PromptContext, userResp, attempt.IsCorrect, attempt.Score, attempt.TimeSpentSec)
+	return err
+}
+
+func (r *StudyRepo) GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	query := `
+		SELECT id, user_id, question_type, prompt_context, user_response, is_correct, score, time_spent_sec, created_at
+		FROM practice_attempts
+		WHERE user_id = $1
+	`
+	args := []interface{}{userID}
+	if questionType != "" {
+		query += " AND question_type = $2"
+		args = append(args, questionType)
+		query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", len(args)+1)
+	} else {
+		query += " ORDER BY created_at DESC LIMIT $2"
+	}
+	args = append(args, limit)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var attempts []models.PracticeAttempt
+	for rows.Next() {
+		var att models.PracticeAttempt
+		if err := rows.Scan(
+			&att.ID, &att.UserID, &att.QuestionType, &att.PromptContext,
+			&att.UserResponse, &att.IsCorrect, &att.Score, &att.TimeSpentSec, &att.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		attempts = append(attempts, att)
+	}
+	return attempts, rows.Err()
+}
+
+func (r *StudyRepo) RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO typing_attempts (id, user_id, wpm, accuracy, mode, duration_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+	`, attempt.ID, attempt.UserID, attempt.WPM, attempt.Accuracy, attempt.Mode, attempt.DurationSec)
+	return err
+}
+
+func (r *StudyRepo) GetTypingAttempts(ctx context.Context, userID string, limit int) ([]models.TypingAttempt, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, user_id, wpm, accuracy, mode, duration_sec, created_at
+		FROM typing_attempts
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2
+	`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var attempts []models.TypingAttempt
+	for rows.Next() {
+		var att models.TypingAttempt
+		if err := rows.Scan(&att.ID, &att.UserID, &att.WPM, &att.Accuracy, &att.Mode, &att.DurationSec, &att.CreatedAt); err != nil {
+			return nil, err
+		}
+		attempts = append(attempts, att)
+	}
+	return attempts, rows.Err()
+}
+
+func (r *StudyRepo) GetBestTypingWPM(ctx context.Context, userID string) (int, error) {
+	var best int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(MAX(wpm), 0) FROM typing_attempts WHERE user_id = $1
+	`, userID).Scan(&best)
+	return best, err
+}
+
+func (r *StudyRepo) UpdateSkillMastery(ctx context.Context, userID, skill string, score float64) error {
+	query := `
+		INSERT INTO user_skill_mastery (user_id, skill, mastery_score, attempts_count, updated_at)
+		VALUES ($1, $2, $3, 1, NOW())
+		ON CONFLICT (user_id, skill) DO UPDATE SET
+			mastery_score = (user_skill_mastery.mastery_score * user_skill_mastery.attempts_count + EXCLUDED.mastery_score) / (user_skill_mastery.attempts_count + 1),
+			attempts_count = user_skill_mastery.attempts_count + 1,
+			updated_at = NOW()
+	`
+	_, err := r.db.ExecContext(ctx, query, userID, skill, score)
+	return err
+}
+
+func (r *StudyRepo) GetSkillMastery(ctx context.Context, userID string) (map[string]models.UserSkillMastery, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT user_id, skill, mastery_score, attempts_count, updated_at
+		FROM user_skill_mastery
+		WHERE user_id = $1
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make(map[string]models.UserSkillMastery)
+	for rows.Next() {
+		var m models.UserSkillMastery
+		if err := rows.Scan(&m.UserID, &m.Skill, &m.MasteryScore, &m.AttemptsCount, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		res[m.Skill] = m
+	}
+	return res, rows.Err()
+}
+
 // --- Vocabulary ---
 
 type VocabularyRepo struct{ db *sql.DB }

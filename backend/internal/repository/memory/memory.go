@@ -42,6 +42,10 @@ type MemoryStorage struct {
 	vocabulary        map[string]models.VocabularyEntry   // entryID -> entry
 	oauthTransactions map[string]models.OAuthTransaction  // stateHash -> transaction
 	refreshTokens     map[string]models.RefreshToken
+	learningEvents    map[string][]models.LearningEvent  // userID -> events
+	practiceAttempts  map[string][]models.PracticeAttempt // userID -> attempts
+	typingAttempts    map[string][]models.TypingAttempt   // userID -> attempts
+	skillMastery      map[string]map[string]*models.UserSkillMastery // userID -> skill -> mastery
 	sessionLockMu     sync.Mutex
 	sessionLocks      map[string]*sync.Mutex
 }
@@ -72,6 +76,10 @@ func New() *MemoryStorage {
 		vocabulary:        make(map[string]models.VocabularyEntry),
 		oauthTransactions: make(map[string]models.OAuthTransaction),
 		refreshTokens:     make(map[string]models.RefreshToken),
+		learningEvents:    make(map[string][]models.LearningEvent),
+		practiceAttempts:  make(map[string][]models.PracticeAttempt),
+		typingAttempts:    make(map[string][]models.TypingAttempt),
+		skillMastery:      make(map[string]map[string]*models.UserSkillMastery),
 		sessionLocks:      make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
@@ -2385,6 +2393,118 @@ func (r *studyMemoryRepo) SaveSRSCard(ctx context.Context, userID string, card *
 	cp := *card
 	r.s.srsCards[userID][card.CardID] = &cp
 	return nil
+}
+
+func (r *studyMemoryRepo) RecordLearningEvent(ctx context.Context, event *models.LearningEvent) (bool, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for _, existing := range r.s.learningEvents[event.UserID] {
+		if existing.IdempotencyKey == event.IdempotencyKey {
+			return false, nil
+		}
+	}
+	if event.CreatedAt.IsZero() {
+		event.CreatedAt = time.Now().UTC()
+	}
+	r.s.learningEvents[event.UserID] = append(r.s.learningEvents[event.UserID], *event)
+	return true, nil
+}
+
+func (r *studyMemoryRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if attempt.CreatedAt.IsZero() {
+		attempt.CreatedAt = time.Now().UTC()
+	}
+	r.s.practiceAttempts[attempt.UserID] = append(r.s.practiceAttempts[attempt.UserID], *attempt)
+	return nil
+}
+
+func (r *studyMemoryRepo) GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	var list []models.PracticeAttempt
+	for _, att := range r.s.practiceAttempts[userID] {
+		if questionType != "" && att.QuestionType != questionType {
+			continue
+		}
+		list = append(list, att)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].CreatedAt.After(list[j].CreatedAt) })
+	if limit > 0 && len(list) > limit {
+		list = list[:limit]
+	}
+	return list, nil
+}
+
+func (r *studyMemoryRepo) RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if attempt.CreatedAt.IsZero() {
+		attempt.CreatedAt = time.Now().UTC()
+	}
+	r.s.typingAttempts[attempt.UserID] = append(r.s.typingAttempts[attempt.UserID], *attempt)
+	return nil
+}
+
+func (r *studyMemoryRepo) GetTypingAttempts(ctx context.Context, userID string, limit int) ([]models.TypingAttempt, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	attempts := append([]models.TypingAttempt(nil), r.s.typingAttempts[userID]...)
+	sort.Slice(attempts, func(i, j int) bool { return attempts[i].CreatedAt.After(attempts[j].CreatedAt) })
+	if limit > 0 && len(attempts) > limit {
+		attempts = attempts[:limit]
+	}
+	return attempts, nil
+}
+
+func (r *studyMemoryRepo) GetBestTypingWPM(ctx context.Context, userID string) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	best := 0
+	for _, att := range r.s.typingAttempts[userID] {
+		if att.WPM > best {
+			best = att.WPM
+		}
+	}
+	return best, nil
+}
+
+func (r *studyMemoryRepo) UpdateSkillMastery(ctx context.Context, userID, skill string, score float64) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if _, ok := r.s.skillMastery[userID]; !ok {
+		r.s.skillMastery[userID] = make(map[string]*models.UserSkillMastery)
+	}
+	m, ok := r.s.skillMastery[userID][skill]
+	if !ok {
+		r.s.skillMastery[userID][skill] = &models.UserSkillMastery{
+			UserID:        userID,
+			Skill:         skill,
+			MasteryScore:  score,
+			AttemptsCount: 1,
+			UpdatedAt:     time.Now().UTC(),
+		}
+		return nil
+	}
+	m.MasteryScore = (m.MasteryScore*float64(m.AttemptsCount) + score) / float64(m.AttemptsCount+1)
+	m.AttemptsCount++
+	m.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (r *studyMemoryRepo) GetSkillMastery(ctx context.Context, userID string) (map[string]models.UserSkillMastery, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	userMap, ok := r.s.skillMastery[userID]
+	if !ok {
+		return make(map[string]models.UserSkillMastery), nil
+	}
+	res := make(map[string]models.UserSkillMastery, len(userMap))
+	for k, v := range userMap {
+		res[k] = *v
+	}
+	return res, nil
 }
 
 // --- Vocabulary ---
