@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -97,9 +97,9 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
     setTimeLeft(block.timeLimitSec);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
-  }, [block?.id, block?.timeLimitSec]);
+  }, [block]);
 
-  const submit = () => {
+  const submit = useCallback(() => {
     if (submittedRef.current || !block) return;
     submittedRef.current = true;
     if (backendSessionId) {
@@ -121,7 +121,7 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
       return;
     }
     onComplete();
-  };
+  }, [backendSessionId, block, blockIndex, blocks.length, gap, highlightSentence, mainIdeaIndex, onComplete, sentenceIndex, titleIndex]);
 
   const submitRef = useRef(submit);
   useEffect(() => {
@@ -140,7 +140,7 @@ export const InteractiveReading: React.FC<InteractiveReadingProps> = ({ onComple
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [block?.id, block?.timeLimitSec]);
+  }, [block]);
 
   if (!block) {
     return (

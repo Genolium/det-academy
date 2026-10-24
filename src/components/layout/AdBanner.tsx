@@ -32,8 +32,10 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
     };
   }, [placement]);
 
-  // Strict constraint: Ad banners MUST be hidden during adaptive test sessions or once dismissed
-  if (pathname.startsWith('/test/session') || dismissed) {
+  // Strict constraint: Ad banners MUST be hidden during adaptive test sessions,
+  // once dismissed, or if no active banner was received from the server/CMS.
+  // We do not inject unverified hardcoded advertising fallbacks.
+  if (pathname.startsWith('/test/session') || dismissed || !banner) {
     return null;
   }
 
@@ -44,8 +46,8 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
   };
 
   if (placement === 'HEADER') {
-    const text = banner?.altText || t.headerDefaultText;
-    const targetUrl = banner?.targetUrl || 'https://so-called-spark.ru';
+    const text = banner.altText;
+    const targetUrl = banner.targetUrl || '#';
 
     return (
       <aside aria-label="Announcement" className="w-full bg-[#0E1012] text-white border-b border-neutral-800/80 text-[11px] leading-tight transition-all">
@@ -80,8 +82,8 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
     );
   }
 
-  const footerText = banner?.altText || t.footerDefaultText;
-  const footerTarget = banner?.targetUrl || '#mentor';
+  const footerText = banner.altText;
+  const footerTarget = banner.targetUrl || '#';
 
   return (
     <aside aria-label="Partner sponsorship" className="w-full py-4 px-4 bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-t border-b border-neutral-800">
@@ -104,6 +106,8 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
         </div>
         <a
           href={footerTarget}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={handleBannerClick}
           className="bg-white hover:bg-neutral-200 text-black px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer"
         >

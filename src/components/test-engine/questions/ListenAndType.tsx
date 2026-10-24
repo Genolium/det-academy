@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -63,20 +63,20 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     isSubmittedRef.current = false;
   }, [currentItem?.id, currentItem?.timeLimitSec]);
 
-  const playAudio = () => {
+  const playAudio = useCallback(() => {
     if (!currentItem || playCount >= currentItem.playsAllowed || isPlayingAudio) return;
     setIsPlayingAudio(true);
     setPlayCount((p) => p + 1);
     sound.speakEnglish(currentItem.audioSentence, () => setIsPlayingAudio(false));
-  };
+  }, [currentItem, isPlayingAudio, playCount]);
 
   useEffect(() => {
     if (!currentItem) return;
     const autoPlay = setTimeout(() => playAudio(), 1000);
     return () => clearTimeout(autoPlay);
-  }, [currentItem?.id]);
+  }, [currentItem, playAudio]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmittedRef.current || !currentItem) return;
     isSubmittedRef.current = true;
 
@@ -95,7 +95,7 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
       return;
     }
     onComplete();
-  };
+  }, [backendSessionId, currentItem, itemIndex, items.length, onComplete, soundEnabled]);
 
   const handleSubmitRef = useRef(handleSubmit);
   useEffect(() => {
@@ -114,7 +114,7 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [currentItem?.id, currentItem?.timeLimitSec]);
+  }, [currentItem]);
 
   if (!currentItem) {
     return (

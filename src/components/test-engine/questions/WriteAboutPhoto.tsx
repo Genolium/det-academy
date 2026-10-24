@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
@@ -52,7 +52,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
   }, [currentText]);
   const isAdvancingRef = useRef(false);
 
-  const handleNextPhoto = () => {
+  const handleNextPhoto = useCallback(() => {
     if (isAdvancingRef.current) return;
     const textToSubmit = currentTextRef.current;
     const updatedTexts = [...texts];
@@ -74,7 +74,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
       isAdvancingRef.current = true;
       onComplete();
     }
-  };
+  }, [backendSessionId, currentPhoto, onComplete, photoIndex, photos.length, texts, timeLeft]);
 
   const handleNextPhotoRef = useRef(handleNextPhoto);
   useEffect(() => {

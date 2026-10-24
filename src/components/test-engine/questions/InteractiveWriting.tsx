@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { interactiveWritingBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, Clock, BookOpen, Lock } from 'lucide-react';
+import { ArrowRight, Clock, Lock } from 'lucide-react';
 
 interface InteractiveWritingProps {
   onComplete: () => void;
@@ -44,7 +44,7 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
   }, [part2Text]);
   const isPartAdvancingRef = useRef(false);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (isPartAdvancingRef.current) return;
     if (part === 1) {
       setPart(2);
@@ -66,7 +66,7 @@ export const InteractiveWriting: React.FC<InteractiveWritingProps> = ({ onComple
       recordInteractiveWritingResult(finalP1, finalP2);
       onComplete();
     }
-  };
+  }, [backendSessionId, onComplete, part, recordInteractiveWritingResult, serverQ, timeLeft]);
 
   const handleNextRef = useRef(handleNext);
   useEffect(() => {

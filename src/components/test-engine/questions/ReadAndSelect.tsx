@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -42,7 +42,7 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
     startedAtRef.current = Date.now();
   }, [index, currentItem?.timeLimitSec]);
 
-  const handleChoice = (choseYes: boolean) => {
+  const handleChoice = useCallback((choseYes: boolean) => {
     if (isHandlingAnswer.current || !currentItem) return;
     isHandlingAnswer.current = true;
 
@@ -66,7 +66,7 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
     } else {
       onComplete();
     }
-  };
+  }, [backendSessionId, currentItem, index, onComplete, pool.length, soundEnabled]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,7 +78,7 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [handleChoice]);
 
   useEffect(() => {
     const limit = currentItem?.timeLimitSec || 5;
@@ -93,7 +93,7 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [index, currentItem?.timeLimitSec]);
+  }, [currentItem?.timeLimitSec, handleChoice]);
 
   if (pool.length === 0) {
     return (

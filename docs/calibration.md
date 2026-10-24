@@ -63,16 +63,17 @@ blocked until all of the following are true:
 
 The repository includes:
 1. `backend/tests/fixtures/calibration_labels.json`: baseline 20-item smoke fixture.
-2. `backend/tests/fixtures/calibration_expert_dataset.json`: validated 54-item dataset with two independent expert raters (`expert-rater-1`, `expert-rater-2`).
+2. `backend/tests/fixtures/calibration_expert_dataset.json`: synthetic 54-item validation fixture (`fixture: true`) with simulated rater profiles (`expert-rater-1`, `expert-rater-2`) to test inter-rater agreement arithmetic, writing/speaking subscore splitting, and harness mechanics.
 
-### Verified Metrics:
+> [!IMPORTANT]
+> The synthetic 54-item dataset tests pipeline arithmetic and code contracts, but does **not** constitute empirical production calibration against Duolingo English Test standards. Production calibration claims remain **BLOCKED** until authenticated student responses with two accredited external raters are collected under informed consent.
+
+### Synthetic Fixture Metrics (Harness Verification):
 - **Items**: 54 (23 Writing items, 31 Speaking items);
-- **Raters**: 2 independent expert raters;
-- **Inter-rater QWK**: **0.9523** (exceeds ≥ 0.70 threshold);
-- **Human–Model QWK (Overall)**: **0.9496** (exceeds ≥ 0.70 threshold);
+- **Raters**: 2 simulated raters;
+- **Inter-rater QWK**: **0.9523**;
+- **Human–Model QWK (Overall)**: **0.9496**;
 - **Writing Human–Model QWK**: **0.9654**;
 - **Speaking Human–Model QWK**: **0.9363**;
-- **Pearson correlation**: **0.9513**;
-- **Exact agreement**: **87.0%**;
-- **Status**: `expert_dataset` (`fixture: false`);
-- **Production calibration gate**: **PASSED**.
+- **Status**: `fixture_only` (`fixture: true`);
+- **Harness gate**: **PASSED** (when evaluated with `--allow-fixture`).

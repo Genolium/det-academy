@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ChevronDown, CheckCircle2, AlertTriangle, Sparkles, Building2, Layers, Compass } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Sparkles, Target, Layers } from 'lucide-react';
 
 export interface Subscores {
   literacy: number;
@@ -17,100 +17,6 @@ export interface Modalities {
   writing: number;
   speaking: number;
 }
-
-interface UniversityPreset {
-  id: string;
-  name: string;
-  country: string;
-  minScore: number;
-  minLiteracy: number;
-  minComprehension: number;
-  minConversation: number;
-  minProduction: number;
-}
-
-const POPULAR_UNIVERSITIES: UniversityPreset[] = [
-  {
-    id: 'toronto',
-    name: 'University of Toronto',
-    country: 'Canada',
-    minScore: 125,
-    minLiteracy: 120,
-    minComprehension: 125,
-    minConversation: 120,
-    minProduction: 125,
-  },
-  {
-    id: 'stanford',
-    name: 'Stanford University',
-    country: 'USA',
-    minScore: 135,
-    minLiteracy: 135,
-    minComprehension: 135,
-    minConversation: 130,
-    minProduction: 130,
-  },
-  {
-    id: 'mit',
-    name: 'Massachusetts Institute of Technology (MIT)',
-    country: 'USA',
-    minScore: 130,
-    minLiteracy: 130,
-    minComprehension: 130,
-    minConversation: 125,
-    minProduction: 125,
-  },
-  {
-    id: 'oxford',
-    name: 'University of Oxford',
-    country: 'UK',
-    minScore: 135,
-    minLiteracy: 135,
-    minComprehension: 135,
-    minConversation: 135,
-    minProduction: 130,
-  },
-  {
-    id: 'columbia',
-    name: 'Columbia University',
-    country: 'USA',
-    minScore: 130,
-    minLiteracy: 130,
-    minComprehension: 125,
-    minConversation: 125,
-    minProduction: 125,
-  },
-  {
-    id: 'mcgill',
-    name: 'McGill University',
-    country: 'Canada',
-    minScore: 120,
-    minLiteracy: 120,
-    minComprehension: 120,
-    minConversation: 115,
-    minProduction: 115,
-  },
-  {
-    id: 'melbourne',
-    name: 'University of Melbourne',
-    country: 'Australia',
-    minScore: 115,
-    minLiteracy: 115,
-    minComprehension: 115,
-    minConversation: 110,
-    minProduction: 110,
-  },
-  {
-    id: 'foundation',
-    name: 'Standard Foundation Program',
-    country: 'Global',
-    minScore: 105,
-    minLiteracy: 105,
-    minComprehension: 105,
-    minConversation: 100,
-    minProduction: 100,
-  },
-];
 
 interface SkillRadarChartProps {
   currentScores?: Subscores | null;
@@ -130,14 +36,6 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
   hasTakenTest = true,
 }) => {
   const [radarMode, setRadarMode] = useState<'subscores' | 'modalities'>('subscores');
-  const [selectedUniId, setSelectedUniId] = useState<string>('toronto');
-
-  const targetUni = useMemo(() => {
-    const found = POPULAR_UNIVERSITIES.find((u) => u.id === selectedUniId);
-    if (found) return found;
-
-    return POPULAR_UNIVERSITIES[0];
-  }, [selectedUniId]);
 
   // Radar geometry
   const size = 320;
@@ -178,12 +76,12 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
     getCoordinates(effectiveSubscores.conversation, 270),
   ];
 
-  // University Target Polygon Points
-  const uniPoints = [
-    getCoordinates(targetUni.minLiteracy, 0),
-    getCoordinates(targetUni.minComprehension, 90),
-    getCoordinates(targetUni.minProduction, 180),
-    getCoordinates(targetUni.minConversation, 270),
+  // Subscore Target Polygon Points (based on student target)
+  const targetSubscorePoints = [
+    getCoordinates(targetScore, 0),
+    getCoordinates(targetScore, 90),
+    getCoordinates(targetScore, 180),
+    getCoordinates(targetScore, 270),
   ];
 
   // 2. Modalities Points (North: Reading, East: Listening, South: Writing, West: Speaking)
@@ -202,17 +100,17 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
   ];
 
   const activePoints = radarMode === 'subscores' ? subscorePoints : modalityPoints;
-  const activeBenchmarkPoints = radarMode === 'subscores' ? uniPoints : targetModalityPoints;
+  const activeBenchmarkPoints = radarMode === 'subscores' ? targetSubscorePoints : targetModalityPoints;
 
   // Scale circles levels (40, 80, 105, 125, 160)
   const scaleLevels = [40, 80, 105, 125, 160];
 
   // Subscore Deficits
   const subscoreDeficits = [
-    { name: 'Literacy', label: 'Чтение + Письмо', current: effectiveSubscores.literacy, target: targetUni.minLiteracy },
-    { name: 'Comprehension', label: 'Чтение + Аудирование', current: effectiveSubscores.comprehension, target: targetUni.minComprehension },
-    { name: 'Production', label: 'Письмо + Говорение', current: effectiveSubscores.production, target: targetUni.minProduction },
-    { name: 'Conversation', label: 'Аудирование + Говорение', current: effectiveSubscores.conversation, target: targetUni.minConversation },
+    { name: 'Literacy', label: 'Чтение + Письмо', current: effectiveSubscores.literacy, target: targetScore },
+    { name: 'Comprehension', label: 'Чтение + Аудирование', current: effectiveSubscores.comprehension, target: targetScore },
+    { name: 'Production', label: 'Письмо + Говорение', current: effectiveSubscores.production, target: targetScore },
+    { name: 'Conversation', label: 'Аудирование + Говорение', current: effectiveSubscores.conversation, target: targetScore },
   ].map((item) => ({
     ...item,
     diff: item.target - item.current,
@@ -282,39 +180,23 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             </div>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            {radarMode === 'subscores' ? 'Сравнение с целевым вузом' : 'Диагностика 4 фундаментальных навыков'}
+            {radarMode === 'subscores' ? 'Сравнение сабскоров с целевым баллом' : 'Диагностика 4 фундаментальных навыков'}
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
             {radarMode === 'subscores'
-              ? 'Наложите профиль ваших официальных сабскоров на требования приемной комиссии.'
+              ? 'Сопоставление ваших результатов с целевым ориентиром подготовки.'
               : 'Анализ независимых навыков: выявите, какой блок тянет общий балл вниз.'}
           </p>
         </div>
 
-        {/* University Selector (Only in subscores mode) */}
-        {radarMode === 'subscores' && (
-          <div className="relative min-w-[260px] w-full sm:w-auto">
-            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
-              Целевой университет:
-            </label>
-            <div className="relative">
-              <Building2 className="w-4 h-4 text-purple-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <select
-                aria-label="Целевой университет"
-                value={selectedUniId}
-                onChange={(e) => setSelectedUniId(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 bg-neutral-900 border border-neutral-800 rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer appearance-none"
-              >
-                {POPULAR_UNIVERSITIES.map((u) => (
-                  <option key={u.id} value={u.id} className="bg-[#0E1012]">
-                    {u.name} ({u.minScore}+ DET)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+        {/* Target Goal Indicator */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-2xl">
+          <Target className="w-4 h-4 text-purple-400 shrink-0" />
+          <div className="text-left">
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Ваша цель:</span>
+            <span className="text-xs font-black text-white">{targetScore}+ DET</span>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Grid: Left Radar SVG, Right Diagnostics */}
@@ -457,9 +339,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-md bg-purple-500 border border-purple-400 border-dashed" />
               <span className="text-purple-300">
-                {radarMode === 'subscores'
-                  ? `${targetUni.name} (${targetUni.minScore})`
-                  : `Целевой порог (${targetScore})`}
+                Целевой ориентир ({targetScore})
               </span>
             </div>
           </div>
@@ -471,7 +351,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-neutral-400">
-                  {radarMode === 'subscores' ? 'Статус соответствия вузу:' : 'Диагностика готовности:'}
+                  {radarMode === 'subscores' ? 'Соответствие цели по сабскорам:' : 'Диагностика готовности:'}
                 </span>
                 <h3 className="text-base font-black text-white mt-0.5">
                   {!hasTakenTest ? (
@@ -497,10 +377,10 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
               <div className="text-right shrink-0">
                 <span className="text-[10px] uppercase font-bold text-neutral-500">
-                  {radarMode === 'subscores' ? 'Проходной балл' : 'Цель студента'}
+                  Цель студента
                 </span>
                 <div className="text-xl font-black text-purple-400">
-                  {radarMode === 'subscores' ? `${targetUni.minScore}+` : `${targetScore}+`}
+                  {targetScore}+
                 </div>
               </div>
             </div>

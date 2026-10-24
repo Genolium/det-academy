@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
@@ -51,14 +51,17 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
     payload.scenario ||
     'You are speaking with your university academic advisor regarding your course schedule and preparing for graduation requirements.';
 
-  const turns = [
-    'Explain why you are considering taking an intensive seminar course instead of a standard lecture series.',
-    'Your advisor asks how this specific course aligns with your intended career path or graduate research.',
-    'Address your advisor’s concern about the heavy weekly reading workload (over 150 pages per week).',
-    'Explain how you plan to balance this seminar with your remaining laboratory requirements.',
-    'Summarize the key study strategies you will employ to maintain a high grade point average.',
-    'Conclude the conversation by thanking your advisor and confirming the final registration deadline.',
-  ];
+  const turns = useMemo(
+    () => [
+      'Explain why you are considering taking an intensive seminar course instead of a standard lecture series.',
+      'Your advisor asks how this specific course aligns with your intended career path or graduate research.',
+      'Address your advisor’s concern about the heavy weekly reading workload (over 150 pages per week).',
+      'Explain how you plan to balance this seminar with your remaining laboratory requirements.',
+      'Summarize the key study strategies you will employ to maintain a high grade point average.',
+      'Conclude the conversation by thanking your advisor and confirming the final registration deadline.',
+    ],
+    []
+  );
 
   const [currentTurn, setCurrentTurn] = useState(0);
   const [timeLeft, setTimeLeft] = useState(35); // 35s per turn
@@ -233,7 +236,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
         window.speechSynthesis.cancel();
       }
     };
-  }, [currentTurn]);
+  }, [currentTurn, turns]);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -339,10 +342,14 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
           <Button
             variant="primary"
             onClick={handleNextTurn}
-            disabled={timeLeft > 25} // Allow moving forward after speaking for at least 10s
+            disabled={timeLeft > 25 || isSubmitting} // Allow moving forward after speaking for at least 10s
             className="gap-2"
           >
-            {currentTurn + 1 === turns.length ? 'Завершить этап' : 'Следующая реплика'}
+            {isSubmitting
+              ? 'Сохранение...'
+              : currentTurn + 1 === turns.length
+              ? 'Завершить этап'
+              : 'Следующая реплика'}
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>

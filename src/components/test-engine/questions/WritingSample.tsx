@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { writingSampleBank } from '@/data/questionBank';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -31,7 +31,7 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
   }, [essayText]);
   const isSubmittedRef = useRef(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmittedRef.current) return;
     isSubmittedRef.current = true;
     const textToSubmit = essayRef.current;
@@ -47,7 +47,7 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
 
     recordWritingSampleResult(textToSubmit);
     onComplete();
-  };
+  }, [backendSessionId, onComplete, recordWritingSampleResult, serverQ, timeLeft]);
 
   const handleSubmitRef = useRef(handleSubmit);
   useEffect(() => {

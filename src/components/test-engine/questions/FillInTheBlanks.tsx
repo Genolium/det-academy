@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -75,7 +75,7 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
     isSubmittingRef.current = false;
   }, [index, currentItem?.timeLimitSec]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmittingRef.current || !currentItem) return;
     isSubmittingRef.current = true;
 
@@ -95,7 +95,7 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
     } else {
       onComplete();
     }
-  };
+  }, [backendSessionId, currentItem, index, onComplete, pool.length, soundEnabled]);
 
   useEffect(() => {
     if (!currentItem) return;
@@ -110,7 +110,7 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [index, currentItem?.timeLimitSec]);
+  }, [currentItem, handleSubmit]);
 
   if (pool.length === 0) {
     return (

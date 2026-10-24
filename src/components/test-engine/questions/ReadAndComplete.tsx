@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -67,7 +67,7 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
     startedAtRef.current = Date.now();
   }, [cTestItem?.id, cTestItem?.timeLimitSec]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmittedRef.current || !cTestItem) return;
     isSubmittedRef.current = true;
 
@@ -82,7 +82,7 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
 
     if (soundEnabled) sound.playSuccessChime();
     onComplete();
-  };
+  }, [backendSessionId, cTestItem, onComplete, soundEnabled]);
 
   useEffect(() => {
     if (!cTestItem) return;
@@ -97,7 +97,7 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
     }, 250);
 
     return () => clearInterval(timer);
-  }, [cTestItem?.id, cTestItem?.timeLimitSec]);
+  }, [cTestItem, handleSubmit]);
 
   if (!cTestItem) {
     return (

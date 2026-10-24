@@ -24,7 +24,7 @@ jobs:
       - run: python3 scripts/lint_content.py
       - run: python3 scripts/review_content.py
       - run: python3 scripts/test_calibration.py
-      - run: python3 scripts/calibration_validate.py --production --allow-fixture
+      - run: python3 scripts/calibration_validate.py backend/tests/fixtures/calibration_expert_dataset.json --allow-fixture
       - run: node scripts/preflight_external.mjs || true
       - run: npm run build
       - run: npm run check:bundle

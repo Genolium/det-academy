@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
@@ -115,7 +115,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
   });
 
   // Start audio capture when transitioning to speaking phase
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     setPhase('speaking');
     setTimeLeft(90);
 
@@ -147,7 +147,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
         recognitionRef.current = rec;
       } catch {}
     }
-  };
+  }, [audioRecorder]);
 
   // Timer handling
   useEffect(() => {
@@ -169,7 +169,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
     }, 250);
 
     return () => clearInterval(timer);
-  }, [phase]);
+  }, [phase, startRecording]);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -284,10 +284,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
             <Button
               variant="primary"
               onClick={handleFinish}
-              disabled={timeLeft > 60} // Require at least 30 seconds of speaking before manual finish
+              disabled={timeLeft > 60 || isSubmitting} // Require at least 30 seconds of speaking before manual finish
               className="gap-2"
             >
-              Далее (Next)
+              {isSubmitting ? 'Сохранение...' : 'Далее (Next)'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}

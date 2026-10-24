@@ -1,7 +1,7 @@
 {
   "rubric": "speaking_writing_0_5",
   "version": "2026.1",
-  "fixture": false,
+  "fixture": true,
   "provenance": {
     "imported_at": "2026-10-23T15:02:15.869764+00:00",
     "rows": 108,
@@ -660,5 +660,6 @@
       "model": 4,
       "adjudicated": 4
     }
-  ]
+  ],
+  "notes": "Synthetic benchmark fixture with dual simulated raters for pipeline validation. Real production calibration requires authenticated human student corpus and accredited independent raters."
 }

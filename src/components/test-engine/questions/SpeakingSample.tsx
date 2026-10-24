@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
@@ -113,7 +113,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     handleFinishRef.current = handleFinish;
   });
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     setPhase('speaking');
     setTimeLeft(180);
 
@@ -143,7 +143,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
         recognitionRef.current = rec;
       } catch {}
     }
-  };
+  }, [audioRecorder]);
 
   useEffect(() => {
     const duration = phase === 'prep' ? 30 : 180;
@@ -164,7 +164,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     }, 250);
 
     return () => clearInterval(timer);
-  }, [phase]);
+  }, [phase, startRecording]);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -268,10 +268,10 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
             <Button
               variant="primary"
               onClick={handleFinish}
-              disabled={timeLeft > 120} // Require at least 60s of speech before manual submit
+              disabled={timeLeft > 120 || isSubmitting} // Require at least 60s of speech before manual submit
               className="gap-2"
             >
-              Далее (Next)
+              {isSubmitting ? 'Сохранение...' : 'Далее (Next)'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}

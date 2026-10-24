@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
@@ -77,7 +77,7 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
     setTimeLeft(block.timeLimitSec);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
-  }, [block?.id, block?.timeLimitSec]);
+  }, [block]);
 
   useEffect(() => {
     if (phase === 'DIALOG' && currentTurn?.speakerAudioText) {
@@ -85,7 +85,7 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
     }
   }, [phase, currentTurnIdx, currentTurn?.speakerAudioText]);
 
-  const submit = () => {
+  const submit = useCallback(() => {
     if (submittedRef.current || !block) return;
     submittedRef.current = true;
     if (backendSessionId) {
@@ -101,7 +101,7 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
       return;
     }
     onComplete();
-  };
+  }, [backendSessionId, block, blockIndex, blocks.length, onComplete, selectedResponses, summaryText]);
 
   const submitRef = useRef(submit);
   useEffect(() => {
@@ -120,7 +120,7 @@ export const InteractiveListening: React.FC<InteractiveListeningProps> = ({ onCo
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [block?.id, block?.timeLimitSec]);
+  }, [block]);
 
   if (!block) {
     return (
