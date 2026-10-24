@@ -23,7 +23,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   cookieConsentAccepted: false,
   setCookieConsentAccepted: (accepted) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('det_cookie_consent', accepted ? 'true' : 'false');
+      localStorage.setItem('det_cookie_consent', accepted ? 'true' : 'rejected');
     }
     set({ cookieConsentAccepted: accepted });
   },

@@ -1,3 +1,5 @@
+import { PRODUCT_FACTS } from './product-facts';
+
 export type Locale = 'ru' | 'en';
 
 /** Текущий год — подставляется автоматически вместо жёстко заданного диапазона. */
@@ -29,6 +31,8 @@ export interface Translations {
     login: string;
     freeMock: string;
     arena: string;
+    dashboard: string;
+    vocabulary: string;
   };
   hero: {
     badge: string;
@@ -37,6 +41,7 @@ export interface Translations {
     titlePart2: string;
     subtitle: string;
     ctaPrimary: string;
+    ctaLoggedIn: string;
     ctaSecondary: string;
     statsUsers: string;
     statsPassRate: string;
@@ -86,6 +91,7 @@ export interface Translations {
     sending: string;
     detSending: string;
     ieltsSending: string;
+    footnote: string;
   };
   demo: {
     title: string;
@@ -119,10 +125,12 @@ export interface Translations {
     promoCodeLabel: string;
     applyBtn: string;
   };
-  cookie: {
-    text: string;
-    accept: string;
-  };
+    cookie: {
+      text: string;
+      accept: string;
+      decline: string;
+      privacy: string;
+    };
   footer: {
     tagline: string;
     rules: string;
@@ -392,6 +400,94 @@ export interface Translations {
     authenticatedRecord: string;
     verifyingTitle: string;
   };
+  dashboard: {
+    personalPlan: string;
+    candidateFallback: string;
+    examReadiness: string;
+    noData: string;
+    theoryLabel: string;
+    mockLabel: string;
+    typingLabel: string;
+    todayTitle: string;
+    daysLeft: string;
+    budget: string;
+    diagnosticCta: string;
+    mockCta: string;
+    typingCta: string;
+    taskCompleted: string;
+    openTask: string;
+    leagueLoading: string;
+    leagueEmpty: string;
+    leagueError: string;
+    badgePrep: string;
+    badgeSecurity: string;
+    goalLabel: string;
+    remainingTitle: string;
+    hoursLeft: string;
+    theoryModules: string;
+    remainingLessons: string;
+    lessonsShort: string;
+    controlTest: string;
+    scoreMet: string;
+    scoreNeeded: string;
+    inProgress: string;
+    reportsTitle: string;
+    reportsHint: string;
+    verifyById: string;
+    lessons16: string;
+    test105: string;
+    nextStep: string;
+    goToLesson: string;
+    radarSubscores: string;
+    radarSkills: string;
+    fromLastSession: string;
+    takeTestForScores: string;
+    overallScore: string;
+    awaitingTest: string;
+    vocabTrainer: string;
+    srsTitle: string;
+    srsDesc: string;
+    openVocab: string;
+    curriculum: string;
+    studiedOf: string;
+    markDone: string;
+    markUndone: string;
+    minutesShort: string;
+    openLesson: string;
+    historyTitle: string;
+    historyHint: string;
+    newTest: string;
+    emptyHistory: string;
+    emptyHistoryHint: string;
+    colDate: string;
+    colScore: string;
+    colStatus: string;
+    recently: string;
+    trainingLevel: string;
+    minPerDay: string;
+    renameProfile: string;
+  };
+  diagnostic: {
+    title: string;
+    subtitle: string;
+    timeTitle: string;
+    timeDesc: string;
+    skillsTitle: string;
+    skillsDesc: string;
+    serverTitle: string;
+    serverDesc: string;
+    disclaimer: string;
+    start: string;
+    creating: string;
+    createFailed: string;
+  };
+  practiceHub: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    mockBanner: string;
+    mockCta: string;
+  };
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -419,17 +515,20 @@ export const translations: Record<Locale, Translations> = {
       profile: 'Кабинет',
       logout: 'Выйти',
       login: 'Войти',
-      freeMock: 'Пройти тест',
+      freeMock: 'Пробный тест',
       arena: 'Арена 1v1',
+      dashboard: 'Кабинет',
+      vocabulary: 'Словарь',
     },
     hero: {
       badge: `ПОДГОТОВКА К ЭКЗАМЕНУ ${YEAR}`,
-      titlePart1: 'СДАЙ DUOLINGO',
-      titlePill: 'НА 120+',
-      titlePart2: 'С УМНЫМ ТРЕНАЖЕРОМ',
-      subtitle: 'Интерактивная адаптивная платформа DET Academy: симулятор экзамена, тренажер скоропечатания DET, разбор стратегий и тренировочную оценку и диапазон.',
-      ctaPrimary: 'Начать тест бесплатно',
-      ctaSecondary: 'Изучить теорию',
+      titlePart1: 'Подготовка к',
+      titlePill: 'DET',
+      titlePart2: 'с понятным планом',
+      subtitle: 'Диагностика четырёх навыков, персональные задания на сегодня, тренажёры и пробный тест. Оценка тренировочная: это не официальный результат Duolingo.',
+      ctaPrimary: 'Создать аккаунт',
+      ctaLoggedIn: 'Пройти диагностику',
+      ctaSecondary: 'Как устроен экзамен',
       statsUsers: '14,200+ студентов',
       statsPassRate: '96% сдали на 115+',
       statsScore: '125 средний балл',
@@ -437,25 +536,25 @@ export const translations: Record<Locale, Translations> = {
     bento: {
       sectionBadge: 'DET Academy Features',
       sectionTitle: 'Инструменты подготовки',
-      sectionSubtitle: 'Все компоненты для подготовки к целевому диапазону 120–145 собраны в единый бесшовный интерфейс.',
-      adaptiveCatTitle: 'Адаптивный тест',
-      adaptiveCatDesc: 'Алгоритм динамически регулирует сложность заданий в реальном времени под ваш уровень от B1 до C2.',
+      sectionSubtitle: `Диагностика, план на сегодня, практика ${PRODUCT_FACTS.activeTaskTypes} типов заданий и тренировочный отчёт — без обещания официального балла.`,
+      adaptiveCatTitle: 'Пробный тест',
+      adaptiveCatDesc: 'Сервер выдаёт задания и считает тренировочную оценку по шкале 10–160. Сложность меняется по этапам; это модель DET Academy, а не алгоритм Duolingo.',
       typingTitle: 'Тренажер скоропечатания DET',
       typingDesc: 'Тренажер слепой печати со специализированным словарем академических эссе и диктантов.',
-      theoryTitle: 'Полная база знаний и стратегий',
-      theoryDesc: '12 интерактивных уроков, шаблоны эссе OREO, разбор ловушек и формулы описания фото.',
-      certificateTitle: 'Верифицируемый сертификат',
-      certificateDesc: 'Генерация тренировочного отчёта с QR-кодом и детализацией сабскоров при балле 105+.',
-      liveFeedback: 'Точный тайминг DET',
+      theoryTitle: 'База знаний и стратегий',
+      theoryDesc: '16 уроков: структура экзамена, шаблоны эссе OREO, типичные ловушки и формулы описания фото.',
+      certificateTitle: 'Тренировочный отчёт',
+      certificateDesc: 'Отчёт DET Academy с QR-проверкой и сабскорами. Это не официальный сертификат Duolingo.',
+      liveFeedback: 'Серверные таймеры',
       instantCert: 'Анализ за 2 секунды',
-      taskTypesMvp: '9 типов заданий в MVP',
-      vocabCount: '200+ академических слов',
+      taskTypesMvp: `${PRODUCT_FACTS.activeTaskTypes} типов заданий`,
+      vocabCount: '506 академических слов',
       certCondition: 'Условие выдачи:',
       certReq: '100% теории + Тест ≥ 105',
     },
     comparison: {
-      title: 'ПОЧЕМУ ИМЕННО DET?',
-      subtitle: 'Duolingo English Test быстрее, доступнее и признается более 5 000 университетов по всему миру (Yale, Columbia, NYU, MIT).',
+      title: 'Почему выбирают DET',
+      subtitle: 'Duolingo English Test сдаётся онлайн примерно за час. Официальный реестр вузов, принимающих DET, содержит 4 087 записей — проверяйте актуальные требования на сайте университета.',
       mapButton: 'Карта вузов с DET',
       feature: 'Критерий',
       det: 'Duolingo English Test',
@@ -467,17 +566,18 @@ export const translations: Record<Locale, Translations> = {
       detFormat: 'Онлайн из дома 24/7',
       ieltsFormat: 'Офлайн в тест-центре по записи',
       duration: 'Длительность',
-      detDuration: 'Около 46 минут',
+      detDuration: 'Около 1 часа',
       ieltsDuration: '3–4 часа',
       results: 'Срок результатов',
       detResults: '48 часов',
       ieltsResults: '3–14 дней',
       recognition: 'Признание в мире',
-      detRecognition: '5,000+ вузов (Лига Плюща, MIT)',
-      ieltsRecognition: '11,000+ учреждений',
+      detRecognition: '4 087 вузов в официальном реестре DET',
+      ieltsRecognition: 'Шире признание, зависит от программы',
       sending: 'Отправка в вузы',
       detSending: 'Бесплатно в любое число вузов',
       ieltsSending: 'Платно за каждый отчет (от $20)',
+      footnote: 'Цена, срок результатов и требования вузов меняются. Ориентир на дату проверки — уточняйте на englishtest.duolingo.com.',
     },
     demo: {
       title: 'Мини-тренажер: Read and Select',
@@ -493,7 +593,7 @@ export const translations: Record<Locale, Translations> = {
       fakeWord: 'Псевдослово',
       score: 'Ваш результат',
       completed: 'Демо-блок завершен!',
-      tryFull: 'Пройти полный симулятор теста',
+      tryFull: 'Пройти диагностику',
       retry: 'Пройти демо еще раз',
       correctPrefix: 'Верно!',
       errorPrefix: 'Ошибка!',
@@ -512,12 +612,14 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Подробнее',
     },
     cookie: {
-      text: 'Мы используем cookie для персонализации тренировок и сохранения прогресса адаптивного тестирования.',
-      accept: 'Принять и продолжить',
+      text: 'Нужные cookie — сессия входа. Прогресс хранится в аккаунте и в localStorage этого браузера, а не «персонализирует адаптивный тест».',
+      accept: 'Принять',
+      decline: 'Только необходимое',
+      privacy: 'Политика данных',
     },
     footer: {
-      tagline: 'Первая специализированная адаптивная EdTech-платформа подготовки к экзамену Duolingo English Test.',
-      rules: `Строгое соответствие регламентам Duolingo ${YEAR}`,
+      tagline: 'Независимая платформа подготовки к Duolingo English Test: диагностика, план и тренировочные тесты.',
+      rules: `Формат заданий ориентирован на публичную структуру DET ${YEAR}`,
       rights: 'Все права защищены.',
       disclaimer: 'DET Academy является независимым образовательным сервисом и не аффилирована с Duolingo, Inc.',
       description: 'Независимая EdTech платформа адаптивной подготовки к экзамену Duolingo English Test. Не аффилирована с Duolingo Inc.',
@@ -568,24 +670,24 @@ export const translations: Record<Locale, Translations> = {
       demoStudentBtn: 'Студент Alex Rivera (100% теории + Тест 125)',
       demoAdminBtn: 'Администратор (CRM-панель + Управление)',
       guardTitle: 'Доступ только после регистрации',
-      guardSubtitle: 'Для сохранения персонального прогресса, расчета прогнозируемого балла 10–160 по шкале DET и формирования сертификата войдите или создайте аккаунт.',
+      guardSubtitle: 'Чтобы сохранить прогресс, пройти диагностику и получить тренировочный отчёт DET Academy, войдите или создайте аккаунт.',
       guardSyncTitle: 'Синхронизация',
-      guardSyncDesc: 'Сохранение прогресса уроков и ответов в облаке',
-      guardCatTitle: 'CAT-алгоритм',
-      guardCatDesc: 'Расчет балла 10–160 с точностью Duolingo',
-      guardCertTitle: 'Сертификат',
-      guardCertDesc: 'Публичный сертификат с верификацией для вузов',
+      guardSyncDesc: 'Прогресс уроков и попыток хранится на сервере',
+      guardCatTitle: 'Пробный тест',
+      guardCatDesc: 'Тренировочная оценка 10–160 считает сервер',
+      guardCertTitle: 'Отчёт',
+      guardCertDesc: 'Тренировочный отчёт платформы, не официальный DET',
       guardActionBtn: 'Войти или Зарегистрироваться',
     },
     institutions: {
       badge: 'Worldwide University Acceptance',
-      countTag: '• 12 000+ институтов по всему миру',
+      countTag: '• 4 087 вузов в официальном реестре DET',
       title: 'Вузы, принимающие DET',
-      subtitle: 'Исследуйте ведущие университеты мира, принимающие сертификаты Duolingo English Test. Фильтруйте по минимальному баллу, странам и категориям Лиги Плюща.',
-      statsWorld: '12,000+',
-      statsWorldLabel: 'Вузов по миру',
-      statsIvy: '100%',
-      statsIvyLabel: 'Вузов Лиги Плюща',
+      subtitle: 'Каталог вузов из официального реестра DET. Пороги баллов, если показаны, — ориентир платформы: сверяйте их с приёмной комиссией.',
+      statsWorld: '4 087',
+      statsWorldLabel: 'Записей в реестре DET',
+      statsIvy: 'Ориентир',
+      statsIvyLabel: 'Пороги не подтверждены вузом',
       statsAvg: '115–125',
       statsAvgLabel: 'Средний проходной',
       statsReports: '0$',
@@ -597,12 +699,12 @@ export const translations: Record<Locale, Translations> = {
       scoreAny: 'Любой балл DET (105+)',
       score115: 'От 115 баллов',
       score120: 'От 120 баллов',
-      score125: 'От 125 баллов (Ivy League / MIT)',
-      score130: 'От 130 баллов (NYU / Top Tier)',
+      score125: 'От 125 баллов',
+      score130: 'От 130 баллов',
       subscoreFilterLabel: 'Фильтр по субскорам:',
       subscoreAny: 'Без ограничений по субскорам',
-      subscoreWriting120: 'Writing (Production) ≥ 120 (Канада U15, UBC)',
-      subscoreLiteracy120: 'Literacy (чтение/письмо) ≥ 120 (MIT, Harvard)',
+      subscoreWriting120: 'Writing (Production) ≥ 120',
+      subscoreLiteracy120: 'Literacy (чтение/письмо) ≥ 120',
       subscoreAll115: 'Все субскоры ≥ 115 (Строгие требования)',
       subscoreConversation120: 'Conversation (устная речь) ≥ 120',
       mapHeading: 'Интерактивная карта вузов мира',
@@ -619,7 +721,7 @@ export const translations: Record<Locale, Translations> = {
       acceptanceLabel: 'Прием:',
       ctaBadge: 'Check Your Admissions Score',
       ctaTitle: 'Хватит ли вашего балла для поступления?',
-      ctaDesc: 'Пройдите симулятор адаптивного тестирования CAT Engine на DET Academy. Наш алгоритм рассчитает прогнозируемый балл по официальной 160-балльной шкале за ~46 минут.',
+      ctaDesc: 'Пройдите диагностику DET Academy (~20 мин) или полный пробный тест (~1 час). Сервер посчитает тренировочную оценку по шкале 10–160.',
       ctaTestBtn: 'Пройти симулятор теста',
       ctaTheoryBtn: 'Изучить стратегию сдачи',
       mapLoading: 'Инициализация интерактивной карты университетов...',
@@ -631,7 +733,7 @@ export const translations: Record<Locale, Translations> = {
       subtitle: 'Отработка навыка слепой печати без подглядывания на клавиатуру на базе академической лексики DET и экзаменационных эссе.',
       modeTime: 'Время',
       modeWords: 'Слова',
-      detPack: 'DET Academic Pack (200+)',
+      detPack: 'DET Academic Pack (506)',
       stdPack: 'English Core 100',
       soundToggle: 'Переключить звук механических клавиш',
       liveWpm: 'Live:',
@@ -680,15 +782,15 @@ export const translations: Record<Locale, Translations> = {
       nextLesson: 'Следующий урок',
     },
     testLobby: {
-      engineBadge: 'Duolingo English Test CAT Engine',
-      scoringTag: '• Оценка 10–160',
-      title: 'Симулятор экзамена DET',
-      subtitle: 'Полноценный адаптивный тест с 9 активными механиками, серверными таймерами и детальным расчетом сабскоров.',
+      engineBadge: 'DET Academy Mock',
+      scoringTag: '• Тренировочная оценка 10–160',
+      title: 'Пробный тест DET',
+      subtitle: `Полный пробный тест: ${PRODUCT_FACTS.activeTaskTypes} типов заданий, серверные таймеры и тренировочные сабскоры. Это оценка DET Academy, не официальный результат Duolingo.`,
       sessionBadge: 'Сессия тестирования',
       sessionTitle: 'Параметры сессии',
       nameLabel: 'Имя и фамилия (латиницей):',
       namePlaceholder: 'e.g. John Doe',
-      nameHint: 'Будет указано в вашем электронном сертификате.',
+      nameHint: 'Будет указано в тренировочном отчёте DET Academy.',
       rulesTitle: 'Правила экзамена:',
       rule1: '• Запрещено пользоваться черновиками и ручками.',
       rule2: '• Не отводите взгляд от экрана.',
@@ -697,7 +799,7 @@ export const translations: Record<Locale, Translations> = {
       compositionTitle: 'Состав экзаменационного теста',
       mvpStatusLabel: 'Статус в MVP',
       statusActive: 'Активно',
-      statusComingSoon: 'Coming Soon (Микрофон)',
+      statusComingSoon: 'В работе',
     },
     testSession: {
       stepLabel: 'Шаг',
@@ -753,7 +855,7 @@ export const translations: Record<Locale, Translations> = {
       title: 'Итоги тестирования DET',
       overallLabel: 'Тренировочная оценка (Overall Estimate)',
       scaleNote: `Тренировочная шкала DET Academy (10–160, шаг 5) • Диапазон: `,
-      highScoreNote: 'Отличный уровень (C1 Advanced) — подходит для Yale, MIT, Columbia',
+      highScoreNote: 'Сильный тренировочный результат. Сверьте требования конкретной программы — мы не подтверждаем пороги вузов.',
       midScoreNote: 'Хороший уровень (B2 Upper-Intermediate) — подходит для большинства ВУЗов',
       lowScoreNote: 'Рекомендуется подтянуть лексику и повторить уроки теории',
       subscoresLabel: 'Тренировочные сабскоры (DET-style subscores):',
@@ -770,19 +872,107 @@ export const translations: Record<Locale, Translations> = {
     },
     certificate: {
       officialBadge: 'DET Academy Training Report',
-      verifiedTag: 'Verified',
-      certIdLabel: 'Certificate ID:',
+      verifiedTag: 'В реестре платформы',
+      certIdLabel: 'ID отчёта:',
       issueDateLabel: 'Дата выдачи:',
       printPdfBtn: 'Печать / PDF',
-      awardedTo: 'This certificate is proudly awarded to',
-      awardReason: `for successfully completing the full curriculum of DET Academy and demonstrating high proficiency on the adaptive test simulation according to ${YEAR} examination standards.`,
-      verifiedScoreLabel: 'Verified Overall DET Score',
-      scaleExplanation: 'Scale 10–160 (increments of 5). Score prediction conforms to empirical Duolingo English Test distributions.',
-      boardTitle: 'DET Academy Examination Board',
-      boardSubtitle: 'Accredited Automated Evaluation Engine',
-      qrLabel: 'QR VERIFY',
-      authenticatedRecord: '✓ Authenticated Record',
+      awardedTo: 'Тренировочный отчёт выдан',
+      awardReason: `за прохождение учебной программы DET Academy и пробного теста. Это оценка платформы, а не официальный результат Duolingo English Test.`,
+      verifiedScoreLabel: 'Тренировочная оценка Overall',
+      scaleExplanation: 'Шкала DET Academy 10–160 (шаг 5). Это учебный ориентир, а не калиброванный официальный балл.',
+      boardTitle: 'DET Academy',
+      boardSubtitle: 'Независимая учебная платформа',
+      qrLabel: 'QR',
+      authenticatedRecord: 'Запись в реестре DET Academy',
       verifyingTitle: 'Верификация сертификата...',
+    },
+    dashboard: {
+      personalPlan: 'План на сегодня',
+      candidateFallback: 'Студент',
+      examReadiness: 'Готовность к экзамену: ',
+      noData: 'нет данных',
+      theoryLabel: 'Теория (16 уроков)',
+      mockLabel: 'Пробный тест',
+      typingLabel: 'Печать',
+      todayTitle: 'Задания на сегодня',
+      daysLeft: 'дн. до экзамена',
+      budget: 'Бюджет',
+      diagnosticCta: 'Пройти диагностику (~20 мин)',
+      mockCta: 'Полный пробный тест (~1 час)',
+      typingCta: 'Тренировать печать',
+      taskCompleted: 'Выполнено по учебному событию',
+      openTask: 'Открыть задание',
+      leagueLoading: 'Загружаем лигу недели…',
+      leagueEmpty: 'Лига появится после первого учебного события.',
+      leagueError: 'Не удалось загрузить лигу. Обновите страницу.',
+      badgePrep: 'Дашборд подготовки',
+      badgeSecurity: 'Безопасность и профиль',
+      goalLabel: 'Цель:',
+      remainingTitle: 'Сколько осталось',
+      hoursLeft: 'ч. до финиша',
+      theoryModules: 'Теоретические модули',
+      remainingLessons: 'Осталось изучить',
+      lessonsShort: 'ур.',
+      controlTest: 'Контрольный тест',
+      scoreMet: 'Порог пройден (≥105 баллов)',
+      scoreNeeded: 'Требуется балл ≥ 105',
+      inProgress: 'В процессе',
+      reportsTitle: 'Отчёты DET Academy',
+      reportsHint: 'Сертификат существует только после выдачи сервером. Локальные баллы и прогресс теории не создают документ.',
+      verifyById: 'Проверить отчёт по ID',
+      lessons16: '16 уроков',
+      test105: 'Тест 105+',
+      nextStep: 'Рекомендуемый следующий шаг',
+      goToLesson: 'Перейти к уроку',
+      radarSubscores: 'Тренировочные сабскоры DET Academy',
+      radarSkills: 'Четыре навыка (Reading, Listening, Writing, Speaking)',
+      fromLastSession: 'Показатели по результатам последней сессии',
+      takeTestForScores: 'Пройдите пробный тест, чтобы увидеть тренировочные сабскоры',
+      overallScore: 'Итоговый балл',
+      awaitingTest: 'Ожидает теста',
+      vocabTrainer: 'Тренажер лексики',
+      srsTitle: 'Академический словарь (SRS)',
+      srsDesc: 'Карточки Academic Word List с озвучкой и коллокациями для Writing и Speaking.',
+      openVocab: 'Открыть тренажер слов',
+      curriculum: 'Программа обучения (16 модулей)',
+      studiedOf: 'Изучено',
+      markDone: 'Отметить как пройденный',
+      markUndone: 'Отметить как не пройденный',
+      minutesShort: 'мин',
+      openLesson: 'Открыть урок',
+      historyTitle: 'История пробных тестирований',
+      historyHint: 'Завершённые сессии с тренировочными сабскорами.',
+      newTest: 'Сдать новый тест',
+      emptyHistory: 'Вы ещё не проходили пробный тест',
+      emptyHistoryHint: 'Пробный тест DET Academy считает тренировочную оценку на сервере. Это не официальный алгоритм Duolingo.',
+      colDate: 'Дата сессии',
+      colScore: 'Итоговый балл',
+      colStatus: 'Статус',
+      recently: 'Недавно',
+      trainingLevel: 'Тренировочный уровень',
+      minPerDay: 'мин/день',
+      renameProfile: 'Переименовать профиль',
+    },
+    diagnostic: {
+      title: 'Диагностика четырёх навыков',
+      subtitle: 'Короткая версия экзамена: Reading, Listening, Writing и Speaking. В конце — диапазон, полнота данных и точки роста.',
+      timeTitle: '15–25 минут',
+      timeDesc: 'Меньше заданий, чем полный пробный тест',
+      skillsTitle: '4 навыка',
+      skillsDesc: 'Неизмеренное остаётся неизмеренным',
+      serverTitle: 'Серверный результат',
+      serverDesc: 'Баллы считает сервер, не браузер',
+      disclaimer: 'Диагностика — тренировочная оценка DET Academy, а не официальный результат Duolingo.',
+      start: 'Начать диагностику',
+      creating: 'Создаём диагностику...',
+      createFailed: 'Сервер не создал диагностическую попытку',
+    },
+    practiceHub: {
+      badge: 'Тренажёры DET',
+      title: 'Свободная практика',
+      subtitle: 'Отрабатывайте типы заданий DET с таймерами. Рекомендуемый путь — задания из кабинета: они влияют на план.',
+      mockBanner: 'Когда будете готовы, пройдите полный пробный тест из лобби — не из заброшенной сессии.',
+      mockCta: 'Открыть лобби пробного теста',
     },
   },
   en: {
@@ -809,17 +999,20 @@ export const translations: Record<Locale, Translations> = {
       profile: 'Dashboard',
       logout: 'Logout',
       login: 'Sign In',
-      freeMock: 'Take Test',
+      freeMock: 'Mock test',
       arena: '1v1 Arena',
+      dashboard: 'Dashboard',
+      vocabulary: 'Vocabulary',
     },
     hero: {
       badge: `EXAM PREPARATION ${YEAR}`,
-      titlePart1: 'ACE DUOLINGO',
-      titlePill: 'SCORE 120+',
-      titlePart2: 'WITH SMART SIMULATION',
-      subtitle: 'Interactive adaptive EdTech platform: exam simulator, DET typing trainer, trap analysis, and accurate score forecasting.',
-      ctaPrimary: 'Start Free Mock Test',
-      ctaSecondary: 'Study Theory',
+      titlePart1: 'Prepare for the',
+      titlePill: 'DET',
+      titlePart2: 'with a clear plan',
+      subtitle: 'A four-skill diagnostic, a daily study queue, drills, and a full mock. Scores are DET Academy training estimates — not an official Duolingo result.',
+      ctaPrimary: 'Create an account',
+      ctaLoggedIn: 'Start diagnostic',
+      ctaSecondary: 'How the exam works',
       statsUsers: '14,200+ students',
       statsPassRate: '96% scored 115+',
       statsScore: '125 average score',
@@ -827,25 +1020,25 @@ export const translations: Record<Locale, Translations> = {
     bento: {
       sectionBadge: 'DET Academy Features',
       sectionTitle: 'Preparation Tools',
-      sectionSubtitle: 'Every tool you need to secure an official 120–145 score engineered in a seamless interface.',
-      adaptiveCatTitle: 'Adaptive Test',
-      adaptiveCatDesc: 'Dynamic multistage difficulty scaling from B1 up to C2 based on your real-time responses.',
+      sectionSubtitle: `Diagnostic, today’s plan, ${PRODUCT_FACTS.activeTaskTypes} question types, and a training report — without promising an official DET score.`,
+      adaptiveCatTitle: 'Practice mock',
+      adaptiveCatDesc: 'The server issues items and computes a training estimate on the 10–160 scale. Difficulty changes by stage; this is DET Academy’s model, not Duolingo’s algorithm.',
       typingTitle: 'DET Typing Trainer',
       typingDesc: 'High-speed touch typing trainer powered by the actual DET academic vocabulary bank.',
-      theoryTitle: 'Comprehensive Knowledge Base',
-      theoryDesc: '12 detailed guides, OREO essay templates, trap breakdowns, and image description formulas.',
-      certificateTitle: 'Verifiable Certificate',
-      certificateDesc: 'Automated verified credential with QR verification and subscore breakdown upon scoring 105+.',
-      liveFeedback: 'Strict DET Timers',
+      theoryTitle: 'Knowledge base',
+      theoryDesc: '16 lessons: exam structure, OREO essay templates, common traps, and photo description formulas.',
+      certificateTitle: 'Training report',
+      certificateDesc: 'A DET Academy report with QR verification and subscores. Not an official Duolingo certificate.',
+      liveFeedback: 'Server timers',
       instantCert: 'Instant score prediction',
-      taskTypesMvp: '9 Active Mechanics in MVP',
-      vocabCount: '200+ Academic Words',
+      taskTypesMvp: `${PRODUCT_FACTS.activeTaskTypes} question types`,
+      vocabCount: '506 academic words',
       certCondition: 'Issuance Criteria:',
       certReq: '100% Theory + Test ≥ 105',
     },
     comparison: {
-      title: 'WHY CHOOSE DUOLINGO ENGLISH TEST?',
-      subtitle: 'DET is 4x cheaper, faster, and accepted by 5,000+ top universities worldwide including Yale, Columbia, NYU, MIT.',
+      title: 'Why students choose DET',
+      subtitle: 'The Duolingo English Test is taken online in about an hour. The official DET registry lists 4,087 institutions — always confirm requirements with the university.',
       mapButton: 'DET University Map',
       feature: 'Metric',
       det: 'Duolingo English Test',
@@ -857,17 +1050,18 @@ export const translations: Record<Locale, Translations> = {
       detFormat: 'Online 24/7 from home',
       ieltsFormat: 'In-person test centers',
       duration: 'Duration',
-      detDuration: '~60 minutes',
+      detDuration: 'About 1 hour',
       ieltsDuration: '3–4 hours',
       results: 'Score Release',
       detResults: 'Within 48 hours',
       ieltsResults: '3–14 business days',
       recognition: 'Global Acceptance',
-      detRecognition: '5,000+ institutions (Ivy League, MIT)',
-      ieltsRecognition: '11,000+ institutions',
+      detRecognition: '4,087 institutions in the official DET registry',
+      ieltsRecognition: 'Wider recognition; depends on the program',
       sending: 'University Reporting',
       detSending: 'Unlimited free reports to all universities',
       ieltsSending: 'Paid fees per recipient (~$20+)',
+      footnote: 'Price, result SLA, and admission requirements change. Treat these figures as a snapshot and confirm on englishtest.duolingo.com.',
     },
     demo: {
       title: 'Mini-Trainer: Read and Select',
@@ -883,7 +1077,7 @@ export const translations: Record<Locale, Translations> = {
       fakeWord: 'Pseudo-word',
       score: 'Your Score',
       completed: 'Demo completed!',
-      tryFull: 'Start Full DET Simulator',
+      tryFull: 'Start diagnostic',
       retry: 'Take Demo Again',
       correctPrefix: 'Correct!',
       errorPrefix: 'Incorrect!',
@@ -902,12 +1096,14 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Learn More',
     },
     cookie: {
-      text: 'We use cookies to personalize test sessions and preserve your adaptive testing progress.',
-      accept: 'Accept & Continue',
+      text: 'Essential cookies keep you signed in. Progress lives in your account and this browser’s localStorage — it does not “personalize adaptive testing”.',
+      accept: 'Accept',
+      decline: 'Essential only',
+      privacy: 'Data policy',
     },
     footer: {
-      tagline: 'Leading independent adaptive EdTech platform for Duolingo English Test preparation.',
-      rules: `Strict compliance with ${YEAR} Duolingo protocols`,
+      tagline: 'Independent DET prep: diagnostic, daily plan, and training mocks.',
+      rules: `Question types follow the published DET structure for ${YEAR}`,
       rights: 'All rights reserved.',
       disclaimer: 'DET Academy is an independent educational platform and is not affiliated with Duolingo, Inc.',
       description: 'Independent EdTech prep platform for the Duolingo English Test. Not officially affiliated with Duolingo Inc.',
@@ -958,24 +1154,24 @@ export const translations: Record<Locale, Translations> = {
       demoStudentBtn: 'Student Alex Rivera (100% Theory + Score 125)',
       demoAdminBtn: 'Administrator (CRM Panel + Management)',
       guardTitle: 'Registration Required',
-      guardSubtitle: 'To save your personal progress, compute estimated scores on the 10–160 DET scale, and generate verifiable certificates, please sign in or create an account.',
-      guardSyncTitle: 'Cloud Sync',
-      guardSyncDesc: 'Preserve lesson progress and quiz submissions in the cloud',
-      guardCatTitle: 'CAT Engine',
-      guardCatDesc: 'Computer adaptive scoring benchmarked to official standards',
-      guardCertTitle: 'Certificate',
-      guardCertDesc: 'Public verifiable credential with unique QR code for universities',
+      guardSubtitle: 'Sign in to save progress, take the diagnostic, and receive a DET Academy training report.',
+      guardSyncTitle: 'Cloud sync',
+      guardSyncDesc: 'Lesson and attempt progress is stored on the server',
+      guardCatTitle: 'Practice mock',
+      guardCatDesc: 'The server computes a 10–160 training estimate',
+      guardCertTitle: 'Report',
+      guardCertDesc: 'A platform training report, not an official DET score',
       guardActionBtn: 'Sign In or Register',
     },
     institutions: {
       badge: 'Worldwide University Acceptance',
-      countTag: '• 12,000+ Global Institutions',
+      countTag: '• 4,087 institutions in the official DET registry',
       title: 'Universities Accepting DET',
-      subtitle: 'Discover world-leading universities accepting Duolingo English Test certificates. Filter by minimum cutoff scores, countries, and Ivy League status.',
-      statsWorld: '12,000+',
-      statsWorldLabel: 'Global Institutions',
-      statsIvy: '100%',
-      statsIvyLabel: 'Ivy League Universities',
+      subtitle: 'Catalogue from the official DET registry. Score thresholds, when shown, are platform estimates — confirm them with admissions.',
+      statsWorld: '4,087',
+      statsWorldLabel: 'DET registry entries',
+      statsIvy: 'Unconfirmed',
+      statsIvyLabel: 'Thresholds are not university-verified',
       statsAvg: '115–125',
       statsAvgLabel: 'Average Cutoff',
       statsReports: '$0',
@@ -987,12 +1183,12 @@ export const translations: Record<Locale, Translations> = {
       scoreAny: 'Any DET Score (105+)',
       score115: 'From 115 points',
       score120: 'From 120 points',
-      score125: 'From 125 points (Ivy League / MIT)',
-      score130: 'From 130 points (NYU / Top Tier)',
+      score125: 'From 125 points',
+      score130: 'From 130 points',
       subscoreFilterLabel: 'Subscore Requirements:',
       subscoreAny: 'No Subscore Restrictions',
-      subscoreWriting120: 'Writing (Production) ≥ 120 (Canada U15, UBC)',
-      subscoreLiteracy120: 'Literacy (Reading/Writing) ≥ 120 (MIT, Harvard)',
+      subscoreWriting120: 'Writing (Production) ≥ 120',
+      subscoreLiteracy120: 'Literacy (Reading/Writing) ≥ 120',
       subscoreAll115: 'All Subscores ≥ 115 (Strict Requirements)',
       subscoreConversation120: 'Conversation (Spoken/Listening) ≥ 120',
       mapHeading: 'Interactive Global Universities Map',
@@ -1009,7 +1205,7 @@ export const translations: Record<Locale, Translations> = {
       acceptanceLabel: 'Acceptance:',
       ctaBadge: 'Check Your Admissions Score',
       ctaTitle: 'Is Your Score High Enough for Admission?',
-      ctaDesc: 'Take our CAT Engine simulation test on DET Academy. Our computer adaptive algorithm calculates your estimated score on the official 160-point scale in 45 minutes.',
+      ctaDesc: 'Take the DET Academy diagnostic (~20 min) or a full mock (~1 hour). The server computes a training estimate on the 10–160 scale.',
       ctaTestBtn: 'Start Test Simulator',
       ctaTheoryBtn: 'Explore Test Strategies',
       mapLoading: 'Initializing interactive global university map...',
@@ -1021,7 +1217,7 @@ export const translations: Record<Locale, Translations> = {
       subtitle: 'Master fast touch typing without looking at the keyboard using authentic DET academic vocabulary and essay excerpts.',
       modeTime: 'Time',
       modeWords: 'Words',
-      detPack: 'DET Academic Pack (200+)',
+      detPack: 'DET Academic Pack (506)',
       stdPack: 'English Core 100',
       soundToggle: 'Toggle mechanical keyboard clicks',
       liveWpm: 'Live:',
@@ -1070,15 +1266,15 @@ export const translations: Record<Locale, Translations> = {
       nextLesson: 'Next Lesson',
     },
     testLobby: {
-      engineBadge: 'Duolingo English Test CAT Engine',
-      scoringTag: '• Scale 10–160',
-      title: 'DET Exam Simulator',
-      subtitle: 'Complete adaptive exam experience with 9 active mechanics, server-grade timers, and granular subscore evaluation.',
+      engineBadge: 'DET Academy Mock',
+      scoringTag: '• Training estimate 10–160',
+      title: 'DET practice mock',
+      subtitle: `A full mock with ${PRODUCT_FACTS.activeTaskTypes} question types, server timers, and training subscores. This is a DET Academy estimate, not an official Duolingo result.`,
       sessionBadge: 'Testing Session',
       sessionTitle: 'Session Configuration',
       nameLabel: 'Full Candidate Name (Latin characters):',
       namePlaceholder: 'e.g. John Doe',
-      nameHint: 'Will appear exactly as typed on your official certificate.',
+      nameHint: 'Will appear on your DET Academy training report.',
       rulesTitle: 'Exam Guidelines:',
       rule1: '• Scratch paper and pens are strictly prohibited.',
       rule2: '• Keep eyes focused on the monitor at all times.',
@@ -1087,7 +1283,7 @@ export const translations: Record<Locale, Translations> = {
       compositionTitle: 'Exam Test Structure',
       mvpStatusLabel: 'MVP Status',
       statusActive: 'Active',
-      statusComingSoon: 'Coming Soon (Microphone)',
+      statusComingSoon: 'In progress',
     },
     testSession: {
       stepLabel: 'Step',
@@ -1143,7 +1339,7 @@ export const translations: Record<Locale, Translations> = {
       title: 'DET Test Results',
       overallLabel: 'Training Overall Estimate',
       scaleNote: `DET Academy training scale (10–160, step 5) • Range: `,
-      highScoreNote: 'Outstanding (C1 Advanced) — competitive for Yale, MIT, Columbia',
+      highScoreNote: 'A strong training result. Confirm the specific program’s requirements — we do not certify university cutoffs.',
       midScoreNote: 'Good (B2 Upper-Intermediate) — qualifies for most global universities',
       lowScoreNote: 'Further vocabulary and strategy review recommended',
       subscoresLabel: 'Training DET-style subscores:',
@@ -1160,19 +1356,107 @@ export const translations: Record<Locale, Translations> = {
     },
     certificate: {
       officialBadge: 'DET Academy Training Report',
-      verifiedTag: 'Verified',
-      certIdLabel: 'Certificate ID:',
+      verifiedTag: 'In platform registry',
+      certIdLabel: 'Report ID:',
       issueDateLabel: 'Date Issued:',
       printPdfBtn: 'Print / Save PDF',
-      awardedTo: 'This certificate is proudly awarded to',
-      awardReason: `for successfully completing the full curriculum of DET Academy and demonstrating high proficiency on the adaptive test simulation according to ${YEAR} examination standards.`,
-      verifiedScoreLabel: 'Verified Overall DET Score',
-      scaleExplanation: 'Scale 10–160 (increments of 5). Score prediction conforms to empirical Duolingo English Test distributions.',
-      boardTitle: 'DET Academy Examination Board',
-      boardSubtitle: 'Accredited Automated Evaluation Engine',
-      qrLabel: 'QR VERIFY',
-      authenticatedRecord: '✓ Authenticated Record',
-      verifyingTitle: 'Verifying certificate authenticity...',
+      awardedTo: 'Training report issued to',
+      awardReason: `for completing the DET Academy curriculum and practice mock. This is a platform estimate, not an official Duolingo English Test score.`,
+      verifiedScoreLabel: 'Training Overall estimate',
+      scaleExplanation: 'DET Academy scale 10–160 (step 5). A study guide, not a calibrated official score.',
+      boardTitle: 'DET Academy',
+      boardSubtitle: 'Independent training platform',
+      qrLabel: 'QR',
+      authenticatedRecord: 'Record in the DET Academy registry',
+      verifyingTitle: 'Verifying report...',
+    },
+    dashboard: {
+      personalPlan: 'Today’s plan',
+      candidateFallback: 'Student',
+      examReadiness: 'Exam readiness: ',
+      noData: 'no data',
+      theoryLabel: 'Theory (16 lessons)',
+      mockLabel: 'Practice mock',
+      typingLabel: 'Typing',
+      todayTitle: 'Tasks for today',
+      daysLeft: 'days until the exam',
+      budget: 'Budget',
+      diagnosticCta: 'Take diagnostic (~20 min)',
+      mockCta: 'Full mock (~1 hour)',
+      typingCta: 'Practice typing',
+      taskCompleted: 'Completed via a learning event',
+      openTask: 'Open task',
+      leagueLoading: 'Loading this week’s league…',
+      leagueEmpty: 'The league appears after your first learning event.',
+      leagueError: 'Could not load the league. Refresh the page.',
+      badgePrep: 'Prep dashboard',
+      badgeSecurity: 'Security and profile',
+      goalLabel: 'Goal:',
+      remainingTitle: 'What’s left',
+      hoursLeft: 'h to finish',
+      theoryModules: 'Theory modules',
+      remainingLessons: 'Still to study',
+      lessonsShort: 'lsn',
+      controlTest: 'Checkpoint mock',
+      scoreMet: 'Threshold met (≥105)',
+      scoreNeeded: 'Need a score ≥ 105',
+      inProgress: 'In progress',
+      reportsTitle: 'DET Academy reports',
+      reportsHint: 'A report exists only after the server issues it. Local scores and theory progress do not create a document.',
+      verifyById: 'Verify a report by ID',
+      lessons16: '16 lessons',
+      test105: 'Test 105+',
+      nextStep: 'Recommended next step',
+      goToLesson: 'Open lesson',
+      radarSubscores: 'DET Academy training subscores',
+      radarSkills: 'Four skills (Reading, Listening, Writing, Speaking)',
+      fromLastSession: 'From the latest completed session',
+      takeTestForScores: 'Take a practice mock to see training subscores',
+      overallScore: 'Overall estimate',
+      awaitingTest: 'Waiting for a test',
+      vocabTrainer: 'Vocabulary trainer',
+      srsTitle: 'Academic vocabulary (SRS)',
+      srsDesc: 'Academic Word List cards with audio and collocations for Writing and Speaking.',
+      openVocab: 'Open word trainer',
+      curriculum: 'Curriculum (16 modules)',
+      studiedOf: 'Completed',
+      markDone: 'Mark as completed',
+      markUndone: 'Mark as not completed',
+      minutesShort: 'min',
+      openLesson: 'Open lesson',
+      historyTitle: 'Mock history',
+      historyHint: 'Completed sessions with training subscores.',
+      newTest: 'Start a new mock',
+      emptyHistory: 'You have not taken a practice mock yet',
+      emptyHistoryHint: 'DET Academy scores the mock on the server. This is not Duolingo’s official algorithm.',
+      colDate: 'Session date',
+      colScore: 'Overall estimate',
+      colStatus: 'Status',
+      recently: 'Recently',
+      trainingLevel: 'Training level',
+      minPerDay: 'min/day',
+      renameProfile: 'Rename profile',
+    },
+    diagnostic: {
+      title: 'Four-skill diagnostic',
+      subtitle: 'A shorter exam covering Reading, Listening, Writing and Speaking. You get a range, data completeness, and the next gaps to close.',
+      timeTitle: '15–25 minutes',
+      timeDesc: 'Fewer items than a full mock',
+      skillsTitle: '4 skills',
+      skillsDesc: 'Unmeasured stays unmeasured',
+      serverTitle: 'Server result',
+      serverDesc: 'The server scores — not the browser',
+      disclaimer: 'The diagnostic is a DET Academy training estimate, not an official Duolingo score.',
+      start: 'Start diagnostic',
+      creating: 'Creating diagnostic…',
+      createFailed: 'The server did not create a diagnostic attempt',
+    },
+    practiceHub: {
+      badge: 'DET drills',
+      title: 'Free practice',
+      subtitle: 'Drill DET item types with timers. The recommended path is the dashboard queue — those activities update your plan.',
+      mockBanner: 'When you are ready, start a full mock from the lobby — not from an abandoned session.',
+      mockCta: 'Open mock lobby',
     },
   },
 };

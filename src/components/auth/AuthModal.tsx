@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { X, Lock, Mail, User, Info } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -27,6 +28,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { setCandidateName, syncWithBackend } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
+  const router = useRouter();
+
+  const finishAuth = () => {
+    onClose();
+    router.push('/dashboard');
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -78,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (ok) {
         setCandidateName(name);
         syncWithBackend();
-        onClose();
+        finishAuth();
       }
     } else {
       const ok = await login(email, password);
@@ -86,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const u = useAuthStore.getState().user;
         if (u) setCandidateName(u.name);
         syncWithBackend();
-        onClose();
+        finishAuth();
       }
     }
   };

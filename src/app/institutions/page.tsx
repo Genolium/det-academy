@@ -82,7 +82,7 @@ export default function InstitutionsPage() {
             }`}
           >
             <BookOpen className="w-4 h-4 text-[#D2F544]" />
-            Официальный реестр (4,087 вузов)
+            {locale === 'ru' ? 'Официальный реестр (4 087 вузов)' : 'Official registry (4,087 institutions)'}
           </button>
 
           <button
@@ -94,7 +94,7 @@ export default function InstitutionsPage() {
             }`}
           >
             <Map className="w-4 h-4 text-[#D2F544]" />
-            Интерактивная карта (проверенные координаты)
+            {locale === 'ru' ? 'Карта с проверенными координатами' : 'Map with verified coordinates'}
           </button>
         </div>
 
@@ -121,11 +121,9 @@ export default function InstitutionsPage() {
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/test">
-                <Button variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
-                  {t.ctaTestBtn}
-                </Button>
-              </Link>
+              <Button href="/diagnostic" variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
+                {t.ctaTestBtn}
+              </Button>
               <Link href="/theory">
                 <button className="px-6 py-3.5 rounded-full text-xs font-bold text-neutral-300 hover:text-white border border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer">
                   {t.ctaTheoryBtn}

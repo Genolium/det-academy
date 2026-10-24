@@ -37,7 +37,10 @@ export const CookieConsent: React.FC = () => {
           <Cookie className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
         <p className="text-xs text-neutral-300 leading-relaxed text-center sm:text-left">
-          {t.text}
+          {t.text}{' '}
+          <a href="/privacy" className="underline text-white/80 hover:text-white">
+            {t.privacy}
+          </a>
         </p>
       </div>
       <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end shrink-0">
@@ -48,7 +51,7 @@ export const CookieConsent: React.FC = () => {
           }}
           className="w-full sm:w-auto border border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold px-4 py-2 rounded-full transition-colors whitespace-nowrap text-center cursor-pointer"
         >
-          {locale === 'ru' ? 'Отклонить' : 'Decline'}
+          {t.decline}
         </button>
         <button
           onClick={() => {

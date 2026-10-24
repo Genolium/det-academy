@@ -13,18 +13,26 @@ import { LocaleSync } from '@/components/system/LocaleSync';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  subsets: ['latin', 'cyrillic'],
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
-  subsets: ['latin'],
+  subsets: ['latin', 'cyrillic'],
 });
 
 export const metadata: Metadata = {
   title: 'DET Academy | Интерактивная платформа подготовки к Duolingo English Test',
   description: `Подготовка к Duolingo English Test по актуальным стандартам ${new Date().getFullYear()}. Диагностика, персональный план, тренажёры, пробные тесты и разбор ошибок.`,
   metadataBase: new URL('https://det-academy.ru'),
+  openGraph: {
+    title: 'DET Academy',
+    description: 'Диагностика, план на сегодня и тренировочный пробный тест DET. Оценка платформы, не официальный балл Duolingo.',
+    url: 'https://det-academy.ru',
+    siteName: 'DET Academy',
+    locale: 'ru_RU',
+    type: 'website',
+  },
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [

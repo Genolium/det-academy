@@ -11,9 +11,9 @@ export default function Home() {
       <HeroSection />
       <BentoGrid />
       <ComparisonTable />
-      <SparkPromo />
       <DemoWidget />
       <AdBanner placement="FOOTER" />
+      <SparkPromo />
     </div>
   );
 }

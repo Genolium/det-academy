@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { hasAuthSession } from '@/lib/auth-session';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -21,7 +22,7 @@ export const AuthRequiredGuard: React.FC<AuthRequiredGuardProps> = ({
   subtitle,
   badge = 'Private Educational Area',
 }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
 
@@ -32,10 +33,13 @@ export const AuthRequiredGuard: React.FC<AuthRequiredGuardProps> = ({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  const waitingForSession = !mounted || isLoading || (!isAuthenticated && hasAuthSession());
+
+  if (waitingForSession) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-live="polite">
         <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#0C2418] rounded-full animate-spin" />
+        <span className="sr-only">{locale === 'ru' ? 'Проверяем сессию' : 'Checking session'}</span>
       </div>
     );
   }

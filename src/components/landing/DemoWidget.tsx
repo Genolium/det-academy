@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { PillBadge } from '@/components/ui/PillBadge';
@@ -237,11 +236,9 @@ export const DemoWidget: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/test">
-                <Button variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
-                  {t.tryFull}
-                </Button>
-              </Link>
+              <Button href="/diagnostic" variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
+                {t.tryFull}
+              </Button>
               <button
                 onClick={restart}
                 className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white px-4 py-3 rounded-full border border-neutral-700 hover:border-neutral-500 cursor-pointer transition-colors"

@@ -2,11 +2,11 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Award, ShieldCheck, Download, Printer, CheckCircle, ExternalLink } from 'lucide-react';
+import { Award, Printer, CheckCircle } from 'lucide-react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
+import { verifyUrl } from '@/lib/product-facts';
 
 export interface CertificateData {
   id: string;
@@ -27,6 +27,8 @@ interface CertificateViewProps {
 export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
   const { locale } = useSettingsStore();
   const t = translations[locale].certificate;
+  const reportUrl = verifyUrl(data.id);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(reportUrl)}`;
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -92,8 +94,8 @@ export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
               <h2 className="text-2xl font-black uppercase tracking-tight text-neutral-900">
                 DET ACADEMY
               </h2>
-              <span className="text-xs uppercase tracking-widest text-neutral-500 font-bold block">
-                Certificate of Simulation Proficiency
+              <span className="text-xs tracking-wide text-neutral-500 font-semibold block">
+                {t.officialBadge}
               </span>
             </div>
           </div>
@@ -163,13 +165,15 @@ export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 bg-neutral-900 text-[#D2F544] p-1.5 rounded-xl font-mono text-[9px] flex flex-col items-center justify-center font-bold text-center">
-              <span>{t.qrLabel}</span>
-              <span className="text-[7px] text-white">ID: {data.id.slice(0, 8)}</span>
-            </div>
+            <a href={reportUrl} className="shrink-0 rounded-xl overflow-hidden border border-neutral-200 bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrSrc} width={56} height={56} alt={t.qrLabel} />
+            </a>
             <div className="text-[11px]">
               <span className="text-emerald-700 font-bold block">{t.authenticatedRecord}</span>
-              <span>det-academy.org/verify/{data.id}</span>
+              <a href={reportUrl} className="underline break-all">
+                {reportUrl.replace('https://', '')}
+              </a>
             </div>
           </div>
         </div>

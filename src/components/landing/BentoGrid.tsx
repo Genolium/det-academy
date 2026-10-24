@@ -33,7 +33,7 @@ export const BentoGrid: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Lead Accent Card: Electric Lime (7 cols) */}
         <BentoCard variant="lime" className="md:col-span-7 flex flex-col justify-between group cursor-pointer relative overflow-hidden">
-          <Link href="/test" className="block h-full">
+          <Link href="/diagnostic" className="block h-full">
             <div className="flex items-center justify-between mb-8">
               <PillBadge variant="dark" prefixHash>
                 #CAT ENGINE
@@ -80,7 +80,7 @@ export const BentoGrid: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs text-[#D2F544] font-mono">
                 <Keyboard className="w-4 h-4" />
-                <span>WPM: 85+ • Acc: 98%</span>
+                <span>{locale === 'ru' ? 'Слепая печать для эссе DET' : 'Touch typing for DET essays'}</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold uppercase text-white">
                 {t.typingTitle}

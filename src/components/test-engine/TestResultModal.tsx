@@ -497,9 +497,10 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                     <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400">
                       {item.questionType.replaceAll('_', ' ')}
                     </span>
-                    {item.status === 'COMPLETED' ? (
+                      {item.status === 'COMPLETED' ? (
                       <span className="text-xs font-black text-[#D2F544]">
                         {Math.round(item.score * 100)}% · {item.cefrLevel}
+                        {typeof item.previousScore === 'number' ? ` · ${item.scoreDelta && item.scoreDelta > 0 ? '+' : ''}${Math.round((item.scoreDelta || 0) * 100)}` : ''}
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold text-amber-300">оценка недоступна</span>

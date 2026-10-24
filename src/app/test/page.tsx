@@ -50,16 +50,16 @@ export default function TestLobbyPage() {
     { title: 'Interactive Writing', timing: locale === 'ru' ? '5 мин + 3 мин follow-up' : '5 min + 3 min follow-up', status: 'Active' },
     { title: 'Writing Sample', timing: locale === 'ru' ? '5 минут (100+ слов)' : '5 minutes (100+ words)', status: 'Active' },
     { title: 'Speak About the Photo', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
-    { title: 'Read / Listen, Then Speak', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Coming Soon' },
-    { title: 'Interactive Speaking', timing: locale === 'ru' ? '35с на вопрос' : '35s per prompt', status: 'Coming Soon' },
+    { title: 'Read / Listen, Then Speak', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
+    { title: 'Interactive Speaking', timing: locale === 'ru' ? '35с на вопрос' : '35s per prompt', status: 'Active' },
     { title: 'Speaking Sample', timing: locale === 'ru' ? '3 минуты' : '3 minutes', status: 'Active' },
   ];
 
   return (
     <AuthRequiredGuard
-      title={locale === 'ru' ? 'Симулятор теста доступен только после регистрации' : 'Test simulator requires authentication'}
-      subtitle={locale === 'ru' ? 'Для запуска Computer Adaptive Testing (CAT), фиксации серверных таймингов, оценки сабскоров и выдачи официального сертификата требуется авторизация.' : 'Log in or create an account to start computer adaptive testing, record certified timings, and receive your certificate.'}
-      badge="DET Simulation Engine"
+      title={locale === 'ru' ? 'Пробный тест доступен после регистрации' : 'The practice mock requires an account'}
+      subtitle={locale === 'ru' ? 'Авторизация нужна, чтобы сервер выдал задания, записал таймеры и сохранил тренировочный отчёт DET Academy.' : 'Sign in so the server can issue items, keep timers, and store a DET Academy training report.'}
+      badge="DET Academy Mock"
     >
       <div className="min-h-screen py-12 ambient-glow">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">

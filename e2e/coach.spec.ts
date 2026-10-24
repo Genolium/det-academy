@@ -49,7 +49,7 @@ test.describe('speaking/writing coach', () => {
               status: 'COMPLETED',
               score: 0.72,
               cefrLevel: 'B2',
-              provider: 'rule-based',
+              provider: 'practice_feedback',
               evaluatorVersion: '2026.1',
               feedback: 'Усильте аргументацию примерами.',
               recommendations: [],

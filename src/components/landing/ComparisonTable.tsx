@@ -49,7 +49,6 @@ export const ComparisonTable: React.FC = () => {
             <div className="col-span-4 sm:col-span-4">{t.feature}</div>
             <div className="col-span-4 sm:col-span-4 text-[#D2F544] flex items-center gap-1.5">
               <span>{t.det}</span>
-              <span className="hidden sm:inline bg-[#D2F544] text-[#0C2418] text-[10px] px-2 py-0.5 rounded-full font-black">WIN</span>
             </div>
             <div className="col-span-4 sm:col-span-4 text-neutral-400">{t.ielts}</div>
           </div>
@@ -61,9 +60,13 @@ export const ComparisonTable: React.FC = () => {
                 className="grid grid-cols-12 p-4 sm:p-5 text-xs sm:text-sm items-center hover:bg-neutral-50/70 transition-colors"
               >
                 <div className="col-span-4 font-semibold text-neutral-900">{row.label}</div>
-                <div className="col-span-4 font-bold text-emerald-700 flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5 text-emerald-700" />
+                <div className={`col-span-4 font-bold flex items-center gap-2 ${row.detWin ? 'text-emerald-700' : 'text-neutral-800'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${row.detWin ? 'bg-emerald-100' : 'bg-neutral-100'}`}>
+                    {row.detWin ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-700" />
+                    ) : (
+                      <span className="text-neutral-400 text-xs">•</span>
+                    )}
                   </div>
                   <span>{row.det}</span>
                 </div>
@@ -77,6 +80,9 @@ export const ComparisonTable: React.FC = () => {
             ))}
           </div>
         </div>
+        <p className="text-xs text-neutral-500 max-w-2xl mx-auto mt-6 text-center leading-relaxed">
+          {t.footnote}
+        </p>
       </div>
     </section>
   );

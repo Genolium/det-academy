@@ -30,16 +30,16 @@ import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { translations } from '@/lib/translations';
 
 export default function PracticeHubPage() {
   const { user, isAuthenticated } = useAuthStore();
-  const { strictMode, setStrictMode } = useSettingsStore();
+  const { locale, strictMode, setStrictMode } = useSettingsStore();
+  const hub = translations[locale].practiceHub;
   const [activeDrillSlug, setActiveDrillSlug] = useState<string | null>(null);
   const [drillCounter, setDrillCounter] = useState(0);
   const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
-  const [inspectorText, setInspectorText] = useState(
-    'In my opinion, higher education represents a pivotal catalyst for modern socioeconomic mobility. This is primarily because university curricula foster advanced critical thinking and empirical inquiry. For instance, recent studies demonstrate that graduates adapt substantially faster to automated digital environments. Ultimately, governments must prioritize equitable access to tertiary learning.'
-  );
+  const [inspectorText, setInspectorText] = useState('');
 
   const { errors } = useErrorNotebookStore();
   const unmasteredErrors = errors.filter((error) => !error.mastered).length;
@@ -167,14 +167,14 @@ export default function PracticeHubPage() {
 
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <PillBadge variant="mint" prefixHash className="mb-4">
-            Тренажеры DET
+          <PillBadge variant="mint" className="mb-4">
+            {hub.badge}
           </PillBadge>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#0E1012] tracking-tight mb-4">
-            Тренажеры свободной практики
+          <h1 className="text-3xl sm:text-5xl font-semibold text-brand-obsidian tracking-tight mb-4">
+            {hub.title}
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-            Отрабатывайте все типы заданий Duolingo English Test в изолированном интерактивном режиме с таймерами и детальной диагностикой.
+            {hub.subtitle}
           </p>
         </div>
 
@@ -235,6 +235,7 @@ export default function PracticeHubPage() {
                     rows={5}
                     value={inspectorText}
                     onChange={(e) => setInspectorText(e.target.value)}
+                    placeholder={locale === 'ru' ? 'Напишите свой черновик здесь — инспектор не подставляет готовое эссе.' : 'Write your draft here — the inspector does not seed a model essay.'}
                     className="w-full bg-neutral-950 border border-neutral-700 focus:border-[#D2F544] rounded-xl p-3.5 text-white text-xs outline-none leading-relaxed"
                   />
                 </div>
@@ -316,18 +317,13 @@ export default function PracticeHubPage() {
             <PillBadge variant="mint" className="mb-3">
               Full Computer Adaptive Test
             </PillBadge>
-            <h2 className="text-2xl font-black text-white mb-2">
-              Готовы проверить себя в боевых условиях?
+            <h2 className="text-2xl font-semibold text-white mb-2">
+              {hub.mockBanner}
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-400 max-w-xl">
-              Пройдите полный 60-минутный адаптивный симулятор DET со сквозным скорингом (10–160), расчетом всех 4 сабскоров и выдачей верифицируемого сертификата.
-            </p>
           </div>
-          <Link href="/test/session">
-            <Button size="lg" className="bg-[#D2F544] text-neutral-900 font-black hover:bg-[#c3e839] whitespace-nowrap">
-              Начать полный экзамен
-            </Button>
-          </Link>
+          <Button href="/test" size="lg" className="whitespace-nowrap">
+            {hub.mockCta}
+          </Button>
         </div>
 
         {/* Error Bank Modal */}

@@ -100,6 +100,16 @@ export const Navbar: React.FC = () => {
   const isAdmin = user?.role === 'admin';
 
   const navLinks = [
+    ...(isAuthenticated
+      ? [
+          {
+            href: '/dashboard',
+            label: t.dashboard,
+            icon: LayoutDashboard,
+            isActive: pathname.startsWith('/dashboard'),
+          },
+        ]
+      : []),
     {
       href: '/theory',
       label: t.theory,
@@ -114,7 +124,7 @@ export const Navbar: React.FC = () => {
     },
     {
       href: '/vocabulary',
-      label: locale === 'ru' ? 'Словарь' : 'Vocabulary',
+      label: t.vocabulary,
       icon: BookOpen,
       isActive: pathname.startsWith('/vocabulary'),
     },
@@ -123,12 +133,6 @@ export const Navbar: React.FC = () => {
       label: t.institutions,
       icon: MapPin,
       isActive: pathname.startsWith('/institutions'),
-    },
-    {
-      href: '/arena',
-      label: t.arena,
-      icon: Swords,
-      isActive: pathname.startsWith('/arena'),
     },
   ];
 
@@ -162,8 +166,8 @@ export const Navbar: React.FC = () => {
               <span className="font-extrabold text-base tracking-tight text-[#0E1012] flex items-center gap-1.5 leading-none">
                 DET <span className="bg-[#D2F544] text-[#0C2418] text-[10px] px-1.5 py-0.5 rounded-full font-black tracking-normal">ACADEMY</span>
               </span>
-              <span className="text-[9px] uppercase font-semibold text-neutral-600 tracking-wider mt-0.5">
-                Prep Platform
+              <span className="text-[9px] font-semibold text-neutral-600 tracking-wider mt-0.5">
+                {locale === 'ru' ? 'Подготовка к DET' : 'DET prep'}
               </span>
             </div>
           </Link>
@@ -238,7 +242,7 @@ export const Navbar: React.FC = () => {
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="px-3 py-2 border-b border-neutral-100">
-                      <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || 'Пользователь'}</p>
+                      <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || (locale === 'ru' ? 'Студент' : 'Student')}</p>
                       <p className="text-[10px] text-neutral-500 truncate">{user.email}</p>
                     </div>
 
@@ -248,7 +252,16 @@ export const Navbar: React.FC = () => {
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
                     >
                       <GraduationCap className="w-3.5 h-3.5 text-[#86ab0d]" />
-                      <span>{locale === 'ru' ? 'Учебный дашборд' : 'Learning Dashboard'}</span>
+                      <span>{t.dashboard}</span>
+                    </Link>
+
+                    <Link
+                      href="/arena"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
+                    >
+                      <Swords className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>{t.arena}</span>
                     </Link>
 
                     <Link
@@ -307,19 +320,19 @@ export const Navbar: React.FC = () => {
 
             {/* Primary Action Button (Test) */}
             <Link
-              href="/test"
-              className={`hidden sm:inline-flex items-center gap-1 sm:gap-1.5 bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-black tracking-wide uppercase transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-sm border border-[#C4F22C]`}
+              href={isAuthenticated ? '/dashboard' : '/diagnostic'}
+              className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 bg-brand-lime hover:bg-brand-lime-hover text-brand-forest px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-bold tracking-wide transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-sm border border-[#C4F22C]"
             >
-              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#0C2418]" />
-              <span className="hidden sm:inline">{t.freeMock}</span>
-              <span className="sm:hidden">Тест</span>
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-brand-forest" />
+              <span className="hidden sm:inline">{isAuthenticated ? t.dashboard : t.freeMock}</span>
+              <span className="sm:hidden">{isAuthenticated ? t.dashboard : t.login}</span>
             </Link>
 
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-1.5 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:text-black hover:border-black transition-colors cursor-pointer shrink-0"
-              aria-label="Toggle mobile menu"
+              aria-label={locale === 'ru' ? 'Открыть меню' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -368,12 +381,12 @@ export const Navbar: React.FC = () => {
             {/* Test Link in Mobile Menu */}
             <div className="pt-1">
               <Link
-                href="/test"
+                href={isAuthenticated ? '/dashboard' : '/diagnostic'}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 text-xs font-bold transition-all shadow-sm"
               >
-                <Sparkles className="w-4 h-4 text-[#D2F544]" />
-                <span>{t.freeMock}</span>
+                <Sparkles className="w-4 h-4 text-brand-lime" />
+                <span>{isAuthenticated ? t.dashboard : t.freeMock}</span>
               </Link>
             </div>
 
@@ -382,7 +395,7 @@ export const Navbar: React.FC = () => {
               {isAuthenticated && user ? (
                 <div className="space-y-2 px-1">
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-                    <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || 'Пользователь'}</p>
+                    <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || (locale === 'ru' ? 'Студент' : 'Student')}</p>
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
@@ -399,7 +412,7 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2 text-xs font-bold text-neutral-800 hover:text-black py-1"
                   >
                     <GraduationCap className="w-4 h-4 text-[#86ab0d]" />
-                    <span>{locale === 'ru' ? 'Учебный дашборд' : 'Dashboard'}</span>
+                    <span>{t.dashboard}</span>
                   </Link>
                   <Link
                     href="/profile"

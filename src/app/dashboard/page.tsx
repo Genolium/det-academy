@@ -43,22 +43,37 @@ import {
 } from 'lucide-react';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
+import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
+import { translations } from '@/lib/translations';
 
-const CATEGORY_NAMES: Record<string, string> = {
-  all: 'Все разделы',
-  rules: 'Регламент',
-  vocab: 'Словарь',
-  listening: 'Аудирование',
-  interactive: 'Чтение',
-  images: 'Фотографии',
-  writing: 'Письмо и эссе',
-  speaking: 'Устная речь',
+const CATEGORY_NAMES: Record<'ru' | 'en', Record<string, string>> = {
+  ru: {
+    all: 'Все разделы',
+    rules: 'Регламент',
+    vocab: 'Словарь',
+    listening: 'Аудирование',
+    interactive: 'Чтение',
+    images: 'Фотографии',
+    writing: 'Письмо и эссе',
+    speaking: 'Устная речь',
+  },
+  en: {
+    all: 'All sections',
+    rules: 'Rules',
+    vocab: 'Vocabulary',
+    listening: 'Listening',
+    interactive: 'Reading',
+    images: 'Photos',
+    writing: 'Writing',
+    speaking: 'Speaking',
+  },
 };
 
 function DashboardContent() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const locale = useSettingsStore((state) => state.locale);
+  const d = translations[locale].dashboard;
   const {
     completedLessons,
     testResults,
@@ -72,7 +87,6 @@ function DashboardContent() {
     setTargetDate,
     setDailyMinutes,
     loadStudyPlan,
-    completeDailyTask,
     toggleLessonCompleted,
     syncWithBackend,
     getBestMockScore,
@@ -178,14 +192,14 @@ function DashboardContent() {
           <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold shrink-0">
             <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-3 sm:py-4 whitespace-nowrap">
               <GraduationCap className="w-4 h-4" />
-              <span>Дашборд подготовки</span>
+              <span>{d.badgePrep}</span>
             </span>
             <Link
               href="/profile"
               className="text-neutral-400 hover:text-white flex items-center gap-2 py-3 sm:py-4 transition-colors whitespace-nowrap"
             >
               <Settings className="w-4 h-4" />
-              <span>Безопасность и профиль</span>
+              <span>{d.badgeSecurity}</span>
             </Link>
           </div>
 
@@ -193,9 +207,9 @@ function DashboardContent() {
             {/* Target Score */}
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />
-              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Цель:</span>
+              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">{d.goalLabel}</span>
               <select
-                aria-label="Целевой балл DET"
+                aria-label={d.goalLabel}
                 value={targetScore}
                 onChange={(e) => setTargetScore(Number(e.target.value))}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
@@ -230,10 +244,10 @@ function DashboardContent() {
                 onChange={(e) => setDailyMinutes(Number(e.target.value))}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
               >
-                <option value={30} className="bg-[#0E1012]">30 мин/день</option>
-                <option value={45} className="bg-[#0E1012]">45 мин/день</option>
-                <option value={60} className="bg-[#0E1012]">60 мин/день</option>
-                <option value={90} className="bg-[#0E1012]">90 мин/день</option>
+                <option value={30} className="bg-[#0E1012]">30 {d.minPerDay}</option>
+                <option value={45} className="bg-[#0E1012]">45 {d.minPerDay}</option>
+                <option value={60} className="bg-[#0E1012]">60 {d.minPerDay}</option>
+                <option value={90} className="bg-[#0E1012]">90 {d.minPerDay}</option>
               </select>
             </div>
           </div>
@@ -253,17 +267,17 @@ function DashboardContent() {
             <div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#D2F544]/20 text-[#D2F544] border border-[#D2F544]/30">
-                  Личный план обучения
+                  {d.personalPlan}
                 </span>
                 <span className="text-neutral-500 text-xs">•</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-neutral-300 text-xs font-bold" suppressHydrationWarning>
-                    {user?.name || candidateName || 'Кандидат DET'}
+                    {user?.name || candidateName || d.candidateFallback}
                   </span>
                   <button
                     onClick={() => setIsRenameModalOpen(true)}
                     className="p-1 hover:bg-neutral-800 text-neutral-400 hover:text-[#D2F544] rounded-lg transition-colors cursor-pointer"
-                    title="Переименовать профиль"
+                    title={d.renameProfile}
                   >
                     <Edit2 className="w-3 h-3" />
                   </button>
@@ -271,9 +285,9 @@ function DashboardContent() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                {locale === 'ru' ? 'Готовность к экзамену: ' : 'Exam readiness: '}
+                {d.examReadiness}
                 <span className="text-[#D2F544]">
-                  {readinessAvailable ? `${readiness}%` : locale === 'ru' ? 'нет данных' : 'no data'}
+                  {readinessAvailable ? `${readiness}%` : d.noData}
                 </span>
               </h1>
               <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl leading-relaxed">
@@ -294,7 +308,7 @@ function DashboardContent() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                 <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-2xl p-3 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral-400 text-[11px] font-semibold">
-                    <span>Теория (16 уроков)</span>
+                    <span>{d.theoryLabel}</span>
                     <span className="text-white font-bold">{completedLessons.length}/16</span>
                   </div>
                   <div className="w-full bg-neutral-800 h-1.5 rounded-full mt-2 overflow-hidden">
@@ -307,7 +321,7 @@ function DashboardContent() {
 
                 <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-2xl p-3 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral-400 text-[11px] font-semibold">
-                    <span>Симулятор теста</span>
+                    <span>{d.mockLabel}</span>
                     <span className="text-white font-bold">
                       {bestScore > 0 ? `${bestScore}/${targetScore}` : '0/160'}
                     </span>
@@ -322,7 +336,7 @@ function DashboardContent() {
 
                 <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-2xl p-3 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral-400 text-[11px] font-semibold">
-                    <span>Слепая печать</span>
+                    <span>{d.typingLabel}</span>
                     <span className="text-white font-bold">{bestTypingWpm} / 50 WPM</span>
                   </div>
                   <div className="w-full bg-neutral-800 h-1.5 rounded-full mt-2 overflow-hidden">
@@ -342,11 +356,11 @@ function DashboardContent() {
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#D2F544]" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                      Задания на сегодня ({studyPlan.daysRemaining} дн. до экзамена)
+                      {d.todayTitle} ({studyPlan.daysRemaining} {d.daysLeft})
                     </h3>
                   </div>
                   <span className="text-[11px] text-neutral-400">
-                    Бюджет: <strong>{dailyMinutes} мин</strong>
+                    {d.budget}: <strong>{dailyMinutes} {d.minutesShort}</strong>
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -359,7 +373,7 @@ function DashboardContent() {
                           : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700'
                       }`}
                     >
-                      <Link href={task.actionUrl} className="flex items-center gap-2.5 min-w-0 flex-1 group">
+                      <Link href={task.actionUrl} className="flex items-center gap-2.5 min-w-0 flex-1 group" title={d.openTask}>
                         <div
                           className={`w-2 h-2 rounded-full shrink-0 ${
                             task.completed
@@ -383,24 +397,19 @@ function DashboardContent() {
                           {task.reason && (
                             <p className="text-[10px] text-neutral-500 truncate max-w-[240px]">
                               {task.reason}
-                              {task.estimatedMinutes ? ` · ${task.estimatedMinutes} ${locale === 'ru' ? 'мин' : 'min'}` : ''}
+                              {task.estimatedMinutes ? ` · ${task.estimatedMinutes} ${d.minutesShort}` : ''}
                             </p>
                           )}
                         </div>
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => void completeDailyTask(task.id)}
-                        disabled={task.completed}
-                        className={`shrink-0 rounded-lg p-1.5 transition-colors ${
-                          task.completed
-                            ? 'text-emerald-400'
-                            : 'text-neutral-500 hover:text-white hover:bg-neutral-800'
+                      <span
+                        className={`shrink-0 rounded-lg p-1.5 ${
+                          task.completed ? 'text-emerald-400' : 'text-neutral-600'
                         }`}
-                        title={task.completed ? 'Задание выполнено' : 'Отметить выполненным'}
+                        title={task.completed ? d.taskCompleted : d.openTask}
                       >
                         {task.completed ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-                      </button>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -414,21 +423,21 @@ function DashboardContent() {
                 className="bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Пройти диагностику (~20 мин)</span>
+                <span>{d.diagnosticCta}</span>
               </Link>
               <Link
                 href="/test"
                 className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Полный mock (~46 мин)</span>
+                <span>{d.mockCta}</span>
               </Link>
               <Link
                 href="/practice/typing"
                 className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Keyboard className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Тренировать печать</span>
+                <span>{d.typingCta}</span>
               </Link>
             </div>
           </div>
@@ -439,10 +448,10 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#D2F544]" />
-                  <span>Сколько осталось</span>
+                  <span>{d.remainingTitle}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-400 border border-neutral-800">
-                  ~{estimatedHoursLeft} ч. до финиша
+                  ~{estimatedHoursLeft} {d.hoursLeft}
                 </span>
               </div>
 
@@ -453,16 +462,16 @@ function DashboardContent() {
                       <BookOpen className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-white">Теоретические модули</p>
+                      <p className="text-xs font-bold text-white">{d.theoryModules}</p>
                       <p className="text-[11px] text-neutral-400">
-                        Осталось изучить: <strong className="text-[#D2F544]">{remainingLessonsCount}</strong> из 16
+                        {d.remainingLessons}: <strong className="text-[#D2F544]">{remainingLessonsCount}</strong> / 16
                       </p>
                     </div>
                   </div>
                   {remainingLessonsCount === 0 ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   ) : (
-                    <span className="text-xs font-black text-white">{remainingLessonsCount} ур.</span>
+                    <span className="text-xs font-black text-white">{remainingLessonsCount} {d.lessonsShort}</span>
                   )}
                 </div>
 
@@ -472,16 +481,16 @@ function DashboardContent() {
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-white">Контрольный тест</p>
+                      <p className="text-xs font-bold text-white">{d.controlTest}</p>
                       <p className="text-[11px] text-neutral-400">
-                        {bestScore >= 105 ? 'Порог пройден (≥105 баллов)' : 'Требуется балл ≥ 105'}
+                        {bestScore >= 105 ? d.scoreMet : d.scoreNeeded}
                       </p>
                     </div>
                   </div>
                   {bestScore >= 105 ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   ) : (
-                    <span className="text-xs font-bold text-amber-400">В процессе</span>
+                    <span className="text-xs font-bold text-amber-400">{d.inProgress}</span>
                   )}
                 </div>
               </div>
@@ -494,10 +503,9 @@ function DashboardContent() {
                   <Award className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xs font-bold text-white">Отчёты DET Academy</h2>
+                  <h2 className="text-xs font-bold text-white">{d.reportsTitle}</h2>
                   <p className="text-[11px] text-neutral-400 mt-1">
-                    Сертификат существует только после выдачи сервером. Локальные баллы и прогресс
-                    теории не создают документ.
+                    {d.reportsHint}
                   </p>
                 </div>
               </div>
@@ -507,18 +515,18 @@ function DashboardContent() {
                 className="mt-3 w-full py-2 px-3 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-[#D2F544]/60 text-white text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
               >
                 <ShieldCheck className="w-4 h-4 text-[#D2F544]" />
-                <span>Проверить отчёт по ID</span>
+                <span>{d.verifyById}</span>
               </Link>
 
               <div className="mt-3 flex items-center gap-2 text-[10px] text-neutral-500">
                 <div className="flex items-center gap-1">
                   {completedLessons.length >= 16 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
-                  <span>16 уроков</span>
+                  <span>{d.lessons16}</span>
                 </div>
                 <span>•</span>
                 <div className="flex items-center gap-1">
                   {bestScore >= 105 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
-                  <span>Тест 105+</span>
+                  <span>{d.test105}</span>
                 </div>
               </div>
             </div>
@@ -535,7 +543,7 @@ function DashboardContent() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D2F544]">
-                    Рекомендуемый следующий шаг
+                    {d.nextStep}
                   </span>
                   <span className="text-neutral-500 text-xs">•</span>
                   <span className="text-xs text-neutral-400">{nextLesson.categoryLabelRu}</span>
@@ -553,7 +561,7 @@ function DashboardContent() {
               href={`/theory/${nextLesson.slug}`}
               className="w-full md:w-auto px-6 py-3 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 active:scale-95"
             >
-              <span>Перейти к уроку</span>
+              <span>{d.goToLesson}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -587,8 +595,8 @@ function DashboardContent() {
                   <TrendingUp className="w-5 h-5 text-[#D2F544]" />
                   <span>
                     {subscoresViewMode === 'subscores'
-                      ? 'Официальные сабскоры Duolingo English Test'
-                      : 'Четыре фундаментальных навыка (Reading, Listening, Writing, Speaking)'}
+                      ? d.radarSubscores
+                      : d.radarSkills}
                   </span>
                 </h2>
                 <div className="flex bg-neutral-900 border border-neutral-800 rounded-xl p-0.5 text-[11px] font-bold">
@@ -616,13 +624,13 @@ function DashboardContent() {
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
                 {latestTest
-                  ? `Показатели по результатам последней сессии (${latestTest.date})`
-                  : 'Пройдите симулятор тестирования для расчета точных сабскоров'}
+                  ? `${d.fromLastSession} (${latestTest.date})`
+                  : d.takeTestForScores}
               </p>
             </div>
             {latestTest && (
               <span className="text-xs font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-xl">
-                Итоговый балл: <strong className="text-[#D2F544]">{latestTest.overallScore}</strong> / 160
+                {d.overallScore}: <strong className="text-[#D2F544]">{latestTest.overallScore}</strong> / 160
               </span>
             )}
           </div>
@@ -649,7 +657,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -679,7 +687,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -709,7 +717,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -739,7 +747,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -771,7 +779,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -801,7 +809,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -831,7 +839,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -861,7 +869,7 @@ function DashboardContent() {
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border text-neutral-400 bg-neutral-900 border-neutral-800">
-                        Ожидает теста
+                        {d.awaitingTest}
                       </span>
                     )}
                   </div>
@@ -883,16 +891,16 @@ function DashboardContent() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D2F544] bg-[#D2F544]/10 border border-[#D2F544]/20 px-2 py-0.5 rounded-full">
-                  Тренажер лексики
+                  {d.vocabTrainer}
                 </span>
                 <span className="text-neutral-500 text-xs">•</span>
                 <span className="text-xs text-neutral-400">Алгоритм SuperMemo SM-2</span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                Академический словарь C1/C2 (SRS Flashcards)
+                {d.srsTitle}
               </h3>
               <p className="text-xs text-neutral-400 mt-1 max-w-2xl">
-                Карточки 500+ высокочастотных лексем Academic Word List (AWL) с озвучкой, дефинициями и академическими коллокациями для секций Writing и Speaking.
+                {d.srsDesc}
               </p>
             </div>
           </div>
@@ -901,7 +909,7 @@ function DashboardContent() {
             href="/practice/flashcards"
             className="w-full md:w-auto px-6 py-3 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs flex items-center justify-center gap-2 transition-all shadow-md shrink-0 active:scale-95"
           >
-            <span>Открыть тренажер слов</span>
+            <span>{d.openVocab}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -912,17 +920,16 @@ function DashboardContent() {
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-[#D2F544]" />
-                <span>Программа обучения (16 модулей)</span>
+                <span>{d.curriculum}</span>
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Изучено: <strong className="text-[#D2F544]">{completedLessons.length}</strong> из 16.
-                Отмечайте пройденные уроки прямо в списке.
+                {d.studiedOf}: <strong className="text-[#D2F544]">{completedLessons.length}</strong> / 16.
               </p>
             </div>
 
             {/* Category Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {Object.entries(CATEGORY_NAMES).map(([key, label]) => (
+              {Object.entries(CATEGORY_NAMES[locale]).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setSelectedCategory(key)}
@@ -963,7 +970,7 @@ function DashboardContent() {
                           ? 'bg-[#D2F544] text-[#0C2418]'
                           : 'border-2 border-neutral-700 hover:border-[#D2F544] text-transparent'
                       }`}
-                      title={isCompleted ? 'Отметить как не пройденный' : 'Отметить как пройденный'}
+                      title={isCompleted ? d.markUndone : d.markDone}
                     >
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                     </button>
@@ -977,7 +984,7 @@ function DashboardContent() {
                           {lesson.categoryLabelRu}
                         </span>
                         <span className="text-[10px] text-neutral-500 hidden sm:inline">
-                          ~15 мин
+                          ~15 {d.minutesShort}
                         </span>
                       </div>
 
@@ -998,7 +1005,7 @@ function DashboardContent() {
                   <Link
                     href={`/theory/${lesson.slug}`}
                     className="p-2 rounded-xl text-neutral-400 hover:text-[#D2F544] hover:bg-neutral-900 transition-colors shrink-0"
-                    title="Открыть урок"
+                    title={d.openLesson}
                   >
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
@@ -1014,10 +1021,10 @@ function DashboardContent() {
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-[#D2F544]" />
-                <span>История пробных тестирований</span>
+                <span>{d.historyTitle}</span>
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Все сессии в симуляторе с детальным расчетом сабскоров и валидацией.
+                {d.historyHint}
               </p>
             </div>
 
@@ -1025,7 +1032,7 @@ function DashboardContent() {
               href="/test"
               className="text-xs font-bold text-[#D2F544] hover:underline flex items-center gap-1"
             >
-              <span>Сдать новый тест</span>
+              <span>{d.newTest}</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -1036,9 +1043,11 @@ function DashboardContent() {
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Вы еще не проходили симулятор теста</h3>
+                <h3 className="text-sm font-bold text-white">
+                  {d.emptyHistory}
+                </h3>
                 <p className="text-xs text-neutral-400 mt-1 max-w-md mx-auto">
-                  Симулятор DET Academy повторяет адаптивный алгоритм Duolingo English Test (Item Response Theory) и оценивает ваш реальный уровень.
+                  {d.emptyHistoryHint}
                 </p>
               </div>
               <Link
@@ -1046,7 +1055,7 @@ function DashboardContent() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] text-xs font-black transition-all shadow-md"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Пройти первый mock (~46 минут)</span>
+                <span>{d.mockCta}</span>
               </Link>
             </div>
           ) : (
@@ -1055,20 +1064,20 @@ function DashboardContent() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-900/60 border-b border-neutral-800 text-neutral-400 font-semibold uppercase text-[10px] tracking-wider">
                     <tr>
-                      <th className="py-3 px-4">Дата сессии</th>
-                      <th className="py-3 px-4">Итоговый балл</th>
+                      <th className="py-3 px-4">{d.colDate}</th>
+                      <th className="py-3 px-4">{d.colScore}</th>
                       <th className="py-3 px-4">Literacy</th>
                       <th className="py-3 px-4">Comprehension</th>
                       <th className="py-3 px-4">Conversation</th>
                       <th className="py-3 px-4">Production</th>
-                      <th className="py-3 px-4">Статус</th>
+                      <th className="py-3 px-4">{d.colStatus}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800/60">
                     {testResults.map((t, idx) => (
                       <tr key={t.id || idx} className="hover:bg-neutral-900/40 transition-colors">
                         <td className="py-3.5 px-4 font-medium text-neutral-300">
-                          {t.date ? new Date(t.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Недавно'}
+                          {t.date ? new Date(t.date).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : d.recently}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="text-sm font-black text-[#D2F544]">
@@ -1083,7 +1092,7 @@ function DashboardContent() {
                         <td className="py-3.5 px-4">
                           {t.overallScore >= 105 ? (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                              Certified Level
+                              {d.trainingLevel}
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-400 border border-neutral-800">
@@ -1111,14 +1120,16 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#070809] flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-[#D2F544] border-t-transparent animate-spin" />
-        </div>
-      }
-    >
-      <DashboardContent />
-    </Suspense>
+    <AuthRequiredGuard badge="Learning Dashboard">
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-[#070809] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-[#D2F544] border-t-transparent animate-spin" />
+          </div>
+        }
+      >
+        <DashboardContent />
+      </Suspense>
+    </AuthRequiredGuard>
   );
 }

@@ -52,7 +52,7 @@ export default function MultiplayerArenaPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [dbLeaderboard, setDbLeaderboard] = useState<ArenaLeaderboardEntry[]>([]);
   const [state, setState] = useState<ArenaState>('LOBBY');
-  const [userElo, setUserElo] = useState<number>(pvpElo || 1420);
+  const [userElo, setUserElo] = useState<number>(pvpElo || 1200);
   const [countdown, setCountdown] = useState<number>(3);
   const [timeLeft, setTimeLeft] = useState<number>(60);
 
@@ -83,6 +83,7 @@ export default function MultiplayerArenaPage() {
         winRate: item.winRate,
         ratingSource: item.ratingSource,
         bestScore: item.bestScore,
+        isCurrentUser,
       };
     });
   }, [dbLeaderboard, user, userElo, locale]);
@@ -101,8 +102,8 @@ export default function MultiplayerArenaPage() {
   });
 
   const [opponent, setOpponent] = useState<OpponentData>({
-    name: 'Alex (Oxford)',
-    elo: 1410,
+    name: 'Practice Bot',
+    elo: 1200,
     progressPct: 0,
     currentWpm: 0,
     accuracy: 100,
@@ -505,7 +506,7 @@ export default function MultiplayerArenaPage() {
                   <div
                     key={p.rank}
                     className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
-                      p.rank === 4
+                      p.isCurrentUser
                         ? 'bg-[#D2F544]/10 border-[#D2F544]/30 text-white'
                         : 'bg-neutral-900/40 border-neutral-800/80 text-neutral-300'
                     }`}
