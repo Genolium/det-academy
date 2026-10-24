@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	mathRand "math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -224,9 +227,10 @@ var DiagnosticItemCount = map[string]int{
 	"INTERACTIVE_SPEAKING": 1, "WRITING_SAMPLE": 1, "SPEAKING_SAMPLE": 1,
 }
 
-// stageQuestions returns a deterministic, blueprint-sized question set for a
+// stageQuestions returns an exposure-controlled, blueprint-sized question set for a
 // stage. If the exact difficulty band has too few items, it falls back to the
-// full type pool instead of silently shrinking the stage.
+// full type pool instead of silently shrinking the stage. When more candidates exist
+// than required, questions are pseudo-randomly sampled to avoid deterministic repetition.
 func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty string, modes ...string) ([]models.Question, error) {
 	count := stageItemCount(stageName)
 	if len(modes) > 0 && modes[0] == "diagnostic" {
@@ -245,7 +249,16 @@ func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty s
 		}
 	}
 	if len(questions) > count {
-		questions = questions[:count]
+		// Securely seed a local PRNG for unbiased Fisher-Yates shuffle
+		var seed [8]byte
+		_, _ = rand.Read(seed[:])
+		rng := mathRand.New(mathRand.NewSource(int64(binary.LittleEndian.Uint64(seed[:]))))
+		shuffled := make([]models.Question, len(questions))
+		copy(shuffled, questions)
+		rng.Shuffle(len(shuffled), func(i, j int) {
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+		})
+		questions = shuffled[:count]
 	}
 	return questions, nil
 }

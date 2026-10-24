@@ -18,6 +18,7 @@ import { sound } from '@/lib/sound';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Button } from '@/components/ui/Button';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { api } from '@/lib/api';
 import { 
   Sparkles, 
   CheckCircle2, 
@@ -286,6 +287,14 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     });
     setCTestScore(correct);
     setCTestChecked(true);
+    const scoreRatio = cTest.gaps.length > 0 ? correct / cTest.gaps.length : 0;
+    void api.recordPracticeAttempt({
+      questionType: 'C_TEST',
+      promptContext: cTest.title || 'C-Test text reconstruction',
+      userResponse: { inputs: cTestInputs, correctCount: correct, total: cTest.gaps.length },
+      isCorrect: correct === cTest.gaps.length,
+      score: scoreRatio,
+    }).catch(() => {});
     if (correct >= Math.floor(cTest.gaps.length * 0.5)) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -315,6 +324,14 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     } else {
       setRsFinished(true);
       const correctTotal = newAnswers.filter(Boolean).length;
+      const scoreRatio = rsWords.length > 0 ? correctTotal / rsWords.length : 0;
+      void api.recordPracticeAttempt({
+        questionType: 'READ_SELECT',
+        promptContext: 'Read and Select vocabulary drill',
+        userResponse: { answers: newAnswers, choices: newChoices, total: rsWords.length },
+        isCorrect: correctTotal === rsWords.length,
+        score: scoreRatio,
+      }).catch(() => {});
       if (correctTotal >= Math.floor(rsWords.length * 0.6)) {
         setDrillCompleted(true);
         onDrillCompleted?.();
@@ -346,6 +363,14 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     } else {
       setLsFinished(true);
       const correctTotal = newAnswers.filter(Boolean).length;
+      const scoreRatio = lsWords.length > 0 ? correctTotal / lsWords.length : 0;
+      void api.recordPracticeAttempt({
+        questionType: 'LISTEN_SELECT',
+        promptContext: 'Listen and Select audio vocabulary drill',
+        userResponse: { answers: newAnswers, choices: newChoices, total: lsWords.length },
+        isCorrect: correctTotal === lsWords.length,
+        score: scoreRatio,
+      }).catch(() => {});
       if (correctTotal >= Math.floor(lsWords.length * 0.5)) {
         setDrillCompleted(true);
         onDrillCompleted?.();
@@ -368,6 +393,13 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     const isOk = fibInput.trim().toLowerCase() === fib.missingLetters.toLowerCase();
     setFibCorrect(isOk);
     setFibChecked(true);
+    void api.recordPracticeAttempt({
+      questionType: 'FILL_BLANKS',
+      promptContext: `${fib.sentenceBefore} [${fib.givenPrefix}...] ${fib.sentenceAfter}`,
+      userResponse: { input: fibInput, correctWord: fib.fullWord },
+      isCorrect: isOk,
+      score: isOk ? 1.0 : 0.0,
+    }).catch(() => {});
     if (isOk) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -407,6 +439,13 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const handleDictCheck = () => {
     const evalResult = evaluateDictationAccuracy(dictInput, dictation.sentence);
     setDictResult(evalResult);
+    void api.recordPracticeAttempt({
+      questionType: 'LISTEN_TYPE',
+      promptContext: dictation.sentence,
+      userResponse: { input: dictInput, similarity: evalResult.similarity },
+      isCorrect: evalResult.similarity >= 0.85,
+      score: evalResult.similarity,
+    }).catch(() => {});
     if (evalResult.similarity >= 0.65) {
       setDrillCompleted(true);
       onDrillCompleted?.();
