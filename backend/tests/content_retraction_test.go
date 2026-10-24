@@ -79,7 +79,9 @@ func TestPublicQuestionEndpointExcludesInactive(t *testing.T) {
 		t.Fatalf("retract: %v", err)
 	}
 
+	token := registerAuthToken(t, router)
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/test/questions?type=READ_SELECT", nil)
+	request.Header.Set("Authorization", "Bearer "+token)
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -110,7 +111,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 		})
 
 		r.Route("/test", func(r chi.Router) {
-			r.Get("/questions", testHandler.GetQuestions)
+			r.With(handlers.AuthMiddleware(authService)).Get("/questions", testHandler.GetQuestions)
 			// Strict auth required for all test session operations
 			r.Group(func(r chi.Router) {
 				r.Use(handlers.AuthMiddleware(authService))
@@ -168,6 +169,28 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	})
 
 	return r, authService, store
+}
+
+func registerAuthToken(t *testing.T, r http.Handler) string {
+	t.Helper()
+	payload, _ := json.Marshal(models.RegisterRequest{
+		Email:    fmt.Sprintf("q-%d@det-academy.com", time.Now().UnixNano()),
+		Password: "strongPassword123!",
+		Name:     "Question User",
+		Locale:   "en",
+	})
+	req := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(payload))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("register: %d %s", w.Code, w.Body.String())
+	}
+	var resp models.AuthResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp.Token == "" {
+		t.Fatal("empty auth token")
+	}
+	return resp.Token
 }
 
 func TestHealthCheck(t *testing.T) {
@@ -661,9 +684,18 @@ func TestCompletionDoesNotCreditSkippedSkills(t *testing.T) {
 
 func TestQuestionPayloadsDoNotLeakAnswers(t *testing.T) {
 	r, _, _ := setupTestRouter()
+	token := registerAuthToken(t, r)
+
+	unauth := httptest.NewRequest("GET", "/api/v1/test/questions?type=READ_SELECT", nil)
+	unauthW := httptest.NewRecorder()
+	r.ServeHTTP(unauthW, unauth)
+	if unauthW.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated question dump must be 401, got %d", unauthW.Code)
+	}
 
 	for _, questionType := range []string{"FILL_BLANKS", "INTERACTIVE_READING", "INTERACTIVE_LISTENING"} {
 		req := httptest.NewRequest("GET", "/api/v1/test/questions?type="+questionType, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {

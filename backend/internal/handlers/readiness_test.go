@@ -9,6 +9,20 @@ import (
 	"testing"
 )
 
+func TestHealthHandlerRejectsBrokenSchema(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	HealthHandler(errors.New("migration 019 failed"))(recorder, httptest.NewRequest(http.MethodGet, "/api/v1/health", nil))
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503", recorder.Code)
+	}
+
+	ok := httptest.NewRecorder()
+	HealthHandler(nil)(ok, httptest.NewRequest(http.MethodGet, "/api/v1/health", nil))
+	if ok.Code != http.StatusOK {
+		t.Fatalf("healthy status = %d, want 200", ok.Code)
+	}
+}
+
 func TestReadinessHandler(t *testing.T) {
 	healthy := func(context.Context) error { return nil }
 	broken := func(context.Context) error { return errors.New("connection refused") }

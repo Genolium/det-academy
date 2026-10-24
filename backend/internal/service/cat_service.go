@@ -22,6 +22,8 @@ import (
 var ErrQuestionAlreadyAnswered = errors.New("question has already been answered")
 var ErrStageAlreadyCompleted = errors.New("stage has already been completed")
 
+const ItemSelectionPolicyVersion = "exclude-recent-v1"
+
 var StageSequence = []string{
 	"READ_SELECT",
 	"FILL_BLANKS",
@@ -200,7 +202,7 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	}
 
 	// Fetch a deterministic blueprint-sized initial question set.
-	questions, err := s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
+	questions, err := s.stageQuestions(ctx, session.UserID, session.StageName, session.DifficultyLevel, session.Mode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch initial questions: %w", err)
 	}
@@ -233,7 +235,7 @@ var DiagnosticItemCount = map[string]int{
 // stage. If the exact difficulty band has too few items, it falls back to the
 // full type pool instead of silently shrinking the stage. When more candidates exist
 // than required, questions are pseudo-randomly sampled to avoid deterministic repetition.
-func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty string, modes ...string) ([]models.Question, error) {
+func (s *CATService) stageQuestions(ctx context.Context, userID, stageName, difficulty string, modes ...string) ([]models.Question, error) {
 	count := stageItemCount(stageName)
 	if len(modes) > 0 && modes[0] == "diagnostic" {
 		if diagnosticCount, ok := DiagnosticItemCount[stageName]; ok {
@@ -250,8 +252,19 @@ func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty s
 			questions = fallback
 		}
 	}
+	if userID != "" && len(questions) > count {
+		exposed := s.recentlyExposedIDs(ctx, userID)
+		fresh := make([]models.Question, 0, len(questions))
+		for _, question := range questions {
+			if _, seen := exposed[question.ID]; !seen {
+				fresh = append(fresh, question)
+			}
+		}
+		if len(fresh) >= count {
+			questions = fresh
+		}
+	}
 	if len(questions) > count {
-		// Securely seed a local PRNG for unbiased Fisher-Yates shuffle
 		var seed [8]byte
 		_, _ = rand.Read(seed[:])
 		rng := mathRand.New(mathRand.NewSource(int64(binary.LittleEndian.Uint64(seed[:]))))
@@ -263,6 +276,30 @@ func (s *CATService) stageQuestions(ctx context.Context, stageName, difficulty s
 		questions = shuffled[:count]
 	}
 	return questions, nil
+}
+
+func (s *CATService) recentlyExposedIDs(ctx context.Context, userID string) map[string]struct{} {
+	exposed := map[string]struct{}{}
+	if userID == "" {
+		return exposed
+	}
+	sessions, err := s.sessionRepo.GetUserSessions(ctx, userID)
+	if err != nil {
+		return exposed
+	}
+	for i, sess := range sessions {
+		if i >= 8 {
+			break
+		}
+		assigned, err := s.sessionRepo.GetAllAssignedQuestions(ctx, sess.ID)
+		if err != nil {
+			continue
+		}
+		for _, item := range assigned {
+			exposed[item.QuestionID] = struct{}{}
+		}
+	}
+	return exposed
 }
 
 func (s *CATService) assignSessionQuestions(ctx context.Context, session *models.TestSession, questions []models.Question) error {
@@ -287,11 +324,13 @@ func (s *CATService) assignSessionQuestions(ctx context.Context, session *models
 			deadlineAt = *session.DeadlineAt
 		}
 		qSnapshot, _ := json.Marshal(map[string]interface{}{
-			"id":             question.ID,
-			"type":           question.Type,
-			"difficultyBand": question.DifficultyBand,
-			"contentPayload": question.ContentPayload,
-			"timeLimitSec":   question.TimeLimitSec,
+			"id":              question.ID,
+			"type":            question.Type,
+			"difficultyBand":  question.DifficultyBand,
+			"contentPayload":  question.ContentPayload,
+			"timeLimitSec":    question.TimeLimitSec,
+			"correctAnswers":  question.CorrectAnswers,
+			"selectionPolicy": ItemSelectionPolicyVersion,
 		})
 		assignments = append(assignments, models.SessionQuestion{
 			SessionID:        session.ID,
@@ -306,11 +345,63 @@ func (s *CATService) assignSessionQuestions(ctx context.Context, session *models
 	return s.sessionRepo.AssignQuestions(ctx, assignments)
 }
 
+func questionFromSnapshot(assignment models.SessionQuestion) *models.Question {
+	if len(assignment.QuestionSnapshot) == 0 {
+		return nil
+	}
+	var snap struct {
+		ID             string          `json:"id"`
+		Type           string          `json:"type"`
+		DifficultyBand string          `json:"difficultyBand"`
+		ContentPayload json.RawMessage `json:"contentPayload"`
+		TimeLimitSec   int             `json:"timeLimitSec"`
+		CorrectAnswers json.RawMessage `json:"correctAnswers"`
+	}
+	if err := json.Unmarshal(assignment.QuestionSnapshot, &snap); err != nil || snap.ID == "" {
+		return nil
+	}
+	return &models.Question{
+		ID:             snap.ID,
+		Type:           snap.Type,
+		DifficultyBand: snap.DifficultyBand,
+		ContentPayload: snap.ContentPayload,
+		CorrectAnswers: snap.CorrectAnswers,
+		TimeLimitSec:   snap.TimeLimitSec,
+		IsActive:       true,
+	}
+}
+
+func (s *CATService) questionFromAssignment(ctx context.Context, assignment models.SessionQuestion) *models.Question {
+	if q := questionFromSnapshot(assignment); q != nil {
+		return q
+	}
+	live, err := s.questionRepo.GetByID(ctx, assignment.QuestionID)
+	if err == nil {
+		return live
+	}
+	return nil
+}
+
+func (s *CATService) QuestionByID(ctx context.Context, questionID string) (*models.Question, error) {
+	return s.questionRepo.GetByID(ctx, questionID)
+}
+
+func (s *CATService) questionTypeForResponse(ctx context.Context, sessionID, questionID string) string {
+	if assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, questionID); err == nil && assignment != nil {
+		if q := questionFromSnapshot(*assignment); q != nil && q.Type != "" {
+			return q.Type
+		}
+	}
+	if q, err := s.questionRepo.GetByID(ctx, questionID); err == nil && q != nil {
+		return q.Type
+	}
+	return deduceQuestionTypeFromID(questionID)
+}
+
 func (s *CATService) questionsForAssignments(ctx context.Context, assignments []models.SessionQuestion) ([]models.Question, error) {
 	questions := make([]models.Question, 0, len(assignments))
 	for _, assignment := range assignments {
-		question, err := s.questionRepo.GetByID(ctx, assignment.QuestionID)
-		if err == nil && question != nil {
+		if question := s.questionFromAssignment(ctx, assignment); question != nil {
 			questions = append(questions, *question)
 		}
 	}
@@ -365,7 +456,7 @@ func (s *CATService) GetSessionWithDetails(ctx context.Context, sessionID, userI
 			questions, _ = s.questionsForAssignments(ctx, assignments)
 		}
 		if len(questions) == 0 {
-			questions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
+			questions, _ = s.stageQuestions(ctx, session.UserID, session.StageName, session.DifficultyLevel, session.Mode)
 			_ = s.assignSessionQuestions(ctx, session, questions)
 		}
 	}
@@ -508,10 +599,7 @@ func (s *CATService) submitStageResultLocked(ctx context.Context, sessionID, use
 		if responses, err := s.sessionRepo.GetSessionResponses(ctx, sessionID); err == nil {
 			sum, count := 0.0, 0
 			for _, response := range responses {
-				qType := deduceQuestionTypeFromID(response.QuestionID)
-				if q, qErr := s.questionRepo.GetByID(ctx, response.QuestionID); qErr == nil && q != nil {
-					qType = q.Type
-				}
+				qType := s.questionTypeForResponse(ctx, sessionID, response.QuestionID)
 				for _, stageType := range stageTypes {
 					if qType == stageType {
 						sum += math.Max(0, math.Min(1, response.RawScore))
@@ -562,7 +650,7 @@ func (s *CATService) submitStageResultLocked(ctx context.Context, sessionID, use
 
 	var nextQuestions []models.Question
 	if session.StageName != "COMPLETED" {
-		nextQuestions, _ = s.stageQuestions(ctx, session.StageName, session.DifficultyLevel, session.Mode)
+		nextQuestions, _ = s.stageQuestions(ctx, session.UserID, session.StageName, session.DifficultyLevel, session.Mode)
 		_ = s.assignSessionQuestions(ctx, session, nextQuestions)
 	}
 
@@ -657,217 +745,59 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 	var calculatedScore float64
 	var isCorrect bool
 
-	// Server-side grading based on question answer key
-	if q, err := s.questionRepo.GetByID(ctx, req.QuestionID); err == nil && q != nil && len(q.CorrectAnswers) > 0 {
-		switch q.Type {
-		case "READ_SELECT":
-			var ca struct {
-				IsReal bool `json:"isReal"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
-				var userBool bool
-				var userObj struct {
-					Selected bool `json:"selected"`
-					IsReal   bool `json:"isReal"`
-				}
-				if err := json.Unmarshal(req.UserResponse, &userObj); err == nil && (userObj.Selected || userObj.IsReal) {
-					userBool = userObj.Selected || userObj.IsReal
-				} else if err := json.Unmarshal(req.UserResponse, &userBool); err == nil {
-					// parsed as bool
-				} else {
-					userBool = strings.EqualFold(trimmedResponse, "true") || strings.EqualFold(trimmedResponse, "real")
-				}
-				if userBool == ca.IsReal {
-					isCorrect = true
-					calculatedScore = 1.0
-				} else {
+	q := s.questionFromAssignment(ctx, *assignment)
+	if q != nil && (len(q.CorrectAnswers) > 0 || isOpenEndedQuestionType(q.Type)) {
+		if closedCorrect, closedScore, handled := GradeClosedItem(q, req.UserResponse); handled {
+			isCorrect = closedCorrect
+			calculatedScore = closedScore
+		} else {
+			switch q.Type {
+			case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
+				userText, _, _, _ := extractUserText(req.UserResponse)
+				if s.evaluationQueue != nil {
+					eval := models.EvaluationResult{
+						ID: uuid.New().String(), SessionID: sessionID, QuestionID: req.QuestionID,
+						QuestionType: q.Type, Status: "PENDING", FeedbackStatus: "queued",
+						Provider: "pending", EvaluatorVersion: "2026.1", CreatedAt: time.Now().UTC(),
+					}
+					if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err == nil {
+						_ = s.evaluationQueue.EnqueueWritingEvaluation(ctx, sessionID, req.QuestionID, eval.ID, userText)
+					}
+					calculatedScore = 0
 					isCorrect = false
-					calculatedScore = 0.0
-				}
-			}
-		case "FILL_BLANKS":
-			var ca struct {
-				Answer         string `json:"answer"`
-				FullWord       string `json:"fullWord"`
-				MissingLetters string `json:"missingLetters"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
-				expected := ca.MissingLetters
-				if expected == "" {
-					expected = ca.Answer
-				}
-				if expected == "" {
-					expected = ca.FullWord
-				}
-				var userText string
-				var userObj struct {
-					Answer string `json:"answer"`
-				}
-				if err := json.Unmarshal(req.UserResponse, &userObj); err == nil && userObj.Answer != "" {
-					userText = userObj.Answer
-				} else if err := json.Unmarshal(req.UserResponse, &userText); err == nil {
-					// parsed as string
 				} else {
-					userText = strings.Trim(trimmedResponse, `"'`)
+					keywords := extractContextKeywords(q.ContentPayload)
+					eval := s.evaluator.EvaluateWriting(sessionID, req.QuestionID, q.Type, userText, keywords)
+					eval.Provider = "practice_feedback"
+					_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+					calculatedScore = eval.Score
+					isCorrect = eval.Score >= 0.6
 				}
-				userText = strings.TrimSpace(userText)
-				calculatedScore = 0
-				if expected != "" && strings.EqualFold(userText, strings.TrimSpace(expected)) {
-					calculatedScore = 1.0
-				} else if ca.FullWord != "" && strings.EqualFold(userText, strings.TrimSpace(ca.FullWord)) {
-					calculatedScore = 1.0
+			case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+				_, transcript, audioURL, durationSec := extractUserText(req.UserResponse)
+				keywords := extractContextKeywords(q.ContentPayload)
+				eval := s.evaluator.EvaluateSpeaking(sessionID, req.QuestionID, q.Type, transcript, durationSec, keywords)
+				eval.Provider = "practice_feedback"
+				if audioURL != "" {
+					eval.AudioURL = audioURL
 				}
-				isCorrect = calculatedScore >= 0.99
-			}
-		case "LISTEN_TYPE":
-			var ca struct {
-				Text             string `json:"text"`
-				ExpectedSentence string `json:"expectedSentence"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
-				expected := ca.ExpectedSentence
-				if expected == "" {
-					expected = ca.Text
-				}
-				var userText string
-				if err := json.Unmarshal(req.UserResponse, &userText); err != nil {
-					userText = strings.Trim(trimmedResponse, `"'`)
-				}
-				sim := StringSimilarity(userText, expected)
-				calculatedScore = sim
-				isCorrect = sim >= 0.85
-			}
-		case "C_TEST":
-			var ca struct {
-				Answers []string `json:"answers"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil && len(ca.Answers) > 0 {
-				var userAnswers []string
-				if err := json.Unmarshal(req.UserResponse, &userAnswers); err == nil && len(userAnswers) > 0 {
-					matched := 0
-					for i, a := range ca.Answers {
-						if i < len(userAnswers) && strings.EqualFold(strings.TrimSpace(userAnswers[i]), strings.TrimSpace(a)) {
-							matched++
-						}
-					}
-					calculatedScore = float64(matched) / float64(len(ca.Answers))
-					isCorrect = calculatedScore >= 0.7
-				}
-			}
-		case "INTERACTIVE_READING":
-			var ca struct {
-				GapCorrect                string `json:"gapCorrect"`
-				SentenceCorrectIndex      *int   `json:"sentenceCorrectIndex"`
-				MainIdeaCorrectIndex      *int   `json:"mainIdeaCorrectIndex"`
-				TitleCorrectIndex         *int   `json:"titleCorrectIndex"`
-				HighlightCorrectSubstring string `json:"highlightCorrectSubstring"`
-				HighlightCorrect          string `json:"highlightCorrect"`
-			}
-			var ur struct {
-				Gap               string `json:"gap"`
-				SentenceIndex     *int   `json:"sentenceIndex"`
-				HighlightSentence string `json:"highlightSentence"`
-				MainIdeaIndex     *int   `json:"mainIdeaIndex"`
-				TitleIndex        *int   `json:"titleIndex"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil {
-				if err := json.Unmarshal(req.UserResponse, &ur); err == nil {
-					const subtaskCount = 5
-					correct := 0
-					if strings.EqualFold(strings.TrimSpace(ur.Gap), strings.TrimSpace(ca.GapCorrect)) && ur.Gap != "" {
-						correct++
-					}
-					if ur.SentenceIndex != nil && ca.SentenceCorrectIndex != nil && *ur.SentenceIndex == *ca.SentenceCorrectIndex {
-						correct++
-					}
-					if ur.MainIdeaIndex != nil && ca.MainIdeaCorrectIndex != nil && *ur.MainIdeaIndex == *ca.MainIdeaCorrectIndex {
-						correct++
-					}
-					if ur.TitleIndex != nil && ca.TitleCorrectIndex != nil && *ur.TitleIndex == *ca.TitleCorrectIndex {
-						correct++
-					}
-					normalizeSentence := func(value string) string {
-						value = strings.ToLower(strings.TrimSpace(value))
-						value = strings.Trim(value, `".!?`)
-						return strings.Join(strings.Fields(value), " ")
-					}
-					highlightExpected := ca.HighlightCorrectSubstring
-					if highlightExpected == "" {
-						highlightExpected = ca.HighlightCorrect
-					}
-					highlightCorrect := normalizeSentence(highlightExpected)
-					highlightUser := normalizeSentence(ur.HighlightSentence)
-					if highlightUser != "" && highlightCorrect != "" &&
-						(strings.Contains(highlightCorrect, highlightUser) || strings.Contains(highlightUser, highlightCorrect)) {
-						correct++
-					}
-					calculatedScore = float64(correct) / float64(subtaskCount)
-					isCorrect = calculatedScore >= 0.75
-				}
-			}
-		case "INTERACTIVE_LISTENING":
-			var ca struct {
-				TurnsAnswers []int `json:"turnsAnswers"`
-			}
-			var ur struct {
-				Turns []int `json:"turns"`
-			}
-			if err := json.Unmarshal(q.CorrectAnswers, &ca); err == nil && len(ca.TurnsAnswers) > 0 {
-				if err := json.Unmarshal(req.UserResponse, &ur); err == nil {
-					matched := 0
-					for i, expected := range ca.TurnsAnswers {
-						if i < len(ur.Turns) && ur.Turns[i] == expected {
-							matched++
-						}
-					}
-					calculatedScore = float64(matched) / float64(len(ca.TurnsAnswers))
-					isCorrect = calculatedScore >= 0.75
-				}
-			}
-		case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
-			userText, _, _, _ := extractUserText(req.UserResponse)
-			if s.evaluationQueue != nil {
-				eval := models.EvaluationResult{
-					ID: uuid.New().String(), SessionID: sessionID, QuestionID: req.QuestionID,
-					QuestionType: q.Type, Status: "PENDING", FeedbackStatus: "queued",
-					Provider: "pending", EvaluatorVersion: "2026.1", CreatedAt: time.Now().UTC(),
-				}
-				if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err == nil {
-					_ = s.evaluationQueue.EnqueueWritingEvaluation(ctx, sessionID, req.QuestionID, eval.ID, userText)
-				}
-				calculatedScore = 0
-				isCorrect = false
-			} else {
+				_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+				calculatedScore = eval.Score
+				isCorrect = eval.Score >= 0.6
+			default:
+				userText, _, _, _ := extractUserText(req.UserResponse)
 				keywords := extractContextKeywords(q.ContentPayload)
 				eval := s.evaluator.EvaluateWriting(sessionID, req.QuestionID, q.Type, userText, keywords)
+				eval.Provider = "practice_feedback"
 				_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
 				calculatedScore = eval.Score
 				isCorrect = eval.Score >= 0.6
 			}
-		case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
-			_, transcript, audioURL, durationSec := extractUserText(req.UserResponse)
-			keywords := extractContextKeywords(q.ContentPayload)
-			eval := s.evaluator.EvaluateSpeaking(sessionID, req.QuestionID, q.Type, transcript, durationSec, keywords)
-			if audioURL != "" {
-				eval.AudioURL = audioURL
-			}
-			_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
-			calculatedScore = eval.Score
-			isCorrect = eval.Score >= 0.6
-		default:
-			// Generic text evaluation for open-ended items
-			userText, _, _, _ := extractUserText(req.UserResponse)
-			keywords := extractContextKeywords(q.ContentPayload)
-			eval := s.evaluator.EvaluateWriting(sessionID, req.QuestionID, q.Type, userText, keywords)
-			_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
-			calculatedScore = eval.Score
-			isCorrect = eval.Score >= 0.6
 		}
 		if !isCorrect {
 			s.recordMistake(ctx, session.UserID, q, req)
 		}
 	} else {
-		// Fallback when question details not in repo: evaluate text directly without trusting client raw score
 		userText, transcript, audioURL, durationSec := extractUserText(req.UserResponse)
 		var eval models.EvaluationResult
 		if audioURL != "" || durationSec > 0 {
@@ -876,6 +806,7 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 		} else {
 			eval = s.evaluator.EvaluateWriting(sessionID, req.QuestionID, "WRITING_SAMPLE", userText, nil)
 		}
+		eval.Provider = "practice_feedback"
 		_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
 		calculatedScore = eval.Score
 		isCorrect = eval.Score >= 0.6
@@ -1068,8 +999,8 @@ func (s *CATService) GetSessionReview(ctx context.Context, sessionID, userID str
 
 	items := []models.ReviewItem{}
 	for _, assignment := range assignments {
-		question, qErr := s.questionRepo.GetByID(ctx, assignment.QuestionID)
-		if qErr != nil || question == nil {
+		question := s.questionFromAssignment(ctx, assignment)
+		if question == nil {
 			continue
 		}
 		response, answered := responseByQuestion[assignment.QuestionID]
@@ -1265,7 +1196,7 @@ func extractContextKeywords(contentPayload json.RawMessage) []string {
 	if alt, ok := payload["altText"].(string); ok {
 		keywords = append(keywords, TokenizeWords(alt)...)
 	}
-	return keywords
+	return ContentKeywords(keywords)
 }
 
 func extractUserText(userResponse json.RawMessage) (text string, transcript string, audioURL string, durationSec float64) {
@@ -1669,12 +1600,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 
 	for _, r := range responses {
-		qType := ""
-		if q, err := s.questionRepo.GetByID(ctx, r.QuestionID); err == nil && q != nil {
-			qType = q.Type
-		} else {
-			qType = deduceQuestionTypeFromID(r.QuestionID)
-		}
+		qType := s.questionTypeForResponse(ctx, sessionID, r.QuestionID)
 		skill := MapQuestionTypeToSkill(qType)
 		st := stats[skill]
 		if st == nil {
@@ -1793,12 +1719,13 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Immutable content snapshot of this attempt: capture all questions and responses
 	allAssignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, session.ID)
 	sessionSnapshotMap := map[string]interface{}{
-		"blueprintVersion": session.BlueprintVersion,
-		"scoringVersion":   session.ScoringVersion,
-		"assignedCount":    len(allAssignments),
-		"answeredCount":    len(responses),
-		"scores":           scores,
-		"completedAt":      now.Format(time.RFC3339),
+		"blueprintVersion":        session.BlueprintVersion,
+		"scoringVersion":          session.ScoringVersion,
+		"selectionPolicyVersion":  ItemSelectionPolicyVersion,
+		"assignedCount":           len(allAssignments),
+		"answeredCount":           len(responses),
+		"scores":                  scores,
+		"completedAt":             now.Format(time.RFC3339),
 	}
 	sessionSnapshotBytes, _ := json.Marshal(sessionSnapshotMap)
 	session.ContentSnapshot = sessionSnapshotBytes
@@ -1873,6 +1800,11 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 			IdempotencyKey: "mock:" + session.ID,
 			XP:             100,
 			CreatedAt:      now,
+		})
+		emitLearningEvent(ctx, s.studyRepo, session.UserID, "mock_completed", "mock:"+session.ID, map[string]any{
+			"sessionId": session.ID,
+			"mode":      session.Mode,
+			"overall":   scores.Overall,
 		})
 	}
 

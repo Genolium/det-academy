@@ -118,6 +118,9 @@ func (s *TheoryService) ToggleCompletion(ctx context.Context, userID, lessonSlug
 			XP:             20,
 			CreatedAt:      time.Now().UTC(),
 		})
+		emitLearningEvent(ctx, s.studyRepo, userID, "lesson_completed", "lesson:"+lessonSlug, map[string]any{
+			"slug": lessonSlug,
+		})
 	}
 
 	return s.GetProgress(ctx, userID)

@@ -120,7 +120,7 @@ func TestPlanTaskAwardsXPOnce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("total: %v", err)
 	}
-	if total != 10 {
-		t.Fatalf("total XP = %d, want 10 after a double completion", total)
+	if total != 0 {
+		t.Fatalf("total XP = %d, want 0: plan-task completion must not award XP", total)
 	}
 }

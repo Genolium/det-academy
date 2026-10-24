@@ -12,6 +12,14 @@ import (
 // part of the payload the client receives.
 func TestPublicQuestionPayloadHidesAnswerKeys(t *testing.T) {
 	router, _, _ := setupTestRouter()
+	token := registerAuthToken(t, router)
+
+	unauth := httptest.NewRequest(http.MethodGet, "/api/v1/test/questions?type=READ_SELECT", nil)
+	unauthRec := httptest.NewRecorder()
+	router.ServeHTTP(unauthRec, unauth)
+	if unauthRec.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated access must be 401, got %d", unauthRec.Code)
+	}
 
 	types := []string{
 		"READ_SELECT", "FILL_BLANKS", "C_TEST", "LISTEN_TYPE",
@@ -25,6 +33,7 @@ func TestPublicQuestionPayloadHidesAnswerKeys(t *testing.T) {
 
 	for _, questionType := range types {
 		request := httptest.NewRequest(http.MethodGet, "/api/v1/test/questions?type="+questionType, nil)
+		request.Header.Set("Authorization", "Bearer "+token)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 		if recorder.Code != http.StatusOK {

@@ -89,14 +89,14 @@ func TestBlueprintSelectionAndTimeoutEvents(t *testing.T) {
 		}
 	}
 
-	reading, err := cat.stageQuestions(ctx, "INTERACTIVE_READING", "B1")
+	reading, err := cat.stageQuestions(ctx, "", "INTERACTIVE_READING", "B1")
 	if err != nil {
 		t.Fatalf("failed to select reading blocks: %v", err)
 	}
 	if len(reading) != 2 {
 		t.Fatalf("expected 2 reading blocks, got %d", len(reading))
 	}
-	listening, err := cat.stageQuestions(ctx, "INTERACTIVE_LISTENING", "B1")
+	listening, err := cat.stageQuestions(ctx, "", "INTERACTIVE_LISTENING", "B1")
 	if err != nil {
 		t.Fatalf("failed to select listening blocks: %v", err)
 	}
@@ -133,5 +133,64 @@ func TestBlueprintSelectionAndTimeoutEvents(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected ANSWER_REJECTED_DEADLINE event, got %+v", events)
+	}
+}
+
+func TestGradingUsesQuestionSnapshotNotLiveKey(t *testing.T) {
+	store := memory.New()
+	theory := NewTheoryService(store.Theory(), store.Study())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	ctx := context.Background()
+	userID := "snapshot-user"
+
+	session, _, err := cat.StartSession(ctx, userID, "Snapshot User", "B1")
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	assigned, err := store.Sessions().GetAssignedQuestions(ctx, session.ID, session.StageName)
+	if err != nil || len(assigned) == 0 {
+		t.Fatalf("assignments: %v %d", err, len(assigned))
+	}
+
+	var item models.SessionQuestion
+	found := false
+	for _, assignment := range assigned {
+		q := questionFromSnapshot(assignment)
+		if q != nil && q.Type == "READ_SELECT" && len(q.CorrectAnswers) > 0 {
+			item = assignment
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected a READ_SELECT snapshot")
+	}
+
+	live, err := store.Questions().GetByID(ctx, item.QuestionID)
+	if err != nil {
+		t.Fatalf("live question: %v", err)
+	}
+	flipped := *live
+	if string(live.CorrectAnswers) == `{"isReal":true}` {
+		flipped.CorrectAnswers = json.RawMessage(`{"isReal":false}`)
+	} else {
+		flipped.CorrectAnswers = json.RawMessage(`{"isReal":true}`)
+	}
+	if err := store.Questions().Delete(ctx, item.QuestionID); err != nil {
+		t.Fatalf("delete live: %v", err)
+	}
+	if err := store.Questions().Create(ctx, &flipped); err != nil {
+		t.Fatalf("recreate live: %v", err)
+	}
+
+	correct, score, err := cat.RecordQuestionResponse(ctx, session.ID, userID, models.SubmitResponseRequest{
+		QuestionID:   item.QuestionID,
+		UserResponse: questionFromSnapshot(item).CorrectAnswers,
+	})
+	if err != nil {
+		t.Fatalf("grade snapshot answer: %v", err)
+	}
+	if !correct || score != 1 {
+		t.Fatalf("snapshot key should still score 1, got correct=%v score=%v", correct, score)
 	}
 }
