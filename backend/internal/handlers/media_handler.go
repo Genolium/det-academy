@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"os"
@@ -14,23 +13,20 @@ import (
 
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/service"
+	"det-academy-backend/internal/storage/blob"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 type MediaHandler struct {
 	catService *service.CATService
-	uploadDir  string
+	store      blob.Store
 }
 
 func NewMediaHandler(catService *service.CATService, uploadDir string) *MediaHandler {
-	if uploadDir == "" {
-		uploadDir = "data/media/audio"
-	}
-	_ = os.MkdirAll(uploadDir, 0755)
 	return &MediaHandler{
 		catService: catService,
-		uploadDir:  uploadDir,
+		store:      blob.NewFromEnv(uploadDir),
 	}
 }
 
@@ -52,11 +48,6 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	// fill the disk using someone else's or a non-existent session.
 	if err := h.catService.VerifySessionOwner(r.Context(), sessionID, userID); err != nil {
 		RespondError(w, http.StatusForbidden, "Session does not belong to user")
-		return
-	}
-
-	if err := os.MkdirAll(h.uploadDir, 0755); err != nil {
-		RespondError(w, http.StatusInternalServerError, "Media storage is unavailable")
 		return
 	}
 
@@ -101,43 +92,13 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	// The public filename is derived only from a server-generated UUID. Never
 	// build a filesystem path from sessionID/questionID supplied by a client.
 	cleanFilename := assetID + ext
-	targetPath := filepath.Join(h.uploadDir, cleanFilename)
-
-	tmpFile, err := os.CreateTemp(h.uploadDir, "upload-*")
+	targetPath, writtenBytes, err := h.store.Put(cleanFilename, file)
 	if err != nil {
+		if errors.Is(err, os.ErrInvalid) {
+			RespondError(w, http.StatusBadRequest, "Uploaded audio file is empty (0 bytes)")
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, "Failed to save audio file on server")
-		return
-	}
-	tmpPath := tmpFile.Name()
-	cleanupTemp := func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpPath)
-	}
-
-	writtenBytes, err := io.Copy(tmpFile, file)
-	if err != nil {
-		cleanupTemp()
-		RespondError(w, http.StatusInternalServerError, "Failed to write audio stream")
-		return
-	}
-	if err := tmpFile.Sync(); err != nil {
-		cleanupTemp()
-		RespondError(w, http.StatusInternalServerError, "Failed to flush audio file")
-		return
-	}
-	if err := tmpFile.Close(); err != nil {
-		_ = os.Remove(tmpPath)
-		RespondError(w, http.StatusInternalServerError, "Failed to close audio file")
-		return
-	}
-	if writtenBytes == 0 {
-		_ = os.Remove(tmpPath)
-		RespondError(w, http.StatusBadRequest, "Uploaded audio file is empty (0 bytes)")
-		return
-	}
-	if err := os.Rename(tmpPath, targetPath); err != nil {
-		_ = os.Remove(tmpPath)
-		RespondError(w, http.StatusInternalServerError, "Failed to finalize audio file")
 		return
 	}
 
@@ -159,7 +120,7 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	// Save media asset and evaluate speaking if questionId provided
 	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset)
 	if err != nil {
-		_ = os.Remove(targetPath)
+		_ = h.store.Delete(targetPath)
 		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {
 			RespondError(w, http.StatusConflict, err.Error())
 			return
@@ -252,7 +213,7 @@ func (h *MediaHandler) DeleteSessionAudio(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	root := filepath.Clean(h.uploadDir)
+	root := filepath.Clean(h.store.Root())
 	deletedFiles := 0
 	for _, path := range paths {
 		clean := filepath.Clean(path)
