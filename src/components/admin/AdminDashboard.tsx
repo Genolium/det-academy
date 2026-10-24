@@ -596,10 +596,10 @@ export const AdminDashboard: React.FC = () => {
                     <div key={u.id} className="py-3 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-neutral-900 text-[#D2F544] flex items-center justify-center font-bold">
-                          {u.name.charAt(0)}
+                          {(u.name || u.email || 'U').charAt(0)}
                         </div>
                         <div>
-                          <div className="font-bold text-[#0E1012]">{u.name}</div>
+                          <div className="font-bold text-[#0E1012]">{u.name || u.email || 'Пользователь'}</div>
                           <div className="text-neutral-400">{u.email}</div>
                         </div>
                       </div>
@@ -699,9 +699,9 @@ export const AdminDashboard: React.FC = () => {
                     <tr key={u.id} className="hover:bg-neutral-50/80 transition-colors">
                       <td className="py-3 px-2 font-bold text-[#0E1012] flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-neutral-900 text-[#D2F544] flex items-center justify-center text-xs font-black">
-                          {u.name.charAt(0)}
+                          {(u.name || u.email || 'U').charAt(0)}
                         </div>
-                        <span>{u.name}</span>
+                        <span>{u.name || u.email || 'Пользователь'}</span>
                       </td>
                       <td className="py-3 px-2 text-neutral-600 font-mono">{u.email}</td>
                       <td className="py-3 px-2">

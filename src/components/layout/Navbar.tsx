@@ -226,10 +226,10 @@ export const Navbar: React.FC = () => {
                   className="flex items-center gap-1 sm:gap-2 p-1 sm:pr-2.5 rounded-full bg-white border border-neutral-200 hover:border-neutral-300 transition-all shadow-sm cursor-pointer"
                 >
                   <div className="w-6 h-6 rounded-full bg-[#0E1012] text-[#D2F544] flex items-center justify-center text-[10px] font-black">
-                    {user.name.charAt(0).toUpperCase()}
+                    {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                   </div>
                   <span className="text-xs font-bold text-neutral-800 max-w-[80px] sm:max-w-[100px] truncate hidden sm:inline">
-                    {user.name.split(' ')[0]}
+                    {(user.name || user.email || 'User').split(' ')[0]}
                   </span>
                   <ChevronDown className="w-3 h-3 text-neutral-400 hidden sm:inline" />
                 </button>
@@ -238,7 +238,7 @@ export const Navbar: React.FC = () => {
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="px-3 py-2 border-b border-neutral-100">
-                      <p className="text-xs font-bold text-neutral-900 truncate">{user.name}</p>
+                      <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || 'Пользователь'}</p>
                       <p className="text-[10px] text-neutral-500 truncate">{user.email}</p>
                     </div>
 
@@ -382,7 +382,7 @@ export const Navbar: React.FC = () => {
               {isAuthenticated && user ? (
                 <div className="space-y-2 px-1">
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-                    <p className="text-xs font-bold text-neutral-900 truncate">{user.name}</p>
+                    <p className="text-xs font-bold text-neutral-900 truncate">{user.name || user.email || 'Пользователь'}</p>
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
