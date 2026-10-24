@@ -95,6 +95,9 @@ CREATE TABLE IF NOT EXISTS test_sessions (
     production_score INT,
     conversation_score INT,
     deadline_at TIMESTAMP WITH TIME ZONE,
+    blueprint_version VARCHAR(50) DEFAULT '2026.1',
+    scoring_version VARCHAR(50) DEFAULT 'irt-2pl-v2',
+    content_snapshot JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP WITH TIME ZONE
 );
@@ -130,6 +133,7 @@ CREATE TABLE IF NOT EXISTS session_questions (
     position INT NOT NULL DEFAULT 0,
     issued_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deadline_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    question_snapshot JSONB NOT NULL DEFAULT '{}',
     PRIMARY KEY (session_id, question_id)
 );
 
@@ -268,6 +272,9 @@ CREATE TABLE IF NOT EXISTS user_errors (
     user_answer TEXT NOT NULL,
     correct_answer TEXT NOT NULL,
     explanation TEXT DEFAULT '',
+    error_category VARCHAR(50) NOT NULL DEFAULT 'general',
+    error_rule VARCHAR(100) NOT NULL DEFAULT '',
+    context_variants JSONB NOT NULL DEFAULT '[]',
     consecutive_successes INT NOT NULL DEFAULT 0,
     attempts_count INT NOT NULL DEFAULT 0,
     mastered BOOLEAN NOT NULL DEFAULT FALSE,

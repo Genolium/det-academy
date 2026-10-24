@@ -484,10 +484,30 @@ type SessionRepo struct{ db *sql.DB }
 
 func (r *SessionRepo) Create(ctx context.Context, s *models.TestSession) error {
 	query := `
-		INSERT INTO test_sessions (id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level, mode, reading_score, listening_score, writing_score, speaking_score, deadline_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		INSERT INTO test_sessions (
+			id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level,
+			mode, reading_score, listening_score, writing_score, speaking_score,
+			deadline_at, blueprint_version, scoring_version, content_snapshot, created_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`
-	_, err := r.db.ExecContext(ctx, query, s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel, envOrDefaultMode(s.Mode), s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore, s.DeadlineAt, s.CreatedAt)
+	bpVersion := s.BlueprintVersion
+	if bpVersion == "" {
+		bpVersion = "2026.1"
+	}
+	scVersion := s.ScoringVersion
+	if scVersion == "" {
+		scVersion = "irt-2pl-v2"
+	}
+	snapshot := s.ContentSnapshot
+	if len(snapshot) == 0 {
+		snapshot = []byte(`{}`)
+	}
+	_, err := r.db.ExecContext(ctx, query,
+		s.ID, s.UserID, s.CandidateName, s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel,
+		envOrDefaultMode(s.Mode), s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore,
+		s.DeadlineAt, bpVersion, scVersion, snapshot, s.CreatedAt,
+	)
 	return err
 }
 
@@ -495,15 +515,19 @@ func (r *SessionRepo) GetByID(ctx context.Context, id string) (*models.TestSessi
 	query := `
 		SELECT id, user_id, candidate_name, status, current_stage, stage_name, difficulty_level,
 		       COALESCE(mode, 'full'),
+		       COALESCE(blueprint_version, '2026.1'),
+		       COALESCE(scoring_version, 'irt-2pl-v2'),
+		       COALESCE(content_snapshot, '{}'::jsonb),
 		       overall_score, reading_score, listening_score, writing_score, speaking_score,
 		       literacy_score, comprehension_score, production_score, conversation_score,
 		       deadline_at, created_at, completed_at
 		FROM test_sessions WHERE id = $1
 	`
 	var s models.TestSession
+	var snapshotBytes []byte
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&s.ID, &s.UserID, &s.CandidateName, &s.Status, &s.CurrentStage, &s.StageName, &s.DifficultyLevel,
-		&s.Mode,
+		&s.Mode, &s.BlueprintVersion, &s.ScoringVersion, &snapshotBytes,
 		&s.OverallScore, &s.ReadingScore, &s.ListeningScore, &s.WritingScore, &s.SpeakingScore,
 		&s.LiteracyScore, &s.ComprehensionScore, &s.ProductionScore, &s.ConversationScore,
 		&s.DeadlineAt, &s.CreatedAt, &s.CompletedAt,
@@ -511,6 +535,7 @@ func (r *SessionRepo) GetByID(ctx context.Context, id string) (*models.TestSessi
 	if err != nil {
 		return nil, err
 	}
+	s.ContentSnapshot = snapshotBytes
 	return &s, nil
 }
 
@@ -520,14 +545,18 @@ func (r *SessionRepo) Update(ctx context.Context, s *models.TestSession) error {
 		SET status = $1, current_stage = $2, stage_name = $3, difficulty_level = $4,
 		    overall_score = $5, reading_score = $6, listening_score = $7, writing_score = $8, speaking_score = $9,
 		    literacy_score = $10, comprehension_score = $11, production_score = $12, conversation_score = $13,
-		    deadline_at = $14, completed_at = $15
-		WHERE id = $16
+		    deadline_at = $14, content_snapshot = $15, completed_at = $16
+		WHERE id = $17
 	`
+	snapshot := s.ContentSnapshot
+	if len(snapshot) == 0 {
+		snapshot = []byte(`{}`)
+	}
 	_, err := r.db.ExecContext(ctx, query,
 		s.Status, s.CurrentStage, s.StageName, s.DifficultyLevel,
 		s.OverallScore, s.ReadingScore, s.ListeningScore, s.WritingScore, s.SpeakingScore,
 		s.LiteracyScore, s.ComprehensionScore, s.ProductionScore, s.ConversationScore,
-		s.DeadlineAt, s.CompletedAt, s.ID,
+		s.DeadlineAt, snapshot, s.CompletedAt, s.ID,
 	)
 	return err
 }
@@ -537,14 +566,19 @@ func (r *SessionRepo) AssignQuestions(ctx context.Context, assignments []models.
 		return nil
 	}
 	query := `
-		INSERT INTO session_questions (session_id, question_id, stage_name, position, issued_at, deadline_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (session_id, question_id) DO NOTHING
+		INSERT INTO session_questions (session_id, question_id, stage_name, position, issued_at, deadline_at, question_snapshot)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (session_id, question_id) DO UPDATE SET
+			question_snapshot = CASE WHEN EXCLUDED.question_snapshot != '{}'::jsonb THEN EXCLUDED.question_snapshot ELSE session_questions.question_snapshot END
 	`
 	for _, assignment := range assignments {
+		snapshot := assignment.QuestionSnapshot
+		if len(snapshot) == 0 {
+			snapshot = []byte(`{}`)
+		}
 		if _, err := r.db.ExecContext(ctx, query,
 			assignment.SessionID, assignment.QuestionID, assignment.StageName,
-			assignment.Position, assignment.IssuedAt, assignment.DeadlineAt,
+			assignment.Position, assignment.IssuedAt, assignment.DeadlineAt, snapshot,
 		); err != nil {
 			return err
 		}
@@ -554,7 +588,7 @@ func (r *SessionRepo) AssignQuestions(ctx context.Context, assignments []models.
 
 func (r *SessionRepo) GetAssignedQuestions(ctx context.Context, sessionID, stageName string) ([]models.SessionQuestion, error) {
 	query := `
-		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at
+		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at, COALESCE(question_snapshot, '{}'::jsonb)
 		FROM session_questions
 		WHERE session_id = $1
 	`
@@ -573,10 +607,12 @@ func (r *SessionRepo) GetAssignedQuestions(ctx context.Context, sessionID, stage
 	assignments := []models.SessionQuestion{}
 	for rows.Next() {
 		var assignment models.SessionQuestion
+		var snapshotBytes []byte
 		if err := rows.Scan(&assignment.SessionID, &assignment.QuestionID, &assignment.StageName,
-			&assignment.Position, &assignment.IssuedAt, &assignment.DeadlineAt); err != nil {
+			&assignment.Position, &assignment.IssuedAt, &assignment.DeadlineAt, &snapshotBytes); err != nil {
 			return nil, err
 		}
+		assignment.QuestionSnapshot = snapshotBytes
 		assignments = append(assignments, assignment)
 	}
 	return assignments, rows.Err()
@@ -1330,7 +1366,11 @@ func (r *StudyRepo) UpsertGoals(ctx context.Context, goal *models.UserGoal) erro
 func (r *StudyRepo) GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error) {
 	query := `
 		SELECT id, user_id, question_type, prompt, user_answer, correct_answer,
-		       COALESCE(explanation, ''), consecutive_successes, attempts_count,
+		       COALESCE(explanation, ''),
+		       COALESCE(error_category, 'general'),
+		       COALESCE(error_rule, ''),
+		       COALESCE(context_variants, '[]'::jsonb),
+		       consecutive_successes, attempts_count,
 		       mastered, last_reviewed_at, created_at
 		FROM user_errors
 		WHERE user_id = $1
@@ -1345,13 +1385,16 @@ func (r *StudyRepo) GetErrors(ctx context.Context, userID string) ([]models.User
 	var errors []models.UserErrorItem
 	for rows.Next() {
 		var item models.UserErrorItem
+		var variantsBytes []byte
 		if err := rows.Scan(
 			&item.ID, &item.UserID, &item.QuestionType, &item.Prompt, &item.UserAnswer, &item.CorrectAnswer,
-			&item.Explanation, &item.ConsecutiveSuccesses, &item.AttemptsCount,
+			&item.Explanation, &item.ErrorCategory, &item.ErrorRule, &variantsBytes,
+			&item.ConsecutiveSuccesses, &item.AttemptsCount,
 			&item.Mastered, &item.LastReviewedAt, &item.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
+		_ = json.Unmarshal(variantsBytes, &item.ContextVariants)
 		errors = append(errors, item)
 	}
 	if errors == nil {
@@ -1363,39 +1406,59 @@ func (r *StudyRepo) GetErrors(ctx context.Context, userID string) ([]models.User
 func (r *StudyRepo) GetErrorByID(ctx context.Context, userID, errorID string) (*models.UserErrorItem, error) {
 	query := `
 		SELECT id, user_id, question_type, prompt, user_answer, correct_answer,
-		       COALESCE(explanation, ''), consecutive_successes, attempts_count,
+		       COALESCE(explanation, ''),
+		       COALESCE(error_category, 'general'),
+		       COALESCE(error_rule, ''),
+		       COALESCE(context_variants, '[]'::jsonb),
+		       consecutive_successes, attempts_count,
 		       mastered, last_reviewed_at, created_at
 		FROM user_errors
 		WHERE user_id = $1 AND id = $2
 	`
 	var item models.UserErrorItem
+	var variantsBytes []byte
 	err := r.db.QueryRowContext(ctx, query, userID, errorID).Scan(
 		&item.ID, &item.UserID, &item.QuestionType, &item.Prompt, &item.UserAnswer, &item.CorrectAnswer,
-		&item.Explanation, &item.ConsecutiveSuccesses, &item.AttemptsCount,
+		&item.Explanation, &item.ErrorCategory, &item.ErrorRule, &variantsBytes,
+		&item.ConsecutiveSuccesses, &item.AttemptsCount,
 		&item.Mastered, &item.LastReviewedAt, &item.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+	_ = json.Unmarshal(variantsBytes, &item.ContextVariants)
 	return &item, nil
 }
 
 func (r *StudyRepo) SaveError(ctx context.Context, item *models.UserErrorItem) error {
+	variantsBytes, _ := json.Marshal(item.ContextVariants)
+	if len(variantsBytes) == 0 {
+		variantsBytes = []byte(`[]`)
+	}
+	category := item.ErrorCategory
+	if category == "" {
+		category = "general"
+	}
 	query := `
 		INSERT INTO user_errors (
 			id, user_id, question_type, prompt, user_answer, correct_answer,
-			explanation, consecutive_successes, attempts_count, mastered, last_reviewed_at, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			explanation, error_category, error_rule, context_variants,
+			consecutive_successes, attempts_count, mastered, last_reviewed_at, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		ON CONFLICT (id) DO UPDATE SET
 			user_answer = EXCLUDED.user_answer,
 			consecutive_successes = EXCLUDED.consecutive_successes,
 			attempts_count = EXCLUDED.attempts_count,
 			mastered = EXCLUDED.mastered,
+			error_category = EXCLUDED.error_category,
+			error_rule = EXCLUDED.error_rule,
+			context_variants = EXCLUDED.context_variants,
 			last_reviewed_at = EXCLUDED.last_reviewed_at
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		item.ID, item.UserID, item.QuestionType, item.Prompt, item.UserAnswer, item.CorrectAnswer,
-		item.Explanation, item.ConsecutiveSuccesses, item.AttemptsCount, item.Mastered, item.LastReviewedAt, item.CreatedAt,
+		item.Explanation, category, item.ErrorRule, variantsBytes,
+		item.ConsecutiveSuccesses, item.AttemptsCount, item.Mastered, item.LastReviewedAt, item.CreatedAt,
 	)
 	return err
 }

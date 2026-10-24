@@ -185,10 +185,50 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		len(completedSessions),
 	)
 	if readinessAvailable {
-		readinessPercent = int(math.Round(theoryPct*40.0 + mockRatio*60.0))
+		// Evaluate 4 modalities completeness and consistency across recent mock sessions
+		recentSessions := completedSessions
+		if len(recentSessions) > 3 {
+			recentSessions = recentSessions[:3]
+		}
+
+		// 1. Modality completeness: do all 4 skills have measured scores in the latest session?
+		latest := recentSessions[0]
+		measuredCount := 0
+		if intVal(latest.ReadingScore) > 0 {
+			measuredCount++
+		}
+		if intVal(latest.ListeningScore) > 0 {
+			measuredCount++
+		}
+		if intVal(latest.WritingScore) > 0 {
+			measuredCount++
+		}
+		if intVal(latest.SpeakingScore) > 0 {
+			measuredCount++
+		}
+		completenessRatio := float64(measuredCount) / 4.0
+
+		// 2. Stability score: measure standard deviation of overall scores across recent tests
+		stabilityFactor := 1.0
+		if len(recentSessions) >= 2 {
+			diff := math.Abs(float64(intVal(recentSessions[0].OverallScore) - intVal(recentSessions[1].OverallScore)))
+			// If variance between attempts is very large (> 25 pts), reduce readiness confidence
+			if diff > 25 {
+				stabilityFactor = 0.85
+			} else if diff <= 10 {
+				stabilityFactor = 1.0
+			} else {
+				stabilityFactor = 0.95
+			}
+		}
+
+		// Combined formula: 30% theory + 50% target ratio + 20% modality completeness * stability
+		rawReadiness := (theoryPct*30.0 + mockRatio*50.0 + completenessRatio*20.0) * stabilityFactor
+		readinessPercent = int(math.Round(math.Max(0, math.Min(100, rawReadiness))))
+
 		readinessBasis = fmt.Sprintf(
-			"Расчёт по %d завершённым mock-тестам (%d%% теории и лучший ориентир %d из %d).",
-			len(completedSessions), int(math.Round(theoryPct*100)), currentEstimate, goal.TargetScore,
+			"Многофакторный расчёт: %d завершённых mock-тестов (теория %d%%, модальности %d/4, ориентир %d из %d, стабильность %.0f%%).",
+			len(completedSessions), int(math.Round(theoryPct*100)), measuredCount, currentEstimate, goal.TargetScore, stabilityFactor*100,
 		)
 	}
 
@@ -479,6 +519,19 @@ func (s *StudyService) SaveError(ctx context.Context, userID string, req models.
 		}
 	}
 
+	category := req.ErrorCategory
+	if category == "" {
+		category = DeduceErrorCategory(req.QuestionType, req.Explanation)
+	}
+	rule := req.ErrorRule
+	if rule == "" {
+		rule = DeduceErrorRule(category, req.Explanation)
+	}
+	variants := req.ContextVariants
+	if len(variants) == 0 {
+		variants = GenerateContextVariants(category, req.Prompt, req.CorrectAnswer, rule)
+	}
+
 	item := &models.UserErrorItem{
 		ID:                   "err-" + uuid.New().String()[:8],
 		UserID:               userID,
@@ -487,6 +540,9 @@ func (s *StudyService) SaveError(ctx context.Context, userID string, req models.
 		UserAnswer:           req.UserAnswer,
 		CorrectAnswer:        req.CorrectAnswer,
 		Explanation:          req.Explanation,
+		ErrorCategory:        category,
+		ErrorRule:            rule,
+		ContextVariants:      variants,
 		ConsecutiveSuccesses: 0,
 		AttemptsCount:        1,
 		Mastered:             false,
@@ -1391,4 +1447,87 @@ func (s *StudyService) GetTypingHistory(ctx context.Context, userID string) (int
 
 func (s *StudyService) GetSkillMastery(ctx context.Context, userID string) (map[string]models.UserSkillMastery, error) {
 	return s.storage.Study().GetSkillMastery(ctx, userID)
+}
+
+// DeduceErrorCategory classifies the error based on question type and explanation keywords.
+func DeduceErrorCategory(questionType, explanation string) string {
+	lowerExp := strings.ToLower(explanation)
+	switch {
+	case strings.Contains(lowerExp, "connector") || strings.Contains(lowerExp, "linking") || strings.Contains(lowerExp, "however") || strings.Contains(lowerExp, "therefore"):
+		return "connector"
+	case strings.Contains(lowerExp, "collocation") || strings.Contains(lowerExp, "preposition") || strings.Contains(lowerExp, "phrase"):
+		return "collocation"
+	case strings.Contains(lowerExp, "subject") || strings.Contains(lowerExp, "verb") || strings.Contains(lowerExp, "agreement") || strings.Contains(lowerExp, "plural") || strings.Contains(lowerExp, "tense"):
+		return "grammar"
+	case questionType == "FILL_BLANKS" || questionType == "C_TEST" || strings.Contains(lowerExp, "morpheme") || strings.Contains(lowerExp, "prefix") || strings.Contains(lowerExp, "suffix"):
+		return "morpheme"
+	case questionType == "READ_SELECT" || questionType == "LISTEN_SELECT":
+		return "vocabulary"
+	default:
+		return "general"
+	}
+}
+
+// DeduceErrorRule provides an academic rule hint based on category and explanation.
+func DeduceErrorRule(category, explanation string) string {
+	switch category {
+	case "morpheme":
+		return "Word Formation: Check grammatical part of speech and affix spelling."
+	case "connector":
+		return "Discourse Markers: Select cohesive devices reflecting contrasting or causal relations."
+	case "collocation":
+		return "Academic Collocations: Pair words following standard academic English usage."
+	case "grammar":
+		return "Subject-Verb Concord: Ensure agreement in number, person, and tense continuity."
+	case "vocabulary":
+		return "Lexical Authenticity: Differentiate genuine C1/C2 terms from pseudo-words."
+	default:
+		if explanation != "" {
+			return explanation
+		}
+		return "General Accuracy: Review context and verify intended meaning."
+	}
+}
+
+// GenerateContextVariants creates alternate practice sentences for deep retention.
+func GenerateContextVariants(category, prompt, correctAnswer, rule string) []models.ContextVariant {
+	var variants []models.ContextVariant
+	cleanAns := strings.TrimSpace(correctAnswer)
+	if cleanAns == "" {
+		return variants
+	}
+
+	switch category {
+	case "connector":
+		variants = append(variants, models.ContextVariant{
+			Prompt:        fmt.Sprintf("The research hypotheses were rigorous; _______, empirical validation required additional trials. (Use: %s)", cleanAns),
+			CorrectAnswer: cleanAns,
+			Explanation:   "Use contrasting or causal transition appropriate for academic discourse.",
+		})
+		variants = append(variants, models.ContextVariant{
+			Prompt:        fmt.Sprintf("Initial simulations failed to reproduce expected outcomes; _______, the engineers refined the model parameters. (Use: %s)", cleanAns),
+			CorrectAnswer: cleanAns,
+			Explanation:   "Maintain cohesive flow between independent scientific clauses.",
+		})
+	case "collocation":
+		variants = append(variants, models.ContextVariant{
+			Prompt:        fmt.Sprintf("Scholars generally agree that sustainable development plays a crucial role in economic policy. Complete the academic phrase: %s", cleanAns),
+			CorrectAnswer: cleanAns,
+			Explanation:   "Adhere to high-frequency AWL collocations.",
+		})
+	case "morpheme":
+		variants = append(variants, models.ContextVariant{
+			Prompt:        fmt.Sprintf("Complete the sentence with correct derivative: The government implemented a comprehensive str________ plan. (Root/target: %s)", cleanAns),
+			CorrectAnswer: cleanAns,
+			Explanation:   "Ensure correct morphological inflection.",
+		})
+	default:
+		variants = append(variants, models.ContextVariant{
+			Prompt:        fmt.Sprintf("Active recall in context: Re-apply the target knowledge [%s] under novel conditions.", cleanAns),
+			CorrectAnswer: cleanAns,
+			Explanation:   rule,
+		})
+	}
+
+	return variants
 }

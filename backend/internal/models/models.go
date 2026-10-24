@@ -170,26 +170,29 @@ func GetDefaultExamBlueprint() ExamBlueprint {
 }
 
 type TestSession struct {
-	ID                 string     `json:"id"`
-	UserID             string     `json:"userId"`
-	CandidateName      string     `json:"candidateName"`
-	Status             string     `json:"status"` // IN_PROGRESS, COMPLETED, ABANDONED
-	CurrentStage       int        `json:"currentStage"`
-	StageName          string     `json:"stageName"`
-	DifficultyLevel    string     `json:"difficultyLevel"` // A2, B1, B2, C1
-	Mode               string     `json:"mode"`            // full, diagnostic
-	OverallScore       *int       `json:"overallScore,omitempty"`
-	ReadingScore       *int       `json:"readingScore,omitempty"`
-	ListeningScore     *int       `json:"listeningScore,omitempty"`
-	WritingScore       *int       `json:"writingScore,omitempty"`
-	SpeakingScore      *int       `json:"speakingScore,omitempty"`
-	LiteracyScore      *int       `json:"literacyScore,omitempty"`
-	ComprehensionScore *int       `json:"comprehensionScore,omitempty"`
-	ProductionScore    *int       `json:"productionScore,omitempty"`
-	ConversationScore  *int       `json:"conversationScore,omitempty"`
-	DeadlineAt         *time.Time `json:"deadlineAt,omitempty"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	CompletedAt        *time.Time `json:"completedAt,omitempty"`
+	ID                 string          `json:"id"`
+	UserID             string          `json:"userId"`
+	CandidateName      string          `json:"candidateName"`
+	Status             string          `json:"status"` // IN_PROGRESS, COMPLETED, ABANDONED
+	CurrentStage       int             `json:"currentStage"`
+	StageName          string          `json:"stageName"`
+	DifficultyLevel    string          `json:"difficultyLevel"` // A2, B1, B2, C1
+	Mode               string          `json:"mode"`            // full, diagnostic
+	BlueprintVersion   string          `json:"blueprintVersion"`
+	ScoringVersion     string          `json:"scoringVersion"`
+	ContentSnapshot    json.RawMessage `json:"contentSnapshot,omitempty"`
+	OverallScore       *int            `json:"overallScore,omitempty"`
+	ReadingScore       *int            `json:"readingScore,omitempty"`
+	ListeningScore     *int            `json:"listeningScore,omitempty"`
+	WritingScore       *int            `json:"writingScore,omitempty"`
+	SpeakingScore      *int            `json:"speakingScore,omitempty"`
+	LiteracyScore      *int            `json:"literacyScore,omitempty"`
+	ComprehensionScore *int            `json:"comprehensionScore,omitempty"`
+	ProductionScore    *int            `json:"productionScore,omitempty"`
+	ConversationScore  *int            `json:"conversationScore,omitempty"`
+	DeadlineAt         *time.Time      `json:"deadlineAt,omitempty"`
+	CreatedAt          time.Time       `json:"createdAt"`
+	CompletedAt        *time.Time      `json:"completedAt,omitempty"`
 }
 
 type QuestionResponse struct {
@@ -432,12 +435,13 @@ type SessionReviewResponse struct {
 }
 
 type SessionQuestion struct {
-	SessionID  string    `json:"sessionId"`
-	QuestionID string    `json:"questionId"`
-	StageName  string    `json:"stageName"`
-	Position   int       `json:"position"`
-	IssuedAt   time.Time `json:"issuedAt"`
-	DeadlineAt time.Time `json:"deadlineAt"`
+	SessionID        string          `json:"sessionId"`
+	QuestionID       string          `json:"questionId"`
+	StageName        string          `json:"stageName"`
+	Position         int             `json:"position"`
+	IssuedAt         time.Time       `json:"issuedAt"`
+	DeadlineAt       time.Time       `json:"deadlineAt"`
+	QuestionSnapshot json.RawMessage `json:"questionSnapshot,omitempty"`
 }
 
 type SessionEvent struct {
@@ -806,27 +810,40 @@ type StudyPlanResponse struct {
 	TasksToday         []DailyTask `json:"tasksToday"`
 }
 
+// ContextVariant represents an alternative sentence or context for error practice
+type ContextVariant struct {
+	Prompt        string `json:"prompt"`
+	CorrectAnswer string `json:"correctAnswer"`
+	Explanation   string `json:"explanation,omitempty"`
+}
+
 type UserErrorItem struct {
-	ID                   string     `json:"id"`
-	UserID               string     `json:"userId"`
-	QuestionType         string     `json:"type"`
-	Prompt               string     `json:"prompt"`
-	UserAnswer           string     `json:"userAnswer"`
-	CorrectAnswer        string     `json:"correctAnswer"`
-	Explanation          string     `json:"explanation,omitempty"`
-	ConsecutiveSuccesses int        `json:"consecutiveSuccesses"`
-	AttemptsCount        int        `json:"attemptsCount"`
-	Mastered             bool       `json:"mastered"`
-	LastReviewedAt       *time.Time `json:"lastReviewedAt,omitempty"`
-	CreatedAt            time.Time  `json:"createdAt"`
+	ID                   string           `json:"id"`
+	UserID               string           `json:"userId"`
+	QuestionType         string           `json:"type"`
+	Prompt               string           `json:"prompt"`
+	UserAnswer           string           `json:"userAnswer"`
+	CorrectAnswer        string           `json:"correctAnswer"`
+	Explanation          string           `json:"explanation,omitempty"`
+	ErrorCategory        string           `json:"errorCategory"` // morpheme, connector, collocation, grammar, vocabulary
+	ErrorRule            string           `json:"errorRule"`
+	ContextVariants      []ContextVariant `json:"contextVariants,omitempty"`
+	ConsecutiveSuccesses int              `json:"consecutiveSuccesses"`
+	AttemptsCount        int              `json:"attemptsCount"`
+	Mastered             bool             `json:"mastered"`
+	LastReviewedAt       *time.Time       `json:"lastReviewedAt,omitempty"`
+	CreatedAt            time.Time        `json:"createdAt"`
 }
 
 type SaveErrorRequest struct {
-	QuestionType  string `json:"type"`
-	Prompt        string `json:"prompt"`
-	UserAnswer    string `json:"userAnswer"`
-	CorrectAnswer string `json:"correctAnswer"`
-	Explanation   string `json:"explanation,omitempty"`
+	QuestionType    string           `json:"type"`
+	Prompt          string           `json:"prompt"`
+	UserAnswer      string           `json:"userAnswer"`
+	CorrectAnswer   string           `json:"correctAnswer"`
+	Explanation     string           `json:"explanation,omitempty"`
+	ErrorCategory   string           `json:"errorCategory,omitempty"`
+	ErrorRule       string           `json:"errorRule,omitempty"`
+	ContextVariants []ContextVariant `json:"contextVariants,omitempty"`
 }
 
 type RecallErrorRequest struct {

@@ -182,15 +182,17 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	deadline := time.Now().Add(time.Duration(durationSec) * time.Second)
 
 	session := &models.TestSession{
-		ID:              uuid.New().String(),
-		UserID:          userID,
-		CandidateName:   candidateName,
-		Status:          "IN_PROGRESS",
-		CurrentStage:    1,
-		StageName:       initialStage,
-		DifficultyLevel: initialDifficulty,
-		Mode:            mode,
-		DeadlineAt:      &deadline,
+		ID:               uuid.New().String(),
+		UserID:           userID,
+		CandidateName:    candidateName,
+		Status:           "IN_PROGRESS",
+		CurrentStage:     1,
+		StageName:        initialStage,
+		DifficultyLevel:  initialDifficulty,
+		Mode:             mode,
+		BlueprintVersion: "2026.1",
+		ScoringVersion:   "irt-2pl-v2",
+		DeadlineAt:       &deadline,
 	}
 
 	if err := s.sessionRepo.Create(ctx, session); err != nil {
@@ -284,13 +286,21 @@ func (s *CATService) assignSessionQuestions(ctx context.Context, session *models
 		if session.DeadlineAt != nil {
 			deadlineAt = *session.DeadlineAt
 		}
+		qSnapshot, _ := json.Marshal(map[string]interface{}{
+			"id":             question.ID,
+			"type":           question.Type,
+			"difficultyBand": question.DifficultyBand,
+			"contentPayload": question.ContentPayload,
+			"timeLimitSec":   question.TimeLimitSec,
+		})
 		assignments = append(assignments, models.SessionQuestion{
-			SessionID:  session.ID,
-			QuestionID: question.ID,
-			StageName:  session.StageName,
-			Position:   index,
-			IssuedAt:   now,
-			DeadlineAt: deadlineAt,
+			SessionID:        session.ID,
+			QuestionID:       question.ID,
+			StageName:        session.StageName,
+			Position:         index,
+			IssuedAt:         now,
+			DeadlineAt:       deadlineAt,
+			QuestionSnapshot: qSnapshot,
 		})
 	}
 	return s.sessionRepo.AssignQuestions(ctx, assignments)
@@ -1779,6 +1789,19 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 
 	now := time.Now()
+
+	// Immutable content snapshot of this attempt: capture all questions and responses
+	allAssignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, session.ID)
+	sessionSnapshotMap := map[string]interface{}{
+		"blueprintVersion": session.BlueprintVersion,
+		"scoringVersion":   session.ScoringVersion,
+		"assignedCount":    len(allAssignments),
+		"answeredCount":    len(responses),
+		"scores":           scores,
+		"completedAt":      now.Format(time.RFC3339),
+	}
+	sessionSnapshotBytes, _ := json.Marshal(sessionSnapshotMap)
+	session.ContentSnapshot = sessionSnapshotBytes
 
 	session.Status = "COMPLETED"
 	session.StageName = "COMPLETED"

@@ -11,6 +11,9 @@ export interface ErrorItem {
   userAnswer: string;
   correctAnswer: string;
   explanation?: string;
+  errorCategory?: string;
+  errorRule?: string;
+  contextVariants?: Array<{ prompt: string; correctAnswer: string; explanation?: string }>;
   timestamp: string;
   consecutiveSuccesses: number;
   attemptsCount: number;
@@ -26,6 +29,9 @@ export interface SaveErrorInput {
   userAnswer: string;
   correctAnswer: string;
   explanation?: string;
+  errorCategory?: string;
+  errorRule?: string;
+  contextVariants?: Array<{ prompt: string; correctAnswer: string; explanation?: string }>;
 }
 
 interface RecallResult {
@@ -102,6 +108,9 @@ const mapServerItem = (item: BackendErrorItem): ErrorItem => ({
   userAnswer: item.userAnswer,
   correctAnswer: item.correctAnswer,
   explanation: item.explanation,
+  errorCategory: item.errorCategory || 'general',
+  errorRule: item.errorRule || '',
+  contextVariants: item.contextVariants || [],
   consecutiveSuccesses: item.consecutiveSuccesses || 0,
   attemptsCount: item.attemptsCount || 1,
   mastered: Boolean(item.mastered),

@@ -229,6 +229,11 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 uppercase">
                           {errorTypeLabel(item.type)}
                         </span>
+                        {item.errorCategory && item.errorCategory !== 'general' && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 uppercase">
+                            {item.errorCategory}
+                          </span>
+                        )}
                         {item.mastered ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-1">
                             <Check className="w-3 h-3" /> Усвоено
@@ -251,6 +256,11 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
                       <p className="text-xs text-neutral-200 leading-relaxed break-words">
                         {item.prompt}
                       </p>
+                      {item.errorRule && (
+                        <p className="text-[11px] text-amber-300/90 font-medium mt-1">
+                          Правило: {item.errorRule}
+                        </p>
+                      )}
                       <div className="mt-2 flex flex-col gap-1 text-xs">
                         <span className="text-red-300 font-mono break-words">
                           Ваш ответ: {item.userAnswer || '—'}
@@ -264,6 +274,17 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
                           </span>
                         )}
                       </div>
+
+                      {item.contextVariants && item.contextVariants.length > 0 && (
+                        <div className="mt-3 p-2.5 rounded-xl bg-neutral-950/80 border border-neutral-800/80">
+                          <span className="text-[10px] uppercase font-bold text-neutral-400 block mb-1">
+                            Отработка в новом контексте:
+                          </span>
+                          <p className="text-[11px] text-neutral-300 font-mono">
+                            {item.contextVariants[0].prompt}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">

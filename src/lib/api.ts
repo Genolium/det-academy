@@ -299,6 +299,12 @@ export interface StudyPlanResponse {
   tasksToday: DailyTask[];
 }
 
+export interface ContextVariant {
+  prompt: string;
+  correctAnswer: string;
+  explanation?: string;
+}
+
 export interface UserErrorItem {
   id: string;
   userId: string;
@@ -307,6 +313,9 @@ export interface UserErrorItem {
   userAnswer: string;
   correctAnswer: string;
   explanation?: string;
+  errorCategory?: string;
+  errorRule?: string;
+  contextVariants?: ContextVariant[];
   consecutiveSuccesses: number;
   attemptsCount: number;
   mastered: boolean;
@@ -320,6 +329,9 @@ export interface SaveErrorRequest {
   userAnswer: string;
   correctAnswer: string;
   explanation?: string;
+  errorCategory?: string;
+  errorRule?: string;
+  contextVariants?: ContextVariant[];
 }
 
 export interface RecallErrorResponse {
