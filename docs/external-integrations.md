@@ -86,3 +86,30 @@ frontend falls back to the bundled content instead of blocking the page.
    speaking response with STT, and one deliberate backend error to confirm Sentry.
 4. Record the evidence in the release checklist before claiming the integrations
    are production-ready.
+
+## AI evaluation and speech recognition
+
+Any OpenAI-compatible provider works (OpenAI, OpenRouter, Groq, a local Ollama):
+
+| Variable | Purpose |
+|---|---|
+| `AI_BASE_URL` | endpoint root, e.g. `https://api.openai.com/v1` |
+| `AI_API_KEY` | provider key (empty for a local Ollama) |
+| `AI_MODEL` | chat model used for enrichment and rubric evaluation |
+| `AI_STT_ENABLED` | `true` enables server-side transcription |
+| `AI_STT_MODEL` | transcription model, default `whisper-1` |
+| `REQUIRE_NEURAL_EVALUATION` | `true` makes the provider authoritative; a failure stays `failed`, never a zero |
+
+Check the configuration without spending meaningful tokens:
+
+```bash
+npm run preflight:ai
+```
+
+Exit codes: `2` missing configuration, `1` the provider did not answer, `0` chat
+(and STT when enabled) work. The probe sends an 8-token chat request and, with
+STT enabled, a 0.25 s silent WAV.
+
+Score provenance is always visible: `provider`, `evaluatorVersion` and
+`transcriptSource` are stored on every evaluation, and the browser-transcript
+path is labelled practice-grade in the coach.

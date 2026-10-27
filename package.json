@@ -13,6 +13,7 @@
     "test:backend": "cd backend && go test ./...",
     "test:e2e:fullstack": "playwright test -c playwright.fullstack.config.ts",
     "preflight:external": "node --env-file-if-exists=.env scripts/preflight_external.mjs",
+    "preflight:ai": "node --env-file-if-exists=.env scripts/ai_preflight.mjs",
     "preflight:directus": "node --env-file-if-exists=.env scripts/directus_preflight.mjs",
     "preflight:edge": "node scripts/edge_preflight.mjs",
     "calibration:test": "python3 scripts/test_calibration.py",
