@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { readSelectBank, fillBlanksBank } from '@/data/questionBank';
+import { theoryWords, theoryVocabularyMeta } from '@/data/theoryVocabulary';
 import { api, VocabularyEntry } from '@/lib/api';
 import { BookOpen, Search, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
 import { PronounceButton } from '@/components/vocabulary/PronounceButton';
@@ -12,7 +13,8 @@ const levels = ['ALL', 'B1', 'B2', 'C1', 'C2'] as const;
 export default function VocabularyPage() {
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<(typeof levels)[number]>('ALL');
-  const [tab, setTab] = useState<'awl' | 'read-select' | 'fill-blanks'>('awl');
+  const [tab, setTab] = useState<'awl' | 'theory' | 'read-select' | 'fill-blanks'>('theory');
+  const [theoryQuery, setTheoryQuery] = useState('');
   const [entries, setEntries] = useState<VocabularyEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,15 @@ export default function VocabularyPage() {
     );
   }, [query]);
 
+  const filteredTheoryWords = useMemo(() => {
+    const query = theoryQuery.trim().toLowerCase();
+    const list = query
+      ? theoryWords.filter((word) => word.toLowerCase().includes(query))
+      : theoryWords;
+    // Cap the DOM: the source list has more than a thousand words.
+    return list.slice(0, 600);
+  }, [theoryQuery]);
+
   return (
     <div className="min-h-screen py-12 ambient-glow">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -94,10 +105,11 @@ export default function VocabularyPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-xl bg-neutral-100 p-1">
+            <div className="flex flex-wrap items-center gap-1 rounded-xl bg-neutral-100 p-1 max-w-full">
               {(
                 [
-                  ['awl', `Academic Word List (${total})`],
+                  ['theory', `Слова из программы (${theoryVocabularyMeta.count})`],
+                  ['awl', total > 0 ? `Academic Word List (${total})` : 'Academic Word List'],
                   ['read-select', `Read & Select (${readSelectBank.length})`],
                   ['fill-blanks', `Fill in the Blanks (${fillBlanksBank.length})`],
                 ] as const
@@ -114,7 +126,56 @@ export default function VocabularyPage() {
               ))}
             </div>
 
-            {tab === 'awl' && (
+            {tab === 'theory' && (
+          <section aria-labelledby="theory-words-title" className="space-y-4">
+            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 id="theory-words-title" className="text-lg font-black text-[#0E1012]">
+                    Слова из программы
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
+                    {theoryVocabularyMeta.count} слов из материалов курса. Нажмите на динамик рядом со словом,
+                    чтобы услышать произношение — транскрипция подскажет звуки, но на слух быстрее.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={theoryQuery}
+                    onChange={(event) => setTheoryQuery(event.target.value)}
+                    placeholder="Поиск по слову..."
+                    aria-label="Поиск по словам из программы"
+                    className="w-full sm:w-56 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-[#0E1012] focus:outline-none focus:border-neutral-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {filteredTheoryWords.map((word) => (
+                <span
+                  key={word}
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white pl-3.5 pr-1.5 py-1 text-sm font-semibold text-[#0E1012] shadow-sm"
+                >
+                  {word}
+                  <PronounceButton word={word} size="sm" />
+                </span>
+              ))}
+            </div>
+
+            {filteredTheoryWords.length === 0 && (
+              <p className="text-sm text-neutral-500">По запросу «{theoryQuery}» ничего не найдено.</p>
+            )}
+            {theoryQuery === '' && filteredTheoryWords.length < theoryVocabularyMeta.count && (
+              <p className="text-[11px] text-neutral-400">
+                Показаны первые {filteredTheoryWords.length} слов — уточните поиск, чтобы найти остальные.
+              </p>
+            )}
+          </section>
+        )}
+
+        {tab === 'awl' && (
               <div className="flex items-center gap-1">
                 {levels.map((item) => (
                   <button
