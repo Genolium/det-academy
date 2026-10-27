@@ -62,7 +62,7 @@ test('the map catalogue is verified and complete', async ({ request }) => {
 
 test('the map shows scores, cities and working category filters', async ({ page }) => {
   await page.goto('/institutions');
-  await page.getByRole('button', { name: /Интерактивная карта/ }).click();
+  await page.getByRole('button', { name: /Карта с проверенными координатами|Интерактивная карта/ }).click();
   await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
 
   const found = page.locator('[data-testid="map-found-count"]');

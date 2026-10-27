@@ -8,7 +8,7 @@ test('institutions map uses local Leaflet CSS and keeps attribution', async ({ p
     }
   });
   await page.goto('/institutions');
-  await page.getByRole('button', { name: /Интерактивная карта/ }).click();
+  await page.getByRole('button', { name: /Карта с проверенными координатами|Интерактивная карта/ }).click();
   await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap');
   expect(externalLeafletRequests.filter((url) => url.includes('unpkg.com'))).toEqual([]);

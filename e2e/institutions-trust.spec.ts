@@ -51,5 +51,5 @@ test('registry hides the unsupported score filter', async ({ page }) => {
   await expect(page.getByText(/Официальный реестр/)).toBeVisible();
   await expect(page.getByText(/Фильтр: Подходит под мой балл/)).toHaveCount(0);
   await expect(page.getByText(/Требования вузов пока не подтверждены/)).toBeVisible();
-  await expect(page.getByText(/4,087/)).toBeVisible();
+  await expect(page.getByText(/4[\s,]?087/).first()).toBeVisible();
 });
