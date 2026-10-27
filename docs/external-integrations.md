@@ -180,9 +180,9 @@ Verified on 2026-10-28: a synthesised sentence was recognised verbatim in
 
 ### Text-to-speech and permanent audio cache
 
-`GET /api/v1/tts?text=...` synthesises speech through SpeechKit and stores the
-result under `MEDIA_UPLOAD_DIR/tts` as a content-addressed MP3
-(`sha256(provider|voice|text)`). Files are kept forever, served with
+`GET /api/v1/tts?text=...` synthesises speech through Yandex SpeechKit and
+stores the result under `MEDIA_UPLOAD_DIR/tts` as a content-addressed MP3
+(`sha256(model|voice|lang|text)`). Files are kept forever, served with
 `Cache-Control: public, max-age=31536000, immutable`, and a concurrent request
 for the same sentence waits for the first synthesis instead of paying twice.
 
@@ -191,19 +191,51 @@ AI_TTS_ENABLED=true
 AI_TTS_PROVIDER=yandex
 AI_TTS_API_KEY=<SpeechKit key>   # falls back to AI_API_KEY
 AI_FOLDER_ID=<folder>
-AI_TTS_VOICE=jane                # English: jane, omazh, marina, zahar
+AI_TTS_MODEL=general             # general (native English) | livetts (ru voices)
+AI_TTS_VOICE=john                # the only native en-US voice in the catalogue
 AI_TTS_LANG=en-US
-AI_TTS_SPEED=0.9
+AI_TTS_SPEED=0.9                 # deliberate dictation pace (general only)
 NEXT_PUBLIC_TTS_PROVIDER=server  # browser = device voice fallback
 ```
+
+**Why `general` + `john`.** Every candidate was benchmarked objectively:
+synthesise a sentence, recognise it back with SpeechKit STT, compare words.
+
+| Model / voice | Round-trip accuracy | Notes |
+|---|---|---|
+| `general` / `john` | **0.99** | Native en-US male; supports `speed` |
+| `livetts` / `sofia` | 0.77–0.90 | LiveTTS voices are **ru-RU**; English has an accent |
+| `general` / `jane` | 0.40–0.46 | "The library" came out as "Ze ly brerri" |
+| `general` / `marina`, `omazh`, `ermil` | 0.32–0.44 | Also Russian speakers |
+
+The v1 voices `jane`, `marina`, `omazh`, `ermil` are Russian speakers reading
+English, which is exactly what users heard as "funny" dictations. `john` is
+listed as `en-US` in the voice catalogue and scored 0.99 across ten real
+dictation sentences.
+
+LiveTTS (`AI_TTS_MODEL=livetts`) remains available for Russian UI prompts:
+
+* voices are `sofia`, `vera`, `vasily`, `sergey`, `denis`, `irina`;
+* the model accepts **≤250 characters** per request, so longer texts are split
+  on sentence boundaries (240 runes) and joined with `ffmpeg`; the endpoint
+  itself still accepts up to 600 characters;
+* `speed` is not supported by this model — dictation pacing is then applied in
+  the browser with `playbackRate` (pitch preserved);
+* the v3 endpoint streams newline-delimited JSON with base64 `audioChunk`s.
+
+Changing `AI_TTS_MODEL` or `AI_TTS_VOICE` changes the cache key, so old files
+stay valid and new ones are generated next to them.
 
 Warm the whole dictation bank once after a deploy:
 
 ```bash
 TTS_PREGEN_BASE_URL=http://127.0.0.1:18080 node scripts/pregenerate_tts.mjs
+# or, inside the deploy script:
+./scripts/deploy_production.sh --tts
 ```
 
-Quality note: a round-trip benchmark (synthesise → recognise) showed SpeechKit's
-English voices at 0.32–0.46 word accuracy, so the client falls back to the
-ranked browser voice when server synthesis fails. ElevenLabs or OpenAI TTS can
-replace the provider behind the same endpoint without touching the cache.
+The client calls the server voice first and falls back to the ranked browser
+voice (Google US English, Microsoft Aria/Jenny, Samantha) on any failure, so a
+provider outage never blocks a lesson. Dictation pacing is not applied twice:
+the synthesiser already speaks at `AI_TTS_SPEED`, and the client only adjusts
+`playbackRate` relative to the browser default.

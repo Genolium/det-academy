@@ -1,5 +1,6 @@
 import { listenTypeBank } from '@/data/questionBank';
 import { sound } from '@/lib/sound';
+import { isServerTTSEnabled } from '@/lib/tts';
 
 export interface DictationItem {
   id: string;
@@ -357,7 +358,12 @@ export function evaluateDictationAccuracy(userInput: string, targetSentence: str
  */
 export function playSynthesizedDictation(text: string, rate: number = 0.9): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    const hasBrowserVoice = typeof window !== 'undefined' && 'speechSynthesis' in window;
+    // With the server voice a local speech engine is not required at all.
+    if (typeof window === 'undefined') {
+      return reject(new Error('Speech synthesis is not available'));
+    }
+    if (!hasBrowserVoice && !isServerTTSEnabled()) {
       return reject(new Error('SpeechSynthesis not supported'));
     }
     try {

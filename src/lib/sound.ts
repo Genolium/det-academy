@@ -1,4 +1,4 @@
-import { isServerTTSEnabled, playServerTTS } from '@/lib/tts';
+import { isServerTTSEnabled, playServerTTS, stopServerTTS } from '@/lib/tts';
 /**
  * Web Audio API synthesizer for mechanical keyboard clicks and sounds.
  * Ensures zero external audio asset dependencies!
@@ -103,13 +103,23 @@ class SoundEngine {
     // Prefer the cached server voice; fall back to the browser when the
     // backend has no synthesis provider or the request fails.
     if (isServerTTSEnabled()) {
-      void playServerTTS(text).then((played) => {
+      // The synthesiser already speaks at a deliberate pace (AI_TTS_SPEED),
+      // so only the difference from the browser default is applied here.
+      void playServerTTS(text, rate / 0.92).then((played) => {
         if (!played) this.speakWithBrowser(text, onEnd, rate);
         else if (onEnd) onEnd();
       });
       return;
     }
     this.speakWithBrowser(text, onEnd, rate);
+  }
+
+  /** Stops whichever voice is currently speaking. */
+  stopSpeaking() {
+    stopServerTTS();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   }
 
   speakWithBrowser(text: string, onEnd?: () => void, rate: number = 0.92) {
