@@ -161,6 +161,9 @@ type StudyRepository interface {
 	// CountPracticeAttemptsSince counts practice answers of the given types
 	// (all types when the list is empty) created after the given time.
 	CountPracticeAttemptsSince(ctx context.Context, userID string, since time.Time, questionTypes []string) (int, error)
+	// AI usage accounting (global, not per user).
+	RecordAIUsage(ctx context.Context, event *models.AIUsageEvent) error
+	AIUsageSummary(ctx context.Context, since time.Time) ([]models.AIUsageRow, error)
 	RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error
 	GetTypingAttempts(ctx context.Context, userID string, limit int) ([]models.TypingAttempt, error)
 	GetBestTypingWPM(ctx context.Context, userID string) (int, error)

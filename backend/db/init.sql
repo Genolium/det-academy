@@ -390,6 +390,18 @@ CREATE INDEX IF NOT EXISTS idx_vocabulary_status_level ON vocabulary_entries(sta
 CREATE INDEX IF NOT EXISTS idx_oauth_transactions_state ON oauth_transactions(state_hash);
 CREATE INDEX IF NOT EXISTS idx_oauth_transactions_expiry ON oauth_transactions(expires_at);
 
+-- Token and cost accounting for external AI providers.
+CREATE TABLE IF NOT EXISTS ai_usage_events (
+    id UUID PRIMARY KEY,
+    kind VARCHAR(30) NOT NULL,
+    model VARCHAR(160) NOT NULL,
+    prompt_tokens INT NOT NULL DEFAULT 0,
+    completion_tokens INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_usage_created ON ai_usage_events(created_at DESC);
+
 -- Server-side XP ledger (one immutable reward per idempotency key).
 CREATE TABLE IF NOT EXISTS xp_events (
     id UUID PRIMARY KEY,

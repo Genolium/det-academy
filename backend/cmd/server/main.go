@@ -14,6 +14,7 @@ import (
 	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/config"
 	"det-academy-backend/internal/handlers"
+	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/observability"
 	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/repository/memory"
@@ -23,6 +24,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/google/uuid"
 )
 
 // corsOrigins returns explicit origins. A wildcard "*" must not be used together with
@@ -163,6 +165,21 @@ func main() {
 		store.Institutions(),
 	)
 	aiProvider := ai.NewFromEnv()
+	if aiProvider != nil {
+		// Every provider call is recorded for the admin cost dashboard.
+		aiStore := store.Study()
+		aiProvider.Usage = func(event ai.UsageEvent) {
+			recordCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_ = aiStore.RecordAIUsage(recordCtx, &models.AIUsageEvent{
+				ID:               uuid.NewString(),
+				Kind:             event.Kind,
+				Model:            event.Model,
+				PromptTokens:     event.PromptTokens,
+				CompletionTokens: event.CompletionTokens,
+			})
+		}
+	}
 	var transcriber ai.Transcriber
 	if aiProvider != nil && os.Getenv("AI_STT_ENABLED") == "true" {
 		transcriber = aiProvider
@@ -356,6 +373,7 @@ func main() {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(handlers.AdminMiddleware(authService))
 			r.Get("/stats", adminHandler.GetStats)
+			r.Get("/ai-usage", studyHandler.GetAIUsage)
 			r.Get("/users", adminHandler.ListUsers)
 			r.Patch("/users/{id}/role", adminHandler.UpdateUserRole)
 			r.Delete("/users/{id}", adminHandler.DeleteUser)

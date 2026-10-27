@@ -430,6 +430,36 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	}, nil
 }
 
+// GetAIUsage aggregates provider calls for the admin dashboard. Prices are
+// configured per million tokens; without prices only token counts are shown.
+func (s *StudyService) GetAIUsage(ctx context.Context, days int) (*models.AIUsageSummary, error) {
+	if days <= 0 || days > 90 {
+		days = 7
+	}
+	since := time.Now().UTC().AddDate(0, 0, -days)
+	rows, err := s.storage.Study().AIUsageSummary(ctx, since)
+	if err != nil {
+		return nil, err
+	}
+
+	inputPrice := envFloat("AI_PRICE_INPUT_PER_1M", 0)
+	outputPrice := envFloat("AI_PRICE_OUTPUT_PER_1M", 0)
+	summary := &models.AIUsageSummary{
+		Days:     days,
+		Currency: envOrString("AI_PRICE_CURRENCY", "USD"),
+		Rows:     rows,
+	}
+	for index := range summary.Rows {
+		row := &summary.Rows[index]
+		row.Cost = (float64(row.PromptTokens)*inputPrice + float64(row.CompletionTokens)*outputPrice) / 1_000_000
+		summary.PromptTokens += row.PromptTokens
+		summary.CompletionTokens += row.CompletionTokens
+		summary.Calls += row.Calls
+		summary.Cost += row.Cost
+	}
+	return summary, nil
+}
+
 // GetPlacement returns the estimated level from the most recent completed
 // diagnostic. It is the onboarding placement test: no extra schema, the short
 // server-driven diagnostic is the source of truth.

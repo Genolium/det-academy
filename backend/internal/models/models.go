@@ -624,6 +624,38 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+// AIUsageEvent is one billable provider call.
+type AIUsageEvent struct {
+	ID               string    `json:"id"`
+	Kind             string    `json:"kind"`
+	Model            string    `json:"model"`
+	PromptTokens     int       `json:"promptTokens"`
+	CompletionTokens int       `json:"completionTokens"`
+	CreatedAt        time.Time `json:"createdAt"`
+}
+
+// AIUsageRow is an aggregated bucket for the admin dashboard.
+type AIUsageRow struct {
+	Day              string  `json:"day"`
+	Model            string  `json:"model"`
+	Kind             string  `json:"kind"`
+	Calls            int     `json:"calls"`
+	PromptTokens     int     `json:"promptTokens"`
+	CompletionTokens int     `json:"completionTokens"`
+	Cost             float64 `json:"cost"`
+}
+
+// AIUsageSummary is the admin view of provider spending.
+type AIUsageSummary struct {
+	Days             int          `json:"days"`
+	Currency         string       `json:"currency"`
+	PromptTokens     int          `json:"promptTokens"`
+	CompletionTokens int          `json:"completionTokens"`
+	Calls            int          `json:"calls"`
+	Cost             float64      `json:"cost"`
+	Rows             []AIUsageRow `json:"rows"`
+}
+
 // PlacementResult is the estimated level from the onboarding diagnostic.
 type PlacementResult struct {
 	Available   bool   `json:"available"`

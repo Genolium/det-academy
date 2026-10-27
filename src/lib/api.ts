@@ -957,6 +957,18 @@ class ApiClient {
 
 
 
+
+  async getAdminAIUsage(days = 7): Promise<AIUsageSummary> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin/ai-usage?days=${days}`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить AI-расходы', res.status);
+    }
+    return res.json();
+  }
+
   async getPlacement(): Promise<PlacementResult> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/placement`, {
       headers: this.getHeaders(),
@@ -1538,6 +1550,27 @@ export interface XPEvent {
 }
 
 
+
+
+export interface AIUsageRow {
+  day: string;
+  model: string;
+  kind: string;
+  calls: number;
+  promptTokens: number;
+  completionTokens: number;
+  cost: number;
+}
+
+export interface AIUsageSummary {
+  days: number;
+  currency: string;
+  promptTokens: number;
+  completionTokens: number;
+  calls: number;
+  cost: number;
+  rows: AIUsageRow[];
+}
 
 export interface PlacementResult {
   available: boolean;

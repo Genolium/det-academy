@@ -63,11 +63,49 @@ type Transcriber interface {
 	Transcribe(ctx context.Context, audioPath, mimeType string) (string, error)
 }
 
+// UsageEvent is one billable provider call.
+type UsageEvent struct {
+	Kind             string
+	Model            string
+	PromptTokens     int
+	CompletionTokens int
+}
+
 type OpenAICompatible struct {
-	BaseURL string
-	APIKey  string
-	Model   string
-	Client  *http.Client
+	BaseURL   string
+	APIKey    string
+	Model     string
+	FastModel string
+	EvalModel string
+	// FolderID is sent as x-folder-id for Yandex AI Studio.
+	FolderID string
+	Client   *http.Client
+	// Usage receives token usage for the admin cost dashboard.
+	Usage func(UsageEvent)
+}
+
+func (p *OpenAICompatible) fastModel() string {
+	if p.FastModel != "" {
+		return p.FastModel
+	}
+	return p.Model
+}
+
+func (p *OpenAICompatible) evalModel() string {
+	if p.EvalModel != "" {
+		return p.EvalModel
+	}
+	return p.Model
+}
+
+func (p *OpenAICompatible) setHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	if p.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+p.APIKey)
+	}
+	if p.FolderID != "" {
+		req.Header.Set("x-folder-id", p.FolderID)
+	}
 }
 
 func NewFromEnv() *OpenAICompatible {
@@ -87,15 +125,100 @@ func NewFromEnv() *OpenAICompatible {
 		model = "gpt-4o-mini"
 	}
 	return &OpenAICompatible{
-		BaseURL: baseURL,
-		APIKey:  apiKey,
-		Model:   model,
-		Client:  &http.Client{Timeout: 45 * time.Second},
+		BaseURL:   baseURL,
+		APIKey:    apiKey,
+		Model:     model,
+		FastModel: strings.TrimSpace(os.Getenv("AI_MODEL_FAST")),
+		EvalModel: strings.TrimSpace(os.Getenv("AI_MODEL_EVAL")),
+		FolderID:  strings.TrimSpace(os.Getenv("AI_FOLDER_ID")),
+		Client:    &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
 func (p *OpenAICompatible) Name() string    { return "openai-compatible" }
 func (p *OpenAICompatible) Version() string { return p.Model }
+
+// chatCompletion sends one chat request and reports the answer together with
+// the token usage. A shared path keeps the headers (including the Yandex
+// folder) and the accounting in one place.
+func (p *OpenAICompatible) chatCompletion(ctx context.Context, kind, model, system, user string, temperature float64) (string, error) {
+	payload := map[string]interface{}{
+		"model": model,
+		"messages": []map[string]string{
+			{"role": "system", "content": system},
+			{"role": "user", "content": user},
+		},
+		"temperature":     temperature,
+		"response_format": map[string]string{"type": "json_object"},
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, "POST", p.BaseURL+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	p.setHeaders(req)
+
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		payload, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return "", fmt.Errorf("ai provider returned %d: %s", resp.StatusCode, string(payload))
+	}
+
+	var completion struct {
+		Choices []struct {
+			Message struct {
+				Content          string `json:"content"`
+				ReasoningContent string `json:"reasoning_content"`
+			} `json:"message"`
+		} `json:"choices"`
+		Usage struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+		} `json:"usage"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&completion); err != nil {
+		return "", err
+	}
+	if len(completion.Choices) == 0 {
+		return "", errors.New("ai provider returned no choices")
+	}
+	if p.Usage != nil {
+		p.Usage(UsageEvent{
+			Kind:             kind,
+			Model:            model,
+			PromptTokens:     completion.Usage.PromptTokens,
+			CompletionTokens: completion.Usage.CompletionTokens,
+		})
+	}
+	content := strings.TrimSpace(completion.Choices[0].Message.Content)
+	// Reasoning models (for example DeepSeek via AI Studio) can put the answer
+	// into reasoning_content and leave content empty when the token budget is
+	// tight. Prefer the answer, then the reasoning text.
+	if content == "" {
+		content = strings.TrimSpace(completion.Choices[0].Message.ReasoningContent)
+	}
+	return cleanJSONContent(content), nil
+}
+
+// cleanJSONContent strips markdown code fences that some models add around a
+// JSON object even in json_object mode.
+func cleanJSONContent(content string) string {
+	trimmed := strings.TrimSpace(content)
+	if !strings.HasPrefix(trimmed, "```") {
+		return trimmed
+	}
+	trimmed = strings.TrimPrefix(trimmed, "```")
+	trimmed = strings.TrimPrefix(trimmed, "json")
+	trimmed = strings.TrimPrefix(trimmed, "JSON")
+	if index := strings.LastIndex(trimmed, "```"); index >= 0 {
+		trimmed = trimmed[:index]
+	}
+	return strings.TrimSpace(trimmed)
+}
 
 func (p *OpenAICompatible) Enrich(ctx context.Context, input EnrichInput) (Enrichment, error) {
 	system := `You are an English assessment coach for the Duolingo English Test.
@@ -103,58 +226,23 @@ Return strict JSON: {"feedback": string, "evidence": [{"start": number, "end": n
 Use only evidence present in the learner response. Do not change the numeric score.`
 	user := fmt.Sprintf("Task: %s\nPrompt: %s\nLearner response: %s\nTranscript: %s\nCurrent rule-based score: %.2f (%s)",
 		input.QuestionType, input.Prompt, input.Response, input.Transcript, input.Score, input.CEFR)
-	payload := map[string]interface{}{
-		"model": p.Model,
-		"messages": []map[string]string{
-			{"role": "system", "content": system},
-			{"role": "user", "content": user},
-		},
-		"temperature":     0.2,
-		"response_format": map[string]string{"type": "json_object"},
-	}
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, "POST", p.BaseURL+"/chat/completions", bytes.NewReader(body))
+
+	content, err := p.chatCompletion(ctx, "enrich", p.fastModel(), system, user, 0.2)
 	if err != nil {
 		return Enrichment{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.APIKey != "" {
-		req.Header.Set("Authorization", "Bearer "+p.APIKey)
-	}
-	resp, err := p.Client.Do(req)
-	if err != nil {
-		return Enrichment{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return Enrichment{}, fmt.Errorf("ai provider returned %d: %s", resp.StatusCode, string(payload))
-	}
-	var completion struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&completion); err != nil {
-		return Enrichment{}, err
-	}
-	if len(completion.Choices) == 0 {
-		return Enrichment{}, errors.New("ai provider returned no choices")
 	}
 	var parsed struct {
 		Feedback string     `json:"feedback"`
 		Evidence []Evidence `json:"evidence"`
 	}
-	if err := json.Unmarshal([]byte(completion.Choices[0].Message.Content), &parsed); err != nil {
+	if err := json.Unmarshal([]byte(content), &parsed); err != nil {
 		return Enrichment{}, fmt.Errorf("invalid ai json: %w", err)
 	}
 	return Enrichment{
 		Feedback: parsed.Feedback,
 		Evidence: parsed.Evidence,
 		Provider: p.Name(),
-		Model:    p.Model,
+		Model:    p.fastModel(),
 	}, nil
 }
 
@@ -166,45 +254,10 @@ Judge task completion, organization, grammar, vocabulary and fluency. Use only t
 Never reward silence, empty text or off-topic content.`
 	user := fmt.Sprintf("Task: %s\nPrompt: %s\nResponse: %s\nTranscript: %s",
 		input.QuestionType, input.Prompt, input.Response, input.Transcript)
-	payload := map[string]interface{}{
-		"model": p.Model,
-		"messages": []map[string]string{
-			{"role": "system", "content": system},
-			{"role": "user", "content": user},
-		},
-		"temperature":     0.1,
-		"response_format": map[string]string{"type": "json_object"},
-	}
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, "POST", p.BaseURL+"/chat/completions", bytes.NewReader(body))
+
+	content, err := p.chatCompletion(ctx, "evaluate", p.evalModel(), system, user, 0.1)
 	if err != nil {
 		return Evaluation{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if p.APIKey != "" {
-		req.Header.Set("Authorization", "Bearer "+p.APIKey)
-	}
-	resp, err := p.Client.Do(req)
-	if err != nil {
-		return Evaluation{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return Evaluation{}, fmt.Errorf("ai evaluator returned %d: %s", resp.StatusCode, string(payload))
-	}
-	var completion struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&completion); err != nil {
-		return Evaluation{}, err
-	}
-	if len(completion.Choices) == 0 {
-		return Evaluation{}, errors.New("ai evaluator returned no choices")
 	}
 	var parsed struct {
 		Score    float64    `json:"score"`
@@ -212,7 +265,7 @@ Never reward silence, empty text or off-topic content.`
 		Feedback string     `json:"feedback"`
 		Evidence []Evidence `json:"evidence"`
 	}
-	if err := json.Unmarshal([]byte(completion.Choices[0].Message.Content), &parsed); err != nil {
+	if err := json.Unmarshal([]byte(content), &parsed); err != nil {
 		return Evaluation{}, fmt.Errorf("invalid ai evaluation json: %w", err)
 	}
 	if parsed.Score < 0 {
@@ -226,7 +279,7 @@ Never reward silence, empty text or off-topic content.`
 	}
 	return Evaluation{
 		Score: parsed.Score, CEFR: parsed.CEFR, Feedback: parsed.Feedback,
-		Evidence: parsed.Evidence, Provider: p.Name(), Model: p.Model,
+		Evidence: parsed.Evidence, Provider: p.Name(), Model: p.evalModel(),
 	}, nil
 }
 
@@ -259,6 +312,9 @@ func (p *OpenAICompatible) Transcribe(ctx context.Context, audioPath, mimeType s
 	if p.APIKey != "" {
 		req.Header.Set("Authorization", "Bearer "+p.APIKey)
 	}
+	if p.FolderID != "" {
+		req.Header.Set("x-folder-id", p.FolderID)
+	}
 	resp, err := p.Client.Do(req)
 	if err != nil {
 		return "", err
@@ -275,6 +331,10 @@ func (p *OpenAICompatible) Transcribe(ctx context.Context, audioPath, mimeType s
 	}
 	if strings.TrimSpace(payload.Text) == "" {
 		return "", errors.New("transcription provider returned empty text")
+	}
+	if p.Usage != nil {
+		// Transcription endpoints usually report duration rather than tokens.
+		p.Usage(UsageEvent{Kind: "transcribe", Model: envOr("AI_STT_MODEL", "whisper-1")})
 	}
 	return strings.TrimSpace(payload.Text), nil
 }

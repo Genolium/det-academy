@@ -30,8 +30,10 @@ if (!baseUrl || !model) {
   process.exit(2);
 }
 
+const folderId = process.env.AI_FOLDER_ID || '';
 const headers = { 'Content-Type': 'application/json' };
 if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+if (folderId) headers['x-folder-id'] = folderId;
 
 async function withTimeout(url, options) {
   const controller = new AbortController();

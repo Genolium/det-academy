@@ -27,6 +27,7 @@ type MemoryStorage struct {
 	evaluationJobs      map[string]*models.EvaluationJob
 	mediaAssets         map[string]*models.MediaAsset // assetID -> *MediaAsset
 	xpEvents            map[string][]models.XPEvent   // userID -> ledger
+	aiUsage             []models.AIUsageEvent         // global provider accounting
 	certificates        map[string]*models.Certificate
 	banners             map[string]*models.AdBanner
 	institutions        map[string]*models.Institution
@@ -2280,6 +2281,48 @@ func (r *studyMemoryRepo) RecordActivity(ctx context.Context, userID, activityDa
 	}
 	r.s.activity[userID][activityDate] = true
 	return nil
+}
+
+func (r *studyMemoryRepo) RecordAIUsage(ctx context.Context, event *models.AIUsageEvent) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if event.CreatedAt.IsZero() {
+		event.CreatedAt = time.Now().UTC()
+	}
+	r.s.aiUsage = append(r.s.aiUsage, *event)
+	return nil
+}
+
+func (r *studyMemoryRepo) AIUsageSummary(ctx context.Context, since time.Time) ([]models.AIUsageRow, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	type key struct{ day, model, kind string }
+	buckets := map[key]*models.AIUsageRow{}
+	for _, event := range r.s.aiUsage {
+		if event.CreatedAt.Before(since) {
+			continue
+		}
+		k := key{event.CreatedAt.UTC().Format("2006-01-02"), event.Model, event.Kind}
+		row := buckets[k]
+		if row == nil {
+			row = &models.AIUsageRow{Day: k.day, Model: k.model, Kind: k.kind}
+			buckets[k] = row
+		}
+		row.Calls++
+		row.PromptTokens += event.PromptTokens
+		row.CompletionTokens += event.CompletionTokens
+	}
+	rows := make([]models.AIUsageRow, 0, len(buckets))
+	for _, row := range buckets {
+		rows = append(rows, *row)
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Day != rows[j].Day {
+			return rows[i].Day > rows[j].Day
+		}
+		return rows[i].Model < rows[j].Model
+	})
+	return rows, nil
 }
 
 func (r *studyMemoryRepo) AwardXP(ctx context.Context, event *models.XPEvent) (bool, error) {

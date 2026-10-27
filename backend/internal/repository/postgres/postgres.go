@@ -1488,6 +1488,39 @@ func (r *StudyRepo) RecordActivity(ctx context.Context, userID, activityDate, so
 	return err
 }
 
+func (r *StudyRepo) RecordAIUsage(ctx context.Context, event *models.AIUsageEvent) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO ai_usage_events (id, kind, model, prompt_tokens, completion_tokens, created_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+	`, event.ID, event.Kind, event.Model, event.PromptTokens, event.CompletionTokens)
+	return err
+}
+
+func (r *StudyRepo) AIUsageSummary(ctx context.Context, since time.Time) ([]models.AIUsageRow, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day, model, kind,
+		       COUNT(*)::int, COALESCE(SUM(prompt_tokens), 0)::int, COALESCE(SUM(completion_tokens), 0)::int
+		FROM ai_usage_events
+		WHERE created_at >= $1
+		GROUP BY day, model, kind
+		ORDER BY day DESC, model ASC
+	`, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := []models.AIUsageRow{}
+	for rows.Next() {
+		var row models.AIUsageRow
+		if err := rows.Scan(&row.Day, &row.Model, &row.Kind, &row.Calls, &row.PromptTokens, &row.CompletionTokens); err != nil {
+			return nil, err
+		}
+		result = append(result, row)
+	}
+	return result, rows.Err()
+}
+
 func (r *StudyRepo) AwardXP(ctx context.Context, event *models.XPEvent) (bool, error) {
 	metadata := event.Metadata
 	if len(metadata) == 0 {

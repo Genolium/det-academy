@@ -515,3 +515,19 @@ func (h *StudyHandler) GetPlacement(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, placement)
 }
+
+// GetAIUsage reports provider tokens and cost for the admin dashboard.
+func (h *StudyHandler) GetAIUsage(w http.ResponseWriter, r *http.Request) {
+	days := 7
+	if raw := r.URL.Query().Get("days"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			days = parsed
+		}
+	}
+	summary, err := h.studyService.GetAIUsage(r.Context(), days)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to load AI usage")
+		return
+	}
+	RespondJSON(w, http.StatusOK, summary)
+}

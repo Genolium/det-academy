@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
-import { api, AdminStats, User, BackendTestSession, AdBannerData, BackendQuestion, Institution } from '@/lib/api';
+import { api, AIUsageSummary, AdminStats, User, BackendTestSession, AdBannerData, BackendQuestion, Institution } from '@/lib/api';
 import { PillBadge } from '@/components/ui/PillBadge';
 import {
   Users,
@@ -34,7 +34,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions';
+type Tab = 'overview' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions' | 'ai';
 
 export const AdminDashboard: React.FC = () => {
   const { user, login, logout, isLoading } = useAuthStore();
@@ -53,6 +53,8 @@ export const AdminDashboard: React.FC = () => {
   const [banners, setBanners] = useState<AdBannerData[]>([]);
   const [questions, setQuestions] = useState<BackendQuestion[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [aiUsage, setAIUsage] = useState<AIUsageSummary | null>(null);
+  const [aiDays, setAIDays] = useState(7);
 
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -97,6 +99,10 @@ export const AdminDashboard: React.FC = () => {
       if (activeTab === 'questions') {
         const qRes = await api.getAdminQuestions();
         setQuestions(Array.isArray(qRes?.questions) ? qRes.questions : []);
+      }
+      if (activeTab === 'ai') {
+        const usage = await api.getAdminAIUsage(aiDays);
+        setAIUsage(usage);
       }
       if (activeTab === 'institutions') {
         const instRes = await api.getInstitutions();
@@ -495,9 +501,117 @@ export const AdminDashboard: React.FC = () => {
             <Building2 className="w-4 h-4" />
             <span>Каталог вузов</span>
           </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'ai'
+                ? 'bg-[#0E1012] text-[#D2F544] shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            <span>AI расходы</span>
+          </button>
         </div>
 
         {/* Tab 1: Overview Dashboard */}
+        {activeTab === 'ai' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl border border-neutral-200 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-black text-[#0E1012] flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-[#86ab0d]" />
+                    Токены и стоимость AI
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Учёт вызовов внешних моделей: оценка письма/речи, обогащение и распознавание речи.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {[1, 7, 30].map((days) => (
+                    <button
+                      key={days}
+                      onClick={() => setAIDays(days)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                        aiDays === days ? 'bg-[#0E1012] text-[#D2F544]' : 'bg-neutral-100 text-neutral-600'
+                      }`}
+                    >
+                      {days} дн.
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {aiUsage ? (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+                    <div className="rounded-2xl border border-neutral-200 p-4">
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">Вызовов</span>
+                      <div className="text-xl font-black text-[#0E1012]">{aiUsage.calls}</div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 p-4">
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">Входные токены</span>
+                      <div className="text-xl font-black text-[#0E1012]">{aiUsage.promptTokens.toLocaleString('ru-RU')}</div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 p-4">
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">Выходные токены</span>
+                      <div className="text-xl font-black text-[#0E1012]">{aiUsage.completionTokens.toLocaleString('ru-RU')}</div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 p-4">
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">Стоимость</span>
+                      <div className="text-xl font-black text-[#0E1012]">
+                        {aiUsage.cost > 0 ? `${aiUsage.cost.toFixed(4)} ${aiUsage.currency}` : 'цена не задана'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-neutral-400 uppercase text-[10px]">
+                          <th className="py-2 pr-3">День</th>
+                          <th className="py-2 pr-3">Модель</th>
+                          <th className="py-2 pr-3">Тип</th>
+                          <th className="py-2 pr-3 text-right">Вызовы</th>
+                          <th className="py-2 pr-3 text-right">Вход</th>
+                          <th className="py-2 pr-3 text-right">Выход</th>
+                          <th className="py-2 text-right">Стоимость</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aiUsage.rows.map((row) => (
+                          <tr key={`${row.day}-${row.model}-${row.kind}`} className="border-t border-neutral-100">
+                            <td className="py-2 pr-3 font-mono text-neutral-500">{row.day}</td>
+                            <td className="py-2 pr-3 font-semibold text-[#0E1012] break-all">{row.model}</td>
+                            <td className="py-2 pr-3 text-neutral-500">{row.kind}</td>
+                            <td className="py-2 pr-3 text-right">{row.calls}</td>
+                            <td className="py-2 pr-3 text-right">{row.promptTokens.toLocaleString('ru-RU')}</td>
+                            <td className="py-2 pr-3 text-right">{row.completionTokens.toLocaleString('ru-RU')}</td>
+                            <td className="py-2 text-right">{row.cost > 0 ? `${row.cost.toFixed(4)} ${aiUsage.currency}` : '—'}</td>
+                          </tr>
+                        ))}
+                        {aiUsage.rows.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="py-6 text-center text-neutral-400">
+                              За период вызовов AI не было.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[10px] text-neutral-400 mt-3">
+                    Стоимость считается по ценам AI_PRICE_INPUT_PER_1M и AI_PRICE_OUTPUT_PER_1M. Без цен показываются только токены.
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-neutral-400 mt-4">Загрузка…</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'overview' && stats && (
           <div className="space-y-8">
             {/* KPI Cards Grid */}

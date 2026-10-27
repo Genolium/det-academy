@@ -113,3 +113,42 @@ STT enabled, a 0.25 s silent WAV.
 Score provenance is always visible: `provider`, `evaluatorVersion` and
 `transcriptSource` are stored on every evaluation, and the browser-transcript
 path is labelled practice-grade in the coach.
+
+### Yandex AI Studio model routing
+
+Yandex AI Studio exposes an OpenAI-compatible endpoint
+(`https://ai.api.cloud.yandex.net/v1`). Model identifiers look like
+`gpt://<folder_id>/<model>`, and the folder is also sent as `x-folder-id`.
+
+| Variable | Purpose |
+|---|---|
+| `AI_MODEL` | fallback model for every call |
+| `AI_MODEL_FAST` | enrichment: hints and short feedback (cheap/fast) |
+| `AI_MODEL_EVAL` | authoritative speaking/writing evaluation (stronger) |
+| `AI_FOLDER_ID` | Yandex folder id (`x-folder-id` header) |
+| `AI_PRICE_INPUT_PER_1M`, `AI_PRICE_OUTPUT_PER_1M`, `AI_PRICE_CURRENCY` | cost shown in the admin dashboard |
+
+Verified routing (AI Studio, 2026-10-27):
+
+```bash
+AI_BASE_URL=https://ai.api.cloud.yandex.net/v1
+AI_FOLDER_ID=<folder>
+AI_MODEL=gpt://<folder>/aliceai-llm/latest          # fallback
+AI_MODEL_FAST=gpt://<folder>/yandexgpt-5-lite/latest # enrichment
+AI_MODEL_EVAL=gpt://<folder>/aliceai-llm/latest      # rubric evaluation
+AI_PRICE_INPUT_PER_1M=...                            # Yandex tariff
+AI_PRICE_OUTPUT_PER_1M=...
+AI_PRICE_CURRENCY=RUB
+```
+
+`aliceai-llm` answers strict JSON in about two seconds; `yandexgpt-5-lite`
+is the fastest and is used for hints. DeepSeek V4.1 Flash via AI Studio returns
+reasoning in `reasoning_content`, so the client also reads that field and strips
+markdown fences. `npm run preflight:ai` verifies chat (and STT when enabled).
+Server-side speech recognition needs a Yandex SpeechKit adapter (SpeechKit is
+not OpenAI-compatible); until then the browser transcript path stays active.
+
+Every call records `kind`, `model`, `prompt_tokens` and `completion_tokens` in
+`ai_usage_events`; `GET /api/v1/admin/ai-usage?days=7` aggregates them and the
+admin dashboard renders the tokens and cost. The key lives only in the server
+`.env` and is never committed.
