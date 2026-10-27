@@ -21,7 +21,7 @@ FROM alpine:3.20
 
 WORKDIR /app
 
-RUN apk --no-cache add ca-certificates tzdata curl
+RUN apk --no-cache add ca-certificates tzdata curl ffmpeg
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

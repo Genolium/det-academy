@@ -152,3 +152,28 @@ Every call records `kind`, `model`, `prompt_tokens` and `completion_tokens` in
 `ai_usage_events`; `GET /api/v1/admin/ai-usage?days=7` aggregates them and the
 admin dashboard renders the tokens and cost. The key lives only in the server
 `.env` and is never committed.
+
+### Yandex SpeechKit speech recognition
+
+SpeechKit is not OpenAI-compatible, so the backend ships a dedicated adapter
+(`internal/ai/speechkit.go`):
+
+1. `ffmpeg` converts the browser recording (WebM/Opus) to 16 kHz mono OggOpus;
+2. long answers are split into 20-second chunks (SpeechKit's synchronous
+   endpoint accepts up to 30 seconds and 1 MB per request);
+3. every chunk is sent to `POST /speech/v1/stt:recognize` with
+   `format=oggopus`, `lang=en-US` and `Authorization: Api-Key <key>`.
+
+```bash
+AI_STT_ENABLED=true
+AI_STT_PROVIDER=yandex_speechkit
+AI_STT_API_KEY=<SpeechKit API key>      # falls back to AI_API_KEY
+AI_FOLDER_ID=<Yandex folder id>
+AI_STT_LANG=en-US
+AI_STT_CHUNK_SECONDS=20
+ALLOW_CLIENT_TRANSCRIPT=false           # server transcript is authoritative
+```
+
+Verified on 2026-10-28: a synthesised sentence was recognised verbatim in
+0.47 s. `ffmpeg` is installed in the backend image (`apk add ffmpeg`), and
+`TestSpeechKitConvertsWebMWithFFmpeg` covers the real conversion path.

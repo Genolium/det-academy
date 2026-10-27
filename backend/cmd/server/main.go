@@ -180,9 +180,11 @@ func main() {
 			})
 		}
 	}
-	var transcriber ai.Transcriber
-	if aiProvider != nil && os.Getenv("AI_STT_ENABLED") == "true" {
-		transcriber = aiProvider
+	// Speech recognition is independent from the chat model: SpeechKit and the
+	// OpenAI-compatible transcription endpoint are selected by AI_STT_PROVIDER.
+	transcriber := ai.NewTranscriberFromEnv()
+	if transcriber != nil {
+		log.Printf("[AI] speech recognition: %s", transcriber.Name())
 	}
 	evaluationQueue := service.NewEvaluationQueue(store.Sessions(), store.Questions(), transcriber, aiProvider)
 	catService.SetEvaluationQueue(evaluationQueue)
