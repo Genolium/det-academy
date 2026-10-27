@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { readSelectBank, fillBlanksBank } from '@/data/questionBank';
 import { api, VocabularyEntry } from '@/lib/api';
 import { BookOpen, Search, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
+import { PronounceButton } from '@/components/vocabulary/PronounceButton';
 
 const levels = ['ALL', 'B1', 'B2', 'C1', 'C2'] as const;
 
@@ -159,7 +160,10 @@ export default function VocabularyPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-black text-[#0E1012]">{entry.word}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-black text-[#0E1012]">{entry.word}</h2>
+                      <PronounceButton word={entry.word} size="sm" />
+                    </div>
                     <p className="text-xs text-neutral-500 font-mono">
                       {entry.ipa} {entry.pos ? `· ${entry.pos}` : ''}
                     </p>
@@ -205,7 +209,10 @@ export default function VocabularyPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-[#0E1012]">{word.word}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-sm text-[#0E1012]">{word.word}</span>
+                    <PronounceButton word={word.word} size="sm" />
+                  </span>
                   {word.isReal ? (
                     <Sparkles className="w-4 h-4 text-emerald-500" />
                   ) : (

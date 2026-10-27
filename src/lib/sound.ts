@@ -94,52 +94,86 @@ class SoundEngine {
     }
   }
 
-  // Text-to-speech for Listen and Type & Interactive Listening
+  // Text-to-speech for Listen and Type, Interactive Listening and words.
+  // Only English voices are used: falling back to an arbitrary system voice
+  // (for example a Russian one) produces the "funny" pronunciation users
+  // reported on dictations and vocabulary.
   speakEnglish(text: string, onEnd?: () => void) {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       if (onEnd) onEnd();
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.92; // Slightly more deliberate, natural pace matching authentic DET prompts
-    utterance.pitch = 1.0;
+    const synth = window.speechSynthesis;
 
-    const selectBestVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) return;
-
-      // Priority list of high quality neural / studio natural voices
-      const usVoices = voices.filter(
-        (v) => v.lang.startsWith('en-US') || v.lang.startsWith('en_US') || v.lang === 'en'
-      );
-
-      const premium = usVoices.find(
-        (v) =>
-          /natural|neural|online|google us english|samantha|jenny|guy|aria/i.test(v.name)
-      );
-
-      const standardUs = usVoices.find((v) => !v.localService) || usVoices[0];
-      utterance.voice = premium || standardUs || voices[0];
+    const rankVoice = (voice: SpeechSynthesisVoice): number => {
+      const name = voice.name.toLowerCase();
+      if (!voice.lang.toLowerCase().startsWith('en')) return -1;
+      if (/google us english/.test(name)) return 100;
+      if (/microsoft.*(aria|jenny|guy|sophia).*online/.test(name)) return 95;
+      if (/samantha/.test(name)) return 90;
+      if (/microsoft.*(aria|jenny|guy)/.test(name)) return 85;
+      if (/google uk english female/.test(name)) return 80;
+      if (/karen|daniel|moira/.test(name)) return 75;
+      if (/natural|neural/.test(name)) return 70;
+      if (voice.lang.toLowerCase().startsWith('en-us')) return 60;
+      if (voice.lang.toLowerCase().startsWith('en-gb')) return 50;
+      return 30;
     };
 
-    selectBestVoice();
+    const pickVoice = (): SpeechSynthesisVoice | null => {
+      const voices = synth.getVoices();
+      if (!voices || voices.length === 0) return null;
+      let best: SpeechSynthesisVoice | null = null;
+      let bestRank = -1;
+      for (const voice of voices) {
+        const rank = rankVoice(voice);
+        if (rank > bestRank) {
+          bestRank = rank;
+          best = voice;
+        }
+      }
+      return bestRank > 0 ? best : null;
+    };
 
-    // If voices are loaded asynchronously in Chrome/Safari
-    if (!utterance.voice && window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        selectBestVoice();
-      };
-    }
+    const speak = (attempt: number) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.92; // Slightly deliberate, natural pace for DET prompts
+      utterance.pitch = 1.0;
 
-    if (onEnd) {
-      utterance.onend = () => onEnd();
-      utterance.onerror = () => onEnd();
-    }
+      const voice = pickVoice();
+      if (voice) {
+        utterance.voice = voice;
+        // Keep the utterance language aligned with the selected voice.
+        if (voice.lang) utterance.lang = voice.lang;
+      }
 
-    window.speechSynthesis.speak(utterance);
+      if (!voice && attempt === 0) {
+        // Chrome populates the voice list asynchronously. Wait once, then
+        // speak with whatever English voice is available.
+        let settled = false;
+        const handler = () => {
+          if (settled) return;
+          settled = true;
+          synth.onvoiceschanged = null;
+          speak(1);
+        };
+        synth.onvoiceschanged = handler;
+        window.setTimeout(handler, 600);
+        return;
+      }
+
+      if (onEnd) {
+        utterance.onend = () => onEnd();
+        utterance.onerror = () => onEnd();
+      }
+
+      synth.cancel();
+      synth.speak(utterance);
+    };
+
+    speak(0);
   }
 
   // Convenient semantic aliases

@@ -88,7 +88,9 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const isReadAloud = lessonSlug === 'read-aloud';
   const isInteractiveReading = lessonSlug === 'interactive-reading';
   const isInteractiveListening = lessonSlug === 'interactive-listening';
-  const isPhotoWriting = lessonSlug === 'write-about-photo';
+  // The practice hub links this drill as "write-about-the-photo"; accept both
+  // slugs so the writing task always renders its prompt and textarea.
+  const isPhotoWriting = lessonSlug === 'write-about-photo' || lessonSlug === 'write-about-the-photo';
   const isInteractiveWriting = lessonSlug === 'interactive-writing';
   const isWritingSample = lessonSlug === 'writing-sample';
   const isPhotoSpeaking = lessonSlug === 'speak-about-photo';
@@ -98,6 +100,9 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   // General State
   const [drillCompleted, setDrillCompleted] = useState(false);
   const [assignment, setAssignment] = useState<PracticeAssignment | null>(null);
+  // A malformed payload (for example an empty object from a proxy) must never
+  // crash the drill: without a usable assignment the local mode is used.
+  const hasServerAssignment = Boolean(assignment?.assignmentId);
   const [isServerGrading, setIsServerGrading] = useState(false);
   const [serverGradeError, setServerGradeError] = useState<string | null>(null);
   const [serverGradedBadge, setServerGradedBadge] = useState<{ isCorrect: boolean; score: number } | null>(null);
@@ -814,9 +819,9 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         {/* Server Authoritative status banner */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-6 pb-4 border-b border-neutral-200/80 text-xs">
           <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${assignment ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-neutral-300'}`} />
+            <span className={`w-2.5 h-2.5 rounded-full ${hasServerAssignment ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-neutral-300'}`} />
             <span className="font-semibold text-neutral-800">
-              {assignment ? `Серверное задание #${assignment.assignmentId.slice(0, 8)}` : 'Локальный режим практики'}
+              {hasServerAssignment ? `Серверное задание #${String(assignment?.assignmentId).slice(0, 8)}` : 'Локальный режим практики'}
             </span>
             {assignment?.cefrLevel && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 border border-neutral-200">
