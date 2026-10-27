@@ -17,6 +17,7 @@ services:
       - ./backend/db/05-productive-question-bank.sql:/docker-entrypoint-initdb.d/05-productive-question-bank.sql:ro
       - ./backend/db/06-level-bank.sql:/docker-entrypoint-initdb.d/06-level-bank.sql:ro
       - ./backend/db/07-theory-content.sql:/docker-entrypoint-initdb.d/07-theory-content.sql:ro
+      - ./backend/db/08-productive-bank.sql:/docker-entrypoint-initdb.d/08-productive-bank.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-det_academy}"]
       interval: 5s

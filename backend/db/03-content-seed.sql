@@ -3761,7 +3761,7 @@ VALUES (
   'sp-1',
   'SPEAK_PHOTO',
   'B1',
-  '{"imageUrl": "/images/practice/park-gathering.jpg", "prompt": "Speak for 90 seconds about the scene in this image. Describe what the people are doing and the environment around them."}',
+  '{"imageUrl": "/drills/wp-2.jpg", "prompt": "Speak for 90 seconds about the scene in this image. Describe what the people are doing and the environment around them."}',
   '{"rubric": "fluency_pronunciation_vocabulary_min90s"}',
   90,
   TRUE
@@ -3777,7 +3777,7 @@ VALUES (
   'sp-2',
   'SPEAK_PHOTO',
   'B2',
-  '{"imageUrl": "/images/practice/engineering-workshop.jpg", "prompt": "Speak for 90 seconds about what you see in the photo. Describe the equipment, the people involved, and what they appear to be building."}',
+  '{"imageUrl": "/drills/wp-31.jpg", "prompt": "Speak for 90 seconds about what you see in the photo. Describe the equipment, the people involved, and what they appear to be building."}',
   '{"rubric": "fluency_pronunciation_vocabulary_min90s"}',
   90,
   TRUE
