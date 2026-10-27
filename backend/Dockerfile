@@ -26,6 +26,12 @@ RUN apk --no-cache add ca-certificates tzdata curl ffmpeg
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+# The media volume (uploaded audio and the permanent TTS cache) is mounted at
+# /data/media. Docker initialises a fresh named volume with the ownership from
+# the image, so it must belong to the runtime user: otherwise synthesis fails
+# with "speech cache is unavailable" after the first deploy.
+RUN mkdir -p /data/media && chown -R appuser:appgroup /data
+
 COPY --from=builder /app/bin/server /app/server
 COPY --from=builder /app/db/migrations /app/db/migrations
 COPY --from=builder /app/db/init.sql /app/db/init.sql
