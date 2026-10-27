@@ -11,6 +11,7 @@
 #   --with-nginx  also install nginx/det-academy.ru.conf and reload nginx
 #   --backup      create a PostgreSQL backup before deploying
 #   --seed        re-apply the content and vocabulary seeds
+#   --tts         warm the speech-synthesis cache for every dictation
 #   --force       deploy even when the working tree has local modifications
 set -euo pipefail
 
@@ -20,12 +21,14 @@ cd "$REPO_ROOT"
 WITH_NGINX=false
 BACKUP=false
 SEED=false
+TTS=false
 FORCE=false
 for arg in "$@"; do
   case "$arg" in
     --with-nginx) WITH_NGINX=true ;;
     --backup) BACKUP=true ;;
     --seed) SEED=true ;;
+    --tts) TTS=true ;;
     --force) FORCE=true ;;
     -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
@@ -114,6 +117,21 @@ log "Verifying the critical endpoints"
 curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/health && echo
 curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/ready && echo
 curl -fsS --max-time 5 http://127.0.0.1:18080/api/v1/vocabulary -o /dev/null && echo "vocabulary ok"
+
+if [ "$TTS" = true ]; then
+  log "Warming the speech-synthesis cache"
+  db_user="$(docker compose exec -T postgres printenv POSTGRES_USER | tr -d '\r')"
+  db_name="$(docker compose exec -T postgres printenv POSTGRES_DB | tr -d '\r')"
+  warmed=0
+  docker compose exec -T postgres psql -U "$db_user" -d "$db_name" -Atc \
+    "SELECT content_payload->>'audioSentence' FROM questions WHERE type = 'LISTEN_TYPE' AND content_payload ? 'audioSentence'" \
+    | while IFS= read -r sentence; do
+        [ -z "$sentence" ] && continue
+        curl -fsS --max-time 30 -o /dev/null --get --data-urlencode "text=$sentence" \
+          http://127.0.0.1:18080/api/v1/tts || echo "tts warm failed: $sentence" >&2
+      done
+  echo "speech cache warmed"
+fi
 
 if [ "$WITH_NGINX" = true ]; then
   log "Installing the nginx configuration"
