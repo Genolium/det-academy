@@ -1539,6 +1539,7 @@ export interface CoachItem {
   provider: string;
   evaluatorVersion: string;
   feedback: string;
+  transcriptSource?: 'server' | 'client' | 'none' | string;
   recommendations: string[];
   evidence: CoachEvidence[];
   previousScore?: number;

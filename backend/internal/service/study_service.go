@@ -1196,6 +1196,7 @@ func (s *StudyService) BuildCoachReport(ctx context.Context, sessionID, userID s
 			Provider:         evaluation.Provider,
 			EvaluatorVersion: evaluation.EvaluatorVersion,
 			Feedback:         evaluation.Feedback,
+			TranscriptSource: evaluation.TranscriptSource,
 			Recommendations:  evaluation.Recommendations,
 			PracticeURL:      coachPracticeURL(evaluation.QuestionType),
 		}

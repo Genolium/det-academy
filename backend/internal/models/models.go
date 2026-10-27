@@ -726,14 +726,17 @@ type CoachEvidence struct {
 
 // CoachItem is the coaching view of one speaking or writing answer.
 type CoachItem struct {
-	QuestionID       string          `json:"questionId"`
-	QuestionType     string          `json:"questionType"`
-	Status           string          `json:"status"` // COMPLETED, FAILED, PENDING, EMPTY
-	Score            float64         `json:"score"`
-	CEFRLevel        string          `json:"cefrLevel"`
-	Provider         string          `json:"provider"`
-	EvaluatorVersion string          `json:"evaluatorVersion"`
-	Feedback         string          `json:"feedback"`
+	QuestionID       string  `json:"questionId"`
+	QuestionType     string  `json:"questionType"`
+	Status           string  `json:"status"` // COMPLETED, FAILED, PENDING, EMPTY
+	Score            float64 `json:"score"`
+	CEFRLevel        string  `json:"cefrLevel"`
+	Provider         string  `json:"provider"`
+	EvaluatorVersion string  `json:"evaluatorVersion"`
+	Feedback         string  `json:"feedback"`
+	// TranscriptSource is "server", "client" or "none". A client transcript is
+	// produced by the browser and makes the score practice-grade.
+	TranscriptSource string          `json:"transcriptSource,omitempty"`
 	Recommendations  []string        `json:"recommendations"`
 	Evidence         []CoachEvidence `json:"evidence"`
 	// PreviousScore and ScoreDelta compare the answer with the previous attempt

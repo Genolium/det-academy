@@ -273,3 +273,98 @@ func TestEvaluationQueueStatsCountsStatuses(t *testing.T) {
 		t.Fatalf("expected positive processing age: %+v", stats)
 	}
 }
+
+// TestEvaluationQueueUsesClientTranscriptWhenAllowed covers the free speaking
+// path: the browser recognises the speech and sends the transcript, so a score
+// can be produced without a paid server-side STT provider.
+func TestEvaluationQueueUsesClientTranscriptWhenAllowed(t *testing.T) {
+	store := memory.New()
+	session := &models.TestSession{
+		ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS",
+		StageName: "SPEAKING_SAMPLE", CurrentStage: 13, DifficultyLevel: "B1",
+	}
+	if err := store.Sessions().Create(context.Background(), session); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		QuestionType: "SPEAK_PHOTO", Status: "PENDING", SpeakingDuration: 75,
+		FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	if err := store.Sessions().SaveEvaluation(context.Background(), evaluation); err != nil {
+		t.Fatalf("save evaluation: %v", err)
+	}
+	job := &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		EvaluationID: evaluation.ID, Status: "queued", MaxAttempts: 3,
+		ClientTranscript: "I can see a group of students working together in a bright modern laboratory. They are discussing an experiment and taking detailed notes about the results.",
+		NextAttemptAt:    time.Now().Add(-time.Second), CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	}
+	if err := store.Sessions().CreateEvaluationJob(context.Background(), job); err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, nil)
+	queue.allowClientTranscript = true
+
+	claimed, err := store.Sessions().ClaimEvaluationJob(context.Background())
+	if err != nil {
+		t.Fatalf("claim job: %v", err)
+	}
+	queue.processJob(context.Background(), claimed)
+
+	evaluations, err := store.Sessions().GetSessionEvaluations(context.Background(), session.ID)
+	if err != nil || len(evaluations) != 1 {
+		t.Fatalf("load evaluations: %v (%d)", err, len(evaluations))
+	}
+	result := evaluations[0]
+	if result.Status != "COMPLETED" {
+		t.Fatalf("status = %q, want COMPLETED (error: %s)", result.Status, result.LastError)
+	}
+	if result.Score <= 0 {
+		t.Fatalf("score = %f, want a positive practice score", result.Score)
+	}
+	if result.TranscriptSource != "client" {
+		t.Fatalf("transcript source = %q, want client", result.TranscriptSource)
+	}
+}
+
+// TestEvaluationQueueRejectsUntrustedTranscriptWhenDisabled keeps the strict
+// mode available for proctored exams.
+func TestEvaluationQueueRejectsUntrustedTranscriptWhenDisabled(t *testing.T) {
+	store := memory.New()
+	session := &models.TestSession{
+		ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS",
+		StageName: "SPEAKING_SAMPLE", CurrentStage: 13, DifficultyLevel: "B1",
+	}
+	if err := store.Sessions().Create(context.Background(), session); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		QuestionType: "SPEAK_PHOTO", Status: "PENDING", FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	if err := store.Sessions().SaveEvaluation(context.Background(), evaluation); err != nil {
+		t.Fatalf("save evaluation: %v", err)
+	}
+	job := &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-sp-01",
+		EvaluationID: evaluation.ID, Status: "queued", MaxAttempts: 3,
+		ClientTranscript: "This transcript must be ignored in strict mode.",
+		NextAttemptAt:    time.Now().Add(-time.Second), CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	}
+	if err := store.Sessions().CreateEvaluationJob(context.Background(), job); err != nil {
+		t.Fatalf("create job: %v", err)
+	}
+
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, nil)
+	queue.allowClientTranscript = false
+
+	claimed, _ := store.Sessions().ClaimEvaluationJob(context.Background())
+	queue.processJob(context.Background(), claimed)
+
+	evaluations, _ := store.Sessions().GetSessionEvaluations(context.Background(), session.ID)
+	if len(evaluations) != 1 || evaluations[0].Status != "INSUFFICIENT" {
+		t.Fatalf("strict mode must not score a client transcript: %#v", evaluations)
+	}
+}

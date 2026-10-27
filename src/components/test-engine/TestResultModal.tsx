@@ -519,6 +519,11 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                         </p>
                       ))}
                       {item.feedback && <p className="text-[11px] text-neutral-400">{item.feedback}</p>}
+                      {item.transcriptSource === 'client' && (
+                        <p className="text-[10px] text-amber-300/90">
+                          Оценка по распознанной речи браузера — тренировочная, не прокторинговая.
+                        </p>
+                      )}
                       <div className="flex items-center justify-between gap-2 pt-1">
                         <span className="text-[10px] text-neutral-500">
                           {item.provider || 'provider'} · {item.evaluatorVersion || 'version'}
