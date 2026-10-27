@@ -500,3 +500,18 @@ func (h *StudyHandler) GetDailyLimits(w http.ResponseWriter, r *http.Request) {
 	}
 	RespondJSON(w, http.StatusOK, limits)
 }
+
+// GetPlacement returns the level estimated by the onboarding diagnostic.
+func (h *StudyHandler) GetPlacement(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	placement, err := h.studyService.GetPlacement(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to load placement")
+		return
+	}
+	RespondJSON(w, http.StatusOK, placement)
+}

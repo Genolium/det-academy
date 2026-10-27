@@ -15,6 +15,7 @@ import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificatio
 import { GoalOnboarding } from '@/components/dashboard/GoalOnboarding';
 import { XpLeagueCard } from '@/components/dashboard/XpLeagueCard';
 import { DailyLimitsCard } from '@/components/dashboard/DailyLimitsCard';
+import { PlacementCard } from '@/components/dashboard/PlacementCard';
 import {
   GraduationCap,
   Sparkles,
@@ -257,7 +258,8 @@ function DashboardContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {!goalsConfigured && <GoalOnboarding />}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <PlacementCard />
           <XpLeagueCard />
           <DailyLimitsCard />
         </div>

@@ -430,6 +430,45 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	}, nil
 }
 
+// GetPlacement returns the estimated level from the most recent completed
+// diagnostic. It is the onboarding placement test: no extra schema, the short
+// server-driven diagnostic is the source of truth.
+func (s *StudyService) GetPlacement(ctx context.Context, userID string) (*models.PlacementResult, error) {
+	if s.catService == nil || userID == "" {
+		return &models.PlacementResult{Available: false}, nil
+	}
+	sessions, err := s.catService.GetUserSessions(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var latest *models.TestSession
+	for index := range sessions {
+		session := sessions[index]
+		if session.Mode != "diagnostic" || session.Status != "COMPLETED" || session.CompletedAt == nil {
+			continue
+		}
+		if latest == nil || session.CompletedAt.After(*latest.CompletedAt) {
+			latest = &session
+		}
+	}
+	if latest == nil {
+		return &models.PlacementResult{Available: false}, nil
+	}
+
+	level := latest.DifficultyLevel
+	if level == "" {
+		level = "B1"
+	}
+	return &models.PlacementResult{
+		Available:   true,
+		Level:       level,
+		Overall:     intVal(latest.OverallScore),
+		CompletedAt: latest.CompletedAt.Format("2006-01-02"),
+		SessionID:   latest.ID,
+	}, nil
+}
+
 // --- Server-side XP ledger and leagues ---
 
 // leagueThresholds are ordered from the highest league to Bronze. The league

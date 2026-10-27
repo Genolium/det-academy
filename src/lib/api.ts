@@ -956,6 +956,18 @@ class ApiClient {
 
 
 
+
+  async getPlacement(): Promise<PlacementResult> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/placement`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить уровень', res.status);
+    }
+    return res.json();
+  }
+
   async getDailyLimits(): Promise<DailyLimits> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/limits`, {
       headers: this.getHeaders(),
@@ -1525,6 +1537,15 @@ export interface XPEvent {
   createdAt: string;
 }
 
+
+
+export interface PlacementResult {
+  available: boolean;
+  level?: string;
+  overall?: number;
+  completedAt?: string;
+  sessionId?: string;
+}
 
 export interface DailyLimits {
   date: string;

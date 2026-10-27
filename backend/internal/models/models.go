@@ -624,6 +624,15 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+// PlacementResult is the estimated level from the onboarding diagnostic.
+type PlacementResult struct {
+	Available   bool   `json:"available"`
+	Level       string `json:"level,omitempty"`
+	Overall     int    `json:"overall,omitempty"`
+	CompletedAt string `json:"completedAt,omitempty"`
+	SessionID   string `json:"sessionId,omitempty"`
+}
+
 // DailyLimits is the remaining daily allowance for the expensive actions.
 type DailyLimits struct {
 	Date          string `json:"date"`

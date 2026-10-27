@@ -192,6 +192,14 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalLearned: 0,
       });
     }
+    if (path.endsWith('/user/placement')) {
+      return json(route, 200, {
+        available: true,
+        level: 'B2',
+        overall: 115,
+        completedAt: '2026-10-26',
+      });
+    }
     if (path.endsWith('/user/limits')) {
       return json(route, 200, {
         date: '2026-10-27',

@@ -163,3 +163,38 @@ func TestDailyPlanFitsTheAvailableTimeAndExplainsTasks(t *testing.T) {
 		t.Fatalf("the plan takes %d minutes but the student has %d", total, plan.DailyMinutes)
 	}
 }
+
+// TestPlacementComesFromTheDiagnostic is the onboarding level test: the short
+// diagnostic is the only source of the estimated level.
+func TestPlacementFromDiagnostic(t *testing.T) {
+	store, study, userID := newStudyFixture(t)
+	ctx := context.Background()
+
+	empty, err := study.GetPlacement(ctx, userID)
+	if err != nil {
+		t.Fatalf("empty placement: %v", err)
+	}
+	if empty.Available {
+		t.Fatal("a new account has no placement yet")
+	}
+
+	completedAt := time.Now().UTC()
+	session := &models.TestSession{
+		ID: uuid.NewString(), UserID: userID, CandidateName: "Placement",
+		Status: "COMPLETED", StageName: "COMPLETED", CurrentStage: 13,
+		DifficultyLevel: "B2", Mode: "diagnostic", CompletedAt: &completedAt,
+	}
+	score := 115
+	session.OverallScore = &score
+	if err := store.Sessions().Create(ctx, session); err != nil {
+		t.Fatalf("create diagnostic: %v", err)
+	}
+
+	placement, err := study.GetPlacement(ctx, userID)
+	if err != nil {
+		t.Fatalf("placement: %v", err)
+	}
+	if !placement.Available || placement.Level != "B2" || placement.SessionID != session.ID {
+		t.Fatalf("unexpected placement: %#v", placement)
+	}
+}

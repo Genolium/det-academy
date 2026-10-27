@@ -290,6 +290,7 @@ func main() {
 			// and audio deletion for the student's own recordings.
 			r.Get("/xp", studyHandler.GetXPProfile)
 			r.Get("/limits", studyHandler.GetDailyLimits)
+			r.Get("/placement", studyHandler.GetPlacement)
 			r.Get("/coach/{sessionId}", studyHandler.GetCoachReport)
 			r.Post("/coach/{sessionId}/errors", studyHandler.SaveCoachErrors)
 			r.Delete("/coach/{sessionId}/audio", mediaHandler.DeleteSessionAudio)
