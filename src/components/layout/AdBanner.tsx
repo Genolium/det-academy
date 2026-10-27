@@ -7,6 +7,10 @@ import { api, AdBannerData } from '@/lib/api';
 import { translations } from '@/lib/translations';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
+// Advertising is paused until the partner programme is ready. Set
+// NEXT_PUBLIC_ADS_ENABLED=true to bring the banner back.
+const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true';
+
 interface AdBannerProps {
   placement: 'HEADER' | 'FOOTER';
 }
@@ -19,6 +23,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
   const [banner, setBanner] = useState<AdBannerData | null>(null);
 
   useEffect(() => {
+    if (!ADS_ENABLED) return;
     let isMounted = true;
     api.getActiveBanners(placement)
       .then((banners) => {
@@ -35,7 +40,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement }) => {
   // Strict constraint: Ad banners MUST be hidden during adaptive test sessions,
   // once dismissed, or if no active banner was received from the server/CMS.
   // We do not inject unverified hardcoded advertising fallbacks.
-  if (pathname.startsWith('/test/session') || dismissed || !banner) {
+  if (!ADS_ENABLED || pathname.startsWith('/test/session') || dismissed || !banner) {
     return null;
   }
 
