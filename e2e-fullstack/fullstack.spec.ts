@@ -19,6 +19,19 @@ test.describe('real backend + PostgreSQL', () => {
     expect(auth.token).toBeTruthy();
     expect(auth.user.email).toBe(email);
 
+    // A plan exists only after the student chooses a goal.
+    const planBeforeGoal = await request.get(`${API}/api/v1/user/plan`, {
+      headers: { Authorization: `Bearer ${auth.token}` },
+    });
+    expect(planBeforeGoal.status()).toBe(200);
+    expect((await planBeforeGoal.json()).configured).toBe(false);
+
+    const goal = await request.put(`${API}/api/v1/user/goals`, {
+      headers: { Authorization: `Bearer ${auth.token}` },
+      data: { targetScore: 125, targetDate: '2027-03-01', dailyMinutes: 45 },
+    });
+    expect(goal.status()).toBe(200);
+
     const plan = await request.get(`${API}/api/v1/user/plan`, {
       headers: { Authorization: `Bearer ${auth.token}` },
     });

@@ -170,15 +170,17 @@ func downgradeToLegacy(t *testing.T, databaseURL, schema string) {
 	}
 	defer db.Close()
 
+	// Columns are dropped first: some of them belong to tables that are dropped
+	// below, and ALTER on a missing table would fail.
+	for _, column := range legacyMissingColumns {
+		statement := fmt.Sprintf(`ALTER TABLE IF EXISTS "%s" DROP COLUMN IF EXISTS "%s"`, column.table, column.column)
+		if _, err := db.Exec(statement); err != nil {
+			t.Fatalf("drop legacy column %s.%s: %v", column.table, column.column, err)
+		}
+	}
 	for _, table := range legacyMissingTables {
 		if _, err := db.Exec(`DROP TABLE IF EXISTS "` + table + `" CASCADE`); err != nil {
 			t.Fatalf("drop legacy table %s: %v", table, err)
-		}
-	}
-	for _, column := range legacyMissingColumns {
-		statement := fmt.Sprintf(`ALTER TABLE "%s" DROP COLUMN IF EXISTS "%s"`, column.table, column.column)
-		if _, err := db.Exec(statement); err != nil {
-			t.Fatalf("drop legacy column %s.%s: %v", column.table, column.column, err)
 		}
 	}
 }
