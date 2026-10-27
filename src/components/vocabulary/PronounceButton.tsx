@@ -38,9 +38,7 @@ export const PronounceButton: React.FC<PronounceButtonProps> = ({ word, classNam
           setBusy(false);
         }
       }}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] ${
-        size === 'sm' ? 'h-8 w-8' : 'h-9 w-9'
-      } ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-400 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] h-11 w-11 ${className}`}
     >
       <Volume2 className={`${size === 'sm' ? 'h-4 w-4' : 'h-4.5 w-4.5'} ${busy ? 'animate-pulse' : ''}`} />
     </button>

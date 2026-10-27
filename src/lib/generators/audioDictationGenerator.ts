@@ -1,4 +1,5 @@
 import { listenTypeBank } from '@/data/questionBank';
+import { sound } from '@/lib/sound';
 
 export interface DictationItem {
   id: string;
@@ -359,22 +360,14 @@ export function playSynthesizedDictation(text: string, rate: number = 0.9): Prom
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       return reject(new Error('SpeechSynthesis not supported'));
     }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = rate;
-
-    const voices = window.speechSynthesis.getVoices();
-    const usVoice = voices.find((v) => v.lang.includes('en-US') || v.lang.includes('en_US'));
-    if (usVoice) {
-      utterance.voice = usVoice;
+    try {
+      // The shared engine ranks English voices (Google US English, Microsoft
+      // Aria/Jenny, Samantha…). Picking the first en-US voice produced the
+      // "funny" accented dictations users reported.
+      sound.speakEnglish(text, () => resolve(), rate);
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error(String(error)));
     }
-
-    utterance.onend = () => resolve();
-    utterance.onerror = (e) => reject(e);
-
-    window.speechSynthesis.speak(utterance);
   });
 }
 

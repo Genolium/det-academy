@@ -98,7 +98,7 @@ class SoundEngine {
   // Only English voices are used: falling back to an arbitrary system voice
   // (for example a Russian one) produces the "funny" pronunciation users
   // reported on dictations and vocabulary.
-  speakEnglish(text: string, onEnd?: () => void) {
+  speakEnglish(text: string, onEnd?: () => void, rate: number = 0.92) {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       if (onEnd) onEnd();
       return;
@@ -139,7 +139,7 @@ class SoundEngine {
     const speak = (attempt: number) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 0.92; // Slightly deliberate, natural pace for DET prompts
+      utterance.rate = rate; // Slightly deliberate, natural pace for DET prompts
       utterance.pitch = 1.0;
 
       const voice = pickVoice();

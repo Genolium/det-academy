@@ -176,7 +176,7 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* CENTER: Floating Segmented Navigation (Apple / Linear aesthetic) */}
-          <nav className="hidden md:flex items-center gap-1 bg-neutral-100/80 p-1 rounded-full border border-neutral-200/80 shadow-inner backdrop-blur-sm">
+          <nav className="hidden lg:flex items-center gap-1 bg-neutral-100/80 p-1 rounded-full border border-neutral-200/80 shadow-inner backdrop-blur-sm">
             {navLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -336,7 +336,7 @@ export const Navbar: React.FC = () => {
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:text-black hover:border-black transition-colors cursor-pointer shrink-0"
+              className="lg:hidden p-1.5 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:text-black hover:border-black transition-colors cursor-pointer shrink-0"
               aria-label={locale === 'ru' ? 'Открыть меню' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -346,7 +346,7 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-neutral-200/80 bg-white/95 backdrop-blur-xl px-4 py-3.5 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden border-t border-neutral-200/80 bg-white/95 backdrop-blur-xl px-4 py-3.5 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between pb-1">
               <button
                 onClick={() => setLocale(locale === 'ru' ? 'en' : 'ru')}
