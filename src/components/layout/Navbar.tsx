@@ -1,5 +1,8 @@
 'use client';
 
+// Arena is paused while the reminder/anti-abuse work is in progress.
+const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -255,14 +258,16 @@ export const Navbar: React.FC = () => {
                       <span>{t.dashboard}</span>
                     </Link>
 
-                    <Link
-                      href="/arena"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
-                    >
-                      <Swords className="w-3.5 h-3.5 text-neutral-500" />
-                      <span>{t.arena}</span>
-                    </Link>
+                    {ARENA_ENABLED && (
+                      <Link
+                        href="/arena"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 hover:text-black"
+                      >
+                        <Swords className="w-3.5 h-3.5 text-neutral-500" />
+                        <span>{t.arena}</span>
+                      </Link>
+                    )}
 
                     <Link
                       href="/profile"

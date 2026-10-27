@@ -1377,6 +1377,11 @@ func (s *StudyService) CreatePracticeAssignment(ctx context.Context, userID, que
 	if questionType == "" {
 		return nil, errors.New("questionType is required")
 	}
+	if isSpeakingType(questionType) {
+		if err := checkSpeakingDailyLimit(ctx, s.storage.Study(), userID); err != nil {
+			return nil, err
+		}
+	}
 
 	questions, err := s.storage.Questions().ListByTypeAndDifficulty(ctx, questionType, "")
 	if err != nil || len(questions) == 0 {

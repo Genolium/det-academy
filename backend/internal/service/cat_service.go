@@ -175,6 +175,11 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	if userID == "" {
 		return nil, nil, errors.New("authorization required to start test session")
 	}
+	if mode == "full" {
+		if err := checkMockDailyLimit(ctx, s.sessionRepo, userID); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	initialStage := StageSequence[0]
 	durationSec := StageDefaultDurations[initialStage]
@@ -1719,13 +1724,13 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Immutable content snapshot of this attempt: capture all questions and responses
 	allAssignments, _ := s.sessionRepo.GetAllAssignedQuestions(ctx, session.ID)
 	sessionSnapshotMap := map[string]interface{}{
-		"blueprintVersion":        session.BlueprintVersion,
-		"scoringVersion":          session.ScoringVersion,
-		"selectionPolicyVersion":  ItemSelectionPolicyVersion,
-		"assignedCount":           len(allAssignments),
-		"answeredCount":           len(responses),
-		"scores":                  scores,
-		"completedAt":             now.Format(time.RFC3339),
+		"blueprintVersion":       session.BlueprintVersion,
+		"scoringVersion":         session.ScoringVersion,
+		"selectionPolicyVersion": ItemSelectionPolicyVersion,
+		"assignedCount":          len(allAssignments),
+		"answeredCount":          len(responses),
+		"scores":                 scores,
+		"completedAt":            now.Format(time.RFC3339),
 	}
 	sessionSnapshotBytes, _ := json.Marshal(sessionSnapshotMap)
 	session.ContentSnapshot = sessionSnapshotBytes

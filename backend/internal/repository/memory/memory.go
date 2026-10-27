@@ -16,73 +16,73 @@ import (
 )
 
 type MemoryStorage struct {
-	mu                sync.RWMutex
-	users             map[string]*models.User
-	usersByEmail      map[string]*models.User
-	theory            map[string]map[string]bool // userID -> lessonSlug -> isCompleted
-	questions         map[string]*models.Question
-	sessions          map[string]*models.TestSession
-	responses         map[string][]models.QuestionResponse
-	evaluations       map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
-	evaluationJobs    map[string]*models.EvaluationJob
-	mediaAssets       map[string]*models.MediaAsset // assetID -> *MediaAsset
-	xpEvents          map[string][]models.XPEvent   // userID -> ledger
-	certificates      map[string]*models.Certificate
-	banners           map[string]*models.AdBanner
-	institutions      map[string]*models.Institution
-	socialAccounts    map[string][]models.SocialAccount             // userID -> []SocialAccount
-	goals             map[string]*models.UserGoal                   // userID -> *UserGoal
-	errors            map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
-	srsStats          map[string]*models.SRSStats                   // userID -> *SRSStats
-	srsCards          map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
-	activity          map[string]map[string]bool                    // userID -> date -> active
-	taskCompletions   map[string]map[string]time.Time
-	events            map[string][]models.SessionEvent    // sessionID -> events
-	sessionQuestions  map[string][]models.SessionQuestion // sessionID -> assignments
-	vocabulary        map[string]models.VocabularyEntry   // entryID -> entry
-	oauthTransactions map[string]models.OAuthTransaction  // stateHash -> transaction
-	refreshTokens     map[string]models.RefreshToken
-	learningEvents      map[string][]models.LearningEvent  // userID -> events
-	practiceAssignments map[string]*models.PracticeAssignment // assignmentID -> assignment
-	practiceAttempts    map[string][]models.PracticeAttempt // userID -> attempts
-	typingAttempts    map[string][]models.TypingAttempt   // userID -> attempts
-	skillMastery      map[string]map[string]*models.UserSkillMastery // userID -> skill -> mastery
-	sessionLockMu     sync.Mutex
-	sessionLocks      map[string]*sync.Mutex
+	mu                  sync.RWMutex
+	users               map[string]*models.User
+	usersByEmail        map[string]*models.User
+	theory              map[string]map[string]bool // userID -> lessonSlug -> isCompleted
+	questions           map[string]*models.Question
+	sessions            map[string]*models.TestSession
+	responses           map[string][]models.QuestionResponse
+	evaluations         map[string][]models.EvaluationResult // sessionID -> []EvaluationResult
+	evaluationJobs      map[string]*models.EvaluationJob
+	mediaAssets         map[string]*models.MediaAsset // assetID -> *MediaAsset
+	xpEvents            map[string][]models.XPEvent   // userID -> ledger
+	certificates        map[string]*models.Certificate
+	banners             map[string]*models.AdBanner
+	institutions        map[string]*models.Institution
+	socialAccounts      map[string][]models.SocialAccount             // userID -> []SocialAccount
+	goals               map[string]*models.UserGoal                   // userID -> *UserGoal
+	errors              map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
+	srsStats            map[string]*models.SRSStats                   // userID -> *SRSStats
+	srsCards            map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
+	activity            map[string]map[string]bool                    // userID -> date -> active
+	taskCompletions     map[string]map[string]time.Time
+	events              map[string][]models.SessionEvent    // sessionID -> events
+	sessionQuestions    map[string][]models.SessionQuestion // sessionID -> assignments
+	vocabulary          map[string]models.VocabularyEntry   // entryID -> entry
+	oauthTransactions   map[string]models.OAuthTransaction  // stateHash -> transaction
+	refreshTokens       map[string]models.RefreshToken
+	learningEvents      map[string][]models.LearningEvent              // userID -> events
+	practiceAssignments map[string]*models.PracticeAssignment          // assignmentID -> assignment
+	practiceAttempts    map[string][]models.PracticeAttempt            // userID -> attempts
+	typingAttempts      map[string][]models.TypingAttempt              // userID -> attempts
+	skillMastery        map[string]map[string]*models.UserSkillMastery // userID -> skill -> mastery
+	sessionLockMu       sync.Mutex
+	sessionLocks        map[string]*sync.Mutex
 }
 
 func New() *MemoryStorage {
 	s := &MemoryStorage{
-		users:             make(map[string]*models.User),
-		usersByEmail:      make(map[string]*models.User),
-		theory:            make(map[string]map[string]bool),
-		questions:         make(map[string]*models.Question),
-		sessions:          make(map[string]*models.TestSession),
-		responses:         make(map[string][]models.QuestionResponse),
-		evaluations:       make(map[string][]models.EvaluationResult),
-		evaluationJobs:    make(map[string]*models.EvaluationJob),
-		mediaAssets:       make(map[string]*models.MediaAsset),
-		certificates:      make(map[string]*models.Certificate),
-		banners:           make(map[string]*models.AdBanner),
-		institutions:      make(map[string]*models.Institution),
-		socialAccounts:    make(map[string][]models.SocialAccount),
-		goals:             make(map[string]*models.UserGoal),
-		errors:            make(map[string]map[string]*models.UserErrorItem),
-		srsStats:          make(map[string]*models.SRSStats),
-		srsCards:          make(map[string]map[string]*models.SRSCardProgress),
-		activity:          make(map[string]map[string]bool),
-		taskCompletions:   make(map[string]map[string]time.Time),
-		events:            make(map[string][]models.SessionEvent),
-		sessionQuestions:  make(map[string][]models.SessionQuestion),
-		vocabulary:        make(map[string]models.VocabularyEntry),
-		oauthTransactions: make(map[string]models.OAuthTransaction),
+		users:               make(map[string]*models.User),
+		usersByEmail:        make(map[string]*models.User),
+		theory:              make(map[string]map[string]bool),
+		questions:           make(map[string]*models.Question),
+		sessions:            make(map[string]*models.TestSession),
+		responses:           make(map[string][]models.QuestionResponse),
+		evaluations:         make(map[string][]models.EvaluationResult),
+		evaluationJobs:      make(map[string]*models.EvaluationJob),
+		mediaAssets:         make(map[string]*models.MediaAsset),
+		certificates:        make(map[string]*models.Certificate),
+		banners:             make(map[string]*models.AdBanner),
+		institutions:        make(map[string]*models.Institution),
+		socialAccounts:      make(map[string][]models.SocialAccount),
+		goals:               make(map[string]*models.UserGoal),
+		errors:              make(map[string]map[string]*models.UserErrorItem),
+		srsStats:            make(map[string]*models.SRSStats),
+		srsCards:            make(map[string]map[string]*models.SRSCardProgress),
+		activity:            make(map[string]map[string]bool),
+		taskCompletions:     make(map[string]map[string]time.Time),
+		events:              make(map[string][]models.SessionEvent),
+		sessionQuestions:    make(map[string][]models.SessionQuestion),
+		vocabulary:          make(map[string]models.VocabularyEntry),
+		oauthTransactions:   make(map[string]models.OAuthTransaction),
 		refreshTokens:       make(map[string]models.RefreshToken),
 		learningEvents:      make(map[string][]models.LearningEvent),
 		practiceAssignments: make(map[string]*models.PracticeAssignment),
 		practiceAttempts:    make(map[string][]models.PracticeAttempt),
-		typingAttempts:    make(map[string][]models.TypingAttempt),
-		skillMastery:      make(map[string]map[string]*models.UserSkillMastery),
-		sessionLocks:      make(map[string]*sync.Mutex),
+		typingAttempts:      make(map[string][]models.TypingAttempt),
+		skillMastery:        make(map[string]map[string]*models.UserSkillMastery),
+		sessionLocks:        make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
 	s.seedVocabulary()
@@ -1595,6 +1595,11 @@ type sessionMemoryRepo struct{ s *MemoryStorage }
 func (r *sessionMemoryRepo) Create(ctx context.Context, session *models.TestSession) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
+	// Mirror the PostgreSQL default: a session always has a creation time, so
+	// daily limits and ordering work in the in-memory store too.
+	if session.CreatedAt.IsZero() {
+		session.CreatedAt = time.Now().UTC()
+	}
 	r.s.sessions[session.ID] = session
 	return nil
 }
@@ -1752,6 +1757,25 @@ func (r *sessionMemoryRepo) ListRecent(ctx context.Context, limit int) ([]models
 		}
 	}
 	return list, nil
+}
+
+func (r *sessionMemoryRepo) CountUserSessionsSince(ctx context.Context, userID string, since time.Time) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	count := 0
+	for _, session := range r.s.sessions {
+		if session.UserID != userID || session.CreatedAt.Before(since) {
+			continue
+		}
+		mode := session.Mode
+		if mode == "" {
+			mode = "full"
+		}
+		if mode == "full" {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (r *sessionMemoryRepo) GetStats(ctx context.Context) (int, int, float64, map[string]int, error) {
@@ -2454,6 +2478,26 @@ func (r *studyMemoryRepo) RecordPracticeAttempt(ctx context.Context, attempt *mo
 	}
 	r.s.practiceAttempts[attempt.UserID] = append(r.s.practiceAttempts[attempt.UserID], *attempt)
 	return nil
+}
+
+func (r *studyMemoryRepo) CountPracticeAttemptsSince(ctx context.Context, userID string, since time.Time, questionTypes []string) (int, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	allowed := map[string]bool{}
+	for _, questionType := range questionTypes {
+		allowed[questionType] = true
+	}
+	count := 0
+	for _, attempt := range r.s.practiceAttempts[userID] {
+		if attempt.CreatedAt.Before(since) {
+			continue
+		}
+		if len(allowed) > 0 && !allowed[attempt.QuestionType] {
+			continue
+		}
+		count++
+	}
+	return count, nil
 }
 
 func (r *studyMemoryRepo) GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error) {

@@ -1,5 +1,7 @@
 'use client';
 
+const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
@@ -48,6 +50,29 @@ export default function MultiplayerArenaPage() {
   const { locale } = useSettingsStore();
   const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
   const currentCandidateName = user?.name || candidateName || 'Candidate';
+
+  if (!ARENA_ENABLED) {
+    return (
+      <div className="min-h-screen py-20 ambient-glow flex items-center justify-center px-4">
+        <div className="max-w-lg w-full bg-[#0E1012] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 text-center shadow-2xl">
+          <Swords className="w-10 h-10 text-[#D2F544] mx-auto mb-4" />
+          <h1 className="text-xl font-black tracking-tight">Арена временно на паузе</h1>
+          <p className="text-sm text-neutral-400 mt-3 leading-relaxed">
+            Мы дорабатываем честный рейтинг и защиту от накрутки. Тренажёры, теория и пробный тест работают как обычно.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/practice" className="inline-flex items-center gap-2 bg-[#D2F544] text-[#0E1012] font-black text-sm px-5 py-2.5 rounded-full">
+              К тренажёрам <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link href="/dashboard" className="text-sm font-bold text-neutral-300 hover:text-white">
+              В кабинет
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [dbLeaderboard, setDbLeaderboard] = useState<ArenaLeaderboardEntry[]>([]);

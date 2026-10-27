@@ -624,6 +624,15 @@ type EvaluationResult struct {
 	CreatedAt        time.Time      `json:"createdAt"`
 }
 
+// DailyLimits is the remaining daily allowance for the expensive actions.
+type DailyLimits struct {
+	Date          string `json:"date"`
+	MockUsed      int    `json:"mockUsed"`
+	MockLimit     int    `json:"mockLimit"`
+	SpeakingUsed  int    `json:"speakingUsed"`
+	SpeakingLimit int    `json:"speakingLimit"`
+}
+
 // XPEvent is one immutable reward in the server-side ledger.
 type XPEvent struct {
 	ID             string          `json:"id"`

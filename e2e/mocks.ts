@@ -192,6 +192,15 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalLearned: 0,
       });
     }
+    if (path.endsWith('/user/limits')) {
+      return json(route, 200, {
+        date: '2026-10-27',
+        mockUsed: 1,
+        mockLimit: 3,
+        speakingUsed: 2,
+        speakingLimit: 20,
+      });
+    }
     if (path.endsWith('/user/xp')) {
       return json(route, 200, {
         total: 320,

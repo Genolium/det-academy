@@ -31,6 +31,10 @@ func (h *TestHandler) StartSession(w http.ResponseWriter, r *http.Request) {
 
 	session, questions, err := h.catService.StartSession(r.Context(), userID, req.CandidateName, req.DifficultyLevel, req.Mode)
 	if err != nil {
+		if errors.Is(err, service.ErrDailyLimitReached) {
+			RespondError(w, http.StatusTooManyRequests, "Дневной лимит полных пробных тестов исчерпан. Возвращайтесь завтра.")
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

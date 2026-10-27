@@ -955,6 +955,18 @@ class ApiClient {
 
 
 
+
+  async getDailyLimits(): Promise<DailyLimits> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/limits`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError('Не удалось загрузить дневные лимиты', res.status);
+    }
+    return res.json();
+  }
+
   async getXPProfile(): Promise<XPProfile> {
     const res = await fetch(`${API_BASE_URL}/api/v1/user/xp`, {
       headers: this.getHeaders(),
@@ -1511,6 +1523,15 @@ export interface XPEvent {
   idempotencyKey: string;
   xp: number;
   createdAt: string;
+}
+
+
+export interface DailyLimits {
+  date: string;
+  mockUsed: number;
+  mockLimit: number;
+  speakingUsed: number;
+  speakingLimit: number;
 }
 
 export interface XPProfile {

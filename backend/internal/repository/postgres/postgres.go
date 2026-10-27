@@ -774,6 +774,15 @@ func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestS
 	return sessions, nil
 }
 
+func (r *SessionRepo) CountUserSessionsSince(ctx context.Context, userID string, since time.Time) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM test_sessions
+		WHERE user_id = $1 AND created_at >= $2 AND COALESCE(mode, 'full') = 'full'
+	`, userID, since).Scan(&count)
+	return count, err
+}
+
 func (r *SessionRepo) GetStats(ctx context.Context) (int, int, float64, map[string]int, error) {
 	var total, completed int
 	var avgScore sql.NullFloat64
@@ -1757,6 +1766,18 @@ func (r *StudyRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.P
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 	`, attempt.ID, attempt.UserID, attempt.QuestionType, attempt.QuestionID, attempt.PromptContext, userResp, attempt.IsCorrect, attempt.Score, attempt.TimeSpentSec)
 	return err
+}
+
+func (r *StudyRepo) CountPracticeAttemptsSince(ctx context.Context, userID string, since time.Time, questionTypes []string) (int, error) {
+	query := `SELECT COUNT(*) FROM practice_attempts WHERE user_id = $1 AND created_at >= $2`
+	args := []interface{}{userID, since}
+	if len(questionTypes) > 0 {
+		query += ` AND question_type = ANY($3)`
+		args = append(args, pq.Array(questionTypes))
+	}
+	var count int
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&count)
+	return count, err
 }
 
 func (r *StudyRepo) GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error) {

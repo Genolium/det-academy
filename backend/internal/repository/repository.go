@@ -61,6 +61,8 @@ type TestSessionRepository interface {
 	GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error)
 	ListRecent(ctx context.Context, limit int) ([]models.TestSession, error)
 	GetStats(ctx context.Context) (total int, completed int, avgScore float64, scoreDist map[string]int, err error)
+	// CountUserSessionsSince counts full mock attempts created after the given time.
+	CountUserSessionsSince(ctx context.Context, userID string, since time.Time) (int, error)
 	WithSessionLock(ctx context.Context, sessionID string, fn func() error) error
 	RecordEvent(ctx context.Context, event *models.SessionEvent) error
 	GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error)
@@ -156,6 +158,9 @@ type StudyRepository interface {
 	GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error)
 	RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error
 	GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error)
+	// CountPracticeAttemptsSince counts practice answers of the given types
+	// (all types when the list is empty) created after the given time.
+	CountPracticeAttemptsSince(ctx context.Context, userID string, since time.Time, questionTypes []string) (int, error)
 	RecordTypingAttempt(ctx context.Context, attempt *models.TypingAttempt) error
 	GetTypingAttempts(ctx context.Context, userID string, limit int) ([]models.TypingAttempt, error)
 	GetBestTypingWPM(ctx context.Context, userID string) (int, error)

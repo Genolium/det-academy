@@ -289,6 +289,7 @@ func main() {
 			// Speaking/Writing Coach: attempt comparison, repeatable errors
 			// and audio deletion for the student's own recordings.
 			r.Get("/xp", studyHandler.GetXPProfile)
+			r.Get("/limits", studyHandler.GetDailyLimits)
 			r.Get("/coach/{sessionId}", studyHandler.GetCoachReport)
 			r.Post("/coach/{sessionId}/errors", studyHandler.SaveCoachErrors)
 			r.Delete("/coach/{sessionId}/audio", mediaHandler.DeleteSessionAudio)

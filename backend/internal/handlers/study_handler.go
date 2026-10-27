@@ -367,6 +367,10 @@ func (h *StudyHandler) GetPracticeAssignment(w http.ResponseWriter, r *http.Requ
 
 	asgn, err := h.studyService.CreatePracticeAssignment(r.Context(), userID, questionType)
 	if err != nil {
+		if errors.Is(err, service.ErrDailyLimitReached) {
+			RespondError(w, http.StatusTooManyRequests, "Дневной лимит заданий исчерпан. Возвращайтесь завтра.")
+			return
+		}
 		RespondError(w, http.StatusNotFound, err.Error())
 		return
 	}
@@ -480,4 +484,19 @@ func (h *StudyHandler) GetSkillMastery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondJSON(w, http.StatusOK, mastery)
+}
+
+// GetDailyLimits reports the remaining daily allowance for expensive actions.
+func (h *StudyHandler) GetDailyLimits(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	limits, err := h.studyService.GetDailyLimits(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to load daily limits")
+		return
+	}
+	RespondJSON(w, http.StatusOK, limits)
 }

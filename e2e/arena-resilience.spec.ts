@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { mockApi } from './mocks';
 
+const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
+test.skip(!ARENA_ENABLED, 'Arena is paused (NEXT_PUBLIC_ARENA_ENABLED is not true)');
+
 async function installFakeWebSocket(page: import('@playwright/test').Page): Promise<void> {
   await page.evaluate(() => {
     type FakeWindow = Window & {
