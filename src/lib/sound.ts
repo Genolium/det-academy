@@ -1,3 +1,4 @@
+import { isServerTTSEnabled, playServerTTS } from '@/lib/tts';
 /**
  * Web Audio API synthesizer for mechanical keyboard clicks and sounds.
  * Ensures zero external audio asset dependencies!
@@ -99,6 +100,19 @@ class SoundEngine {
   // (for example a Russian one) produces the "funny" pronunciation users
   // reported on dictations and vocabulary.
   speakEnglish(text: string, onEnd?: () => void, rate: number = 0.92) {
+    // Prefer the cached server voice; fall back to the browser when the
+    // backend has no synthesis provider or the request fails.
+    if (isServerTTSEnabled()) {
+      void playServerTTS(text).then((played) => {
+        if (!played) this.speakWithBrowser(text, onEnd, rate);
+        else if (onEnd) onEnd();
+      });
+      return;
+    }
+    this.speakWithBrowser(text, onEnd, rate);
+  }
+
+  speakWithBrowser(text: string, onEnd?: () => void, rate: number = 0.92) {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       if (onEnd) onEnd();
       return;

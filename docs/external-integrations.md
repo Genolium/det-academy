@@ -177,3 +177,33 @@ ALLOW_CLIENT_TRANSCRIPT=false           # server transcript is authoritative
 Verified on 2026-10-28: a synthesised sentence was recognised verbatim in
 0.47 s. `ffmpeg` is installed in the backend image (`apk add ffmpeg`), and
 `TestSpeechKitConvertsWebMWithFFmpeg` covers the real conversion path.
+
+### Text-to-speech and permanent audio cache
+
+`GET /api/v1/tts?text=...` synthesises speech through SpeechKit and stores the
+result under `MEDIA_UPLOAD_DIR/tts` as a content-addressed MP3
+(`sha256(provider|voice|text)`). Files are kept forever, served with
+`Cache-Control: public, max-age=31536000, immutable`, and a concurrent request
+for the same sentence waits for the first synthesis instead of paying twice.
+
+```bash
+AI_TTS_ENABLED=true
+AI_TTS_PROVIDER=yandex
+AI_TTS_API_KEY=<SpeechKit key>   # falls back to AI_API_KEY
+AI_FOLDER_ID=<folder>
+AI_TTS_VOICE=jane                # English: jane, omazh, marina, zahar
+AI_TTS_LANG=en-US
+AI_TTS_SPEED=0.9
+NEXT_PUBLIC_TTS_PROVIDER=server  # browser = device voice fallback
+```
+
+Warm the whole dictation bank once after a deploy:
+
+```bash
+TTS_PREGEN_BASE_URL=http://127.0.0.1:18080 node scripts/pregenerate_tts.mjs
+```
+
+Quality note: a round-trip benchmark (synthesise → recognise) showed SpeechKit's
+English voices at 0.32–0.46 word accuracy, so the client falls back to the
+ranked browser voice when server synthesis fails. ElevenLabs or OpenAI TTS can
+replace the provider behind the same endpoint without touching the cache.

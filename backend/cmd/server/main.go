@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -212,6 +213,14 @@ func main() {
 	}
 	mediaHandler := handlers.NewMediaHandler(catService, mediaUploadDir)
 
+	// Text-to-speech: generated audio is cached forever under the persistent
+	// media volume and served with immutable headers.
+	ttsProvider := ai.NewTTSFromEnv()
+	if ttsProvider != nil {
+		log.Printf("[AI] speech synthesis: %s", ttsProvider.Name())
+	}
+	ttsHandler := handlers.NewTTSHandler(ttsProvider, filepath.Join(mediaUploadDir, "tts"))
+
 	arenaHub := handlers.NewArenaHub()
 	go arenaHub.Run()
 	arenaHandler := handlers.NewArenaHandler(arenaHub, store.Users(), store.Sessions())
@@ -258,6 +267,7 @@ func main() {
 
 		// Auth routes
 		r.Get("/metrics", handlers.MetricsHandler)
+		r.With(handlers.RateLimitMiddleware(120, time.Minute)).Get("/tts", ttsHandler.ServeHTTP)
 		r.With(handlers.RateLimitMiddleware(30, time.Minute)).Post("/client-errors", handlers.ClientError)
 
 		r.Route("/auth", func(r chi.Router) {
