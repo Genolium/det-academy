@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 
 export interface AudioRecorderState {
   isRecording: boolean;
@@ -247,18 +247,37 @@ export function useAudioRecorder(): AudioRecorderState {
     };
   }, [cleanupTracksAndAudio, audioUrl]);
 
-  return {
-    isRecording,
-    isPaused,
-    durationSec,
-    audioBlob,
-    audioUrl,
-    volumeLevel,
-    hasPermission,
-    error,
-    startRecording,
-    stopRecording,
-    cancelRecording,
-    resetAudio,
-  };
+  // A stable object identity is required: consumers put these callbacks in
+  // effect dependency arrays, and a fresh object on every render would restart
+  // their timers on each state update.
+  return useMemo(
+    () => ({
+      isRecording,
+      isPaused,
+      durationSec,
+      audioBlob,
+      audioUrl,
+      volumeLevel,
+      hasPermission,
+      error,
+      startRecording,
+      stopRecording,
+      cancelRecording,
+      resetAudio,
+    }),
+    [
+      isRecording,
+      isPaused,
+      durationSec,
+      audioBlob,
+      audioUrl,
+      volumeLevel,
+      hasPermission,
+      error,
+      startRecording,
+      stopRecording,
+      cancelRecording,
+      resetAudio,
+    ]
+  );
 }

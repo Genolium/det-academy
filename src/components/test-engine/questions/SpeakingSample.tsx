@@ -145,6 +145,14 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     }
   }, [audioRecorder]);
 
+  // The timer must depend on the phase only. Depending on startRecording made
+  // the deadline reset whenever the recorder updated its duration, so the
+  // countdown never reached the point where the answer can be submitted.
+  const startRecordingRef = useRef(startRecording);
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
+
   useEffect(() => {
     const duration = phase === 'prep' ? 30 : 180;
     const deadline = Date.now() + duration * 1000;
@@ -156,7 +164,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
       if (remaining <= 0) {
         clearInterval(timer);
         if (phase === 'prep') {
-          startRecording();
+          startRecordingRef.current();
         } else {
           handleFinishRef.current();
         }
@@ -164,7 +172,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     }, 250);
 
     return () => clearInterval(timer);
-  }, [phase, startRecording]);
+  }, [phase]);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
