@@ -23,7 +23,9 @@ jobs:
       - run: npm run lint
       - run: python3 scripts/lint_content.py
       - run: python3 scripts/lint_content.py backend/db/05-productive-question-bank.sql
+      - run: python3 scripts/lint_content.py backend/db/06-level-bank.sql
       - run: node scripts/sync_question_bank.mjs --check
+      - run: node scripts/generate_level_bank.mjs --check
       - run: python3 scripts/review_content.py
       - run: python3 scripts/test_calibration.py
       - run: python3 scripts/calibration_validate.py backend/tests/fixtures/calibration_expert_dataset.json --allow-fixture

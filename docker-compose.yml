@@ -15,6 +15,7 @@ services:
       - ./backend/db/03-content-seed.sql:/docker-entrypoint-initdb.d/03-content-seed.sql:ro
       - ./backend/db/04-vocabulary-seed.sql:/docker-entrypoint-initdb.d/04-vocabulary-seed.sql:ro
       - ./backend/db/05-productive-question-bank.sql:/docker-entrypoint-initdb.d/05-productive-question-bank.sql:ro
+      - ./backend/db/06-level-bank.sql:/docker-entrypoint-initdb.d/06-level-bank.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-det_academy}"]
       interval: 5s
