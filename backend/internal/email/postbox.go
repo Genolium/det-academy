@@ -162,7 +162,7 @@ func signPostboxRequest(accessKey, secretKey, region, host, path string, payload
 	payloadHash := sha256Hex(payload)
 
 	signedHeaders := "content-type;host;x-amz-date"
-	canonicalHeaders := "content-type:application/json\nhost:" + host + "\nx-amz-date:" + amzDate
+	canonicalHeaders := "content-type:application/json\nhost:" + host + "\nx-amz-date:" + amzDate + "\n"
 	canonicalRequest := strings.Join([]string{
 		http.MethodPost,
 		path,
