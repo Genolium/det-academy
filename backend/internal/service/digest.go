@@ -156,7 +156,7 @@ func digestMessage(user models.User, report *models.WeeklyReport, week time.Time
   </ul>
   <p><strong>Next step:</strong> %s</p>
   <p><a href="https://det-academy.ru/practice/adaptive">Open adaptive practice</a></p>
-  <p style="color:#666;font-size:12px">You receive this email because you have a DET Academy account. You can turn it off in your profile settings.</p>
+  <p style="color:#666;font-size:12px">You receive this weekly summary because you have a verified DET Academy account. Reply to this email to stop these summaries.</p>
 </div>`, name, report.StudyDays, report.MockTests, report.SRSReviews, report.RangeLow, report.RangeHigh, weakest, recommendation)
 	return subject, html
 }
