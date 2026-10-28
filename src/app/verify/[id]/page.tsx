@@ -125,12 +125,34 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
     return { band: 'A2 Elementary', color: 'text-neutral-400 bg-neutral-900 border-neutral-800' };
   };
 
-  const handleCopyLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    if (typeof window === 'undefined') return;
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: cert ? `Сертификат DET Academy: ${cert.candidateName}` : 'DET Academy',
+      text: cert
+        ? `Результат тренировочного экзамена: ${cert.overallScore}/160`
+        : 'Проверка сертификата DET Academy',
+      url: shareUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        return;
+      } catch {
+        // The user cancelled the share sheet: fall through to copying.
+      }
     }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // Clipboard can be unavailable on insecure origins; the address bar still
+      // contains the public URL, so no error dialog is needed.
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handlePrint = () => {

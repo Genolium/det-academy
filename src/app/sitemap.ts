@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/practice`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/practice/flashcards`, lastModified: today, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/practice/typing`, lastModified: today, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/practice/pronunciation`, lastModified: today, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/diagnostic`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/test`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/verify`, lastModified: today, changeFrequency: 'monthly', priority: 0.6 },

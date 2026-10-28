@@ -4,6 +4,7 @@ import React from 'react';
 import { EvaluationResult } from '@/lib/api';
 import { AudioPlayer } from './AudioPlayer';
 import { PronunciationFeedback } from './PronunciationFeedback';
+import { PRONUNCIATION_METHOD } from '@/lib/pronunciationAnalysis';
 import { Award, BookOpen, Clock, Lightbulb, MessageSquare, Sparkles } from 'lucide-react';
 
 interface RubricFeedbackCardProps {
@@ -144,6 +145,7 @@ export const RubricFeedbackCard: React.FC<RubricFeedbackCardProps> = ({
             report={{
               ...evaluation.pronunciation,
               version: 1,
+              method: PRONUNCIATION_METHOD,
               notes: evaluation.pronunciation.notes ?? [],
             }}
             referenceText={evaluation.pronunciation.referenceText}

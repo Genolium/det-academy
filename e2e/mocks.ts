@@ -212,6 +212,15 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           confidence: 'high',
           basis: '3 мока, последний 120, разброс ±10 баллов.',
         },
+        projectedRange: {
+          low: 122,
+          high: 134,
+          target: 125,
+          onTrack: true,
+          confidence: 'medium',
+          slopePerDay: 0.4,
+          basis: 'Тренд по 3 мокам: +0.40 балла в день. К дате экзамена через 30 дней: около 128.',
+        },
         nextBestAction: {
           title: 'Отработать Read and Select',
           description: '2 неусвоенных ошибки этого типа: 10 минут точечной практики.',

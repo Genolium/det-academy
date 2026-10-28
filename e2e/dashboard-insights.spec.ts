@@ -18,6 +18,10 @@ test.describe('dashboard insights', () => {
     await expect(page.getByText('110–130')).toBeVisible();
     await expect(page.getByText(/высокая уверенность/)).toBeVisible();
     await expect(page.getByText(/разброс ±10/)).toBeVisible();
+    await expect(page.getByText('К дате экзамена:')).toBeVisible();
+    await expect(page.getByText('122–134')).toBeVisible();
+    await expect(page.getByText('идёт к цели')).toBeVisible();
+    await expect(page.getByText(/Тренд по 3 мокам/)).toBeVisible();
   });
 
   test('opens the recommended drill from the next best action', async ({ page }) => {

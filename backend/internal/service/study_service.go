@@ -404,6 +404,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
 	estimatedRange := estimateScoreRange(completedSessions)
+	projectedRange := projectTrajectory(completedSessions, goal.TargetScore, daysRemaining)
 	nextBestAction := buildNextBestAction(errorsList, weakestSkill)
 
 	today := time.Now().UTC().Format("2006-01-02")
@@ -430,6 +431,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		StatusMessage:      statusMsg,
 		TasksToday:         tasks,
 		EstimatedRange:     estimatedRange,
+		ProjectedRange:     projectedRange,
 		NextBestAction:     nextBestAction,
 	}, nil
 }

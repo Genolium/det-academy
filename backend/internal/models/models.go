@@ -651,6 +651,12 @@ type PronunciationWord struct {
 	Issue         string  `json:"issue,omitempty"`
 	Confidence    float64 `json:"confidence,omitempty"`
 	ReferenceWord string  `json:"referenceWord,omitempty"`
+	// ReferencePhonemes and SpokenPhonemes are G2P sequences derived from the
+	// expected and recognised text. They are not acoustic posteriors.
+	ReferencePhonemes []string `json:"referencePhonemes,omitempty"`
+	SpokenPhonemes    []string `json:"spokenPhonemes,omitempty"`
+	PhonemeDistance   int      `json:"phonemeDistance,omitempty"`
+	PhonemeScore      float64  `json:"phonemeScore,omitempty"`
 }
 
 // PronunciationReport is the client-computed word-level clarity panel.
@@ -667,9 +673,14 @@ type PronunciationReport struct {
 	ReferenceText string              `json:"referenceText,omitempty"`
 	// ReferencePlaybackText is the task prompt offered for reference playback.
 	// It is never used for alignment.
-	ReferencePlaybackText string   `json:"referencePlaybackText,omitempty"`
-	ReferenceMatchRate    float64  `json:"referenceMatchRate,omitempty"`
-	Notes                 []string `json:"notes,omitempty"`
+	ReferencePlaybackText string  `json:"referencePlaybackText,omitempty"`
+	ReferenceMatchRate    float64 `json:"referenceMatchRate,omitempty"`
+	// PhonemeScore is the mean G2P alignment score over compared word pairs.
+	// It is display-only feedback, never a grading input.
+	PhonemeScore         float64  `json:"phonemeScore,omitempty"`
+	PhonemeMeasuredWords int      `json:"phonemeMeasuredWords,omitempty"`
+	PhonemeModel         string   `json:"phonemeModel,omitempty"`
+	Notes                []string `json:"notes,omitempty"`
 }
 
 // AIUsageEvent is one billable provider call.
@@ -938,6 +949,9 @@ type StudyPlanResponse struct {
 	EstimatedRange *ScoreRange `json:"estimatedRange,omitempty"`
 	// NextBestAction is one concrete task, not a generic recommendation.
 	NextBestAction *NextBestAction `json:"nextBestAction,omitempty"`
+	// ProjectedRange is the trajectory at the target date. It is absent when
+	// there is not enough history to estimate a trend.
+	ProjectedRange *ProjectedRange `json:"projectedRange,omitempty"`
 }
 
 type ScoreRange struct {
@@ -945,6 +959,16 @@ type ScoreRange struct {
 	High       int    `json:"high"`
 	Confidence string `json:"confidence"` // low | medium | high
 	Basis      string `json:"basis"`
+}
+
+type ProjectedRange struct {
+	Low         int     `json:"low"`
+	High        int     `json:"high"`
+	Target      int     `json:"target"`
+	OnTrack     bool    `json:"onTrack"`
+	Confidence  string  `json:"confidence"`
+	SlopePerDay float64 `json:"slopePerDay"`
+	Basis       string  `json:"basis"`
 }
 
 type NextBestAction struct {
@@ -979,6 +1003,17 @@ type UserErrorItem struct {
 	Mastered             bool             `json:"mastered"`
 	LastReviewedAt       *time.Time       `json:"lastReviewedAt,omitempty"`
 	CreatedAt            time.Time        `json:"createdAt"`
+}
+
+// AdaptivePractice is the error-driven practice plan shown on the dashboard.
+type AdaptivePractice struct {
+	FocusType  string   `json:"focusType"`
+	FocusSlug  string   `json:"focusSlug"`
+	Title      string   `json:"title"`
+	Reason     string   `json:"reason"`
+	ErrorCount int      `json:"errorCount"`
+	Minutes    int      `json:"minutes"`
+	ErrorIDs   []string `json:"errorIds"`
 }
 
 type SaveErrorRequest struct {

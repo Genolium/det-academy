@@ -86,6 +86,89 @@ func clampScore(value float64) int {
 	return int(math.Round(value))
 }
 
+// projectTrajectory extrapolates the recent mock trend to the exam date. It
+// refuses to invent a trend from a single attempt and caps the daily slope so
+// one lucky retake cannot promise an unrealistic jump.
+func projectTrajectory(sessions []models.TestSession, targetScore, daysRemaining int) *models.ProjectedRange {
+	if len(sessions) < 2 || daysRemaining <= 0 {
+		return nil
+	}
+	type point struct {
+		day   float64
+		score float64
+	}
+	points := make([]point, 0, 5)
+	for index := 0; index < len(sessions) && index < 5; index++ {
+		session := sessions[len(sessions)-1-index]
+		if session.CompletedAt == nil {
+			continue
+		}
+		points = append(points, point{
+			day:   float64(session.CompletedAt.Unix()) / 86400,
+			score: float64(intVal(session.OverallScore)),
+		})
+	}
+	if len(points) < 2 {
+		return nil
+	}
+	// points are oldest -> newest after the reverse walk above.
+	var sumX, sumY, sumXY, sumXX float64
+	for _, p := range points {
+		sumX += p.day
+		sumY += p.score
+		sumXY += p.day * p.score
+		sumXX += p.day * p.day
+	}
+	n := float64(len(points))
+	denominator := n*sumXX - sumX*sumX
+	if denominator == 0 {
+		return nil
+	}
+	slope := (n*sumXY - sumX*sumY) / denominator
+	if slope > 2 {
+		slope = 2
+	}
+	if slope < -2 {
+		slope = -2
+	}
+	latest := points[len(points)-1].score
+	projected := latest + slope*float64(daysRemaining)
+	if projected < 10 {
+		projected = 10
+	}
+	if projected > 160 {
+		projected = 160
+	}
+
+	margin := int(math.Round(8 + math.Abs(slope)*float64(daysRemaining)*0.35))
+	if margin < 8 {
+		margin = 8
+	}
+	if margin > 25 {
+		margin = 25
+	}
+	confidence := "medium"
+	if len(points) >= 3 && math.Abs(slope) < 0.8 {
+		confidence = "high"
+	}
+	if len(points) < 3 || math.Abs(slope) > 1.2 {
+		confidence = "low"
+	}
+
+	return &models.ProjectedRange{
+		Low:         clampScore(projected - float64(margin)),
+		High:        clampScore(projected + float64(margin)),
+		Target:      targetScore,
+		OnTrack:     projected >= float64(targetScore),
+		Confidence:  confidence,
+		SlopePerDay: math.Round(slope*100) / 100,
+		Basis: fmt.Sprintf(
+			"Тренд по %d мокам: %+.2f балла в день. К дате экзамена через %d дней: около %d.",
+			len(points), slope, daysRemaining, int(math.Round(projected)),
+		),
+	}
+}
+
 var drillByQuestionType = map[string]struct {
 	title string
 	slug  string

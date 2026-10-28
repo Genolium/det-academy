@@ -13,6 +13,7 @@ import React, { useMemo, useState } from 'react';
 import { Info, Play, Volume2 } from 'lucide-react';
 import { sound } from '@/lib/sound';
 import { playPronunciation } from '@/lib/pronunciation';
+import { formatPhonemes } from '@/lib/phonemes';
 import {
   PRONUNCIATION_METHOD,
   type PronunciationIssue,
@@ -73,12 +74,19 @@ const WordChip: React.FC<{
   const tone = scoreTone(word.score);
   const percent = Math.round(word.score * 100);
   const issueLabel = word.issue ? ISSUE_LABELS[word.issue] : null;
+  const phonemeLabel =
+    word.referencePhonemes && word.spokenPhonemes
+      ? `эталон ${formatPhonemes(word.referencePhonemes)}, услышано ${formatPhonemes(word.spokenPhonemes)}`
+      : null;
   const description = [
     `Слово «${word.word}»`,
     `чёткость ${percent}%`,
+    phonemeLabel,
     issueLabel ? issueLabel : 'без замечаний',
     'Нажмите, чтобы услышать эталонное произношение',
-  ].join('. ');
+  ]
+    .filter(Boolean)
+    .join('. ');
 
   return (
     <button
@@ -89,6 +97,8 @@ const WordChip: React.FC<{
       data-testid="pronunciation-word"
       data-score={word.score}
       data-issue={word.issue || ''}
+      data-phoneme-score={word.phonemeScore ?? ''}
+      data-phoneme-distance={word.phonemeDistance ?? ''}
       className={`group inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] ${tone.chip} ${
         busy ? 'opacity-60' : ''
       }`}
@@ -143,11 +153,12 @@ export const PronunciationFeedback: React.FC<PronunciationFeedbackProps> = ({
             className="flex items-center gap-2 text-sm font-bold text-white"
           >
             <Volume2 className="h-4 w-4 text-[#D2F544]" />
-            Чёткость произношения по словам
+            Произношение: чёткость и фонемы
           </h4>
           <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-neutral-400">
-            Прокси-оценка по громкости, озвученности и артикуляции слов — не фонемная
-            точность. Нажмите на слово, чтобы услышать эталон.
+            Чёткость измеряется по громкости и артикуляции, фонемы сравниваются с
+            эталоном через G2P по тексту распознавания. Это не акустическая точность.
+            Нажмите на слово, чтобы услышать эталон.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -172,6 +183,11 @@ export const PronunciationFeedback: React.FC<PronunciationFeedbackProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-neutral-500">
               Индекс чёткости
             </p>
+            {report.phonemeScore !== undefined ? (
+              <p className="mt-1 text-[10px] font-bold text-neutral-300" data-testid="pronunciation-phoneme-overall">
+                фонемы: {Math.round(report.phonemeScore * 100)}%
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -217,6 +233,49 @@ export const PronunciationFeedback: React.FC<PronunciationFeedbackProps> = ({
           />
         ))}
       </div>
+
+      {report.phonemeMeasuredWords && report.phonemeMeasuredWords > 0 ? (
+        <div className="mt-3 rounded-xl border border-neutral-800 bg-neutral-900/50 p-3" data-testid="phoneme-diff">
+          <p className="text-[11px] font-bold text-neutral-200">
+            Фонемная разница по словам{' '}
+            <span className="font-normal text-neutral-500">
+              ({report.phonemeMeasuredWords} пар, модель {report.phonemeModel ?? 'G2P'})
+            </span>
+          </p>
+          <ul className="mt-1.5 space-y-1 text-[11px] text-neutral-400">
+            {report.words
+              .filter(
+                (word) =>
+                  word.referencePhonemes &&
+                  word.spokenPhonemes &&
+                  (word.phonemeDistance ?? 0) > 0
+              )
+              .slice(0, 12)
+              .map((word, index) => (
+                <li key={`${word.word}-phonemes-${index}`} className="flex flex-wrap gap-x-1.5">
+                  <strong className="text-neutral-200">{word.word}</strong>
+                  <span className="font-mono text-neutral-400">
+                    {formatPhonemes(word.referencePhonemes ?? [])}
+                  </span>
+                  <span className="text-neutral-400">→</span>
+                  <span className="font-mono text-amber-300/90">
+                    {formatPhonemes(word.spokenPhonemes ?? [])}
+                  </span>
+                  <span className="text-neutral-400">
+                    ({word.phonemeDistance} {word.phonemeDistance === 1 ? 'правка' : 'правки'})
+                  </span>
+                </li>
+              ))}
+          </ul>
+          {report.words.every(
+            (word) => !word.referencePhonemes || (word.phonemeDistance ?? 0) === 0
+          ) ? (
+            <p className="mt-1 text-[11px] text-emerald-300/80">
+              Фонемных расхождений в распознанных словах нет.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {report.referenceText && report.referenceMatchRate !== undefined ? (
         <p className="mt-3 text-[11px] text-neutral-400">
@@ -268,9 +327,11 @@ export const PronunciationFeedback: React.FC<PronunciationFeedbackProps> = ({
             вашим же медианным словом, поэтому не зависит от громкости микрофона.
           </p>
           <p>
-            Не измеряется: правильность отдельных фонем. Для этого нужна модель
-            фонемного распознавания или принудительное выравнивание по эталону —
-            в текущем стеке их нет.
+            Фонемы: эталон берётся из IPA-словаря курса, незнакомые слова —
+            из правил G2P. «Услышанные» фонемы строятся из текста распознавания тем
+            же G2P и сравниваются редакционным расстоянием. Акустическая модель
+            фонем и принудительное выравнивание по звуку в текущем стеке не
+            используются, поэтому оценка не отражает акцент или тембр.
           </p>
           {report.notes.map((note) => (
             <p key={note} className="text-amber-300/80">

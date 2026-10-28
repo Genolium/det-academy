@@ -34,8 +34,10 @@ const root = path.resolve(__dirname, '..');
 const target = path.join(root, 'backend/db/09-interactive-bank.sql');
 
 const BANDS = ['B1', 'B2', 'C1'];
-const READING_VARIANTS = 2;
-const LISTENING_VARIANTS = 3;
+// Each bank row gets its own source text. Two rows from one passage would mean
+// the same passage appears twice in a student's pool, so variants are forbidden.
+const READING_VARIANTS = 1;
+const LISTENING_VARIANTS = 1;
 
 const MIN_COUNTS = {
   INTERACTIVE_READING: 100,
@@ -78,6 +80,17 @@ function jaccard(left, right) {
   let shared = 0;
   for (const value of left) if (right.has(value)) shared += 1;
   return shared / (left.size + right.size - shared);
+}
+
+// stableHash spreads sequential row numbers across the option positions. A
+// plain index is too regular: with four positions, every linear shift repeats
+// the same answer pattern every fourth row.
+function stableHash(value) {
+  let x = Math.imul(value + 1, 2654435761) >>> 0;
+  x ^= x >>> 15;
+  x = Math.imul(x, 2246822507) >>> 0;
+  x ^= x >>> 13;
+  return x >>> 0;
 }
 
 function findWholeWord(text, word) {
@@ -229,57 +242,61 @@ function passageGap(passage, index) {
 
 function buildReadingRows() {
   const rows = [];
-  let id = 0;
   readingPassages.forEach((passage, passageIndex) => {
-    for (let variant = 0; variant < READING_VARIANTS; variant += 1) {
-      id += 1;
-      const gap = passageGap(passage, variant);
-      const gapOptions = rotate(gap.correct, gap.distractors, variant + passageIndex);
-      const title = rotate(passage.titles[0], passage.titles.slice(1), variant + passageIndex);
-      const mainIdea = rotate(passage.mainIdeas[0], passage.mainIdeas.slice(1), variant + passageIndex * 2 + 2);
-      const highlight = passage.highlights[variant % passage.highlights.length];
-      const otherHighlights = readingPassages
-        .filter((_, index) => index !== passageIndex)
-        .map((item) => item.highlights[(variant + item.title.length) % item.highlights.length])
-        .slice(0, 3);
-      const sentence = rotate(highlight, otherHighlights, variant + passageIndex);
+    // Independent hashes per question keep the correct positions varied: if
+    // every shift were derived from one value, the whole four-answer pattern
+    // would repeat every fourth passage.
+    const gapShift = stableHash(passageIndex * 4 + 1);
+    const titleShift = stableHash(passageIndex * 4 + 2);
+    const mainShift = stableHash(passageIndex * 4 + 3);
+    const sentenceShift = stableHash(passageIndex * 4 + 4);
+    const gap = passageGap(passage, gapShift % passage.gaps.length);
+    const gapOptions = rotate(gap.correct, gap.distractors, gapShift);
+    const title = rotate(passage.titles[0], passage.titles.slice(1), titleShift);
+    const mainIdea = rotate(passage.mainIdeas[0], passage.mainIdeas.slice(1), mainShift);
+    const highlight = passage.highlights[stableHash(passageIndex * 4 + 5) % passage.highlights.length];
+    const otherHighlights = readingPassages
+      .map((item, index) => ({ item, index }))
+      .filter((entry) => entry.index !== passageIndex)
+      .map((entry) => entry.item.highlights[stableHash(entry.index + passageIndex + 1) % entry.item.highlights.length])
+      .slice(0, 3);
+    const sentence = rotate(highlight, otherHighlights, sentenceShift);
 
-      rows.push({
-        id: `ibir-${id}`,
-        type: 'INTERACTIVE_READING',
-        band: BANDS[(passageIndex * READING_VARIANTS + variant) % BANDS.length],
-        time: 120,
-        content: {
-          passageTitle: passage.title,
-          passageText: passage.text,
-          gapSentence: {
-            before: gap.before,
-            after: gap.after,
-            correct: gap.correct,
-            options: gapOptions.options,
-          },
-          titleQuestion: {
-            question: 'Choose the most appropriate academic title for this passage:',
-            options: title.options,
-            correctIndex: title.correctIndex,
-          },
-          mainIdeaQuestion: {
-            question: 'What is the primary idea of the passage?',
-            options: mainIdea.options,
-            correctIndex: mainIdea.correctIndex,
-          },
-          highlightPrompt: 'Highlight the sentence that carries the key claim described in the question.',
-          sentenceOptions: sentence.options,
+    rows.push({
+      id: `ibir-${passageIndex + 1}`,
+      type: 'INTERACTIVE_READING',
+      band: BANDS[passageIndex % BANDS.length],
+      time: 120,
+      content: {
+        passageTitle: passage.title,
+        passageText: passage.text,
+        gapSentence: {
+          before: gap.before,
+          after: gap.after,
+          correct: gap.correct,
+          options: gapOptions.options,
         },
-        correct: {
-          gapCorrect: gap.correct,
-          titleCorrectIndex: title.correctIndex,
-          mainIdeaCorrectIndex: mainIdea.correctIndex,
-          sentenceCorrectIndex: sentence.correctIndex,
-          highlightCorrectSubstring: highlight,
+        titleQuestion: {
+          question: 'Choose the most appropriate academic title for this passage:',
+          options: title.options,
+          correctIndex: title.correctIndex,
         },
-      });
-    }
+        mainIdeaQuestion: {
+          question: 'What is the primary idea of the passage?',
+          options: mainIdea.options,
+          correctIndex: mainIdea.correctIndex,
+        },
+        highlightPrompt: 'Highlight the sentence that carries the key claim described in the question.',
+        sentenceOptions: sentence.options,
+      },
+      correct: {
+        gapCorrect: gap.correct,
+        titleCorrectIndex: title.correctIndex,
+        mainIdeaCorrectIndex: mainIdea.correctIndex,
+        sentenceCorrectIndex: sentence.correctIndex,
+        highlightCorrectSubstring: highlight,
+      },
+    });
   });
   return rows;
 }
@@ -292,8 +309,11 @@ const cTestSourceById = new Map();
 
 function buildCTestRows() {
   const rows = [];
+  // Keep the C-Test at 120 items: the first 60 reading passages plus the 60
+  // C-Test-only passages. The newer reading passages are reserved for the
+  // interactive-reading bank, where every row must have a unique text.
   const sources = [
-    ...readingPassages.map((passage) => ({ title: passage.title, text: passage.text })),
+    ...readingPassages.slice(0, 60).map((passage) => ({ title: passage.title, text: passage.text })),
     ...cTestPassages.map((passage) => ({ title: passage.title, text: passage.text })),
   ];
 
@@ -362,46 +382,35 @@ function buildCTestRows() {
   return rows;
 }
 
-const summaryVariants = [
-  (dialogue) => dialogue.summaries[0],
-  (dialogue) => dialogue.summaries[1],
-  () => 'Summarise the conversation in three sentences: the situation, the decision, and the next step.',
-  () => 'Write 35-65 words describing what the speakers agreed and what remains to be done.',
-  () => 'Summarise the dialogue from the perspective of the student: what you asked for and what you were told.',
-];
-
 function buildListeningRows() {
   const rows = [];
-  let id = 0;
   listeningDialogues.forEach((dialogue, dialogueIndex) => {
-    for (let variant = 0; variant < LISTENING_VARIANTS; variant += 1) {
-      id += 1;
-      const turns = dialogue.turns.map((turn, turnIndex) => {
-        const options = [turn.correct, ...turn.wrong];
-        // Vary both the starting position and the step between turns so the
-        // three-turn answer pattern is not identical across dialogues.
-        const offset = (dialogueIndex * 5 + variant * 7 + turnIndex * (variant + 1)) % 4;
-        const rotated = [...options.slice(offset), ...options.slice(0, offset)];
-        return {
-          speaker: turn.speaker,
-          speakerAudioText: turn.audio,
-          options: rotated,
-          correctIndex: rotated.indexOf(turn.correct),
-        };
-      });
-      rows.push({
-        id: `ibil-${id}`,
-        type: 'INTERACTIVE_LISTENING',
-        band: BANDS[(dialogueIndex + variant) % BANDS.length],
-        time: 150,
-        content: {
-          scenario: dialogue.scenario,
-          turns,
-          summaryPrompt: summaryVariants[variant](dialogue),
-        },
-        correct: { turnsAnswers: turns.map((turn) => turn.correctIndex) },
-      });
-    }
+    const turns = dialogue.turns.map((turn, turnIndex) => {
+      const options = [turn.correct, ...turn.wrong];
+      // A stable hash keeps the three-turn answer pattern from repeating
+      // across the pool while staying deterministic between builds.
+      const base = stableHash(dialogueIndex);
+      const offset = (base + turnIndex * (1 + (base % 3))) % 4;
+      const rotated = [...options.slice(offset), ...options.slice(0, offset)];
+      return {
+        speaker: turn.speaker,
+        speakerAudioText: turn.audio,
+        options: rotated,
+        correctIndex: rotated.indexOf(turn.correct),
+      };
+    });
+    rows.push({
+      id: `ibil-${dialogueIndex + 1}`,
+      type: 'INTERACTIVE_LISTENING',
+      band: BANDS[dialogueIndex % BANDS.length],
+      time: 150,
+      content: {
+        scenario: dialogue.scenario,
+        turns,
+        summaryPrompt: dialogue.summaries[0],
+      },
+      correct: { turnsAnswers: turns.map((turn) => turn.correctIndex) },
+    });
   });
   return rows;
 }
@@ -509,6 +518,8 @@ function validate(rows) {
   const ids = new Set();
   const counts = {};
   const irSignatures = new Set();
+  const irTexts = new Set();
+  const ilScenarios = new Set();
   const cTestTexts = new Set();
   const rtsPrompts = new Set();
   const speakingPrompts = new Set();
@@ -544,7 +555,11 @@ function validate(rows) {
       if (row.correct.highlightCorrectSubstring !== correctSentence) errors.push(`${row.id}: highlight mismatch`);
       if (new Set(sentenceOptions).size !== 4) errors.push(`${row.id}: duplicate sentence options`);
 
-      const signature = `${normalize(passageText)}|${gapSentence.before.length}|${gapSentence.correct}`;
+      const normalizedPassage = normalize(passageText);
+      if (irTexts.has(normalizedPassage)) errors.push(`${row.id}: duplicate interactive-reading passage text`);
+      irTexts.add(normalizedPassage);
+
+      const signature = `${normalizedPassage}|${gapSentence.before.length}|${gapSentence.correct}`;
       if (irSignatures.has(signature)) errors.push(`${row.id}: duplicate passage/gap combination`);
       irSignatures.add(signature);
     }
@@ -589,6 +604,9 @@ function validate(rows) {
     }
 
     if (row.type === 'INTERACTIVE_LISTENING') {
+      const normalizedScenario = normalize(row.content.scenario ?? '');
+      if (ilScenarios.has(normalizedScenario)) errors.push(`${row.id}: duplicate listening scenario`);
+      ilScenarios.add(normalizedScenario);
       if (row.content.turns.length !== 3) errors.push(`${row.id}: needs three turns`);
       if (row.correct.turnsAnswers.length !== 3) errors.push(`${row.id}: needs three recorded answers`);
       row.content.turns.forEach((turn, index) => {
@@ -632,7 +650,8 @@ function renderSQL(rows) {
   const header = `-- Generated by scripts/generate_interactive_bank.mjs. Do not edit by hand.
 -- Interactive reading and listening, C-Test, read-then-speak and interactive
 -- speaking. Every row is validated by the generator; run with --check in CI.
--- C-Test items each use a different source text (100 unique texts).
+-- Every interactive-reading item and listening item uses its own source text.
+-- C-Test items each use a different source text (120 unique texts).
 
 `;
   const statements = rows.map((row) => `INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
@@ -653,7 +672,17 @@ ON CONFLICT (id) DO UPDATE SET
   time_limit_sec = EXCLUDED.time_limit_sec,
   is_active = true;
 `);
-  return header + statements.join('\n');
+  // A previous deploy may contain rows that are no longer generated. They must
+  // not stay active: the uniqueness guarantee applies to the live bank, not
+  // only to the rows in this file. Deactivation keeps response history intact.
+  const ids = rows.map((row) => sqlString(row.id)).join(', ');
+  const retire = `-- Retire rows from older banks so the active pool stays unique.
+UPDATE questions
+SET is_active = false
+WHERE id LIKE 'ib%'
+  AND id NOT IN (${ids});
+`;
+  return header + statements.join('\n') + '\n' + retire;
 }
 
 const sourceErrors = validateSources();

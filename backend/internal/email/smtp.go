@@ -43,6 +43,30 @@ func (s *SMTPSender) timeout() time.Duration {
 	return 10 * time.Second
 }
 
+// Check verifies that the SMTP endpoint accepts a TCP/TLS connection. It is
+// used before a batch send so a blocked egress port fails once instead of
+// timing out for every recipient.
+func (s *SMTPSender) Check(ctx context.Context) error {
+	if strings.TrimSpace(s.Host) == "" {
+		return errors.New("smtp: host is not configured")
+	}
+	dialer := &net.Dialer{Timeout: s.timeout()}
+	var conn net.Conn
+	var err error
+	if s.ImplicitTLS {
+		conn, err = tls.DialWithDialer(dialer, "tcp", s.address(), &tls.Config{
+			ServerName: s.Host,
+			MinVersion: tls.VersionTLS12,
+		})
+	} else {
+		conn, err = dialer.DialContext(ctx, "tcp", s.address())
+	}
+	if err != nil {
+		return fmt.Errorf("smtp: dial %s: %w", s.address(), err)
+	}
+	return conn.Close()
+}
+
 // Send delivers a single message over SMTP.
 func (s *SMTPSender) Send(ctx context.Context, msg Message) error {
 	if strings.TrimSpace(s.Host) == "" {

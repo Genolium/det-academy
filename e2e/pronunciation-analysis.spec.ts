@@ -200,7 +200,8 @@ test.describe('pronunciation report', () => {
     });
 
     expect(report).not.toBeNull();
-    expect(report!.method).toBe('clarity-proxy');
+    expect(report!.method).toBe('g2p-phoneme-alignment');
+    expect(report!.version).toBe(2);
     expect(report!.words).toHaveLength(5);
     expect(report!.overallScore).toBeGreaterThan(0);
     expect(report!.overallScore).toBeLessThan(1);

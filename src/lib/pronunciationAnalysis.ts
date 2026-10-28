@@ -1,12 +1,15 @@
+import { compareWordPronunciation, PHONEME_METHOD, PHONEME_MODEL } from './phonemes';
+
 /**
- * Word-level pronunciation clarity analysis.
+ * Word-level pronunciation analysis.
  *
  * IMPORTANT — what this module measures and what it does not.
  *
- * The project has no forced-aligner and no phoneme acoustic model locally, and
- * the configured STT provider (Yandex SpeechKit v1 `stt:recognize`) returns a
- * plain transcript without word timings or confidence. Therefore this module
- * does NOT compute a phoneme accuracy score and must never be presented as one.
+ * The configured STT provider (Yandex SpeechKit v1 `stt:recognize`) returns a
+ * plain transcript without word timings, confidence or phoneme posteriors.
+ * Phonemes are therefore derived from the transcript and the expected text with
+ * a lexicon + rule G2P, then aligned. This is a text-level phoneme comparison,
+ * not an acoustic accuracy measurement, and the report says so explicitly.
  *
  * What it does compute, from the learner's own recording:
  *   - word boundaries, taken from the browser recogniser's segment arrivals
@@ -22,7 +25,7 @@
  * in `pronunciationCapture.ts`.
  */
 
-export const PRONUNCIATION_METHOD = 'clarity-proxy' as const;
+export const PRONUNCIATION_METHOD = PHONEME_METHOD;
 
 export type PronunciationMethod = typeof PRONUNCIATION_METHOD;
 
@@ -61,15 +64,23 @@ export interface WordAcousticFeatures {
 }
 
 export interface PronunciationWordResult extends WordTiming {
-  /** Clarity index 0..1 (proxy, not phoneme accuracy). */
+  /** Delivery clarity index 0..1 (voicing, loudness, articulation). */
   score: number;
   issue?: PronunciationIssue;
   /** Expected word when a reference text was supplied. */
   referenceWord?: string;
+  /** Expected phonemes from the IPA lexicon or the rule fallback. */
+  referencePhonemes?: string[];
+  /** Phonemes derived from the recognised word with the same G2P. */
+  spokenPhonemes?: string[];
+  /** Phoneme-level Levenshtein distance for this word pair. */
+  phonemeDistance?: number;
+  /** 1 - distance / max(lengths), 0..1. */
+  phonemeScore?: number;
 }
 
 export interface PronunciationReport {
-  version: 1;
+  version: 1 | 2;
   method: PronunciationMethod;
   /** Mean word clarity, 0..1. */
   overallScore: number;
@@ -86,6 +97,12 @@ export interface PronunciationReport {
   referencePlaybackText?: string;
   /** Share of reference words the recogniser matched (read-aloud only). */
   referenceMatchRate?: number;
+  /** Mean phoneme score over aligned word pairs, 0..1. */
+  phonemeScore?: number;
+  /** Number of word pairs with a phoneme comparison. */
+  phonemeMeasuredWords?: number;
+  /** Identifies the G2P model behind the phoneme comparison. */
+  phonemeModel?: string;
   /** Non-fatal data-quality notes shown in the UI. */
   notes: string[];
 }
@@ -535,22 +552,42 @@ export function buildPronunciationReport(input: BuildReportInput): Pronunciation
   let weightedSum = 0;
   let weightTotal = 0;
   let measuredWords = 0;
+  let phonemeSum = 0;
+  let phonemeMeasuredWords = 0;
 
   words.forEach((word, index) => {
     const features = entries[index].features;
+    const item = alignmentByIndex.get(index);
+    const comparison =
+      item?.referenceWord && item.kind !== 'extra'
+        ? compareWordPronunciation(item.referenceWord, word.word)
+        : null;
+    if (comparison) {
+      phonemeSum += comparison.score;
+      phonemeMeasuredWords += 1;
+    }
+    const phonemeFields = comparison
+      ? {
+          referencePhonemes: comparison.reference,
+          spokenPhonemes: comparison.spoken,
+          phonemeDistance: comparison.distance,
+          phonemeScore: comparison.score,
+        }
+      : {};
+
     if (!features) {
       results.push({
         ...word,
         score: 0.35,
         issue: 'unclear',
-        referenceWord: alignmentByIndex.get(index)?.referenceWord ?? undefined,
+        referenceWord: item?.referenceWord ?? undefined,
+        ...phonemeFields,
       });
       weightedSum += 0.35 * Math.max(MIN_WORD_SECONDS, word.end - word.start);
       weightTotal += Math.max(MIN_WORD_SECONDS, word.end - word.start);
       return;
     }
     measuredWords += 1;
-    const item = alignmentByIndex.get(index);
     const scored = scoreWord(features, {
       medianRmsDb,
       medianZcr,
@@ -565,6 +602,7 @@ export function buildPronunciationReport(input: BuildReportInput): Pronunciation
       score: scored.score,
       issue: scored.issue,
       referenceWord: item?.referenceWord ?? undefined,
+      ...phonemeFields,
     });
     const weight = Math.max(MIN_WORD_SECONDS, word.end - word.start);
     weightedSum += scored.score * weight;
@@ -579,9 +617,14 @@ export function buildPronunciationReport(input: BuildReportInput): Pronunciation
   if (input.speechCoverage !== undefined && input.speechCoverage < 0.35) {
     notes.push('Мало речи в записи — оценка чёткости менее надёжна.');
   }
+  if (phonemeMeasuredWords > 0) {
+    notes.push(
+      'Фонемы получены из текста распознавания и словаря/правил G2P, а не из акустической модели: это сравнение ожидаемых и услышанных фонем, не акустическая точность.'
+    );
+  }
 
   return {
-    version: 1,
+    version: 2,
     method: PRONUNCIATION_METHOD,
     overallScore: clamp01(overallScore),
     words: results,
@@ -594,6 +637,10 @@ export function buildPronunciationReport(input: BuildReportInput): Pronunciation
       alignment && alignment.referenceWordCount > 0
         ? Math.round((alignment.matchedReferenceWords / alignment.referenceWordCount) * 100) / 100
         : undefined,
+    phonemeScore:
+      phonemeMeasuredWords > 0 ? Math.round((phonemeSum / phonemeMeasuredWords) * 100) / 100 : undefined,
+    phonemeMeasuredWords: phonemeMeasuredWords > 0 ? phonemeMeasuredWords : undefined,
+    phonemeModel: phonemeMeasuredWords > 0 ? PHONEME_MODEL : undefined,
     notes,
   };
 }

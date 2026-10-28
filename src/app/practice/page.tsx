@@ -140,6 +140,18 @@ export default function PracticeHubPage() {
       actionText: copy.categories['speaking-sample'].actionText,
     },
     {
+      id: 'pronunciation',
+      href: '/practice/pronunciation',
+      title: locale === 'ru' ? 'Фонемная практика' : 'Phoneme Practice',
+      description:
+        locale === 'ru'
+          ? 'Прочитайте предложение вслух и сравните услышанные фонемы с эталоном.'
+          : 'Read a sentence aloud and compare the recognised phonemes with the reference.',
+      icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
+      badge: 'G2P + IPA',
+      actionText: locale === 'ru' ? 'Начать разбор' : 'Start analysis',
+    },
+    {
       id: 'writing-inspector',
       slug: 'writing-inspector',
       title: 'AI Writing Diagnostic Inspector',

@@ -97,6 +97,27 @@ func (s *ResendSender) SendVerification(ctx context.Context, to, link string) er
 // as a fallback and the log sender is the last resort so that a missing
 // configuration never breaks registration.
 func NewFromEnv() Sender {
+	// The Postbox HTTPS API is preferred when configured: it survives hosting
+	// providers that block outbound SMTP ports and uses the same sender domain.
+	if accessKey := strings.TrimSpace(os.Getenv("POSTBOX_ACCESS_KEY")); accessKey != "" {
+		from := firstNonEmpty(
+			os.Getenv("POSTBOX_FROM"),
+			os.Getenv("SMTP_FROM"),
+			os.Getenv("EMAIL_FROM"),
+			"DET Academy <noreply@det-academy.ru>",
+		)
+		sender := &PostboxSender{
+			AccessKey: accessKey,
+			SecretKey: os.Getenv("POSTBOX_SECRET_KEY"),
+			Region:    firstNonEmpty(os.Getenv("POSTBOX_REGION"), "ru-central1"),
+			Endpoint:  firstNonEmpty(os.Getenv("POSTBOX_ENDPOINT"), "https://postbox.cloud.yandex.net"),
+			From:      from,
+			Client:    &http.Client{Timeout: 10 * time.Second},
+		}
+		log.Printf("[email] transport: Postbox HTTPS API (%s)", sender.endpoint())
+		return sender
+	}
+
 	if host := strings.TrimSpace(os.Getenv("SMTP_HOST")); host != "" {
 		from := firstNonEmpty(
 			os.Getenv("SMTP_FROM"),

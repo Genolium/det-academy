@@ -14,6 +14,7 @@ import (
 
 	"det-academy-backend/internal/ai"
 	"det-academy-backend/internal/config"
+	"det-academy-backend/internal/email"
 	"det-academy-backend/internal/handlers"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/observability"
@@ -206,6 +207,8 @@ func main() {
 	go evaluationQueue.Run(queueCtx)
 
 	studyService := service.NewStudyService(store, theoryService, catService)
+	digestService := service.NewDigestService(store, studyService, email.NewFromEnv())
+	go digestService.Run(queueCtx)
 	vocabularyService := service.NewVocabularyService(store.Vocabulary())
 
 	// IP/device daily quotas for the expensive endpoints. The per-user
@@ -222,6 +225,7 @@ func main() {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
+	digestHandler := handlers.NewDigestHandler(digestService)
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	studyHandler := handlers.NewStudyHandler(studyService)
 	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
@@ -348,6 +352,7 @@ func main() {
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)
 
 			// Practice, Typing, and Mastery events
+			r.Get("/practice/adaptive", studyHandler.GetAdaptivePractice)
 			r.Get("/practice/assignment", studyHandler.GetPracticeAssignment)
 			r.Post("/practice/attempts", studyHandler.RecordPracticeAttempt)
 			r.Post("/typing/attempts", studyHandler.RecordTypingAttempt)
@@ -431,6 +436,7 @@ func main() {
 				r.Get("/retention", analyticsHandler.Retention)
 			})
 			r.Get("/ai-usage", studyHandler.GetAIUsage)
+			r.Post("/digest/send", digestHandler.SendWeekly)
 			r.Get("/users", adminHandler.ListUsers)
 			r.Patch("/users/{id}/role", adminHandler.UpdateUserRole)
 			r.Delete("/users/{id}", adminHandler.DeleteUser)

@@ -198,12 +198,19 @@ export interface PronunciationWordReport {
   issue?: 'quiet' | 'unclear' | 'muffled' | 'unexpected' | 'low-confidence';
   confidence?: number;
   referenceWord?: string;
+  referencePhonemes?: string[];
+  spokenPhonemes?: string[];
+  phonemeDistance?: number;
+  phonemeScore?: number;
 }
 
-/** Browser-computed clarity feedback. Display-only, never a grading input. */
+/** Browser-computed pronunciation feedback. Display-only, never a grading input. */
 export interface PronunciationReport {
   version: number;
-  method: 'clarity-proxy';
+  method: 'g2p-phoneme-alignment' | 'clarity-proxy';
+  phonemeScore?: number;
+  phonemeMeasuredWords?: number;
+  phonemeModel?: string;
   overallScore: number;
   words: PronunciationWordReport[];
   timingSource: 'asr-segment-arrivals' | 'uniform-estimate';
@@ -335,6 +342,16 @@ export interface StudyPlanResponse {
     low: number;
     high: number;
     confidence: 'low' | 'medium' | 'high';
+    basis: string;
+  };
+  /** Extrapolated range at the target date; absent without enough history. */
+  projectedRange?: {
+    low: number;
+    high: number;
+    target: number;
+    onTrack: boolean;
+    confidence: 'low' | 'medium' | 'high';
+    slopePerDay: number;
     basis: string;
   };
   /** One concrete next task, not a generic recommendation. */
@@ -600,6 +617,16 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = status;
   }
+}
+
+export interface AdaptivePractice {
+  focusType: string;
+  focusSlug: string;
+  title: string;
+  reason: string;
+  errorCount: number;
+  minutes: number;
+  errorIds: string[];
 }
 
 export interface PracticeAssignment {
@@ -1491,6 +1518,15 @@ class ApiClient {
     if (!res.ok) {
       throw new ApiError('Failed to complete plan task', res.status);
     }
+  }
+
+  async getAdaptivePractice(): Promise<AdaptivePractice> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/adaptive`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new ApiError('Failed to build adaptive practice', res.status);
+    return res.json();
   }
 
   async getPracticeAssignment(type: string): Promise<PracticeAssignment> {

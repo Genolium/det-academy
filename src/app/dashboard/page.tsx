@@ -304,6 +304,27 @@ function DashboardContent() {
                 {readinessBasis}
               </p>
 
+              {studyPlan?.projectedRange && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+                  <span className="text-neutral-500">{locale === 'ru' ? 'К дате экзамена:' : 'At the exam date:'}</span>
+                  <span className="font-black text-white tabular-nums">
+                    {studyPlan.projectedRange.low}–{studyPlan.projectedRange.high}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                      studyPlan.projectedRange.onTrack
+                        ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300'
+                        : 'border-amber-800 bg-amber-950/30 text-amber-300'
+                    }`}
+                  >
+                    {studyPlan.projectedRange.onTrack
+                      ? locale === 'ru' ? 'идёт к цели' : 'on track'
+                      : locale === 'ru' ? 'ниже цели' : 'below target'}
+                  </span>
+                  <span className="text-neutral-500">{studyPlan.projectedRange.basis}</span>
+                </div>
+              )}
+
               {studyPlan?.estimatedRange && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
                   <span className="text-neutral-500">{d.scoreRangeLabel}</span>
@@ -379,6 +400,13 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+
+            <Link
+              href="/practice/adaptive"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3.5 py-2 text-[11px] font-bold text-neutral-300 transition-colors hover:border-[#D2F544] hover:text-[#D2F544]"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> {locale === 'ru' ? 'Адаптивная практика из ошибок' : 'Adaptive practice from errors'}
+            </Link>
 
             {studyPlan?.nextBestAction && (
               <Link

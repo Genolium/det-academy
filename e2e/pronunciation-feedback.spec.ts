@@ -3,9 +3,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { completedResult, installFakeMedia, mockApi, TEST_ATTEMPT_ID } from './mocks';
 
 const pronunciationFixture = {
-  version: 1,
-  method: 'clarity-proxy',
+  version: 2,
+  method: 'g2p-phoneme-alignment',
   overallScore: 0.62,
+  phonemeScore: 0.71,
+  phonemeMeasuredWords: 5,
+  phonemeModel: 'lexicon+rule-g2p',
   timingSource: 'asr-segment-arrivals',
   durationSec: 75,
   measuredWords: 5,
@@ -14,11 +17,11 @@ const pronunciationFixture = {
   referenceMatchRate: 0.5,
   notes: ['Границы слов приблизительные: распознаватель не даёт точных меток времени.'],
   words: [
-    { word: 'The', start: 0.2, end: 0.4, score: 0.95 },
-    { word: 'workshop', start: 0.4, end: 1.1, score: 0.38, issue: 'unclear' },
-    { word: 'was', start: 1.1, end: 1.3, score: 0.9 },
-    { word: 'extremely', start: 1.3, end: 2.0, score: 0.55, issue: 'quiet' },
-    { word: 'noisy', start: 2.0, end: 2.5, score: 0.85 },
+    { word: 'The', start: 0.2, end: 0.4, score: 0.95, referencePhonemes: ['ð', 'ə'], spokenPhonemes: ['ð', 'ə'], phonemeDistance: 0, phonemeScore: 1 },
+    { word: 'workshop', start: 0.4, end: 1.1, score: 0.38, issue: 'unclear', referencePhonemes: ['w', 'ɜː', 'k', 'ʃ', 'ɒ', 'p'], spokenPhonemes: ['w', 'ɔː', 'k', 'ʃ', 'ɒ', 'p'], phonemeDistance: 1, phonemeScore: 0.83 },
+    { word: 'was', start: 1.1, end: 1.3, score: 0.9, referencePhonemes: ['w', 'ɒ', 'z'], spokenPhonemes: ['w', 'ɒ', 'z'], phonemeDistance: 0, phonemeScore: 1 },
+    { word: 'extremely', start: 1.3, end: 2.0, score: 0.55, issue: 'quiet', referencePhonemes: ['ɪ', 'k', 's', 't', 'r', 'iː', 'm', 'l', 'i'], spokenPhonemes: ['ɪ', 'k', 's', 't', 'r', 'iː', 'm', 'i'], phonemeDistance: 1, phonemeScore: 0.89 },
+    { word: 'noisy', start: 2.0, end: 2.5, score: 0.85, referencePhonemes: ['n', 'ɔɪ', 'z', 'i'], spokenPhonemes: ['n', 'ɔɪ', 'z', 'i'], phonemeDistance: 0, phonemeScore: 1 },
   ],
 };
 
@@ -110,14 +113,21 @@ test('speaking result renders per-word clarity highlights and model playback', a
 
   const panel = page.getByTestId('pronunciation-feedback');
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole('heading', { name: /Чёткость произношения по словам/ })).toBeVisible();
+  await expect(panel.getByRole('heading', { name: /Произношение: чёткость и фонемы/ })).toBeVisible();
   await expect(page.getByTestId('pronunciation-overall')).toHaveText('62%');
-  await expect(panel.getByText(/не фонемная точность/)).toBeVisible();
+  await expect(page.getByTestId('pronunciation-phoneme-overall')).toHaveText('фонемы: 71%');
 
   const words = page.getByTestId('pronunciation-word');
   await expect(words).toHaveCount(5);
   await expect(words.nth(1)).toHaveAttribute('data-issue', 'unclear');
   await expect(words.nth(1)).toHaveAttribute('data-score', '0.38');
+  await expect(words.nth(1)).toHaveAttribute('data-phoneme-distance', '1');
+  await expect(words.nth(1)).toHaveAttribute('data-phoneme-score', '0.83');
+  const phonemeDiff = page.getByTestId('phoneme-diff');
+  await expect(phonemeDiff).toBeVisible();
+  await expect(phonemeDiff.getByText('workshop')).toBeVisible();
+  await expect(phonemeDiff.getByText('/wɜːkʃɒp/')).toBeVisible();
+  await expect(phonemeDiff.getByText('/wɔːkʃɒp/')).toBeVisible();
   await expect(words.nth(1)).toHaveClass(/rose|amber/);
   await expect(words.nth(2)).toHaveAttribute('data-issue', '');
   await expect(panel.getByText(/2 из 5 слов нечёткие/)).toBeVisible();

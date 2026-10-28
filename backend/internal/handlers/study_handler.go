@@ -383,6 +383,21 @@ func (h *StudyHandler) GetPracticeAssignment(w http.ResponseWriter, r *http.Requ
 	RespondJSON(w, http.StatusOK, asgn)
 }
 
+// GetAdaptivePractice returns the error-driven practice set.
+func (h *StudyHandler) GetAdaptivePractice(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	plan, err := h.studyService.AdaptivePractice(r.Context(), userID)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to build adaptive practice")
+		return
+	}
+	RespondJSON(w, http.StatusOK, plan)
+}
+
 // RecordPracticeAttempt records an exercise attempt from Practice Hub.
 func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())

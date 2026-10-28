@@ -82,6 +82,57 @@ func TestParsePronunciationReportRejectsPhonemeClaims(t *testing.T) {
 	}
 }
 
+func TestParsePronunciationReportRecomputesPhonemes(t *testing.T) {
+	fixture := validPronunciationFixture()
+	fixture.Version = 2
+	fixture.Method = "g2p-phoneme-alignment"
+	fixture.PhonemeModel = "lexicon+rule-g2p"
+	fixture.Words[1].ReferenceWord = "lecture"
+	fixture.Words[1].ReferencePhonemes = []string{"l", "e", "k", "tʃ", "ə"}
+	fixture.Words[1].SpokenPhonemes = []string{"l", "e", "k", "ʃ", "ə"}
+	fixture.Words[1].PhonemeDistance = 99 // deliberately wrong
+	fixture.Words[1].PhonemeScore = 1     // deliberately wrong
+
+	report, err := ParsePronunciationReport(marshalReport(t, fixture), 10)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	word := report.Words[1]
+	if word.PhonemeDistance != 1 {
+		t.Fatalf("distance = %d, want 1", word.PhonemeDistance)
+	}
+	if math.Abs(word.PhonemeScore-0.8) > 1e-9 {
+		t.Fatalf("word phoneme score = %.3f, want 0.8", word.PhonemeScore)
+	}
+	if report.PhonemeMeasuredWords != 1 || math.Abs(report.PhonemeScore-0.8) > 1e-9 {
+		t.Fatalf("report phoneme score = %.3f over %d words", report.PhonemeScore, report.PhonemeMeasuredWords)
+	}
+	if report.PhonemeModel != "lexicon+rule-g2p" {
+		t.Fatalf("model = %q", report.PhonemeModel)
+	}
+}
+
+func TestParsePronunciationReportRejectsIncompletePhonemePair(t *testing.T) {
+	fixture := validPronunciationFixture()
+	fixture.Version = 2
+	fixture.Method = "g2p-phoneme-alignment"
+	fixture.Words[0].ReferencePhonemes = []string{"m", "ɔː", "n", "ɪ", "ŋ"}
+	_, err := ParsePronunciationReport(marshalReport(t, fixture), 10)
+	if !errors.Is(err, ErrPronunciationInvalid) {
+		t.Fatalf("expected ErrPronunciationInvalid, got %v", err)
+	}
+}
+
+func TestParsePronunciationReportRejectsPhonemeMethodWithoutPairs(t *testing.T) {
+	fixture := validPronunciationFixture()
+	fixture.Version = 2
+	fixture.Method = "g2p-phoneme-alignment"
+	_, err := ParsePronunciationReport(marshalReport(t, fixture), 10)
+	if !errors.Is(err, ErrPronunciationInvalid) {
+		t.Fatalf("expected ErrPronunciationInvalid, got %v", err)
+	}
+}
+
 func TestParsePronunciationReportRejectsInvalidWords(t *testing.T) {
 	cases := map[string]func(*models.PronunciationReport){
 		"empty words": func(report *models.PronunciationReport) { report.Words = nil },

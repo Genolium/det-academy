@@ -18,24 +18,44 @@ Exit codes: `0` all configured, `2` missing (BLOCKED), `1` missing with
 | Apple OAuth | `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | missing |
 | VK ID | `VK_CLIENT_SECRET` (+ public client ID) | missing secret |
 | Yandex ID | `YANDEX_CLIENT_SECRET` (+ public client ID) | missing |
-| Email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM` (or `RESEND_API_KEY`, `EMAIL_FROM`) | missing |
+| Email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM` (or `RESEND_API_KEY`, `EMAIL_FROM`) | production: Yandex Cloud Postbox; SMTP ports must be allowed outbound |
+| Weekly digest | `DIGEST_ENABLED=true` | off unless explicitly enabled |
 | Neural evaluator | `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `REQUIRE_NEURAL_EVALUATION=true` | missing; rule-based fallback only |
 | Server STT | `AI_STT_ENABLED=true` | missing |
 | Error tracking | `SENTRY_DSN`, optional `SENTRY_RELEASE` | missing |
 
-## Email delivery (SMTP on Beget)
+## Email delivery (Yandex Cloud Postbox)
 
-The project is hosted on Beget, where the domain mail account is provided as an
-SMTP service. The backend sends through it when `SMTP_HOST` is set:
+The backend sends through Postbox when `SMTP_HOST` is set. The SMTP username is
+the Postbox service-account key ID, not a mailbox address.
 
 | Variable | Example | Notes |
 |---|---|---|
-| `SMTP_HOST` | `smtp.beget.com` | enables the SMTP sender |
-| `SMTP_PORT` | `587` | `587` = STARTTLS, `465` = implicit TLS |
-| `SMTP_USERNAME` | `mailer@det-academy.ru` | full mailbox address |
-| `SMTP_PASSWORD` | — | mailbox password |
-| `SMTP_FROM` | `DET Academy <noreply@det-academy.ru>` | falls back to `EMAIL_FROM` |
-| `SMTP_IMPLICIT_TLS` | `false` | forced to `true` on port `465` |
+| `SMTP_HOST` | `postbox.cloud.yandex.net` | enables the SMTP sender |
+| `SMTP_PORT` | `465` | `465` = implicit TLS, `587` = STARTTLS |
+| `SMTP_USERNAME` | service-account key ID | not an email address |
+| `SMTP_PASSWORD` | — | service-account secret |
+| `SMTP_FROM` | `DET Academy <noreply@det-academy.ru>` | verified Postbox sender |
+| `SMTP_IMPLICIT_TLS` | `true` | forced to `true` on port `465` |
+| `DIGEST_ENABLED` | `true` | enables the Monday weekly digest |
+
+**Egress requirement:** the host must be allowed to open TCP 465 (or 587) to
+`postbox.cloud.yandex.net`. If the provider blocks SMTP ports, either ask the
+provider to unblock them or configure the HTTPS API (port 443):
+
+| Variable | Notes |
+|---|---|
+| `POSTBOX_ACCESS_KEY` | service-account static key ID with `postbox.sender` |
+| `POSTBOX_SECRET_KEY` | static key secret |
+| `POSTBOX_REGION` | `ru-central1` |
+| `POSTBOX_FROM` | verified sender, falls back to `SMTP_FROM`/`EMAIL_FROM` |
+
+`NewFromEnv()` prefers Postbox HTTPS when `POSTBOX_ACCESS_KEY` is set, then
+SMTP, then Resend, then the log sender. The digest checks the transport once
+before iterating, so a blocked port fails once with
+`email transport unreachable` instead of timing out per recipient. Use
+`POST /api/v1/admin/digest/send?dryRun=true` to verify rendering without
+sending; the endpoint is admin-only.
 
 Selection order in `email.NewFromEnv()`: **SMTP → Resend → log sender**. The log
 sender only writes the message to the service log, so without any of these

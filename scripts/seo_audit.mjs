@@ -31,8 +31,8 @@ const expectedWords = new Set(
   [...generatedWords, ...awlWords].map((entry) => entry.word.trim().toLowerCase())
 ).size;
 // Home, institutions, vocabulary, theory, practice, flashcards, typing,
-// diagnostic, test, verify, privacy.
-const expectedStaticRoutes = 11;
+// diagnostic, test, verify, privacy, pronunciation.
+const expectedStaticRoutes = 12;
 const expectedTotal =
   expectedStaticRoutes + expectedInstitutions + expectedCountries + expectedWords;
 

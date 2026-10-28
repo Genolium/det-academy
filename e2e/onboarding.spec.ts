@@ -104,10 +104,9 @@ test('readiness is explained and tasks carry a reason and a time estimate', asyn
   await expect(page.getByText(/Недостаточно данных: нужен минимум 2 завершённых mock-теста/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Ваш уровень' })).toBeVisible();
   await expect(page.getByText(/по диагностике/)).toBeVisible();
-  await expect(page.getByText('Лига недели')).toBeVisible();
+  // The weekly league is feature-flagged off until NEXT_PUBLIC_ARENA_ENABLED.
+  await expect(page.getByText('Лига недели')).toHaveCount(0);
   await expect(page.getByText('Лимиты на сегодня')).toBeVisible();
-  await expect(page.getByText('Gold', { exact: true })).toBeVisible();
-  await expect(page.getByText(/Лига считается по XP за текущую неделю/)).toBeVisible();
   await expect(page.getByText(/Пора повторить 12 карточек/)).toBeVisible();
   await expect(page.getByText(/Бюджет:/)).toBeVisible();
 });
