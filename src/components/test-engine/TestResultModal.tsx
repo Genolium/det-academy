@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalculatedScores } from '@/lib/scoring';
-import { api, CoachReport, EvaluationResult, ReviewItem } from '@/lib/api';
+import { api, CoachReport, EvaluationResult, ReviewItem, SessionReviewResponse } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { PillBadge } from '@/components/ui/PillBadge';
@@ -36,6 +36,7 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([]);
   const [loadingEvals, setLoadingEvals] = useState(false);
   const [review, setReview] = useState<ReviewItem[]>([]);
+  const [reviewResponse, setReviewResponse] = useState<SessionReviewResponse | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [coach, setCoach] = useState<CoachReport | null>(null);
   const [coachBusy, setCoachBusy] = useState(false);
@@ -107,7 +108,10 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
     if (!sessionId) return;
     api
       .getSessionReview(sessionId)
-      .then((response) => setReview(response.items || []))
+      .then((response) => {
+        setReview(response.items || []);
+        setReviewResponse(response);
+      })
       .catch((error: unknown) =>
         setReviewError(error instanceof Error ? error.message : 'Разбор недоступен')
       );
@@ -556,6 +560,51 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
             </span>
           </div>
           {reviewError && <p className="text-xs text-amber-400">{reviewError}</p>}
+
+          {reviewResponse?.nextAction && (
+            <div className="rounded-2xl border border-[#D2F544]/30 bg-[#D2F544]/10 p-3 text-xs text-neutral-200" data-testid="review-next-action">
+              <span className="block text-[10px] font-black uppercase tracking-wider text-[#D2F544] mb-1">
+                Следующее действие
+              </span>
+              {reviewResponse.nextAction}
+            </div>
+          )}
+
+          {reviewResponse?.skills && reviewResponse.skills.some((skill) => skill.total > 0) && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="review-skills">
+              {reviewResponse.skills.filter((skill) => skill.total > 0).map((skill) => (
+                <div key={skill.name} className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-3">
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-500">{skill.name}</span>
+                  <p className="mt-1 font-mono text-sm font-bold text-white">{skill.score || '—'}</p>
+                  <p className="text-[10px] text-neutral-400">
+                    {skill.correct}/{skill.total} · {Math.round(skill.accuracy * 100)}%
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {reviewResponse?.weeklyPlan && reviewResponse.weeklyPlan.length > 0 && (
+            <div className="rounded-2xl border border-neutral-800 bg-neutral-950/40 p-3" data-testid="review-weekly-plan">
+              <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">План на неделю</p>
+              <div className="mt-2 space-y-2">
+                {reviewResponse.weeklyPlan.map((task) => (
+                  <Link
+                    key={task.title}
+                    href={task.href}
+                    className="block rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition-colors hover:border-neutral-600"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-white">{task.title}</span>
+                      <span className="text-[10px] font-mono text-[#D2F544]">{task.minutes} мин</span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-neutral-400">{task.description}</p>
+                    <p className="mt-1 text-[10px] text-neutral-500">{task.reason}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           {review.length === 0 && !reviewError && (
             <p className="text-xs text-neutral-500">
               Разбор появится после завершения попытки.
@@ -575,6 +624,7 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-400">
                       {item.stageName.replaceAll('_', ' ')}
+                      {item.timeSpentSec ? ` · ${item.timeSpentSec}s` : ''}
                     </span>
                     <span
                       className={`font-bold ${

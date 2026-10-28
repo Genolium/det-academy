@@ -228,6 +228,7 @@ func main() {
 	digestHandler := handlers.NewDigestHandler(digestService)
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	studyHandler := handlers.NewStudyHandler(studyService)
+	emailHandler := handlers.NewEmailHandler(store.Users())
 	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
 
 	mediaUploadDir := os.Getenv("MEDIA_UPLOAD_DIR")
@@ -333,9 +334,14 @@ func main() {
 			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)
 		})
 
+		// Public unsubscribe link embedded in the weekly digest.
+		r.With(handlers.RateLimitMiddleware(30, time.Minute)).Get("/email/unsubscribe", emailHandler.Unsubscribe)
+
 		// User Study Plan, Error Notebook, SRS, and Skill Analytics
 		r.Route("/user", func(r chi.Router) {
 			r.Use(handlers.AuthMiddleware(authService))
+			r.Get("/email-preferences", emailHandler.GetPreferences)
+			r.Patch("/email-preferences", emailHandler.UpdatePreferences)
 			r.Get("/goals", studyHandler.GetGoals)
 			r.Put("/goals", studyHandler.UpdateGoals)
 			r.Get("/plan", studyHandler.GetStudyPlan)

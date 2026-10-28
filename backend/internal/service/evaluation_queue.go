@@ -232,6 +232,8 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 		return
 	}
 
+	BuildSpeakingRubric(&result, transcript)
+
 	if err := q.sessionRepo.UpdateEvaluation(ctx, &result); err != nil {
 		q.fail(ctx, job, err)
 		return

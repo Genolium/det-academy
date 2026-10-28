@@ -138,6 +138,39 @@ export const RubricFeedbackCard: React.FC<RubricFeedbackCardProps> = ({
         </>
       )}
 
+      {evaluation.rubric && evaluation.rubric.length > 0 && (
+        <div className="my-4" data-testid="speaking-rubric">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">Рубрика по критериям</span>
+            <span className="text-[10px] text-neutral-500">4 критерия</span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {evaluation.rubric.map((criterion) => (
+              <div key={criterion.key} className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-white">{criterion.label}</span>
+                  <span className="font-mono text-xs font-bold text-emerald-400">
+                    {Math.round(criterion.score * 100)}%
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[10px] uppercase tracking-wider text-amber-400">{criterion.band}</p>
+                <p className="mt-1.5 text-[11px] text-neutral-400">{criterion.evidence}</p>
+                <p className="mt-1 text-[11px] text-neutral-500">{criterion.suggestion}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {evaluation.nextAction && (
+        <div className="my-4 rounded-xl border border-[#D2F544]/30 bg-[#D2F544]/10 p-3 text-xs text-neutral-200" data-testid="speaking-next-action">
+          <span className="block text-[10px] font-black uppercase tracking-wider text-[#D2F544] mb-1">
+            Следующее действие
+          </span>
+          {evaluation.nextAction}
+        </div>
+      )}
+
       {/* Word-level clarity proxy (measured in the browser at record time) */}
       {evaluation.pronunciation && evaluation.pronunciation.words?.length > 0 && (
         <div className="my-4">

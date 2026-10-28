@@ -2281,3 +2281,24 @@ func (r *LimitRepo) purgeIfDue() {
 	defer cancel()
 	_ = r.PurgeDailyBefore(ctx, time.Now().UTC().AddDate(0, 0, -7))
 }
+
+func (r *UserRepo) GetEmailDigestEnabled(ctx context.Context, userID string) (bool, error) {
+	var enabled bool
+	err := r.db.QueryRowContext(ctx, `SELECT digest_enabled FROM email_preferences WHERE user_id = $1`, userID).Scan(&enabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+func (r *UserRepo) SetEmailDigestEnabled(ctx context.Context, userID string, enabled bool) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO email_preferences (user_id, digest_enabled, updated_at)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT (user_id) DO UPDATE SET digest_enabled = EXCLUDED.digest_enabled, updated_at = NOW()
+	`, userID, enabled)
+	return err
+}

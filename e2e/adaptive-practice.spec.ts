@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mockApi } from './mocks';
 
-const adaptivePlan = {
+const plan = {
   focusType: 'READ_SELECT',
   focusSlug: 'read-and-select',
   title: 'Адаптивная практика: Read and Select',
@@ -11,7 +11,40 @@ const adaptivePlan = {
   errorIds: ['err-1', 'err-2'],
 };
 
-test.describe('adaptive practice', () => {
+const errors = [
+  {
+    id: 'err-1',
+    userId: 'user-a',
+    type: 'READ_SELECT',
+    prompt: 'Read and Select: "meticulous" — это настоящее слово?',
+    userAnswer: 'No',
+    correctAnswer: 'Yes',
+    explanation: 'Meticulous means very careful and precise.',
+    errorCategory: 'vocabulary',
+    errorRule: 'real word',
+    consecutiveSuccesses: 0,
+    attemptsCount: 1,
+    mastered: false,
+    createdAt: '2026-10-20T10:00:00Z',
+  },
+  {
+    id: 'err-2',
+    userId: 'user-a',
+    type: 'READ_SELECT',
+    prompt: 'Read and Select: "blorpt" — это настоящее слово?',
+    userAnswer: 'Yes',
+    correctAnswer: 'No',
+    explanation: 'Blorpt is a pseudo-word.',
+    errorCategory: 'vocabulary',
+    errorRule: 'pseudo word',
+    consecutiveSuccesses: 0,
+    attemptsCount: 1,
+    mastered: false,
+    createdAt: '2026-10-20T10:01:00Z',
+  },
+];
+
+test.describe('adaptive practice session', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('det_auth_token', 'token-user-a');
@@ -19,30 +52,63 @@ test.describe('adaptive practice', () => {
     });
     await mockApi(page);
     await page.route('**/api/v1/user/practice/adaptive', (route) =>
-      route.fulfill({
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(plan) })
+    );
+    await page.route('**/api/v1/user/errors', (route) => {
+      if (route.request().method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ errors, total: errors.length }),
+        });
+      }
+      return route.fallback();
+    });
+
+    let recalls = 0;
+    await page.route('**/api/v1/user/errors/err-1/recall', (route) => {
+      recalls += 1;
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(adaptivePlan),
-      })
-    );
+        body: JSON.stringify({
+          success: true,
+          consecutiveSuccesses: recalls,
+          mastered: recalls >= 2,
+          correctAnswer: 'Yes',
+          explanation: 'Meticulous means very careful and precise.',
+          message: recalls >= 2 ? 'Ошибка усвоена.' : 'Верно, нужен ещё один успех.',
+        }),
+      });
+    });
   });
 
-  test('opens the error-driven set from the dashboard in one click', async ({ page }) => {
-    await page.goto('/dashboard');
-    const link = page.getByRole('link', { name: /Адаптивная практика из ошибок/ });
-    await expect(link).toBeVisible();
-    await link.click();
-    await expect(page).toHaveURL(/\/practice\/adaptive$/);
-    await expect(page.getByRole('heading', { name: adaptivePlan.title })).toBeVisible();
-    await expect(page.getByText(adaptivePlan.reason)).toBeVisible();
-    await expect(page.getByText('2 неусвоенных ошибок', { exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Открыть тренажёр/ })).toHaveAttribute(
-      'href',
-      '/practice?drill=read-and-select'
-    );
+  test('serves exactly the returned error IDs and requires two successes to master', async ({ page }) => {
+    await page.goto('/practice/adaptive');
+
+    await expect(page.getByTestId('adaptive-session')).toBeVisible();
+    await expect(page.getByText('Read and Select: "meticulous"')).toBeVisible();
+    await expect(page.getByText('2 точных заданий')).toBeVisible();
+    await expect(page.getByText(/Задание 1 \/ 2/)).toBeVisible();
+
+    const input = page.getByLabel('Ваш ответ');
+    await input.fill('Yes');
+    await page.getByRole('button', { name: 'Проверить' }).click();
+    await expect(page.getByRole('status')).toContainText('нужен ещё один успех');
+    await expect(page.getByText('Правильный ответ')).toBeVisible();
+
+    await page.getByRole('button', { name: /Повторить/ }).click();
+    await input.fill('Yes');
+    await page.getByRole('button', { name: 'Проверить' }).click();
+    await expect(page.getByRole('status')).toContainText('Ошибка усвоена');
+    await expect(page.getByTestId('adaptive-mastered')).toContainText('1');
+
+    await page.getByRole('button', { name: /Следующая ошибка/ }).click();
+    await expect(page.getByText('Read and Select: "blorpt"')).toBeVisible();
+    await expect(page.getByText(/Задание 1 \/ 1/)).toBeVisible();
   });
 
-  test('shows a recoverable error when the set cannot be built', async ({ page }) => {
+  test('renders a recoverable error when the set cannot be built', async ({ page }) => {
     await page.unroute('**/api/v1/user/practice/adaptive');
     await page.route('**/api/v1/user/practice/adaptive', (route) =>
       route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })

@@ -33,8 +33,9 @@ const expectedWords = new Set(
 // Home, institutions, vocabulary, theory, practice, flashcards, typing,
 // diagnostic, test, verify, privacy, pronunciation.
 const expectedStaticRoutes = 12;
+const SCORE_ROUTES = 20;
 const expectedTotal =
-  expectedStaticRoutes + expectedInstitutions + expectedCountries + expectedWords;
+  expectedStaticRoutes + expectedInstitutions + expectedCountries + expectedWords + SCORE_ROUTES;
 
 const INSTITUTION_ROUTES = [
   '/institutions/stanford-university',
@@ -43,6 +44,12 @@ const INSTITUTION_ROUTES = [
 ];
 
 const COUNTRY_ROUTES = ['/institutions/country/united-states'];
+
+const SCORE_PAGE_ROUTES = [
+  '/institutions/stanford-university/det-score',
+  '/institutions/university-of-toronto/det-score',
+  '/institutions/harvard-university/det-score',
+];
 
 const WORD_ROUTES = [
   '/vocabulary/able',
@@ -199,6 +206,23 @@ async function main() {
   for (const route of COUNTRY_ROUTES) {
     const { status, text } = await request(route);
     inspectHtml(route, text, status);
+  }
+
+  console.log('\nDET score pages');
+  for (const route of SCORE_PAGE_ROUTES) {
+    const { status, text } = await request(route);
+    const inspected = inspectHtml(route, text, status);
+    if (!inspected) continue;
+    if (text.includes('Platform reference only') && text.includes('not an official')) {
+      pass(`${route} shows the reference disclaimer`);
+    } else {
+      fail(`${route} is missing the reference disclaimer`);
+    }
+    if (text.includes('"@type":"CollegeOrUniversity"')) {
+      pass(`${route} has CollegeOrUniversity JSON-LD`);
+    } else {
+      fail(`${route} has no CollegeOrUniversity JSON-LD`);
+    }
   }
 
   console.log('\nDictionary pages');

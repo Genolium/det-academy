@@ -183,11 +183,31 @@ export interface ReviewItem {
   correctAnswer?: string;
   isCorrect: boolean;
   rawScore: number;
+  timeSpentSec?: number;
+}
+
+export interface ReviewSkill {
+  name: string;
+  score: number;
+  correct: number;
+  total: number;
+  accuracy: number;
+}
+
+export interface ReviewPlanItem {
+  title: string;
+  description: string;
+  href: string;
+  minutes: number;
+  reason: string;
 }
 
 export interface SessionReviewResponse {
   sessionId: string;
   items: ReviewItem[];
+  skills?: ReviewSkill[];
+  weeklyPlan?: ReviewPlanItem[];
+  nextAction?: string;
 }
 
 export interface PronunciationWordReport {
@@ -261,6 +281,15 @@ export interface EvaluationResult {
     label: string;
     suggestion?: string;
   }>;
+  rubric?: Array<{
+    key: string;
+    label: string;
+    score: number;
+    band: string;
+    evidence: string;
+    suggestion: string;
+  }>;
+  nextAction?: string;
   retryCount?: number;
   lastError?: string;
   createdAt: string;
@@ -1518,6 +1547,26 @@ class ApiClient {
     if (!res.ok) {
       throw new ApiError('Failed to complete plan task', res.status);
     }
+  }
+
+  async getEmailPreferences(): Promise<{ digestEnabled: boolean }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/email-preferences`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new ApiError('Failed to load email preferences', res.status);
+    return res.json();
+  }
+
+  async updateEmailPreferences(digestEnabled: boolean): Promise<{ digestEnabled: boolean }> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/email-preferences`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ digestEnabled }),
+    });
+    if (!res.ok) throw new ApiError('Failed to save email preferences', res.status);
+    return res.json();
   }
 
   async getAdaptivePractice(): Promise<AdaptivePractice> {

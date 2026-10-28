@@ -186,6 +186,13 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
             ],
             recommendations: [],
             feedback: 'Хорошая структура ответа.',
+            rubric: [
+              { key: 'fluency', label: 'Беглость и темп', score: 0.55, band: 'зона роста', evidence: 'Темп: 74 сл/мин, паузы: 18%.', suggestion: 'Держите темп 110–160 сл/мин.' },
+              { key: 'lexical', label: 'Лексика', score: 0.78, band: 'уверенно', evidence: 'Разнообразие: 66%, академических слов: 2.', suggestion: 'Добавьте 2–3 точных академических слова.' },
+              { key: 'relevance', label: 'Соответствие заданию', score: 0.8, band: 'сильная сторона', evidence: 'Ответ раскрывает тему.', suggestion: 'Прямо ответьте на вопрос в первом предложении.' },
+              { key: 'accuracy', label: 'Точность и структура', score: 0.72, band: 'уверенно', evidence: 'Структура понятна.', suggestion: 'Проверьте согласование времён.' },
+            ],
+            nextAction: 'Держите темп 110–160 сл/мин.',
             createdAt: new Date().toISOString(),
           },
         ],

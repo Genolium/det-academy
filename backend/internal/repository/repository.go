@@ -18,6 +18,8 @@ type UserRepository interface {
 	MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error)
 	Delete(ctx context.Context, id string) error
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
+	GetEmailDigestEnabled(ctx context.Context, userID string) (bool, error)
+	SetEmailDigestEnabled(ctx context.Context, userID string, enabled bool) error
 
 	// Social accounts / linked providers
 	GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error)

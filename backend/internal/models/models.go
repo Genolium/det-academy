@@ -427,11 +427,31 @@ type ReviewItem struct {
 	CorrectAnswer string  `json:"correctAnswer,omitempty"`
 	IsCorrect     bool    `json:"isCorrect"`
 	RawScore      float64 `json:"rawScore"`
+	TimeSpentSec  int     `json:"timeSpentSec"`
+}
+
+type ReviewSkill struct {
+	Name     string  `json:"name"`
+	Score    int     `json:"score"`
+	Correct  int     `json:"correct"`
+	Total    int     `json:"total"`
+	Accuracy float64 `json:"accuracy"`
+}
+
+type ReviewPlanItem struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Href        string `json:"href"`
+	Minutes     int    `json:"minutes"`
+	Reason      string `json:"reason"`
 }
 
 type SessionReviewResponse struct {
-	SessionID string       `json:"sessionId"`
-	Items     []ReviewItem `json:"items"`
+	SessionID  string           `json:"sessionId"`
+	Items      []ReviewItem     `json:"items"`
+	Skills     []ReviewSkill    `json:"skills"`
+	WeeklyPlan []ReviewPlanItem `json:"weeklyPlan"`
+	NextAction string           `json:"nextAction"`
 }
 
 type SessionQuestion struct {
@@ -628,9 +648,20 @@ type EvaluationResult struct {
 	FeedbackStatus   string               `json:"feedbackStatus,omitempty"`
 	Feedback         string               `json:"feedback,omitempty"`
 	EvidenceSpans    []EvidenceSpan       `json:"evidenceSpans,omitempty"`
+	Rubric           []RubricCriterion    `json:"rubric,omitempty"`
+	NextAction       string               `json:"nextAction,omitempty"`
 	RetryCount       int                  `json:"retryCount,omitempty"`
 	LastError        string               `json:"lastError,omitempty"`
 	CreatedAt        time.Time            `json:"createdAt"`
+}
+
+type RubricCriterion struct {
+	Key        string  `json:"key"`
+	Label      string  `json:"label"`
+	Score      float64 `json:"score"`
+	Band       string  `json:"band"`
+	Evidence   string  `json:"evidence"`
+	Suggestion string  `json:"suggestion"`
 }
 
 type SpeechPause struct {

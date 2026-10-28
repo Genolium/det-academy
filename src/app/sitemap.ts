@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import {
   getAllCountries,
   getAllInstitutionSlugs,
+  getScoreInstitutions,
 } from '@/lib/seo/institutions';
 import { getAllWordSlugs } from '@/lib/seo/vocabulary';
 import { SITE_URL } from '@/lib/seo/site';
@@ -48,6 +49,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
+  const scoreRoutes: MetadataRoute.Sitemap = getScoreInstitutions(20).map((institution) => ({
+    url: `${SITE_URL}/institutions/${institution.slug}/det-score`,
+    lastModified: registryDate,
+    changeFrequency: 'monthly',
+    priority: 0.65,
+  }));
+
   const wordRoutes: MetadataRoute.Sitemap = getAllWordSlugs().map((slug) => ({
     url: `${SITE_URL}/vocabulary/${slug}`,
     lastModified: today,
@@ -55,5 +63,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
-  return [...staticRoutes, ...countryRoutes, ...institutionRoutes, ...wordRoutes];
+  return [...staticRoutes, ...countryRoutes, ...institutionRoutes, ...scoreRoutes, ...wordRoutes];
 }

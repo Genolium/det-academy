@@ -34,6 +34,7 @@ type MemoryStorage struct {
 	institutions        map[string]*models.Institution
 	socialAccounts      map[string][]models.SocialAccount             // userID -> []SocialAccount
 	goals               map[string]*models.UserGoal                   // userID -> *UserGoal
+	emailPreferences    map[string]bool                               // userID -> digest enabled
 	errors              map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
 	srsStats            map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards            map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
@@ -71,6 +72,7 @@ func New() *MemoryStorage {
 		institutions:        make(map[string]*models.Institution),
 		socialAccounts:      make(map[string][]models.SocialAccount),
 		goals:               make(map[string]*models.UserGoal),
+		emailPreferences:    make(map[string]bool),
 		errors:              make(map[string]map[string]*models.UserErrorItem),
 		srsStats:            make(map[string]*models.SRSStats),
 		srsCards:            make(map[string]map[string]*models.SRSCardProgress),
@@ -2883,5 +2885,22 @@ func (r *limitMemoryRepo) PurgeDailyBefore(ctx context.Context, before time.Time
 			delete(r.s.dailyLimits, key)
 		}
 	}
+	return nil
+}
+
+func (r *userMemoryRepo) GetEmailDigestEnabled(_ context.Context, userID string) (bool, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	enabled, ok := r.s.emailPreferences[userID]
+	if !ok {
+		return true, nil
+	}
+	return enabled, nil
+}
+
+func (r *userMemoryRepo) SetEmailDigestEnabled(_ context.Context, userID string, enabled bool) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.emailPreferences[userID] = enabled
 	return nil
 }

@@ -26,6 +26,7 @@ import {
   Edit2,
   Save,
   X,
+  Mail,
 } from 'lucide-react';
 import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
@@ -55,6 +56,8 @@ function ProfileContent() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [isSavingDigest, setIsSavingDigest] = useState(false);
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +77,34 @@ function ProfileContent() {
       setErrorMsg(c.profileError);
     } finally {
       setIsSavingName(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api
+      .getEmailPreferences()
+      .then((preferences) => setDigestEnabled(preferences.digestEnabled))
+      .catch(() => {});
+  }, [isAuthenticated]);
+
+  const toggleDigest = async () => {
+    if (isSavingDigest) return;
+    setIsSavingDigest(true);
+    setErrorMsg(null);
+    try {
+      const next = !digestEnabled;
+      const saved = await api.updateEmailPreferences(next);
+      setDigestEnabled(saved.digestEnabled);
+      setSuccessMsg(
+        saved.digestEnabled
+          ? 'Недельный дайджест включён.'
+          : 'Недельный дайджест отключён.'
+      );
+    } catch {
+      setErrorMsg('Не удалось сохранить настройку дайджеста.');
+    } finally {
+      setIsSavingDigest(false);
     }
   };
 
@@ -502,6 +533,39 @@ function ProfileContent() {
           >
             <Edit2 className="w-3.5 h-3.5" />
             <span>{c.renameProfile}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2.1 Weekly digest preference */}
+      <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#D2F544]/15 border border-[#D2F544]/30 flex items-center justify-center text-[#D2F544] shrink-0">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white">Недельный дайджест</h2>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Прогресс, слабый сабскор и следующий шаг раз в неделю.
+              </p>
+              <p className="text-[11px] text-neutral-500 mt-1" data-testid="digest-status">
+                {digestEnabled ? 'Включён' : 'Отключён'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void toggleDigest()}
+            disabled={isSavingDigest}
+            aria-pressed={digestEnabled}
+            className={`self-start sm:self-auto rounded-full px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+              digestEnabled
+                ? 'bg-[#D2F544] text-[#0C2418] hover:bg-[#c4f22c]'
+                : 'bg-neutral-900 border border-neutral-700 text-neutral-200 hover:border-neutral-500'
+            }`}
+          >
+            {isSavingDigest ? 'Сохраняем…' : digestEnabled ? 'Отключить' : 'Включить'}
           </button>
         </div>
       </div>

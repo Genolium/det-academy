@@ -256,6 +256,22 @@ export function getAllInstitutionSlugs(): string[] {
   return institutions.map((institution) => institution.slug);
 }
 
+/**
+ * Institutions with a stored platform reference score. These are the only
+ * institutions with enough factual data for a dedicated score page; generating
+ * one for every catalogue row would be thin content.
+ */
+export function getScoreInstitutions(limit = 20): SeoInstitution[] {
+  return institutions
+    .filter((institution) => institution.minScore !== null)
+    .sort(
+      (left, right) =>
+        (right.minScore ?? 0) - (left.minScore ?? 0) ||
+        left.name.localeCompare(right.name)
+    )
+    .slice(0, limit);
+}
+
 export function getCountryBySlug(slug: string): SeoCountry | undefined {
   return byCountry.get(slug);
 }

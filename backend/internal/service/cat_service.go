@@ -1055,9 +1055,128 @@ func (s *CATService) GetSessionReview(ctx context.Context, sessionID, userID str
 			CorrectAnswer: correctAnswerText(question.Type, question.CorrectAnswers),
 			IsCorrect:     isCorrect,
 			RawScore:      rawScore,
+			TimeSpentSec:  response.TimeSpentSec,
 		})
 	}
-	return &models.SessionReviewResponse{SessionID: sessionID, Items: items}, nil
+	skills, plan, nextAction := buildReviewPlan(session, items)
+	return &models.SessionReviewResponse{
+		SessionID: sessionID, Items: items, Skills: skills, WeeklyPlan: plan, NextAction: nextAction,
+	}, nil
+}
+
+func reviewSkillForStage(stage string) string {
+	switch {
+	case strings.Contains(stage, "READ"), strings.Contains(stage, "C_TEST"), strings.Contains(stage, "FILL_BLANKS"):
+		return "reading"
+	case strings.Contains(stage, "LISTEN"):
+		return "listening"
+	case strings.Contains(stage, "WRITE"):
+		return "writing"
+	case strings.Contains(stage, "SPEAK"):
+		return "speaking"
+	default:
+		return "reading"
+	}
+}
+
+func clarityScore(value *int) int {
+	if value == nil {
+		return 0
+	}
+	return *value
+}
+
+func buildReviewPlan(session *models.TestSession, items []models.ReviewItem) ([]models.ReviewSkill, []models.ReviewPlanItem, string) {
+	type aggregate struct {
+		correct int
+		total   int
+	}
+	bySkill := map[string]aggregate{}
+	for _, item := range items {
+		key := reviewSkillForStage(item.StageName)
+		current := bySkill[key]
+		current.total++
+		if item.IsCorrect {
+			current.correct++
+		}
+		bySkill[key] = current
+	}
+
+	names := []string{"reading", "listening", "writing", "speaking"}
+	scores := map[string]int{
+		"reading":   clarityScore(session.ReadingScore),
+		"listening": clarityScore(session.ListeningScore),
+		"writing":   clarityScore(session.WritingScore),
+		"speaking":  clarityScore(session.SpeakingScore),
+	}
+	skills := make([]models.ReviewSkill, 0, len(names))
+	for _, name := range names {
+		current := bySkill[name]
+		accuracy := 0.0
+		if current.total > 0 {
+			accuracy = math.Round(float64(current.correct)/float64(current.total)*100) / 100
+		}
+		skills = append(skills, models.ReviewSkill{
+			Name: name, Score: scores[name], Correct: current.correct,
+			Total: current.total, Accuracy: accuracy,
+		})
+	}
+
+	weakest := ""
+	weakestScore := 161
+	for _, skill := range skills {
+		if skill.Total == 0 || skill.Score <= 0 {
+			continue
+		}
+		if skill.Score < weakestScore {
+			weakest, weakestScore = skill.Name, skill.Score
+		}
+	}
+	if weakest == "" {
+		weakestAccuracy := 2.0
+		for _, skill := range skills {
+			if skill.Total > 0 && skill.Accuracy < weakestAccuracy {
+				weakest, weakestAccuracy = skill.Name, skill.Accuracy
+			}
+		}
+	}
+	if weakest == "" {
+		weakest = "reading"
+	}
+
+	drillBySkill := map[string]string{
+		"reading":   "/practice?drill=read-and-select",
+		"listening": "/practice?drill=listen-and-type",
+		"writing":   "/practice?drill=writing-inspector",
+		"speaking":  "/practice?drill=speaking-sample",
+	}
+	labelBySkill := map[string]string{
+		"reading": "чтение", "listening": "аудирование", "writing": "письмо", "speaking": "устная речь",
+	}
+	plan := []models.ReviewPlanItem{
+		{
+			Title:       "Закрыть слабейший навык: " + labelBySkill[weakest],
+			Description: "Два коротких блока по 10 минут с разбором ошибок после каждого.",
+			Href:        drillBySkill[weakest],
+			Minutes:     20,
+			Reason:      "Самый низкий измеренный сабскор в этой попытке.",
+		},
+		{
+			Title:       "Повторить ошибки из тетради",
+			Description: "Адаптивная сессия ровно по неусвоенным заданиям, mastery после двух верных ответов.",
+			Href:        "/practice/adaptive",
+			Minutes:     10,
+			Reason:      "Ошибки этой попытки попадут в тетрадь и станут следующим шагом.",
+		},
+		{
+			Title:       "Один целевой мок",
+			Description: "Пройдите полный мок в конце недели и сравните диапазон с текущим.",
+			Href:        "/test",
+			Minutes:     60,
+			Reason:      "Проверка переноса навыка в формат экзамена.",
+		},
+	}
+	return skills, plan, plan[0].Title
 }
 
 // RecordAudioResponse records uploaded audio speech, evaluates it, and stores the response.

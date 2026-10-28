@@ -87,6 +87,15 @@ func (d *DigestService) SendWeekly(ctx context.Context, dryRun bool) (sent, skip
 			skipped++
 			continue
 		}
+		digestEnabled, preferenceErr := d.storage.Users().GetEmailDigestEnabled(ctx, user.ID)
+		if preferenceErr != nil {
+			skipped++
+			continue
+		}
+		if !digestEnabled {
+			skipped++
+			continue
+		}
 		report, reportErr := d.study.GetWeeklyReport(ctx, user.ID)
 		if reportErr != nil || (report.StudyDays == 0 && report.Sessions == 0) {
 			skipped++
@@ -109,7 +118,8 @@ func (d *DigestService) SendWeekly(ctx context.Context, dryRun bool) (sent, skip
 				continue
 			}
 		}
-		subject, html := digestMessage(user, report, week)
+		unsubscribeURL := fmt.Sprintf("%s/api/v1/email/unsubscribe?token=%s", email.PublicAppURL(), DigestUnsubscribeToken(user.ID))
+		subject, html := digestMessage(user, report, week, unsubscribeURL)
 		if !dryRun {
 			if sendErr := d.sender.Send(ctx, email.Message{To: user.Email, Subject: subject, HTML: html}); sendErr != nil {
 				// The claim stays: a retry loop must not spam a broken address.
@@ -129,7 +139,7 @@ func weekStart(now time.Time) time.Time {
 	return time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC)
 }
 
-func digestMessage(user models.User, report *models.WeeklyReport, week time.Time) (string, string) {
+func digestMessage(user models.User, report *models.WeeklyReport, week time.Time, unsubscribeURL string) (string, string) {
 	name := user.Name
 	if strings.TrimSpace(name) == "" {
 		name = "Student"
@@ -156,7 +166,7 @@ func digestMessage(user models.User, report *models.WeeklyReport, week time.Time
   </ul>
   <p><strong>Next step:</strong> %s</p>
   <p><a href="https://det-academy.ru/practice/adaptive">Open adaptive practice</a></p>
-  <p style="color:#666;font-size:12px">You receive this weekly summary because you have a verified DET Academy account. Reply to this email to stop these summaries.</p>
-</div>`, name, report.StudyDays, report.MockTests, report.SRSReviews, report.RangeLow, report.RangeHigh, weakest, recommendation)
+  <p style="color:#666;font-size:12px">You receive this weekly summary because you have a verified DET Academy account. <a href="%s">Unsubscribe from weekly summaries</a>.</p>
+</div>`, name, report.StudyDays, report.MockTests, report.SRSReviews, report.RangeLow, report.RangeHigh, weakest, recommendation, unsubscribeURL)
 	return subject, html
 }
