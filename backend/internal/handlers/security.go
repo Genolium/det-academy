@@ -55,11 +55,7 @@ func RateLimitMiddleware(limit int, window time.Duration) func(http.Handler) htt
 	limiter := newRateLimiter(limit, window)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			key := r.RemoteAddr
-			if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-				key = strings.TrimSpace(strings.Split(forwarded, ",")[0])
-			}
-			if !limiter.allow(key) {
+			if !limiter.allow(clientIP(r)) {
 				RespondError(w, http.StatusTooManyRequests, "too many requests")
 				return
 			}

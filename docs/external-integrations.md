@@ -287,6 +287,39 @@ TTS_PREGEN_BASE_URL=http://127.0.0.1:18080 node scripts/pregenerate_tts.mjs
 
 The client calls the server voice first and falls back to the ranked browser
 voice (Google US English, Microsoft Aria/Jenny, Samantha) on any failure, so a
-provider outage never blocks a lesson. Dictation pacing is not applied twice:
+provider outage never blocks a lesson.
+
+#### Is a public TTS endpoint safe?
+
+The audio is lesson content, so the endpoint is intentionally anonymous: a
+learner should not need an account to hear a dictation. That is safe for
+confidentiality (the response is only `audio/mpeg` synthesized from text the
+client already has) but it used to be an open text-to-speech proxy, which is a
+cost and disk-abuse problem. The following guards are in place:
+
+- **Cache hits are unlimited and free.** The deploy pre-generates the whole
+  dictation and vocabulary bank, so normal traffic never calls the provider.
+- **Paid synthesis is budgeted.** `TTS_NEW_PER_IP_PER_DAY` (default 20) and
+  `TTS_NEW_GLOBAL_PER_DAY` (default 500) cap new sentences per UTC day; the
+  response is `429` with `Retry-After`. Worst case is bounded to 500 × 600
+  characters per day instead of unbounded spend.
+- **The client address cannot be rotated.** `X-Forwarded-For` is read from the
+  last hop (the one nginx appends), not the first, so a caller cannot invent a
+  new IP per request. The same helper is used by the request rate limiter.
+- **Request text never reaches the logs.** The application logger writes only
+  `r.URL.Path` (no query string), and nginx disables `access_log` for
+  `/api/v1/tts`.
+- **Memory does not grow per sentence.** The single-flight map used to keep one
+  mutex per cache key forever; flights are now reference-counted and removed
+  when the last waiter leaves.
+- **Response hardening:** `X-Content-Type-Options: nosniff`, explicit
+  `audio/mpeg`, no HTML, no user-supplied filename, 600-rune input limit, and
+  the route is covered by the 120 requests/minute limiter.
+
+If the product ever synthesizes text written by a learner, do not put it in a
+query string: use an authenticated `POST`, keep the text out of access logs and
+out of browser history, and document retention. Today the endpoint only serves
+fixed course content, which is why `GET` is acceptable.
+ Dictation pacing is not applied twice:
 the synthesiser already speaks at `AI_TTS_SPEED`, and the client only adjusts
 `playbackRate` relative to the browser default.

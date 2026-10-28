@@ -97,3 +97,85 @@ func TestTTSHandlerValidationAndFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTTSHandlerLimitsPaidSynthesisNotCacheHits(t *testing.T) {
+	provider := &fakeTTS{}
+	handler := NewTTSHandler(provider, t.TempDir())
+	handler.NewPerIPPerDay = 1
+	handler.NewGlobalPerDay = 2
+
+	request := func(text, ip string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/tts?text="+text, nil)
+		req.Header.Set("X-Forwarded-For", "203.0.113.9, "+ip)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		return rec
+	}
+
+	if rec := request("First+sentence", "198.51.100.1"); rec.Code != http.StatusOK {
+		t.Fatalf("first synthesis = %d", rec.Code)
+	}
+	// A cached sentence is free even after the per-IP budget is spent.
+	if rec := request("First+sentence", "198.51.100.1"); rec.Code != http.StatusOK {
+		t.Fatalf("cache hit = %d", rec.Code)
+	}
+	if rec := request("Second+sentence", "198.51.100.1"); rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("second paid synthesis for one IP = %d, want 429", rec.Code)
+	}
+	// Another client still gets the remaining global budget.
+	if rec := request("Second+sentence", "198.51.100.2"); rec.Code != http.StatusOK {
+		t.Fatalf("second client = %d", rec.Code)
+	}
+	if rec := request("Third+sentence", "198.51.100.3"); rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("global budget = %d, want 429", rec.Code)
+	}
+	if provider.calls != 2 {
+		t.Fatalf("provider calls = %d, want 2", provider.calls)
+	}
+}
+
+func TestTTSHandlerSpoofedForwardedForCannotRotateQuota(t *testing.T) {
+	handler := NewTTSHandler(&fakeTTS{}, t.TempDir())
+	handler.NewPerIPPerDay = 1
+	handler.NewGlobalPerDay = 10
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/tts?text=One", nil)
+	// The client tries to look like a new address; nginx appends the real one.
+	req.Header.Set("X-Forwarded-For", "1.2.3.4, 198.51.100.7")
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/tts?text=Two", nil)
+	req.Header.Set("X-Forwarded-For", "5.6.7.8, 198.51.100.7")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429 for the same real client", rec.Code)
+	}
+}
+
+func TestTTSHandlerReleasesFlightLocks(t *testing.T) {
+	handler := NewTTSHandler(&fakeTTS{}, t.TempDir())
+	for _, text := range []string{"alpha", "beta", "gamma"} {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/tts?text="+text, nil)
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	}
+	handler.mu.Lock()
+	pending := len(handler.flights)
+	handler.mu.Unlock()
+	if pending != 0 {
+		t.Fatalf("flights map leaked %d entries", pending)
+	}
+}
+
+func TestClientIPUsesLastForwardedHop(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "10.0.0.5:1234"
+	req.Header.Set("X-Forwarded-For", "1.2.3.4, 198.51.100.7")
+	if got := clientIP(req); got != "198.51.100.7" {
+		t.Fatalf("clientIP = %q", got)
+	}
+	req.Header.Del("X-Forwarded-For")
+	if got := clientIP(req); got != "10.0.0.5" {
+		t.Fatalf("clientIP fallback = %q", got)
+	}
+}

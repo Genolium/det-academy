@@ -74,6 +74,10 @@ services:
       AI_TTS_VOICE: "${AI_TTS_VOICE:-john}"
       AI_TTS_LANG: "${AI_TTS_LANG:-en-US}"
       AI_TTS_SPEED: "${AI_TTS_SPEED:-0.9}"
+      # Paid syntheses only: cache hits are unlimited. The whole lesson bank is
+      # pre-generated on deploy, so a learner normally never hits these limits.
+      TTS_NEW_PER_IP_PER_DAY: "${TTS_NEW_PER_IP_PER_DAY:-20}"
+      TTS_NEW_GLOBAL_PER_DAY: "${TTS_NEW_GLOBAL_PER_DAY:-500}"
       REQUIRE_NEURAL_EVALUATION: "${REQUIRE_NEURAL_EVALUATION:-false}"
       ALLOW_CLIENT_TRANSCRIPT: "${ALLOW_CLIENT_TRANSCRIPT:-true}"
       METRICS_TOKEN: "${METRICS_TOKEN:-}"
