@@ -6,6 +6,11 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { Cookie } from 'lucide-react';
 
+/**
+ * Consent notice. Deliberately a single compact row on desktop: it must not
+ * cover the hero, and the copy is limited to what actually happens (sign-in and
+ * local progress) instead of a paragraph of policy.
+ */
 export const CookieConsent: React.FC = () => {
   const { locale, cookieConsentAccepted, setCookieConsentAccepted } = useSettingsStore();
   const pathname = usePathname();
@@ -31,37 +36,46 @@ export const CookieConsent: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:max-w-md mx-auto sm:mx-0 z-50 bg-[#111315] text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-neutral-700 shadow-2xl flex flex-col sm:flex-row items-center gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex items-center gap-3">
-        <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#D2F544]/20 text-[#D2F544] shrink-0">
-          <Cookie className="w-4 h-4 sm:w-5 sm:h-5" />
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
+      <div
+        role="region"
+        aria-label={t.label}
+        className="pointer-events-auto mx-auto flex max-w-[840px] flex-col gap-2.5 rounded-2xl border border-white/10 bg-[#111315]/95 px-4 py-3 text-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.55)] backdrop-blur-md sm:flex-row sm:items-center sm:gap-4 sm:rounded-full sm:py-2 sm:pl-5 sm:pr-2"
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#D2F544]/15 text-[#D2F544]">
+            <Cookie className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+          <p className="text-[12.5px] leading-snug text-neutral-300 sm:text-[13px]">
+            {t.text}{' '}
+            <a
+              href="/privacy"
+              className="whitespace-nowrap text-white/90 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white"
+            >
+              {t.privacy}
+            </a>
+          </p>
         </div>
-        <p className="text-xs text-neutral-300 leading-relaxed text-center sm:text-left">
-          {t.text}{' '}
-          <a href="/privacy" className="underline text-white/80 hover:text-white">
-            {t.privacy}
-          </a>
-        </p>
-      </div>
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end shrink-0">
-        <button
-          onClick={() => {
-            localStorage.setItem('det_cookie_consent', 'rejected');
-            setDismissed(true);
-          }}
-          className="w-full sm:w-auto border border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold px-4 py-2 rounded-full transition-colors whitespace-nowrap text-center cursor-pointer"
-        >
-          {t.decline}
-        </button>
-        <button
-          onClick={() => {
-            setCookieConsentAccepted(true);
-            setDismissed(true);
-          }}
-          className="w-full sm:w-auto bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] text-xs font-bold px-4 py-2 rounded-full transition-transform active:scale-95 whitespace-nowrap text-center cursor-pointer"
-        >
-          {t.accept}
-        </button>
+        <div className="flex shrink-0 items-center justify-end gap-1.5 self-stretch sm:gap-2 sm:self-auto">
+          <button
+            onClick={() => {
+              localStorage.setItem('det_cookie_consent', 'rejected');
+              setDismissed(true);
+            }}
+            className="h-11 shrink-0 cursor-pointer whitespace-nowrap rounded-full px-2.5 text-[12.5px] font-semibold text-neutral-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] sm:h-9 sm:px-3"
+          >
+            {t.decline}
+          </button>
+          <button
+            onClick={() => {
+              setCookieConsentAccepted(true);
+              setDismissed(true);
+            }}
+            className="h-11 shrink-0 cursor-pointer whitespace-nowrap rounded-full bg-[#D2F544] px-4 text-[12.5px] font-bold text-[#0C2418] transition-colors hover:bg-[#C4F22C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111315] active:scale-[0.98] sm:h-9"
+          >
+            {t.accept}
+          </button>
+        </div>
       </div>
     </div>
   );

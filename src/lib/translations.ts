@@ -130,6 +130,7 @@ export interface Translations {
       accept: string;
       decline: string;
       privacy: string;
+      label: string;
     };
   footer: {
     tagline: string;
@@ -612,10 +613,11 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Подробнее',
     },
     cookie: {
-      text: 'Нужные cookie — сессия входа. Прогресс хранится в аккаунте и в localStorage этого браузера, а не «персонализирует адаптивный тест».',
+      text: 'Необходимые cookie: вход и прогресс. Без рекламы и трекинга.',
       accept: 'Принять',
       decline: 'Только необходимое',
-      privacy: 'Политика данных',
+      privacy: 'Подробнее',
+      label: 'Cookie',
     },
     footer: {
       tagline: 'Независимая платформа подготовки к Duolingo English Test: диагностика, план и тренировочные тесты.',
@@ -1096,10 +1098,11 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Learn More',
     },
     cookie: {
-      text: 'Essential cookies keep you signed in. Progress lives in your account and this browser’s localStorage — it does not “personalize adaptive testing”.',
+      text: 'Essential cookies: sign-in and progress. No ads, no tracking.',
       accept: 'Accept',
       decline: 'Essential only',
-      privacy: 'Data policy',
+      privacy: 'Details',
+      label: 'Cookie consent',
     },
     footer: {
       tagline: 'Independent DET prep: diagnostic, daily plan, and training mocks.',
