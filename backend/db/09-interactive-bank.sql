@@ -1806,6 +1806,366 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
 VALUES (
+  'ibir-101',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"Ant Colonies as Distributed Problem Solvers","passageText":"A single ant follows simple rules: follow a chemical trail, pick up food, carry it home. A colony of thousands nevertheless solves problems that no individual grasps. When two routes lead to the same feeder, foragers explore both at first, but the shorter route receives more traffic and therefore more scent, so it attracts still more ants. This feedback is not planning; it is amplification. Researchers test such explanations by building models in which every agent is deliberately simple, then checking whether the colony’s behaviour emerges anyway. The lesson extends beyond insects. Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed.","gapSentence":{"before":"A single ant follows simple rules: follow a chemical trail, pick up food, carry it home. A colony of thousands nevertheless solves problems that no individual grasps. When two routes lead to the same feeder, foragers explore both at first, but the shorter route receives more traffic and therefore more scent, so it attracts still more ants. This feedback is not planning; it is amplification. Researchers test such explanations by building models in which every agent is deliberately simple, then checking whether the colony’s behaviour ","after":" anyway. The lesson extends beyond insects. Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed.","correct":"emerges","options":["collapses","repeats","emerges","disappears"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["A Guide to Keeping Ants as Pets","Ant Colonies as Distributed Problem Solvers","The Social Life of Honeybees","How Insects Survive Winter"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Ants plan routes in advance by sharing a mental map of the area.","Only the queen ant makes decisions for the whole colony.","Computer networks were designed by studying a single ant.","Simple local rules, repeated by many individuals, can produce complex collective behaviour."],"correctIndex":3},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve."]}',
+  '{"gapCorrect":"emerges","titleCorrectIndex":1,"mainIdeaCorrectIndex":3,"sentenceCorrectIndex":0,"highlightCorrectSubstring":"Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-102',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"How an MRI Scanner Builds an Image","passageText":"An MRI scanner does not photograph tissue. It aligns the nuclei of hydrogen atoms, most of which sit in water, with an extremely strong magnetic field. A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal. Magnetic gradients applied across the body make the signal depend on position, so a computer can reconstruct a slice image from many such measurements. Unlike X-rays, the method uses no ionising radiation, which is why it is preferred for repeated scans. It is not effortless: the machine is loud, the bore is cramped, and any movement blurs the result. Metal implants and pacemakers may make scanning unsafe, so patients are screened carefully first.","gapSentence":{"before":"An MRI scanner does not photograph tissue. It ","after":" the nuclei of hydrogen atoms, most of which sit in water, with an extremely strong magnetic field. A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal. Magnetic gradients applied across the body make the signal depend on position, so a computer can reconstruct a slice image from many such measurements. Unlike X-rays, the method uses no ionising radiation, which is why it is preferred for repeated scans. It is not effortless: the machine is loud, the bore is cramped, and any movement blurs the result. Metal implants and pacemakers may make scanning unsafe, so patients are screened carefully first.","correct":"aligns","options":["covers","removes","divides","aligns"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["The Invention of the X-Ray","Why Hospitals Are So Expensive","A History of Medical Photography","How an MRI Scanner Builds an Image"],"correctIndex":3},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["MRI locates hydrogen nuclei by their signals, producing images without ionising radiation.","MRI works by photographing the surface of the skin with visible light.","MRI scans are always safe for every patient, including those with implants.","The technique produces images instantly without any computation."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal."]}',
+  '{"gapCorrect":"aligns","titleCorrectIndex":3,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-103',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"The Slow Acceptance of Surgical Anaesthesia","passageText":"Before the 1840s, a surgeon’s reputation depended partly on speed, because every operation was performed on a conscious patient. Ether and then chloroform changed that, but acceptance was not immediate. Some surgeons distrusted a practice that removed the patient’s protective response, and others worried about deaths during induction. Religious objections were voiced too. Meanwhile, the deeper problem remained: painless surgery did not prevent infection, so mortality in hospitals stayed high. What anaesthesia did achieve was to make longer, more careful operations conceivable. It also raised new questions about dosage, monitoring and consent that took decades to answer. The modern anaesthetist is therefore the heir of a long argument, not a single discovery.","gapSentence":{"before":"Before the 1840s, a surgeon’s reputation depended partly on speed, because every operation was performed on a conscious patient. Ether and then chloroform changed that, but acceptance was not immediate. Some surgeons distrusted a practice that removed the patient’s protective response, and others worried about deaths during induction. Religious objections were voiced too. Meanwhile, the deeper problem remained: painless surgery did not prevent infection, so mortality in hospitals stayed high. What anaesthesia did achieve was to make longer, more careful operations conceivable. It also raised new questions about ","after":", monitoring and consent that took decades to answer. The modern anaesthetist is therefore the heir of a long argument, not a single discovery.","correct":"dosage","options":["staffing","billing","dosage","lighting"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["How Broken Bones Heal","The Discovery of Blood Groups","The Slow Acceptance of Surgical Anaesthesia","The History of the Hospital Uniform"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Chloroform was abandoned because it made operations too slow.","Painless surgery was irrelevant to the length of operations.","Anaesthesia was resisted at first and only gradually changed surgery, without solving infection.","Anaesthesia was welcomed immediately by every surgeon and eliminated hospital deaths."],"correctIndex":2},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","What anaesthesia did achieve was to make longer, more careful operations conceivable.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage."]}',
+  '{"gapCorrect":"dosage","titleCorrectIndex":2,"mainIdeaCorrectIndex":2,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"What anaesthesia did achieve was to make longer, more careful operations conceivable."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-104',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"Why Roundabouts Calm Traffic","passageText":"A roundabout replaces the hard edges of a crossroads with a gentle curve, and that geometry changes behaviour. Drivers approaching a circular junction must slow down to enter, so crashes that do occur happen at lower speeds and at shallower angles. Because the most dangerous collision, a side impact at speed, becomes rare, injury severity falls even where the number of minor bumps rises. The design is not a universal cure. Pedestrians must cross a stream of moving vehicles without the protection of a signal phase, and cyclists need careful lane design to avoid being cut off. Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre.","gapSentence":{"before":"A roundabout replaces the hard edges of a crossroads with a gentle curve, and that ","after":" changes behaviour. Drivers approaching a circular junction must slow down to enter, so crashes that do occur happen at lower speeds and at shallower angles. Because the most dangerous collision, a side impact at speed, becomes rare, injury severity falls even where the number of minor bumps rises. The design is not a universal cure. Pedestrians must cross a stream of moving vehicles without the protection of a signal phase, and cyclists need careful lane design to avoid being cut off. Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre.","correct":"geometry","options":["policing","geometry","weather","lighting"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Why Roundabouts Calm Traffic","The Design of Traffic Lights","How Roads Are Resurfaced","A History of the Motorway"],"correctIndex":0},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Traffic signals are always safer than circular junctions.","Roundabouts are equally effective in every traffic condition.","Roundabouts reduce injury by lowering approach speeds, though they suit some places better than others.","Roundabouts eliminate every kind of crash at a junction."],"correctIndex":2},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre.","Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings.","The effect is selective: emotionally charged material and skills practised the previous day benefit most."]}',
+  '{"gapCorrect":"geometry","titleCorrectIndex":0,"mainIdeaCorrectIndex":2,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-105',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"The Bystander Effect and the Cost of Ambiguity","passageText":"People often fail to help in an emergency, and the reason is rarely indifference. When several witnesses are present, each may assume that someone else has already called for help, a diffusion of responsibility. Ambiguity makes this worse: if nobody else looks alarmed, a person may decide that nothing serious is happening. Experiments with staged incidents found that a lone witness intervenes far more often than one in a crowd. The practical lesson is not to scold crowds but to remove the ambiguity. Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance. Training that rehearses this wording changes behaviour more reliably than general appeals.","gapSentence":{"before":"People often fail to help in an emergency, and the reason is rarely ","after":". When several witnesses are present, each may assume that someone else has already called for help, a diffusion of responsibility. Ambiguity makes this worse: if nobody else looks alarmed, a person may decide that nothing serious is happening. Experiments with staged incidents found that a lone witness intervenes far more often than one in a crowd. The practical lesson is not to scold crowds but to remove the ambiguity. Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance. Training that rehearses this wording changes behaviour more reliably than general appeals.","correct":"indifference","options":["hostility","curiosity","generosity","indifference"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["How to Train a Rescue Dog","The Bystander Effect and the Cost of Ambiguity","Why Crowds Become Violent","The Psychology of First Impressions"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["General appeals to the public are the most effective way to increase helping.","Unclear situations and shared responsibility suppress helping, so specific instructions help more than appeals.","People never help because they are naturally cruel.","A larger crowd always makes intervention more likely."],"correctIndex":1},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most."]}',
+  '{"gapCorrect":"indifference","titleCorrectIndex":1,"mainIdeaCorrectIndex":1,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-106',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"How Limestone Caves Grow Their Shapes","passageText":"Caves in limestone begin as cracks. Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along fractures. Over thousands of years the fractures widen into passages, and the shape of those passages records how the water flowed: tall vertical shafts form where water falls, while wide horizontal galleries form where it moves sideways. Once a cave drains, the story changes. Water seeping from above loses carbon dioxide and deposits calcite, building stalactites, stalagmites and columns at rates of millimetres per century. Because the deposits trap minerals and pollen, they preserve a record of ancient rainfall. A cave is therefore both a hollow and an archive.","gapSentence":{"before":"Caves in limestone begin as cracks. Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along ","after":". Over thousands of years the fractures widen into passages, and the shape of those passages records how the water flowed: tall vertical shafts form where water falls, while wide horizontal galleries form where it moves sideways. Once a cave drains, the story changes. Water seeping from above loses carbon dioxide and deposits calcite, building stalactites, stalagmites and columns at rates of millimetres per century. Because the deposits trap minerals and pollen, they preserve a record of ancient rainfall. A cave is therefore both a hollow and an archive.","correct":"fractures","options":["layers","springs","shadows","fractures"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Why Rivers Flood in Spring","How Limestone Caves Grow Their Shapes","The Formation of Desert Sand","A Guide to Cave Tourism"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Caves are shaped by dissolving rock and later filled with deposits that record past climates.","Caves are formed by earthquakes that split limestone in a single event.","Stalactites grow upwards from the cave floor within a few years.","Cave deposits contain no useful information about the past."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along fractures."]}',
+  '{"gapCorrect":"fractures","titleCorrectIndex":1,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along fractures."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-107',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"Whale Falls and the Deep-Sea Floor","passageText":"When a whale dies, its carcass sinks and delivers an enormous meal to a place that usually receives almost nothing. Scavengers arrive first, stripping soft tissue within months. Then a second community settles on the bones, living among sediments enriched by fats that soak into the mud. The final stage is the strangest: bacteria break down the remaining oils and release hydrogen sulphide, supporting organisms that make their own food chemically rather than using sunlight. Some of these species were unknown before whale falls were studied, and they resemble animals found at hydrothermal vents. A single carcass can therefore act as a stepping stone across an otherwise empty plain, sustaining life for decades after the animal has disappeared.","gapSentence":{"before":"When a whale dies, its carcass sinks and delivers an enormous meal to a place that usually receives almost nothing. Scavengers arrive first, stripping soft tissue within months. Then a second community settles on the bones, living among sediments enriched by fats that soak into the mud. The final stage is the strangest: bacteria break down the remaining oils and release hydrogen sulphide, supporting organisms that make their own food chemically rather than using sunlight. Some of these species were unknown before whale falls were studied, and they resemble animals found at hydrothermal vents. A single carcass can therefore act as a stepping stone across an otherwise empty plain, ","after":" life for decades after the animal has disappeared.","correct":"sustaining","options":["sustaining","ending","hiding","slowing"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Whale Falls and the Deep-Sea Floor","How Whales Communicate","The History of Whaling","Life in a Coral Reef"],"correctIndex":0},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Whale carcasses are unimportant because the deep sea is already rich in food.","Only fish, never bacteria, live on a whale skeleton.","Whale falls last only a few days before disappearing.","A dead whale creates a long-lasting deep-sea ecosystem that can connect distant vent communities."],"correctIndex":3},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The effect is selective: emotionally charged material and skills practised the previous day benefit most.","Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","A single carcass can therefore act as a stepping stone across an otherwise empty plain, sustaining life for decades after the animal has disappeared.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms."]}',
+  '{"gapCorrect":"sustaining","titleCorrectIndex":0,"mainIdeaCorrectIndex":3,"sentenceCorrectIndex":2,"highlightCorrectSubstring":"A single carcass can therefore act as a stepping stone across an otherwise empty plain, sustaining life for decades after the animal has disappeared."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-108',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"What a Microwave Oven Actually Heats","passageText":"A microwave oven does not heat food from the inside out. Its magnetron produces waves that make polar molecules, especially water, rotate billions of times a second; that friction generates heat. The waves penetrate only a centimetre or two into most foods, so the interior cooks mainly by conduction from the outer layer. Heating is uneven because the waves form standing patterns inside the cabinet, which is why most ovens rotate the food. Containers matter too: glass and most plastics pass the waves through, while metal reflects them and can cause sparks. The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water.","gapSentence":{"before":"A microwave oven does not heat food from the inside out. Its magnetron produces waves that make polar molecules, especially water, rotate billions of times a second; that friction generates heat. The waves ","after":" only a centimetre or two into most foods, so the interior cooks mainly by conduction from the outer layer. Heating is uneven because the waves form standing patterns inside the cabinet, which is why most ovens rotate the food. Containers matter too: glass and most plastics pass the waves through, while metal reflects them and can cause sparks. The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water.","correct":"penetrate","options":["reflect","escape","freeze","penetrate"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["A History of Cooking Fire","What a Microwave Oven Actually Heats","The Invention of the Electric Kettle","How Refrigerators Make Ice"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Microwaves cook food evenly from the centre outwards.","Metal containers are recommended because they spread the waves.","Microwaves brown food more effectively than a conventional oven.","Microwaves heat water near the surface, and the rest of the food warms by conduction."],"correctIndex":3},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve."]}',
+  '{"gapCorrect":"penetrate","titleCorrectIndex":1,"mainIdeaCorrectIndex":3,"sentenceCorrectIndex":0,"highlightCorrectSubstring":"The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-109',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"Tsunami Walls and the Limits of Defence","passageText":"After a tsunami, coastal towns often build concrete walls. The walls can delay the arrival of water and deflect its force, buying minutes for people to reach higher ground. But they are not a guarantee. A wave taller than the wall will overtop it, and the falling water can trap people on the seaward side. Walls also require maintenance, block access to the beach and may create a false sense of safety that discourages evacuation. Engineers now prefer a mix of measures: raised roads, shelter buildings, early warning and land-use rules that keep new housing away from the most exposed ground. The most effective defence is usually not a single structure but a habit of leaving early.","gapSentence":{"before":"After a tsunami, coastal towns often build concrete walls. The walls can delay the arrival of water and deflect its force, buying minutes for people to reach higher ground. But they are not a guarantee. A wave taller than the wall will overtop it, and the falling water can trap people on the seaward side. Walls also require maintenance, block access to the beach and may create a false sense of safety that discourages ","after":". Engineers now prefer a mix of measures: raised roads, shelter buildings, early warning and land-use rules that keep new housing away from the most exposed ground. The most effective defence is usually not a single structure but a habit of leaving early.","correct":"evacuation","options":["irrigation","evacuation","construction","celebration"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Tsunami Walls and the Limits of Defence","How Tides Are Predicted","The Building of the Panama Canal","Why Coastal Cities Attract Tourists"],"correctIndex":0},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Tsunami walls improve beach access and are cheap to maintain.","Evacuation is unnecessary once a wall has been built.","Seawalls help but cannot replace warning, land-use planning and prompt evacuation.","A tall enough wall removes all tsunami risk for a coastal town."],"correctIndex":2},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","The most effective defence is usually not a single structure but a habit of leaving early."]}',
+  '{"gapCorrect":"evacuation","titleCorrectIndex":0,"mainIdeaCorrectIndex":2,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"The most effective defence is usually not a single structure but a habit of leaving early."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-110',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"The Gut Microbiome and What It Eats","passageText":"The bacteria in the human gut are not passengers. They ferment fibres that human enzymes cannot digest, producing short-chain fatty acids that feed the cells lining the intestine and influence appetite, immunity and mood. Diets rich in varied plant fibres tend to support a more diverse community, while a narrow diet of highly processed food narrows it. Diversity is not a score to maximise for its own sake, but it is associated with stability after disturbance such as a course of antibiotics. Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules. The field is young, and many claims outrun the data. Still, the basic message is unglamorous: what you eat shapes who lives inside you.","gapSentence":{"before":"The bacteria in the human gut are not passengers. They ","after":" fibres that human enzymes cannot digest, producing short-chain fatty acids that feed the cells lining the intestine and influence appetite, immunity and mood. Diets rich in varied plant fibres tend to support a more diverse community, while a narrow diet of highly processed food narrows it. Diversity is not a score to maximise for its own sake, but it is associated with stability after disturbance such as a course of antibiotics. Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules. The field is young, and many claims outrun the data. Still, the basic message is unglamorous: what you eat shapes who lives inside you.","correct":"ferment","options":["freeze","inspect","forget","ferment"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Why Antibiotics Were Invented","The Gut Microbiome and What It Eats","How the Stomach Produces Acid","The History of Food Preservation"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Gut bacteria play no role in digestion or immunity.","Probiotic capsules permanently replace the gut community.","A narrow diet of processed food increases bacterial diversity.","Dietary fibre feeds gut bacteria whose products affect health, and food is more reliable than supplements."],"correctIndex":3},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage."]}',
+  '{"gapCorrect":"ferment","titleCorrectIndex":1,"mainIdeaCorrectIndex":3,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-111',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"Why Accents Change Over a Lifetime","passageText":"Most people assume that an accent is fixed in childhood. It is not. Speakers adjust their pronunciation throughout life, often unconsciously, towards the people they spend time with or the identity they wish to project. Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others. Social factors matter as much as geography: a speaker may strengthen a local accent to signal belonging, or soften it in a formal setting. This flexibility complicates forensic work, because a recording cannot reliably reveal where someone grew up. It also undermines the idea that an accent is a defect to be corrected; it is a moving record of where a person has lived and whom they have wanted to sound like.","gapSentence":{"before":"Most people assume that an accent is fixed in childhood. It is not. Speakers adjust their pronunciation throughout life, often unconsciously, towards the people they spend time with or the identity they wish to project. Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others. Social factors matter as much as geography: a speaker may strengthen a local accent to signal belonging, or soften it in a formal setting. This ","after":" complicates forensic work, because a recording cannot reliably reveal where someone grew up. It also undermines the idea that an accent is a defect to be corrected; it is a moving record of where a person has lived and whom they have wanted to sound like.","correct":"flexibility","options":["volume","flexibility","honesty","accuracy"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["The Origin of Family Names","A History of Public Speaking","Why Accents Change Over a Lifetime","How Children Learn to Read"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Accents have no social meaning and are purely biological.","Accents shift through life in response to social contact and identity, so they are unreliable markers of origin.","Accents are permanently fixed by the age of five.","A regional accent always disappears after moving away."],"correctIndex":1},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings.","During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage.","Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others."]}',
+  '{"gapCorrect":"flexibility","titleCorrectIndex":2,"mainIdeaCorrectIndex":1,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-112',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"The Return of Overnight Trains","passageText":"Night trains once carried business travellers across Europe, then lost ground to cheap flights and motorways. Now several routes have reopened, promoted by passengers who want to sleep through a journey rather than endure an early flight. The economics remain difficult. A sleeper carriage holds far fewer people than a seated one, requires attendants and linen, and pays the same track charges, so tickets cannot be as cheap as a budget airline’s. Crossing borders adds paperwork and incompatible signalling systems. Yet the model can work where the distance is right: long enough for a night’s sleep, short enough to arrive before morning meetings. The train’s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed.","gapSentence":{"before":"Night trains once carried business travellers across Europe, then lost ground to cheap flights and motorways. Now several routes have ","after":", promoted by passengers who want to sleep through a journey rather than endure an early flight. The economics remain difficult. A sleeper carriage holds far fewer people than a seated one, requires attendants and linen, and pays the same track charges, so tickets cannot be as cheap as a budget airline’s. Crossing borders adds paperwork and incompatible signalling systems. Yet the model can work where the distance is right: long enough for a night’s sleep, short enough to arrive before morning meetings. The train’s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed.","correct":"reopened","options":["painted","shortened","reopened","closed"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["How Airports Choose Destinations","Why Roads Need Repair","The Return of Overnight Trains","The History of the Bicycle"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Sleeper carriages carry more passengers than seated carriages.","Border procedures have no effect on international rail services.","Sleeper trains are returning because they use travelling time well, even though their costs are high.","Night trains are cheaper to operate than any airline."],"correctIndex":2},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings.","During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","The train’s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed."]}',
+  '{"gapCorrect":"reopened","titleCorrectIndex":2,"mainIdeaCorrectIndex":2,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"The train’s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-113',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"Equal Temperament and the Modern Piano","passageText":"Tuning a piano is an act of compromise. Pure intervals, in which the frequencies of two notes form simple ratios, sound smooth, but a keyboard tuned entirely to them cannot play in every key. Medieval and Renaissance musicians therefore used temperaments that kept some keys sweet and left others harsh. Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable. The result made modulation and remote keys ordinary, which shaped the music written for the piano. Audiences adjusted too: what once sounded impure became the normal sound of a keyboard. The modern piano therefore embodies a mathematical decision as much as a craft tradition.","gapSentence":{"before":"Tuning a piano is an act of compromise. Pure intervals, in which the frequencies of two notes form simple ratios, sound smooth, but a keyboard tuned entirely to them cannot play in every key. Medieval and Renaissance musicians therefore used temperaments that kept some keys sweet and left others harsh. Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable. The result made ","after":" and remote keys ordinary, which shaped the music written for the piano. Audiences adjusted too: what once sounded impure became the normal sound of a keyboard. The modern piano therefore embodies a mathematical decision as much as a craft tradition.","correct":"modulation","options":["printing","modulation","rehearsal","applause"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["A History of Concert Halls","How Music Is Printed","Equal Temperament and the Modern Piano","The Construction of a Violin"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Keyboards were unaffected by tuning systems.","Equal temperament sacrifices pure intervals so that every key works, and this compromise shaped keyboard music.","Equal temperament makes every interval acoustically perfect.","Pianos are tuned to pure intervals in all twelve keys."],"correctIndex":1},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable.","Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings.","The effect is selective: emotionally charged material and skills practised the previous day benefit most."]}',
+  '{"gapCorrect":"modulation","titleCorrectIndex":2,"mainIdeaCorrectIndex":1,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-114',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"The Hidden Labour of Data Cleaning","passageText":"Analysts rarely spend their days fitting elegant models. Much of the work is cleaning: finding duplicate records, reconciling units, deciding what a missing value means and repairing dates that were entered in different formats. These choices are not neutral. If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish. Good practice is therefore to document every rule, keep the original data untouched and write scripts that can be rerun. Teaching often emphasises algorithms because they are easier to examine, yet the reliability of a result depends heavily on these unglamorous steps. A model trained on badly cleaned data will produce confident answers to questions nobody asked.","gapSentence":{"before":"Analysts rarely spend their days fitting elegant models. Much of the work is cleaning: finding duplicate records, reconciling units, deciding what a missing value means and repairing dates that were entered in different formats. These choices are not neutral. If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish. Good practice is therefore to document every rule, keep the original data untouched and write scripts that can be rerun. Teaching often emphasises algorithms because they are easier to examine, yet the reliability of a result depends heavily on these unglamorous steps. A model trained on badly cleaned data will produce ","after":" answers to questions nobody asked.","correct":"confident","options":["sceptical","silent","confident","correct"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["How to Design a Survey","The History of the Spreadsheet","Why Computers Need Electricity","The Hidden Labour of Data Cleaning"],"correctIndex":3},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Data cleaning is a trivial step with no effect on findings.","Replacing missing values with zero always improves accuracy.","Algorithms matter far more than the quality of the input data.","Cleaning decisions shape results, so they must be documented and repeatable."],"correctIndex":3},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most."]}',
+  '{"gapCorrect":"confident","titleCorrectIndex":3,"mainIdeaCorrectIndex":3,"sentenceCorrectIndex":1,"highlightCorrectSubstring":"If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-115',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"How Sand Dunes Move","passageText":"A dune is a pile of sand shaped by wind. Grains bounce along the surface in short hops, knocking others forward, until they reach an obstacle or a patch of vegetation and settle. The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest. In this way the whole dune migrates, sometimes several metres a year, burying fences, roads and fields. Coastal dunes also protect the land behind them, absorbing wave energy and storing sand that can be released during storms. Attempts to stop movement with hard walls often fail, because the wind simply carries sand around them. Planting marram grass, which traps grains and tolerates salt, is usually more durable.","gapSentence":{"before":"A dune is a pile of sand shaped by wind. Grains bounce along the surface in short hops, knocking others forward, until they reach an ","after":" or a patch of vegetation and settle. The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest. In this way the whole dune migrates, sometimes several metres a year, burying fences, roads and fields. Coastal dunes also protect the land behind them, absorbing wave energy and storing sand that can be released during storms. Attempts to stop movement with hard walls often fail, because the wind simply carries sand around them. Planting marram grass, which traps grains and tolerates salt, is usually more durable.","correct":"obstacle","options":["holiday","promise","obstacle","signal"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["How Sand Dunes Move","The Formation of Glaciers","A History of Desert Travel","Why Beaches Are Crowded"],"correctIndex":0},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Sand moves only when it is wet.","Dunes shift as wind moves grains up the gentle side and down the steep side, and vegetation can hold them.","Dunes are stationary and never change their shape.","Hard walls are the most effective way to stabilise a dune."],"correctIndex":1},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage.","Because the receipts were lighter than the coins, they circulated as payment, and the warehouses gradually became banks.","The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms."]}',
+  '{"gapCorrect":"obstacle","titleCorrectIndex":0,"mainIdeaCorrectIndex":1,"sentenceCorrectIndex":2,"highlightCorrectSubstring":"The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-116',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"What Happens in Museum Storage","passageText":"Most of a museum’s collection is not on display. Objects sit in storerooms where temperature and humidity are controlled, pests are monitored and light is limited, because damage accumulates quietly. A wooden panel that dries too fast may split; a textile exposed to sunlight fades within weeks. Storage is therefore active work rather than forgotten shelving. Curators document each item’s condition, track loans and decide what should be treated by a conservator. Digitisation has changed access, allowing researchers to study objects remotely, but a photograph cannot replace the evidence of weight, texture and repair. The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose.","gapSentence":{"before":"Most of a museum’s collection is not on display. Objects sit in storerooms where temperature and humidity are controlled, pests are monitored and light is limited, because damage ","after":" quietly. A wooden panel that dries too fast may split; a textile exposed to sunlight fades within weeks. Storage is therefore active work rather than forgotten shelving. Curators document each item’s condition, track loans and decide what should be treated by a conservator. Digitisation has changed access, allowing researchers to study objects remotely, but a photograph cannot replace the evidence of weight, texture and repair. The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose.","correct":"accumulates","options":["freezes","belongs","accumulates","disappears"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["The History of Photography","Why Buildings Have Basements","What Happens in Museum Storage","How to Visit a Gallery"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Storage is active conservation work, balancing preservation against the value of access.","Objects in storage are left alone because they are unimportant.","Digitisation makes physical conservation unnecessary.","Light and humidity have no effect on museum objects."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["During deep sleep, the hippocampus replays sequences of the day in compressed bursts, while the cortex gradually incorporates those patterns into longer-term storage.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose.","Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings."]}',
+  '{"gapCorrect":"accumulates","titleCorrectIndex":2,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":2,"highlightCorrectSubstring":"The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-117',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"How Thermometers Measure Heat","passageText":"The first thermoscopes showed that something changed when air warmed, but they had no scale, so two observers could not compare readings. A usable thermometer needed fixed points. Fahrenheit chose a mixture of ice, water and salt, and the temperature of the human body; Celsius later used the freezing and boiling points of water. Once those anchors were agreed, the expansion of mercury or alcohol could be marked in equal steps. Modern instruments avoid liquids: a thermocouple generates a small voltage that depends on temperature, and a resistance sensor changes its electrical behaviour in a predictable way. Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured.","gapSentence":{"before":"The first thermoscopes showed that something changed when air warmed, but they had no scale, so two observers could not compare readings. A usable thermometer needed fixed points. Fahrenheit chose a mixture of ice, water and salt, and the temperature of the human body; Celsius later used the freezing and boiling points of water. Once those ","after":" were agreed, the expansion of mercury or alcohol could be marked in equal steps. Modern instruments avoid liquids: a thermocouple generates a small voltage that depends on temperature, and a resistance sensor changes its electrical behaviour in a predictable way. Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured.","correct":"anchors","options":["windows","errors","engines","anchors"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["The Invention of the Barometer","Why Metal Expands When Heated","A History of Weather Forecasting","How Thermometers Measure Heat"],"correctIndex":3},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Thermometers became useful once fixed reference points allowed readings to be compared.","The first thermoscopes were accurate enough to compare across laboratories.","All thermometers rely on the expansion of mercury.","Temperature can be measured without agreeing on any scale."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured.","Leaves also release water vapour, cooling the air around a street by several degrees and lowering the electricity demand of nearby buildings."]}',
+  '{"gapCorrect":"anchors","titleCorrectIndex":3,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":2,"highlightCorrectSubstring":"Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-118',
+  'INTERACTIVE_READING',
+  'B1',
+  '{"passageTitle":"The Design of Children’s Playgrounds","passageText":"Playgrounds are designed around a contradiction. Adults want equipment that is safe; children want uncertainty, height, speed and the chance to test themselves. Removing every risk produces a tidy space that children quickly abandon. Surfaces, guardrails and inspection records matter, but so does the quality of play: a slope to run down or loose materials to build with can be more valuable than a fixed climbing frame. Some cities now use risk-benefit assessment, weighing the likelihood of injury against the developmental benefit of challenge. Adventure playgrounds, where children build with tools and scrap under supervision, take this further. The aim is not to eliminate bruises but to keep serious harm rare while allowing the small failures through which children learn.","gapSentence":{"before":"Playgrounds are designed around a contradiction. Adults want equipment that is safe; children want ","after":", height, speed and the chance to test themselves. Removing every risk produces a tidy space that children quickly abandon. Surfaces, guardrails and inspection records matter, but so does the quality of play: a slope to run down or loose materials to build with can be more valuable than a fixed climbing frame. Some cities now use risk-benefit assessment, weighing the likelihood of injury against the developmental benefit of challenge. Adventure playgrounds, where children build with tools and scrap under supervision, take this further. The aim is not to eliminate bruises but to keep serious harm rare while allowing the small failures through which children learn.","correct":"uncertainty","options":["cleanliness","silence","payment","uncertainty"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["The History of Children’s Books","Why Parks Attract Birds","The Design of Children’s Playgrounds","How Schools Build Timetables"],"correctIndex":2},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Good playgrounds balance safety against the developmental value of manageable risk.","The safest playground is always the best playground for children.","Children prefer fixed equipment to loose materials.","Risk-benefit assessment ignores the possibility of injury."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["Removing every risk produces a tidy space that children quickly abandon.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve."]}',
+  '{"gapCorrect":"uncertainty","titleCorrectIndex":2,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":0,"highlightCorrectSubstring":"Removing every risk produces a tidy space that children quickly abandon."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-119',
+  'INTERACTIVE_READING',
+  'B2',
+  '{"passageTitle":"The Physics of Sailing Upwind","passageText":"A sailboat cannot sail directly into the wind, yet it can reach a destination upwind by tacking. The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways. A keel or centreboard resists the sideways push, so most of the force becomes forward motion. The closer the boat points to the wind, the slower it usually goes, so sailors choose a course that balances speed against distance. Modern racing boats with hydrofoils lift their hulls clear of the water, reducing drag and allowing higher speeds, though the same principles apply. Sailing is therefore a lesson in vectors: progress towards a goal often requires accepting a direction that is not straight at it.","gapSentence":{"before":"A sailboat cannot sail directly into the wind, yet it can reach a destination upwind by tacking. The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways. A keel or ","after":" resists the sideways push, so most of the force becomes forward motion. The closer the boat points to the wind, the slower it usually goes, so sailors choose a course that balances speed against distance. Modern racing boats with hydrofoils lift their hulls clear of the water, reducing drag and allowing higher speeds, though the same principles apply. Sailing is therefore a lesson in vectors: progress towards a goal often requires accepting a direction that is not straight at it.","correct":"centreboard","options":["anchor","engine","centreboard","compass"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Why Ships Carry Ballast","The Physics of Sailing Upwind","The History of the Lighthouse","How Fish Breathe Underwater"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["A sail generates lift and a keel converts it into forward motion, so upwind travel requires indirect courses.","A sailboat can sail straight into the wind without changing course.","The keel exists mainly to make the boat heavier.","Hydrofoils remove the need for a sail."],"correctIndex":0},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways.","A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve."]}',
+  '{"gapCorrect":"centreboard","titleCorrectIndex":1,"mainIdeaCorrectIndex":0,"sentenceCorrectIndex":0,"highlightCorrectSubstring":"The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibir-120',
+  'INTERACTIVE_READING',
+  'C1',
+  '{"passageTitle":"The History of Standardised Testing","passageText":"Written examinations are old, but the multiple-choice test is a product of the twentieth century. Early mass testing promised speed and consistency: thousands of scripts could be marked by machine, and candidates would face identical questions. That promise appealed to armies, universities and employers, and it shaped schooling as teachers prepared students for the format. Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge. They also warned about washback, the way assessment narrows what is taught. Defenders reply that a flawed common measure is fairer than an unreliable private one. The argument continues because it is really about what education is for, a question no scoring machine can settle.","gapSentence":{"before":"Written examinations are old, but the multiple-choice test is a product of the twentieth century. Early mass testing promised speed and consistency: thousands of scripts could be marked by machine, and candidates would face identical questions. That promise appealed to armies, universities and employers, and it shaped schooling as teachers prepared students for the format. Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge. They also warned about ","after":", the way assessment narrows what is taught. Defenders reply that a flawed common measure is fairer than an unreliable private one. The argument continues because it is really about what education is for, a question no scoring machine can settle.","correct":"washback","options":["homework","tuition","washback","feedback"]},"titleQuestion":{"question":"Choose the most appropriate academic title for this passage:","options":["Why Exams Cause Stress","The History of Standardised Testing","How Universities Choose Students","The Invention of the Printing Press"],"correctIndex":1},"mainIdeaQuestion":{"question":"What is the primary idea of the passage?","options":["Standardised tests measure deep understanding perfectly.","Coaching has no effect on test scores.","Standardised tests spread because they are efficient and comparable, but they measure only part of learning.","Multiple-choice tests were used in ancient schools."],"correctIndex":2},"highlightPrompt":"Highlight the sentence that carries the key claim described in the question.","sentenceOptions":["A mature canopy intercepts rainfall before it reaches the pavement, which reduces the volume of water that storm drains must carry during heavy storms.","The effect is selective: emotionally charged material and skills practised the previous day benefit most.","The pattern repeated: private credit came first, public currency followed, and inflation punished the issuers who ignored the difference between a promise and a reserve.","Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge."]}',
+  '{"gapCorrect":"washback","titleCorrectIndex":1,"mainIdeaCorrectIndex":2,"sentenceCorrectIndex":3,"highlightCorrectSubstring":"Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge."}',
+  120,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
   'ibct-1',
   'C_TEST',
   'B1',
@@ -3969,8 +4329,8 @@ VALUES (
   'ibil-1',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are an undergraduate meeting your biology professor during office hours to discuss an extension on a research assignment because of illness.","turns":[{"speaker":"Professor Hayes","speakerAudioText":"Come in! How can I help you today with your final project?","options":["Hello Professor. I was ill with the flu this week and would like to request a short extension.","I wanted to ask why the cafeteria was closed today.","Yes, I brought my umbrella because it was raining heavily.","I do not really like reading textbooks in the evening."],"correctIndex":0},{"speaker":"Professor Hayes","speakerAudioText":"I am sorry to hear you were unwell. How many additional days do you realistically need?","options":["No, I did not receive any emails from other students.","I think I will probably graduate in two years.","Three days would be enough to finish the bibliography and edit the final draft.","The weather was much better yesterday than today."],"correctIndex":2},{"speaker":"Professor Hayes","speakerAudioText":"That seems fair. Please send the clinic note to the departmental portal by Friday.","options":["Understood. I will upload the documentation today and submit the paper by Thursday night.","Where is the library located on campus?","Why do other classes have different exams?","I already had lunch, so I do not need anything else."],"correctIndex":0}],"summaryPrompt":"Write a 3-sentence summary of the conversation with the professor: the reason for the visit, the agreement, and your next step."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are an undergraduate meeting your biology professor during office hours to discuss an extension on a research assignment because of illness.","turns":[{"speaker":"Professor Hayes","speakerAudioText":"Come in! How can I help you today with your final project?","options":["I wanted to ask why the cafeteria was closed today.","Yes, I brought my umbrella because it was raining heavily.","I do not really like reading textbooks in the evening.","Hello Professor. I was ill with the flu this week and would like to request a short extension."],"correctIndex":3},{"speaker":"Professor Hayes","speakerAudioText":"I am sorry to hear you were unwell. How many additional days do you realistically need?","options":["No, I did not receive any emails from other students.","I think I will probably graduate in two years.","Three days would be enough to finish the bibliography and edit the final draft.","The weather was much better yesterday than today."],"correctIndex":2},{"speaker":"Professor Hayes","speakerAudioText":"That seems fair. Please send the clinic note to the departmental portal by Friday.","options":["Where is the library located on campus?","Why do other classes have different exams?","I already had lunch, so I do not need anything else.","Understood. I will upload the documentation today and submit the paper by Thursday night."],"correctIndex":3}],"summaryPrompt":"Write a 3-sentence summary of the conversation with the professor: the reason for the visit, the agreement, and your next step."}',
+  '{"turnsAnswers":[3,2,3]}',
   150,
   true
 )
@@ -3987,8 +4347,8 @@ VALUES (
   'ibil-2',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are consulting an academic advisor about switching your major from economics to computer science in your second year.","turns":[{"speaker":"Advisor Martinez","speakerAudioText":"Good afternoon! What brings you into the advising centre today?","options":["I lost my student card in the library yesterday.","I need directions to the campus bookstore.","The tuition fees were already paid by my bank last week.","Good afternoon. I am considering switching to computer science and want to check which credits transfer."],"correctIndex":3},{"speaker":"Advisor Martinez","speakerAudioText":"Have you completed the calculus and introductory programming sequences?","options":["I finished Calculus I and II with high marks, but I still need to take an introductory programming course.","No, I have never played intramural basketball.","I usually eat lunch around noon on weekdays.","Calculus is taught on the third floor of the science hall."],"correctIndex":0},{"speaker":"Advisor Martinez","speakerAudioText":"If you take Programming I over the summer, you can still graduate in four years.","options":["My roommate is also an economics student.","Thank you. I will submit the summer registration petition today.","The library closes at ten on Friday nights.","I do not plan to take any courses during my degree."],"correctIndex":1}],"summaryPrompt":"In 35-65 words, summarise why you met the advisor, the prerequisite advice, and your next step."}',
-  '{"turnsAnswers":[3,0,1]}',
+  '{"scenario":"You are consulting an academic advisor about switching your major from economics to computer science in your second year.","turns":[{"speaker":"Advisor Martinez","speakerAudioText":"Good afternoon! What brings you into the advising centre today?","options":["I lost my student card in the library yesterday.","I need directions to the campus bookstore.","The tuition fees were already paid by my bank last week.","Good afternoon. I am considering switching to computer science and want to check which credits transfer."],"correctIndex":3},{"speaker":"Advisor Martinez","speakerAudioText":"Have you completed the calculus and introductory programming sequences?","options":["Calculus is taught on the third floor of the science hall.","I finished Calculus I and II with high marks, but I still need to take an introductory programming course.","No, I have never played intramural basketball.","I usually eat lunch around noon on weekdays."],"correctIndex":1},{"speaker":"Advisor Martinez","speakerAudioText":"If you take Programming I over the summer, you can still graduate in four years.","options":["My roommate is also an economics student.","Thank you. I will submit the summer registration petition today.","The library closes at ten on Friday nights.","I do not plan to take any courses during my degree."],"correctIndex":1}],"summaryPrompt":"In 35-65 words, summarise why you met the advisor, the prerequisite advice, and your next step."}',
+  '{"turnsAnswers":[3,1,1]}',
   150,
   true
 )
@@ -4005,8 +4365,8 @@ VALUES (
   'ibil-3',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are asking a subject librarian for help finding sources for a literature review on urban heat.","turns":[{"speaker":"Librarian Chen","speakerAudioText":"Welcome. What topic are you researching this semester?","options":["Do you know when the cafeteria opens?","I am looking for a quiet place to sleep.","I am writing a literature review on urban heat islands and need recent peer-reviewed studies.","I would like to renew my gym membership."],"correctIndex":2},{"speaker":"Librarian Chen","speakerAudioText":"Should I limit the search to the last five years, or include classic papers as well?","options":["I have never used a database before.","Please include both, but prioritise studies published in the last five years.","I only read novels in my free time.","The printer on the second floor is broken."],"correctIndex":1},{"speaker":"Librarian Chen","speakerAudioText":"I will send you a list of databases and a short guide to citation management.","options":["That would be very helpful. Could you also show me how to export the references?","I think the weather will improve tomorrow.","My brother works in a different library.","No, I do not need any help at all."],"correctIndex":0}],"summaryPrompt":"Summarise the research request, the librarian’s search advice, and the follow-up you asked for."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are asking a subject librarian for help finding sources for a literature review on urban heat.","turns":[{"speaker":"Librarian Chen","speakerAudioText":"Welcome. What topic are you researching this semester?","options":["I am writing a literature review on urban heat islands and need recent peer-reviewed studies.","I would like to renew my gym membership.","Do you know when the cafeteria opens?","I am looking for a quiet place to sleep."],"correctIndex":0},{"speaker":"Librarian Chen","speakerAudioText":"Should I limit the search to the last five years, or include classic papers as well?","options":["I have never used a database before.","Please include both, but prioritise studies published in the last five years.","I only read novels in my free time.","The printer on the second floor is broken."],"correctIndex":1},{"speaker":"Librarian Chen","speakerAudioText":"I will send you a list of databases and a short guide to citation management.","options":["My brother works in a different library.","No, I do not need any help at all.","That would be very helpful. Could you also show me how to export the references?","I think the weather will improve tomorrow."],"correctIndex":2}],"summaryPrompt":"Summarise the research request, the librarian’s search advice, and the follow-up you asked for."}',
+  '{"turnsAnswers":[0,1,2]}',
   150,
   true
 )
@@ -4023,8 +4383,8 @@ VALUES (
   'ibil-4',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are attending a laboratory safety briefing before your first chemistry practical.","turns":[{"speaker":"Dr Okafor","speakerAudioText":"Before we enter the lab, tell me what you would do if a chemical splashed on your arm.","options":["I would continue the experiment and clean it later.","I would use a paper towel and keep working.","I would leave the building without telling anyone.","I would rinse the area under running water for at least fifteen minutes and tell the supervisor immediately."],"correctIndex":3},{"speaker":"Dr Okafor","speakerAudioText":"Good. Where are the eyewash stations and the fire blanket located?","options":["They are probably in the basement.","The eyewash station is by the main sink and the fire blanket is next to the emergency exit.","I think they are in the cafeteria.","I have not looked for them yet."],"correctIndex":1},{"speaker":"Dr Okafor","speakerAudioText":"One more thing: when should goggles be worn?","options":["Only when I am being photographed.","Only during the first five minutes.","Goggles are optional if I wear glasses.","At all times while anyone in the room is handling chemicals or glassware."],"correctIndex":3}],"summaryPrompt":"Write a 3-sentence summary of the safety briefing: the spill procedure, equipment locations, and the goggles rule."}',
-  '{"turnsAnswers":[3,1,3]}',
+  '{"scenario":"You are attending a laboratory safety briefing before your first chemistry practical.","turns":[{"speaker":"Dr Okafor","speakerAudioText":"Before we enter the lab, tell me what you would do if a chemical splashed on your arm.","options":["I would use a paper towel and keep working.","I would leave the building without telling anyone.","I would rinse the area under running water for at least fifteen minutes and tell the supervisor immediately.","I would continue the experiment and clean it later."],"correctIndex":2},{"speaker":"Dr Okafor","speakerAudioText":"Good. Where are the eyewash stations and the fire blanket located?","options":["They are probably in the basement.","The eyewash station is by the main sink and the fire blanket is next to the emergency exit.","I think they are in the cafeteria.","I have not looked for them yet."],"correctIndex":1},{"speaker":"Dr Okafor","speakerAudioText":"One more thing: when should goggles be worn?","options":["Only during the first five minutes.","Goggles are optional if I wear glasses.","At all times while anyone in the room is handling chemicals or glassware.","Only when I am being photographed."],"correctIndex":2}],"summaryPrompt":"Write a 3-sentence summary of the safety briefing: the spill procedure, equipment locations, and the goggles rule."}',
+  '{"turnsAnswers":[2,1,2]}',
   150,
   true
 )
@@ -4041,8 +4401,8 @@ VALUES (
   'ibil-5',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are interviewing for a summer internship in a data analytics team.","turns":[{"speaker":"Ms Ivanova","speakerAudioText":"Tell me about a project where you turned data into a recommendation.","options":["In a course project I analysed survey responses and recommended which library services to extend; the library adopted two of them.","I have never worked with data before.","My favourite subject is medieval history.","I usually work alone and avoid recommendations."],"correctIndex":0},{"speaker":"Ms Ivanova","speakerAudioText":"How do you check that your analysis is reliable?","options":["I delete outliers until the numbers agree.","I validate the data source, test the result on a subset, and ask a colleague to review the code.","I assume the first result is correct.","I only use charts that look attractive."],"correctIndex":1},{"speaker":"Ms Ivanova","speakerAudioText":"What would you like to learn during the internship?","options":["I would prefer not to be given real tasks.","I have no questions about the role.","I would like to learn how your team moves from a prototype to a production dashboard.","I mainly want a certificate for my CV."],"correctIndex":2}],"summaryPrompt":"Summarise the interview: the project you described, how you validate analysis, and what you want to learn."}',
-  '{"turnsAnswers":[0,1,2]}',
+  '{"scenario":"You are interviewing for a summer internship in a data analytics team.","turns":[{"speaker":"Ms Ivanova","speakerAudioText":"Tell me about a project where you turned data into a recommendation.","options":["I have never worked with data before.","My favourite subject is medieval history.","I usually work alone and avoid recommendations.","In a course project I analysed survey responses and recommended which library services to extend; the library adopted two of them."],"correctIndex":3},{"speaker":"Ms Ivanova","speakerAudioText":"How do you check that your analysis is reliable?","options":["I only use charts that look attractive.","I delete outliers until the numbers agree.","I validate the data source, test the result on a subset, and ask a colleague to review the code.","I assume the first result is correct."],"correctIndex":2},{"speaker":"Ms Ivanova","speakerAudioText":"What would you like to learn during the internship?","options":["I would like to learn how your team moves from a prototype to a production dashboard.","I mainly want a certificate for my CV.","I would prefer not to be given real tasks.","I have no questions about the role."],"correctIndex":0}],"summaryPrompt":"Summarise the interview: the project you described, how you validate analysis, and what you want to learn."}',
+  '{"turnsAnswers":[3,2,0]}',
   150,
   true
 )
@@ -4059,8 +4419,8 @@ VALUES (
   'ibil-6',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are mediating a disagreement in your group project about missed deadlines.","turns":[{"speaker":"Sam","speakerAudioText":"I think we should tell the tutor that the report will be late.","options":["I do not care about the deadline.","Let us blame the tutor for the schedule.","We should stop meeting altogether.","Before we do that, let us agree which sections are missing and whether we can finish them by Friday."],"correctIndex":3},{"speaker":"Priya","speakerAudioText":"I can finish the literature section if someone else takes the data analysis.","options":["I have not read the brief yet.","Let us postpone the decision indefinitely.","I will take the data analysis and send you both a draft by Wednesday evening.","That is not my responsibility."],"correctIndex":2},{"speaker":"Sam","speakerAudioText":"Should we still tell the tutor about the delay?","options":["The tutor will not notice.","Yes, but with a clear plan and a realistic date rather than an apology alone.","No, we should hide it.","We can decide after the deadline."],"correctIndex":1}],"summaryPrompt":"Summarise the conflict, the division of work you agreed, and how you will inform the tutor."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are mediating a disagreement in your group project about missed deadlines.","turns":[{"speaker":"Sam","speakerAudioText":"I think we should tell the tutor that the report will be late.","options":["We should stop meeting altogether.","Before we do that, let us agree which sections are missing and whether we can finish them by Friday.","I do not care about the deadline.","Let us blame the tutor for the schedule."],"correctIndex":1},{"speaker":"Priya","speakerAudioText":"I can finish the literature section if someone else takes the data analysis.","options":["Let us postpone the decision indefinitely.","I will take the data analysis and send you both a draft by Wednesday evening.","That is not my responsibility.","I have not read the brief yet."],"correctIndex":1},{"speaker":"Sam","speakerAudioText":"Should we still tell the tutor about the delay?","options":["No, we should hide it.","We can decide after the deadline.","The tutor will not notice.","Yes, but with a clear plan and a realistic date rather than an apology alone."],"correctIndex":3}],"summaryPrompt":"Summarise the conflict, the division of work you agreed, and how you will inform the tutor."}',
+  '{"turnsAnswers":[1,1,3]}',
   150,
   true
 )
@@ -4077,8 +4437,8 @@ VALUES (
   'ibil-7',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the housing office asking about a problem with your student residence.","turns":[{"speaker":"Mr Dubois","speakerAudioText":"How can I help you today?","options":["The library is too quiet in the morning.","The heating in my room has not worked for four days and the temperature is below the legal minimum.","I would like to book a holiday.","I am looking for a new roommate."],"correctIndex":1},{"speaker":"Mr Dubois","speakerAudioText":"Have you reported it to the building manager?","options":["No, I did not know there was a manager.","I prefer to fix it myself.","I have not checked whether it is broken.","Yes, I reported it on Monday and again yesterday, but nobody has come to repair it."],"correctIndex":3},{"speaker":"Mr Dubois","speakerAudioText":"I will send a technician tomorrow morning. Would a temporary heater help tonight?","options":["I do not need anything.","Yes, please. A temporary heater tonight would be very helpful.","No, I enjoy the cold.","I would rather wait another week."],"correctIndex":1}],"summaryPrompt":"Summarise the housing problem, what you had already reported, and the solution offered."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are at the housing office asking about a problem with your student residence.","turns":[{"speaker":"Mr Dubois","speakerAudioText":"How can I help you today?","options":["I would like to book a holiday.","I am looking for a new roommate.","The library is too quiet in the morning.","The heating in my room has not worked for four days and the temperature is below the legal minimum."],"correctIndex":3},{"speaker":"Mr Dubois","speakerAudioText":"Have you reported it to the building manager?","options":["No, I did not know there was a manager.","I prefer to fix it myself.","I have not checked whether it is broken.","Yes, I reported it on Monday and again yesterday, but nobody has come to repair it."],"correctIndex":3},{"speaker":"Mr Dubois","speakerAudioText":"I will send a technician tomorrow morning. Would a temporary heater help tonight?","options":["Yes, please. A temporary heater tonight would be very helpful.","No, I enjoy the cold.","I would rather wait another week.","I do not need anything."],"correctIndex":0}],"summaryPrompt":"Summarise the housing problem, what you had already reported, and the solution offered."}',
+  '{"turnsAnswers":[3,3,0]}',
   150,
   true
 )
@@ -4095,8 +4455,8 @@ VALUES (
   'ibil-8',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are visiting the writing centre to get feedback on the introduction of an academic essay.","turns":[{"speaker":"Tutor Blake","speakerAudioText":"What would you like me to focus on in this draft?","options":["I do not want any feedback today.","I would like help making my thesis statement clearer and connecting it to the evidence in the next paragraph.","Please correct every grammar mistake for me.","I only need you to print the document."],"correctIndex":1},{"speaker":"Tutor Blake","speakerAudioText":"Your thesis is broad. What is the one claim you want the reader to accept?","options":["That remote work reduces urban congestion only when public transport is also improved.","That remote work is an interesting topic.","That cities are usually crowded.","That I have written many essays before."],"correctIndex":0},{"speaker":"Tutor Blake","speakerAudioText":"Good. Shall we rewrite the sentence together and then look at the transition?","options":["No, I would rather start a different essay.","I think the current version is perfect.","I have to leave immediately.","Yes, let us rewrite it now and check that the next paragraph supports the claim."],"correctIndex":3}],"summaryPrompt":"Summarise the feedback session: the focus you requested, the revised claim, and the next step."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are visiting the writing centre to get feedback on the introduction of an academic essay.","turns":[{"speaker":"Tutor Blake","speakerAudioText":"What would you like me to focus on in this draft?","options":["I only need you to print the document.","I do not want any feedback today.","I would like help making my thesis statement clearer and connecting it to the evidence in the next paragraph.","Please correct every grammar mistake for me."],"correctIndex":2},{"speaker":"Tutor Blake","speakerAudioText":"Your thesis is broad. What is the one claim you want the reader to accept?","options":["That remote work reduces urban congestion only when public transport is also improved.","That remote work is an interesting topic.","That cities are usually crowded.","That I have written many essays before."],"correctIndex":0},{"speaker":"Tutor Blake","speakerAudioText":"Good. Shall we rewrite the sentence together and then look at the transition?","options":["No, I would rather start a different essay.","I think the current version is perfect.","I have to leave immediately.","Yes, let us rewrite it now and check that the next paragraph supports the claim."],"correctIndex":3}],"summaryPrompt":"Summarise the feedback session: the focus you requested, the revised claim, and the next step."}',
+  '{"turnsAnswers":[2,0,3]}',
   150,
   true
 )
@@ -4113,8 +4473,8 @@ VALUES (
   'ibil-9',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are talking to a career adviser about applying for graduate schemes.","turns":[{"speaker":"Adviser Novak","speakerAudioText":"Which sector are you targeting for your applications?","options":["I have not thought about it at all.","I only want to work from home.","I would accept any job anywhere.","I am targeting environmental consulting, especially roles that combine data analysis and field work."],"correctIndex":3},{"speaker":"Adviser Novak","speakerAudioText":"Do you have relevant experience outside your degree?","options":["I prefer not to discuss my experience.","I only have retail experience.","I volunteered for a river monitoring project last summer and produced the monthly water-quality report.","No, I have never done anything outside class."],"correctIndex":2},{"speaker":"Adviser Novak","speakerAudioText":"I can review your CV next week. What would you like me to check first?","options":["Just tell me the salary.","Please check whether my project results are described clearly enough for a non-specialist recruiter.","Please write the whole CV for me.","I do not need a review."],"correctIndex":1}],"summaryPrompt":"Summarise the career conversation: the target sector, relevant experience, and the CV review request."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are talking to a career adviser about applying for graduate schemes.","turns":[{"speaker":"Adviser Novak","speakerAudioText":"Which sector are you targeting for your applications?","options":["I would accept any job anywhere.","I am targeting environmental consulting, especially roles that combine data analysis and field work.","I have not thought about it at all.","I only want to work from home."],"correctIndex":1},{"speaker":"Adviser Novak","speakerAudioText":"Do you have relevant experience outside your degree?","options":["I volunteered for a river monitoring project last summer and produced the monthly water-quality report.","No, I have never done anything outside class.","I prefer not to discuss my experience.","I only have retail experience."],"correctIndex":0},{"speaker":"Adviser Novak","speakerAudioText":"I can review your CV next week. What would you like me to check first?","options":["I do not need a review.","Just tell me the salary.","Please check whether my project results are described clearly enough for a non-specialist recruiter.","Please write the whole CV for me."],"correctIndex":2}],"summaryPrompt":"Summarise the career conversation: the target sector, relevant experience, and the CV review request."}',
+  '{"turnsAnswers":[1,0,2]}',
   150,
   true
 )
@@ -4131,8 +4491,8 @@ VALUES (
   'ibil-10',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are discussing a low mark with your tutor and asking for clarification of the feedback.","turns":[{"speaker":"Dr Meyer","speakerAudioText":"You wanted to discuss the result of your last assignment?","options":["Yes. I understand the structure comment, but I would like to know why the evidence was judged insufficient.","I think the mark is simply unfair.","I have not read the feedback.","I want the mark changed without discussion."],"correctIndex":0},{"speaker":"Dr Meyer","speakerAudioText":"Your sources were relevant, but two of them were not peer-reviewed.","options":["I will not use any sources next time.","Peer review is not important in this field.","I see. Would industry reports be acceptable if I explain their methodology?","So the feedback is completely wrong."],"correctIndex":2},{"speaker":"Dr Meyer","speakerAudioText":"That would be acceptable if you justify the source. Would you like to revise and resubmit?","options":["Yes, I would like to revise the evidence section and resubmit by the end of the week.","No, I prefer to keep the current mark.","I would rather write a completely new topic.","I do not have time to read anything."],"correctIndex":0}],"summaryPrompt":"Summarise the feedback discussion: the concern, the tutor’s explanation, and the agreed revision."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are discussing a low mark with your tutor and asking for clarification of the feedback.","turns":[{"speaker":"Dr Meyer","speakerAudioText":"You wanted to discuss the result of your last assignment?","options":["I think the mark is simply unfair.","I have not read the feedback.","I want the mark changed without discussion.","Yes. I understand the structure comment, but I would like to know why the evidence was judged insufficient."],"correctIndex":3},{"speaker":"Dr Meyer","speakerAudioText":"Your sources were relevant, but two of them were not peer-reviewed.","options":["So the feedback is completely wrong.","I will not use any sources next time.","Peer review is not important in this field.","I see. Would industry reports be acceptable if I explain their methodology?"],"correctIndex":3},{"speaker":"Dr Meyer","speakerAudioText":"That would be acceptable if you justify the source. Would you like to revise and resubmit?","options":["No, I prefer to keep the current mark.","I would rather write a completely new topic.","I do not have time to read anything.","Yes, I would like to revise the evidence section and resubmit by the end of the week."],"correctIndex":3}],"summaryPrompt":"Summarise the feedback discussion: the concern, the tutor’s explanation, and the agreed revision."}',
+  '{"turnsAnswers":[3,3,3]}',
   150,
   true
 )
@@ -4149,8 +4509,8 @@ VALUES (
   'ibil-11',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are at the student council meeting proposing a later library closing time during exams.","turns":[{"speaker":"Chair","speakerAudioText":"What change are you proposing, and why?","options":["I have no proposal but wanted to attend.","I propose extending library hours to midnight during the exam period, because the current closing time leaves no quiet study space.","I propose cancelling all exams.","I think the library should close earlier."],"correctIndex":1},{"speaker":"Chair","speakerAudioText":"Have you estimated the cost of staffing those extra hours?","options":["Staffing is not my responsibility.","The library has unlimited funding.","The estimate is two additional staff per evening for three weeks; I have the figures in this handout.","I have not considered the cost."],"correctIndex":2},{"speaker":"Chair","speakerAudioText":"Would a pilot during the next exam period be acceptable?","options":["No, it must be permanent immediately.","A pilot would be a waste of time.","I do not want to collect data.","Yes, a pilot with attendance data would let us evaluate demand before committing permanently."],"correctIndex":3}],"summaryPrompt":"Summarise the proposal, its cost estimate, and the agreed pilot."}',
-  '{"turnsAnswers":[1,2,3]}',
+  '{"scenario":"You are at the student council meeting proposing a later library closing time during exams.","turns":[{"speaker":"Chair","speakerAudioText":"What change are you proposing, and why?","options":["I think the library should close earlier.","I have no proposal but wanted to attend.","I propose extending library hours to midnight during the exam period, because the current closing time leaves no quiet study space.","I propose cancelling all exams."],"correctIndex":2},{"speaker":"Chair","speakerAudioText":"Have you estimated the cost of staffing those extra hours?","options":["Staffing is not my responsibility.","The library has unlimited funding.","The estimate is two additional staff per evening for three weeks; I have the figures in this handout.","I have not considered the cost."],"correctIndex":2},{"speaker":"Chair","speakerAudioText":"Would a pilot during the next exam period be acceptable?","options":["I do not want to collect data.","Yes, a pilot with attendance data would let us evaluate demand before committing permanently.","No, it must be permanent immediately.","A pilot would be a waste of time."],"correctIndex":1}],"summaryPrompt":"Summarise the proposal, its cost estimate, and the agreed pilot."}',
+  '{"turnsAnswers":[2,2,1]}',
   150,
   true
 )
@@ -4167,8 +4527,8 @@ VALUES (
   'ibil-12',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are asking a gym instructor to adapt a training plan after a minor injury.","turns":[{"speaker":"Coach Silva","speakerAudioText":"What happened, and how does it feel now?","options":["I broke my leg yesterday and ran today.","I feel perfect and want a harder programme.","I strained my shoulder lifting last week; it is improving but still painful when I raise my arm.","Nothing happened, I just wanted to chat."],"correctIndex":2},{"speaker":"Coach Silva","speakerAudioText":"We should avoid overhead pressing for now. What training are you still able to do?","options":["I would rather stop exercising completely.","I can cycle and do lower-body exercises without pain.","I cannot move at all.","I only want to train my shoulder."],"correctIndex":1},{"speaker":"Coach Silva","speakerAudioText":"I will write a plan for six weeks. When should we review it?","options":["Let us review it in two weeks, or sooner if the pain gets worse.","Never, I do not need a review.","In two years.","Only after I finish the whole programme."],"correctIndex":0}],"summaryPrompt":"Summarise the injury, the adapted training plan, and the review date."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are asking a gym instructor to adapt a training plan after a minor injury.","turns":[{"speaker":"Coach Silva","speakerAudioText":"What happened, and how does it feel now?","options":["I feel perfect and want a harder programme.","I strained my shoulder lifting last week; it is improving but still painful when I raise my arm.","Nothing happened, I just wanted to chat.","I broke my leg yesterday and ran today."],"correctIndex":1},{"speaker":"Coach Silva","speakerAudioText":"We should avoid overhead pressing for now. What training are you still able to do?","options":["I would rather stop exercising completely.","I can cycle and do lower-body exercises without pain.","I cannot move at all.","I only want to train my shoulder."],"correctIndex":1},{"speaker":"Coach Silva","speakerAudioText":"I will write a plan for six weeks. When should we review it?","options":["In two years.","Only after I finish the whole programme.","Let us review it in two weeks, or sooner if the pain gets worse.","Never, I do not need a review."],"correctIndex":2}],"summaryPrompt":"Summarise the injury, the adapted training plan, and the review date."}',
+  '{"turnsAnswers":[1,1,2]}',
   150,
   true
 )
@@ -4185,8 +4545,8 @@ VALUES (
   'ibil-13',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the library service desk asking about a book that was recalled while you still need it for an assignment.","turns":[{"speaker":"Librarian Osei","speakerAudioText":"I can see the item was recalled. How soon do you need it?","options":["I need it until Friday to finish my literature review; after that I can return it.","I returned it three weeks ago.","I have never borrowed a book from this library.","I want to complain about the opening hours."],"correctIndex":0},{"speaker":"Librarian Osei","speakerAudioText":"The other reader has placed a hold. Would a short extension to Wednesday help?","options":["I would rather buy a new copy than discuss it.","The other reader can wait indefinitely.","Wednesday would be tight. Could you renew it until Thursday morning instead?","No, I do not need the book at all."],"correctIndex":2},{"speaker":"Librarian Osei","speakerAudioText":"I can renew it to Thursday and send you the recall notice by email.","options":["Thank you. I will return it by nine on Thursday and check my email for the confirmation.","I will keep it until the end of the term.","Please cancel my library account.","I do not use email."],"correctIndex":0}],"summaryPrompt":"Summarise the recall problem, the extension you negotiated, and the return arrangement."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are at the library service desk asking about a book that was recalled while you still need it for an assignment.","turns":[{"speaker":"Librarian Osei","speakerAudioText":"I can see the item was recalled. How soon do you need it?","options":["I returned it three weeks ago.","I have never borrowed a book from this library.","I want to complain about the opening hours.","I need it until Friday to finish my literature review; after that I can return it."],"correctIndex":3},{"speaker":"Librarian Osei","speakerAudioText":"The other reader has placed a hold. Would a short extension to Wednesday help?","options":["The other reader can wait indefinitely.","Wednesday would be tight. Could you renew it until Thursday morning instead?","No, I do not need the book at all.","I would rather buy a new copy than discuss it."],"correctIndex":1},{"speaker":"Librarian Osei","speakerAudioText":"I can renew it to Thursday and send you the recall notice by email.","options":["I do not use email.","Thank you. I will return it by nine on Thursday and check my email for the confirmation.","I will keep it until the end of the term.","Please cancel my library account."],"correctIndex":1}],"summaryPrompt":"Summarise the recall problem, the extension you negotiated, and the return arrangement."}',
+  '{"turnsAnswers":[3,1,1]}',
   150,
   true
 )
@@ -4203,8 +4563,8 @@ VALUES (
   'ibil-14',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are meeting your lab partner to resolve a disagreement about data that produced different results.","turns":[{"speaker":"Priya","speakerAudioText":"Your analysis shows a significant effect, but mine does not. Where should we start?","options":["One of us must have lied.","Let us delete the whole dataset.","Let us compare the raw files and check whether we cleaned the outliers the same way.","We should report the result that looks better."],"correctIndex":2},{"speaker":"Priya","speakerAudioText":"I removed three measurements above the detection limit. Did you keep them?","options":["I kept them and flagged them, because removing them changes the mean substantially.","I did not open the file.","I deleted every value above zero.","I only looked at the graphs."],"correctIndex":0},{"speaker":"Priya","speakerAudioText":"So we should report both analyses and explain the difference?","options":["We should choose the version that is shorter.","The supervisor does not need to know.","Yes, and we should ask the supervisor which treatment matches the lab protocol.","No, we should hide the disagreement."],"correctIndex":2}],"summaryPrompt":"Summarise the disagreement, the cause you identified, and the next step with the supervisor."}',
-  '{"turnsAnswers":[2,0,2]}',
+  '{"scenario":"You are meeting your lab partner to resolve a disagreement about data that produced different results.","turns":[{"speaker":"Priya","speakerAudioText":"Your analysis shows a significant effect, but mine does not. Where should we start?","options":["Let us delete the whole dataset.","Let us compare the raw files and check whether we cleaned the outliers the same way.","We should report the result that looks better.","One of us must have lied."],"correctIndex":1},{"speaker":"Priya","speakerAudioText":"I removed three measurements above the detection limit. Did you keep them?","options":["I only looked at the graphs.","I kept them and flagged them, because removing them changes the mean substantially.","I did not open the file.","I deleted every value above zero."],"correctIndex":1},{"speaker":"Priya","speakerAudioText":"So we should report both analyses and explain the difference?","options":["Yes, and we should ask the supervisor which treatment matches the lab protocol.","No, we should hide the disagreement.","We should choose the version that is shorter.","The supervisor does not need to know."],"correctIndex":0}],"summaryPrompt":"Summarise the disagreement, the cause you identified, and the next step with the supervisor."}',
+  '{"turnsAnswers":[1,1,0]}',
   150,
   true
 )
@@ -4221,8 +4581,8 @@ VALUES (
   'ibil-15',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are discussing your conference poster draft with your supervisor before printing.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"The methods section is dense. What do you want a visitor to take away?","options":["That the results are unimportant.","That we tested the coating under real weather conditions rather than only in the lab.","That the poster uses many colours.","That I have attended many conferences."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"Then the results panel should show the durability data first. Can you cut anything?","options":["I can remove all the results.","I will add another page of text.","I would rather keep everything and print smaller.","I can remove the literature table and summarise the gap in two sentences."],"correctIndex":3},{"speaker":"Professor Adeyemi","speakerAudioText":"Send me the revised file by Tuesday and we can check the figures.","options":["Figures do not need labels.","I will send it Tuesday morning and label each figure with the sample size.","I will print it today without changes.","I do not have the data anymore."],"correctIndex":1}],"summaryPrompt":"Summarise the feedback on the poster, the changes you will make, and the deadline."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are discussing your conference poster draft with your supervisor before printing.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"The methods section is dense. What do you want a visitor to take away?","options":["That I have attended many conferences.","That the results are unimportant.","That we tested the coating under real weather conditions rather than only in the lab.","That the poster uses many colours."],"correctIndex":2},{"speaker":"Professor Adeyemi","speakerAudioText":"Then the results panel should show the durability data first. Can you cut anything?","options":["I would rather keep everything and print smaller.","I can remove the literature table and summarise the gap in two sentences.","I can remove all the results.","I will add another page of text."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"Send me the revised file by Tuesday and we can check the figures.","options":["I will send it Tuesday morning and label each figure with the sample size.","I will print it today without changes.","I do not have the data anymore.","Figures do not need labels."],"correctIndex":0}],"summaryPrompt":"Summarise the feedback on the poster, the changes you will make, and the deadline."}',
+  '{"turnsAnswers":[2,1,0]}',
   150,
   true
 )
@@ -4239,8 +4599,8 @@ VALUES (
   'ibil-16',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the student health centre describing sleep problems that began during exam preparation.","turns":[{"speaker":"Dr Rossi","speakerAudioText":"How many hours are you sleeping, and when did the pattern start?","options":["I have never had trouble sleeping.","I only sleep during lectures.","About four hours a night since the revision period began three weeks ago.","I sleep perfectly and came for a check-up."],"correctIndex":2},{"speaker":"Dr Rossi","speakerAudioText":"Do you use screens in bed or drink caffeine late in the day?","options":["I go to bed at eight every evening.","I study on my laptop until midnight and usually have coffee around seven.","I do not own a laptop.","I stopped drinking all fluids last year."],"correctIndex":1},{"speaker":"Dr Rossi","speakerAudioText":"Let us start with a fixed wake time and no screens after eleven. Review in two weeks?","options":["That sounds manageable. I will keep a sleep diary and come back in two weeks.","I would rather take strong medication immediately.","I cannot change anything.","I will stop attending classes."],"correctIndex":0}],"summaryPrompt":"Summarise the sleep problem, the habits discussed, and the plan you agreed to."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are at the student health centre describing sleep problems that began during exam preparation.","turns":[{"speaker":"Dr Rossi","speakerAudioText":"How many hours are you sleeping, and when did the pattern start?","options":["About four hours a night since the revision period began three weeks ago.","I sleep perfectly and came for a check-up.","I have never had trouble sleeping.","I only sleep during lectures."],"correctIndex":0},{"speaker":"Dr Rossi","speakerAudioText":"Do you use screens in bed or drink caffeine late in the day?","options":["I go to bed at eight every evening.","I study on my laptop until midnight and usually have coffee around seven.","I do not own a laptop.","I stopped drinking all fluids last year."],"correctIndex":1},{"speaker":"Dr Rossi","speakerAudioText":"Let us start with a fixed wake time and no screens after eleven. Review in two weeks?","options":["I will stop attending classes.","That sounds manageable. I will keep a sleep diary and come back in two weeks.","I would rather take strong medication immediately.","I cannot change anything."],"correctIndex":1}],"summaryPrompt":"Summarise the sleep problem, the habits discussed, and the plan you agreed to."}',
+  '{"turnsAnswers":[0,1,1]}',
   150,
   true
 )
@@ -4257,8 +4617,8 @@ VALUES (
   'ibil-17',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are at the international office because your student visa renewal requires a document you have not received.","turns":[{"speaker":"Advisor Klein","speakerAudioText":"Which document is missing from your application?","options":["My flight was cancelled.","The enrolment certificate has not arrived, and the visa office needs it by Friday.","I lost my passport photo.","I want to change my course."],"correctIndex":1},{"speaker":"Advisor Klein","speakerAudioText":"I can issue a letter today, but the certificate comes from the registry. Have you asked them?","options":["I asked them to post it abroad.","They refused to speak to me.","Yes, they said it would be ready tomorrow but could not guarantee it.","No, I did not know they existed."],"correctIndex":2},{"speaker":"Advisor Klein","speakerAudioText":"I will email the registry and give you a temporary confirmation letter.","options":["I will travel without any documents.","Please keep the letter in your office.","I do not need a visa.","Thank you. Should I take the letter to the visa office myself or wait for the certificate?"],"correctIndex":3}],"summaryPrompt":"Summarise the missing document, what the registry said, and the temporary solution offered."}',
-  '{"turnsAnswers":[1,2,3]}',
+  '{"scenario":"You are at the international office because your student visa renewal requires a document you have not received.","turns":[{"speaker":"Advisor Klein","speakerAudioText":"Which document is missing from your application?","options":["I lost my passport photo.","I want to change my course.","My flight was cancelled.","The enrolment certificate has not arrived, and the visa office needs it by Friday."],"correctIndex":3},{"speaker":"Advisor Klein","speakerAudioText":"I can issue a letter today, but the certificate comes from the registry. Have you asked them?","options":["I asked them to post it abroad.","They refused to speak to me.","Yes, they said it would be ready tomorrow but could not guarantee it.","No, I did not know they existed."],"correctIndex":2},{"speaker":"Advisor Klein","speakerAudioText":"I will email the registry and give you a temporary confirmation letter.","options":["Please keep the letter in your office.","I do not need a visa.","Thank you. Should I take the letter to the visa office myself or wait for the certificate?","I will travel without any documents."],"correctIndex":2}],"summaryPrompt":"Summarise the missing document, what the registry said, and the temporary solution offered."}',
+  '{"turnsAnswers":[3,2,2]}',
   150,
   true
 )
@@ -4275,8 +4635,8 @@ VALUES (
   'ibil-18',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are asking a department administrator for a waiver of a prerequisite for an advanced course.","turns":[{"speaker":"Mr Haddad","speakerAudioText":"Which course do you want to take, and which prerequisite is missing?","options":["I want to drop all my courses.","I have completed every prerequisite twice.","I am asking about the cafeteria menu.","I want to take Applied Statistics, but I have not completed Linear Algebra."],"correctIndex":3},{"speaker":"Mr Haddad","speakerAudioText":"The course assumes matrix notation. How would you cover that gap?","options":["The lecturer can skip the mathematics.","I do not plan to attend the first weeks.","I completed an online linear algebra module and can show my certificate and notes.","I would learn it during the final exam."],"correctIndex":2},{"speaker":"Mr Haddad","speakerAudioText":"I can grant a trial waiver if you meet the lecturer in week one.","options":["I will wait until the course ends.","That works. I will email the lecturer today and confirm the arrangement.","I would rather not speak to the lecturer.","A trial waiver is unnecessary."],"correctIndex":1}],"summaryPrompt":"Summarise the course request, the missing prerequisite, and the trial arrangement."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are asking a department administrator for a waiver of a prerequisite for an advanced course.","turns":[{"speaker":"Mr Haddad","speakerAudioText":"Which course do you want to take, and which prerequisite is missing?","options":["I want to drop all my courses.","I have completed every prerequisite twice.","I am asking about the cafeteria menu.","I want to take Applied Statistics, but I have not completed Linear Algebra."],"correctIndex":3},{"speaker":"Mr Haddad","speakerAudioText":"The course assumes matrix notation. How would you cover that gap?","options":["I would learn it during the final exam.","The lecturer can skip the mathematics.","I do not plan to attend the first weeks.","I completed an online linear algebra module and can show my certificate and notes."],"correctIndex":3},{"speaker":"Mr Haddad","speakerAudioText":"I can grant a trial waiver if you meet the lecturer in week one.","options":["That works. I will email the lecturer today and confirm the arrangement.","I would rather not speak to the lecturer.","A trial waiver is unnecessary.","I will wait until the course ends."],"correctIndex":0}],"summaryPrompt":"Summarise the course request, the missing prerequisite, and the trial arrangement."}',
+  '{"turnsAnswers":[3,3,0]}',
   150,
   true
 )
@@ -4293,8 +4653,8 @@ VALUES (
   'ibil-19',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at a teaching assistant’s office hours asking why your regression model gives unstable coefficients.","turns":[{"speaker":"Tomas","speakerAudioText":"What does your dataset look like, and how many predictors are you using?","options":["I am using one predictor and one observation.","I only ran a graph.","I have sixty observations and twelve predictors, several of which are highly correlated.","I have no data yet."],"correctIndex":2},{"speaker":"Tomas","speakerAudioText":"That sounds like multicollinearity. Have you checked the correlation matrix?","options":["The correlation is exactly zero.","Yes, two variables correlate at 0.94, but I was not sure what to do next.","No, I do not know what a matrix is.","I deleted the outcome variable instead."],"correctIndex":1},{"speaker":"Tomas","speakerAudioText":"Try removing one variable and compare the adjusted R-squared. Can you do that?","options":["I will run both models and bring the comparison to the next session.","I will change the research question.","I will report only the model I prefer.","I cannot use software."],"correctIndex":0}],"summaryPrompt":"Summarise the modelling problem, the cause identified, and the comparison you will run."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are at a teaching assistant’s office hours asking why your regression model gives unstable coefficients.","turns":[{"speaker":"Tomas","speakerAudioText":"What does your dataset look like, and how many predictors are you using?","options":["I am using one predictor and one observation.","I only ran a graph.","I have sixty observations and twelve predictors, several of which are highly correlated.","I have no data yet."],"correctIndex":2},{"speaker":"Tomas","speakerAudioText":"That sounds like multicollinearity. Have you checked the correlation matrix?","options":["The correlation is exactly zero.","Yes, two variables correlate at 0.94, but I was not sure what to do next.","No, I do not know what a matrix is.","I deleted the outcome variable instead."],"correctIndex":1},{"speaker":"Tomas","speakerAudioText":"Try removing one variable and compare the adjusted R-squared. Can you do that?","options":["I cannot use software.","I will run both models and bring the comparison to the next session.","I will change the research question.","I will report only the model I prefer."],"correctIndex":1}],"summaryPrompt":"Summarise the modelling problem, the cause identified, and the comparison you will run."}',
+  '{"turnsAnswers":[2,1,1]}',
   150,
   true
 )
@@ -4311,8 +4671,8 @@ VALUES (
   'ibil-20',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are interviewing for a part-time job at a campus café.","turns":[{"speaker":"Ms Park","speakerAudioText":"Have you worked in food service before, and what shift can you cover?","options":["I worked in a bakery for a year, and I can cover early mornings before classes.","I have no availability at all.","I only want to work once a month.","I have never spoken to a customer."],"correctIndex":0},{"speaker":"Ms Park","speakerAudioText":"A customer complains that the coffee is cold. What do you do?","options":["I ask the customer to leave.","I apologise, replace the drink and tell the supervisor so the machine can be checked.","I explain that the machine is always like that.","I ignore the complaint."],"correctIndex":1},{"speaker":"Ms Park","speakerAudioText":"We need someone during the exam period. Does that suit you?","options":["I cannot commit to any dates.","I would rather close the café.","Yes, my exams finish in the first week, so I can work the remaining weeks.","I will be travelling for the whole period."],"correctIndex":2}],"summaryPrompt":"Summarise the candidate’s experience, how they would handle a complaint, and their availability."}',
-  '{"turnsAnswers":[0,1,2]}',
+  '{"scenario":"You are interviewing for a part-time job at a campus café.","turns":[{"speaker":"Ms Park","speakerAudioText":"Have you worked in food service before, and what shift can you cover?","options":["I only want to work once a month.","I have never spoken to a customer.","I worked in a bakery for a year, and I can cover early mornings before classes.","I have no availability at all."],"correctIndex":2},{"speaker":"Ms Park","speakerAudioText":"A customer complains that the coffee is cold. What do you do?","options":["I ignore the complaint.","I ask the customer to leave.","I apologise, replace the drink and tell the supervisor so the machine can be checked.","I explain that the machine is always like that."],"correctIndex":2},{"speaker":"Ms Park","speakerAudioText":"We need someone during the exam period. Does that suit you?","options":["I would rather close the café.","Yes, my exams finish in the first week, so I can work the remaining weeks.","I will be travelling for the whole period.","I cannot commit to any dates."],"correctIndex":1}],"summaryPrompt":"Summarise the candidate’s experience, how they would handle a complaint, and their availability."}',
+  '{"turnsAnswers":[2,2,1]}',
   150,
   true
 )
@@ -4329,8 +4689,8 @@ VALUES (
   'ibil-21',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are being interviewed for a scholarship to study abroad for one semester.","turns":[{"speaker":"Dr Lindqvist","speakerAudioText":"Why have you chosen this particular host university?","options":["It is the only university I found online.","I want an easy semester abroad.","My friend lives in the city.","Its coastal ecology group collects the long-term data my project depends on."],"correctIndex":3},{"speaker":"Dr Lindqvist","speakerAudioText":"How will the exchange fit your degree requirements?","options":["The exchange does not affect my degree.","Two modules count as electives, and my supervisor has approved the learning agreement.","I have not checked the requirements.","I plan to take no modules."],"correctIndex":1},{"speaker":"Dr Lindqvist","speakerAudioText":"What would you do if the research project changed after you arrived?","options":["I would abandon the exchange.","I would continue without telling anyone.","I would demand the original project.","I would discuss it with both supervisors and revise the plan before the deadline."],"correctIndex":3}],"summaryPrompt":"Summarise the reasons for the exchange, how it fits the degree, and how you would handle change."}',
-  '{"turnsAnswers":[3,1,3]}',
+  '{"scenario":"You are being interviewed for a scholarship to study abroad for one semester.","turns":[{"speaker":"Dr Lindqvist","speakerAudioText":"Why have you chosen this particular host university?","options":["I want an easy semester abroad.","My friend lives in the city.","Its coastal ecology group collects the long-term data my project depends on.","It is the only university I found online."],"correctIndex":2},{"speaker":"Dr Lindqvist","speakerAudioText":"How will the exchange fit your degree requirements?","options":["I plan to take no modules.","The exchange does not affect my degree.","Two modules count as electives, and my supervisor has approved the learning agreement.","I have not checked the requirements."],"correctIndex":2},{"speaker":"Dr Lindqvist","speakerAudioText":"What would you do if the research project changed after you arrived?","options":["I would discuss it with both supervisors and revise the plan before the deadline.","I would abandon the exchange.","I would continue without telling anyone.","I would demand the original project."],"correctIndex":0}],"summaryPrompt":"Summarise the reasons for the exchange, how it fits the degree, and how you would handle change."}',
+  '{"turnsAnswers":[2,2,0]}',
   150,
   true
 )
@@ -4347,8 +4707,8 @@ VALUES (
   'ibil-22',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are answering questions after presenting a seminar on your survey of student commuting.","turns":[{"speaker":"Dr Weber","speakerAudioText":"Your sample is mostly first-year students. How does that limit your conclusions?","options":["The sample size is irrelevant.","It may overrepresent campus residents, so I cannot generalise to commuters in later years.","It makes the sample perfectly representative.","First-year students do not commute."],"correctIndex":1},{"speaker":"Dr Weber","speakerAudioText":"Did you weight the responses by faculty?","options":["Not yet. I can compare the faculty distribution with the registry and reweight the estimates.","Weighting is impossible in surveys.","I did not collect faculty data at all.","Weights are only for physical objects."],"correctIndex":0},{"speaker":"Dr Weber","speakerAudioText":"Could the low response rate explain the pattern?","options":["No, response rates never matter.","I will hide the response rate.","The pattern is obvious without evidence.","It could, so I plan to report the response rate and test whether late replies differ."],"correctIndex":3}],"summaryPrompt":"Summarise the questions about the sample, weighting and response rate, and your answers."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are answering questions after presenting a seminar on your survey of student commuting.","turns":[{"speaker":"Dr Weber","speakerAudioText":"Your sample is mostly first-year students. How does that limit your conclusions?","options":["It may overrepresent campus residents, so I cannot generalise to commuters in later years.","It makes the sample perfectly representative.","First-year students do not commute.","The sample size is irrelevant."],"correctIndex":0},{"speaker":"Dr Weber","speakerAudioText":"Did you weight the responses by faculty?","options":["Weighting is impossible in surveys.","I did not collect faculty data at all.","Weights are only for physical objects.","Not yet. I can compare the faculty distribution with the registry and reweight the estimates."],"correctIndex":3},{"speaker":"Dr Weber","speakerAudioText":"Could the low response rate explain the pattern?","options":["I will hide the response rate.","The pattern is obvious without evidence.","It could, so I plan to report the response rate and test whether late replies differ.","No, response rates never matter."],"correctIndex":2}],"summaryPrompt":"Summarise the questions about the sample, weighting and response rate, and your answers."}',
+  '{"turnsAnswers":[0,3,2]}',
   150,
   true
 )
@@ -4365,8 +4725,8 @@ VALUES (
   'ibil-23',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are rehearsing a group presentation and asking your teammate for feedback on timing.","turns":[{"speaker":"Sam","speakerAudioText":"Your section ran four minutes, but the slot is two. What can you cut?","options":["I can skip the result entirely.","I can remove the background slide and keep the method and the main result.","I can speak faster and keep every slide.","I can add two more examples."],"correctIndex":1},{"speaker":"Sam","speakerAudioText":"The transition to my section is abrupt. How should we connect them?","options":["We can stop speaking between sections.","The audience will not notice.","I will start with an unrelated joke.","I will end with the research question so your methods slide answers it directly."],"correctIndex":3},{"speaker":"Sam","speakerAudioText":"Shall we rehearse once more with the timer?","options":["Let us rehearse without the slides or timer.","Yes, and I will note where I need to slow down for the key figures.","No, the first run was perfect.","I have memorised nothing."],"correctIndex":1}],"summaryPrompt":"Summarise the timing problem, the cut you agreed, and the plan for the final rehearsal."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are rehearsing a group presentation and asking your teammate for feedback on timing.","turns":[{"speaker":"Sam","speakerAudioText":"Your section ran four minutes, but the slot is two. What can you cut?","options":["I can add two more examples.","I can skip the result entirely.","I can remove the background slide and keep the method and the main result.","I can speak faster and keep every slide."],"correctIndex":2},{"speaker":"Sam","speakerAudioText":"The transition to my section is abrupt. How should we connect them?","options":["I will start with an unrelated joke.","I will end with the research question so your methods slide answers it directly.","We can stop speaking between sections.","The audience will not notice."],"correctIndex":1},{"speaker":"Sam","speakerAudioText":"Shall we rehearse once more with the timer?","options":["I have memorised nothing.","Let us rehearse without the slides or timer.","Yes, and I will note where I need to slow down for the key figures.","No, the first run was perfect."],"correctIndex":2}],"summaryPrompt":"Summarise the timing problem, the cut you agreed, and the plan for the final rehearsal."}',
+  '{"turnsAnswers":[2,1,2]}',
   150,
   true
 )
@@ -4383,8 +4743,8 @@ VALUES (
   'ibil-24',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the IT help desk because a draft chapter of your thesis is missing after a laptop update.","turns":[{"speaker":"Technician Bauer","speakerAudioText":"When did you last see the file, and do you use cloud backup?","options":["I have never used a computer.","The file was never important.","I only keep paper copies.","I saved it yesterday evening, and the university cloud folder usually syncs automatically."],"correctIndex":3},{"speaker":"Technician Bauer","speakerAudioText":"The local folder shows an older version. May I check the backup history?","options":["I would rather rewrite the whole thesis.","Yes, please. The older version is better than nothing, but I need the latest edits.","No, do not touch the laptop.","Delete all backups immediately."],"correctIndex":1},{"speaker":"Technician Bauer","speakerAudioText":"I found a cached copy from last night. Can you open it and confirm?","options":["That file is not mine.","I do not want to check it.","Version history is a waste of time.","I can see the chapter and the latest paragraph. Could you show me how to enable version history?"],"correctIndex":3}],"summaryPrompt":"Summarise the missing file, the backup search, and the recovery you confirmed."}',
-  '{"turnsAnswers":[3,1,3]}',
+  '{"scenario":"You are at the IT help desk because a draft chapter of your thesis is missing after a laptop update.","turns":[{"speaker":"Technician Bauer","speakerAudioText":"When did you last see the file, and do you use cloud backup?","options":["I have never used a computer.","The file was never important.","I only keep paper copies.","I saved it yesterday evening, and the university cloud folder usually syncs automatically."],"correctIndex":3},{"speaker":"Technician Bauer","speakerAudioText":"The local folder shows an older version. May I check the backup history?","options":["Delete all backups immediately.","I would rather rewrite the whole thesis.","Yes, please. The older version is better than nothing, but I need the latest edits.","No, do not touch the laptop."],"correctIndex":2},{"speaker":"Technician Bauer","speakerAudioText":"I found a cached copy from last night. Can you open it and confirm?","options":["That file is not mine.","I do not want to check it.","Version history is a waste of time.","I can see the chapter and the latest paragraph. Could you show me how to enable version history?"],"correctIndex":3}],"summaryPrompt":"Summarise the missing file, the backup search, and the recovery you confirmed."}',
+  '{"turnsAnswers":[3,2,3]}',
   150,
   true
 )
@@ -4401,8 +4761,8 @@ VALUES (
   'ibil-25',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are meeting a tutor about a citation error flagged by plagiarism software.","turns":[{"speaker":"Dr Meyer","speakerAudioText":"A paragraph matches a source closely but has no citation. Can you explain?","options":["I paraphrased it from an article but forgot the reference; I can add the citation and rewrite the wording.","I copied it deliberately and see no problem.","I have never read that article.","The software must be broken."],"correctIndex":0},{"speaker":"Dr Meyer","speakerAudioText":"The wording is also very close. What will you change?","options":["I will add a citation without changing the text.","I will restate the argument in my own words and quote the key phrase with page numbers.","I will change only the font.","I will remove the paragraph and say nothing."],"correctIndex":1},{"speaker":"Dr Meyer","speakerAudioText":"Submit the corrected version through the integrity portal by Friday.","options":["I do not have access to the portal.","I will send it to another tutor.","I will upload the revised section and a short note explaining the correction.","I will submit it next term."],"correctIndex":2}],"summaryPrompt":"Summarise the citation problem, the correction you proposed, and the submission deadline."}',
-  '{"turnsAnswers":[0,1,2]}',
+  '{"scenario":"You are meeting a tutor about a citation error flagged by plagiarism software.","turns":[{"speaker":"Dr Meyer","speakerAudioText":"A paragraph matches a source closely but has no citation. Can you explain?","options":["The software must be broken.","I paraphrased it from an article but forgot the reference; I can add the citation and rewrite the wording.","I copied it deliberately and see no problem.","I have never read that article."],"correctIndex":1},{"speaker":"Dr Meyer","speakerAudioText":"The wording is also very close. What will you change?","options":["I will remove the paragraph and say nothing.","I will add a citation without changing the text.","I will restate the argument in my own words and quote the key phrase with page numbers.","I will change only the font."],"correctIndex":2},{"speaker":"Dr Meyer","speakerAudioText":"Submit the corrected version through the integrity portal by Friday.","options":["I do not have access to the portal.","I will send it to another tutor.","I will upload the revised section and a short note explaining the correction.","I will submit it next term."],"correctIndex":2}],"summaryPrompt":"Summarise the citation problem, the correction you proposed, and the submission deadline."}',
+  '{"turnsAnswers":[1,2,2]}',
   150,
   true
 )
@@ -4419,8 +4779,8 @@ VALUES (
   'ibil-26',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are negotiating a schedule conflict between a sports team commitment and a compulsory laboratory session.","turns":[{"speaker":"Coach Bennett","speakerAudioText":"The match is on Thursday afternoon, but your lab runs at the same time. What do you propose?","options":["I will skip both commitments.","The lab should be cancelled for everyone.","I do not want to play in the match.","I can attend the morning lab group and still travel with the team afterwards."],"correctIndex":3},{"speaker":"Coach Bennett","speakerAudioText":"The morning group is full. Could you do the lab on another day?","options":["Lab attendance does not matter.","I can join Friday’s session if the demonstrator agrees to sign my attendance.","No, I refuse to change anything.","I will copy a friend’s results."],"correctIndex":1},{"speaker":"Coach Bennett","speakerAudioText":"I will speak to the demonstrator. Confirm with me by Wednesday.","options":["I will decide after the match.","I do not have the demonstrator’s address.","You should arrange everything for me.","I will email the demonstrator today and message you as soon as I have an answer."],"correctIndex":3}],"summaryPrompt":"Summarise the clash between the match and the lab, the alternative you proposed, and the deadline."}',
-  '{"turnsAnswers":[3,1,3]}',
+  '{"scenario":"You are negotiating a schedule conflict between a sports team commitment and a compulsory laboratory session.","turns":[{"speaker":"Coach Bennett","speakerAudioText":"The match is on Thursday afternoon, but your lab runs at the same time. What do you propose?","options":["I do not want to play in the match.","I can attend the morning lab group and still travel with the team afterwards.","I will skip both commitments.","The lab should be cancelled for everyone."],"correctIndex":1},{"speaker":"Coach Bennett","speakerAudioText":"The morning group is full. Could you do the lab on another day?","options":["Lab attendance does not matter.","I can join Friday’s session if the demonstrator agrees to sign my attendance.","No, I refuse to change anything.","I will copy a friend’s results."],"correctIndex":1},{"speaker":"Coach Bennett","speakerAudioText":"I will speak to the demonstrator. Confirm with me by Wednesday.","options":["You should arrange everything for me.","I will email the demonstrator today and message you as soon as I have an answer.","I will decide after the match.","I do not have the demonstrator’s address."],"correctIndex":1}],"summaryPrompt":"Summarise the clash between the match and the lab, the alternative you proposed, and the deadline."}',
+  '{"turnsAnswers":[1,1,1]}',
   150,
   true
 )
@@ -4437,8 +4797,8 @@ VALUES (
   'ibil-27',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at a briefing for a coastal field trip, asking about equipment and safety.","turns":[{"speaker":"Dr Okafor","speakerAudioText":"The tide comes in quickly at the second site. What will you do if you are cut off?","options":["I will swim across the channel.","I will wait until the water reaches me.","I will leave my phone in the minibus.","I will stay on high ground and call the coastguard rather than try to cross the channel."],"correctIndex":3},{"speaker":"Dr Okafor","speakerAudioText":"Do you have the required boots and waterproofs?","options":["I do not need any equipment.","I will buy everything on the beach.","I have boots, but I need to borrow waterproof trousers from the department.","I plan to wear trainers in the mud."],"correctIndex":2},{"speaker":"Dr Okafor","speakerAudioText":"We leave at six. What is your role in the group?","options":["I am responsible for nothing.","I am recording the sediment samples and checking the group back onto the minibus.","I have no role.","I will arrive whenever I like."],"correctIndex":1}],"summaryPrompt":"Summarise the safety instruction, the equipment gap, and your role on the field trip."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are at a briefing for a coastal field trip, asking about equipment and safety.","turns":[{"speaker":"Dr Okafor","speakerAudioText":"The tide comes in quickly at the second site. What will you do if you are cut off?","options":["I will leave my phone in the minibus.","I will stay on high ground and call the coastguard rather than try to cross the channel.","I will swim across the channel.","I will wait until the water reaches me."],"correctIndex":1},{"speaker":"Dr Okafor","speakerAudioText":"Do you have the required boots and waterproofs?","options":["I plan to wear trainers in the mud.","I do not need any equipment.","I will buy everything on the beach.","I have boots, but I need to borrow waterproof trousers from the department."],"correctIndex":3},{"speaker":"Dr Okafor","speakerAudioText":"We leave at six. What is your role in the group?","options":["I am responsible for nothing.","I am recording the sediment samples and checking the group back onto the minibus.","I have no role.","I will arrive whenever I like."],"correctIndex":1}],"summaryPrompt":"Summarise the safety instruction, the equipment gap, and your role on the field trip."}',
+  '{"turnsAnswers":[1,3,1]}',
   150,
   true
 )
@@ -4455,8 +4815,8 @@ VALUES (
   'ibil-28',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are meeting a potential master’s supervisor for the first time to discuss a research proposal.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"Your proposal is broad. Which question would you actually test in one year?","options":["Whether green roofs reduce surface temperature more than reflective paint on the same building.","How to solve climate change completely.","Whether buildings are interesting.","What colour roofs look best."],"correctIndex":0},{"speaker":"Professor Adeyemi","speakerAudioText":"What data could you realistically collect?","options":["Data that has not been invented yet.","Temperature sensors on three buildings over one summer, plus council records for roof type.","Satellite data for the entire planet.","No data, only opinions."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"That is feasible. Send me a two-page outline with a timeline.","options":["I do not need a timeline.","I will start fieldwork without approval.","I will send it by Monday, including milestones for the ethics application and fieldwork.","I will send a hundred pages tomorrow."],"correctIndex":2}],"summaryPrompt":"Summarise the narrowed research question, the feasible data plan, and the outline you will send."}',
-  '{"turnsAnswers":[0,1,2]}',
+  '{"scenario":"You are meeting a potential master’s supervisor for the first time to discuss a research proposal.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"Your proposal is broad. Which question would you actually test in one year?","options":["Whether buildings are interesting.","What colour roofs look best.","Whether green roofs reduce surface temperature more than reflective paint on the same building.","How to solve climate change completely."],"correctIndex":2},{"speaker":"Professor Adeyemi","speakerAudioText":"What data could you realistically collect?","options":["Data that has not been invented yet.","Temperature sensors on three buildings over one summer, plus council records for roof type.","Satellite data for the entire planet.","No data, only opinions."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"That is feasible. Send me a two-page outline with a timeline.","options":["I will send it by Monday, including milestones for the ethics application and fieldwork.","I will send a hundred pages tomorrow.","I do not need a timeline.","I will start fieldwork without approval."],"correctIndex":0}],"summaryPrompt":"Summarise the narrowed research question, the feasible data plan, and the outline you will send."}',
+  '{"turnsAnswers":[2,1,0]}',
   150,
   true
 )
@@ -4473,8 +4833,8 @@ VALUES (
   'ibil-29',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are being interviewed by the student newspaper about a proposed tuition increase.","turns":[{"speaker":"Editor Lena","speakerAudioText":"What is your main concern about the increase?","options":["The newspaper should not cover money.","It will hit students who already work part-time and cannot take on more hours.","I think tuition should be higher.","I have no opinion on the proposal."],"correctIndex":1},{"speaker":"Editor Lena","speakerAudioText":"The university says the money is needed for labs. How do you respond?","options":["I would ask for a breakdown of the lab budget before accepting that the increase is unavoidable.","Labs are irrelevant to education.","The university is always lying.","I refuse to look at any budget."],"correctIndex":0},{"speaker":"Editor Lena","speakerAudioText":"Can we quote you by name in the article?","options":["No, and you cannot use anything I said.","Quote me as the vice-chancellor.","I want to remain anonymous and be named.","Yes, you can use my name and my role as a second-year student."],"correctIndex":3}],"summaryPrompt":"Summarise your concern about the fee increase, your response to the university, and the quoting agreement."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are being interviewed by the student newspaper about a proposed tuition increase.","turns":[{"speaker":"Editor Lena","speakerAudioText":"What is your main concern about the increase?","options":["It will hit students who already work part-time and cannot take on more hours.","I think tuition should be higher.","I have no opinion on the proposal.","The newspaper should not cover money."],"correctIndex":0},{"speaker":"Editor Lena","speakerAudioText":"The university says the money is needed for labs. How do you respond?","options":["Labs are irrelevant to education.","The university is always lying.","I refuse to look at any budget.","I would ask for a breakdown of the lab budget before accepting that the increase is unavoidable."],"correctIndex":3},{"speaker":"Editor Lena","speakerAudioText":"Can we quote you by name in the article?","options":["No, and you cannot use anything I said.","Quote me as the vice-chancellor.","I want to remain anonymous and be named.","Yes, you can use my name and my role as a second-year student."],"correctIndex":3}],"summaryPrompt":"Summarise your concern about the fee increase, your response to the university, and the quoting agreement."}',
+  '{"turnsAnswers":[0,3,3]}',
   150,
   true
 )
@@ -4491,8 +4851,8 @@ VALUES (
   'ibil-30',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are discussing a peer review you wrote for a student journal with the editor.","turns":[{"speaker":"Dr Lindqvist","speakerAudioText":"Your review says the method is unclear. Can you give the author something specific?","options":["I will reject the paper without comments.","I will rewrite the paper myself.","I will point to the missing sample size and ask how participants were recruited.","I will repeat that it is unclear."],"correctIndex":2},{"speaker":"Dr Lindqvist","speakerAudioText":"The author may disagree. How will you keep the tone constructive?","options":["I will question the author’s ability.","I will ignore the response.","I will add personal criticism.","I will separate the summary of the paper from the list of requested changes."],"correctIndex":3},{"speaker":"Dr Lindqvist","speakerAudioText":"Can you return the revised review by Thursday?","options":["Yes, I will add examples and send it before noon on Thursday.","I need three months.","I have already deleted the draft.","I cannot give a date."],"correctIndex":0}],"summaryPrompt":"Summarise the editor’s feedback, how you will improve the review, and the deadline."}',
-  '{"turnsAnswers":[2,3,0]}',
+  '{"scenario":"You are discussing a peer review you wrote for a student journal with the editor.","turns":[{"speaker":"Dr Lindqvist","speakerAudioText":"Your review says the method is unclear. Can you give the author something specific?","options":["I will reject the paper without comments.","I will rewrite the paper myself.","I will point to the missing sample size and ask how participants were recruited.","I will repeat that it is unclear."],"correctIndex":2},{"speaker":"Dr Lindqvist","speakerAudioText":"The author may disagree. How will you keep the tone constructive?","options":["I will question the author’s ability.","I will ignore the response.","I will add personal criticism.","I will separate the summary of the paper from the list of requested changes."],"correctIndex":3},{"speaker":"Dr Lindqvist","speakerAudioText":"Can you return the revised review by Thursday?","options":["I need three months.","I have already deleted the draft.","I cannot give a date.","Yes, I will add examples and send it before noon on Thursday."],"correctIndex":3}],"summaryPrompt":"Summarise the editor’s feedback, how you will improve the review, and the deadline."}',
+  '{"turnsAnswers":[2,3,3]}',
   150,
   true
 )
@@ -4509,8 +4869,8 @@ VALUES (
   'ibil-31',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the language centre discussing your placement test result.","turns":[{"speaker":"Ms Ivanova","speakerAudioText":"Your reading score is strong, but your speaking score places you one level lower. How do you want to proceed?","options":["I would like to join the lower speaking group and keep reading in the advanced class.","I demand to be placed in the highest group.","I refuse to speak in class.","I want to cancel all language study."],"correctIndex":0},{"speaker":"Ms Ivanova","speakerAudioText":"The timetable allows a mixed placement. What is your goal this term?","options":["To pass without attending.","To learn a different language instead.","To speak more fluently in seminars, especially when I have to disagree politely.","To avoid all speaking tasks."],"correctIndex":2},{"speaker":"Ms Ivanova","speakerAudioText":"I will enrol you and arrange a monthly review.","options":["Thank you. I will prepare a short recording before each review so we can track progress.","I do not want any review.","I will not attend the speaking group.","Recording is forbidden."],"correctIndex":0}],"summaryPrompt":"Summarise the placement result, the mixed arrangement you chose, and the review plan."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are at the language centre discussing your placement test result.","turns":[{"speaker":"Ms Ivanova","speakerAudioText":"Your reading score is strong, but your speaking score places you one level lower. How do you want to proceed?","options":["I want to cancel all language study.","I would like to join the lower speaking group and keep reading in the advanced class.","I demand to be placed in the highest group.","I refuse to speak in class."],"correctIndex":1},{"speaker":"Ms Ivanova","speakerAudioText":"The timetable allows a mixed placement. What is your goal this term?","options":["To avoid all speaking tasks.","To pass without attending.","To learn a different language instead.","To speak more fluently in seminars, especially when I have to disagree politely."],"correctIndex":3},{"speaker":"Ms Ivanova","speakerAudioText":"I will enrol you and arrange a monthly review.","options":["Recording is forbidden.","Thank you. I will prepare a short recording before each review so we can track progress.","I do not want any review.","I will not attend the speaking group."],"correctIndex":1}],"summaryPrompt":"Summarise the placement result, the mixed arrangement you chose, and the review plan."}',
+  '{"turnsAnswers":[1,3,1]}',
   150,
   true
 )
@@ -4527,8 +4887,8 @@ VALUES (
   'ibil-32',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are meeting a residence adviser to discuss repeated late-night noise from your roommate.","turns":[{"speaker":"Mr Dubois","speakerAudioText":"Have you spoken to your roommate directly?","options":["No, I have never met them.","I broke the door instead.","I do not live in the residence.","Yes, twice. They agreed to be quieter but the calls continued after midnight."],"correctIndex":3},{"speaker":"Mr Dubois","speakerAudioText":"What outcome would you like?","options":["Nothing at all.","Permission to make more noise.","A quiet-hours agreement and, if it continues, a mediation meeting with you present.","Immediate eviction without a conversation."],"correctIndex":2},{"speaker":"Mr Dubois","speakerAudioText":"I will arrange a meeting on Thursday. Will you both attend?","options":["Only my roommate should attend.","Yes, I will come, and I will bring a written record of the nights it happened.","I will not attend.","I have no record and no dates."],"correctIndex":1}],"summaryPrompt":"Summarise the noise problem, what you already tried, and the mediation plan."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are meeting a residence adviser to discuss repeated late-night noise from your roommate.","turns":[{"speaker":"Mr Dubois","speakerAudioText":"Have you spoken to your roommate directly?","options":["I broke the door instead.","I do not live in the residence.","Yes, twice. They agreed to be quieter but the calls continued after midnight.","No, I have never met them."],"correctIndex":2},{"speaker":"Mr Dubois","speakerAudioText":"What outcome would you like?","options":["Nothing at all.","Permission to make more noise.","A quiet-hours agreement and, if it continues, a mediation meeting with you present.","Immediate eviction without a conversation."],"correctIndex":2},{"speaker":"Mr Dubois","speakerAudioText":"I will arrange a meeting on Thursday. Will you both attend?","options":["I will not attend.","I have no record and no dates.","Only my roommate should attend.","Yes, I will come, and I will bring a written record of the nights it happened."],"correctIndex":3}],"summaryPrompt":"Summarise the noise problem, what you already tried, and the mediation plan."}',
+  '{"turnsAnswers":[2,2,3]}',
   150,
   true
 )
@@ -4545,8 +4905,8 @@ VALUES (
   'ibil-33',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at a careers fair speaking to a recruiter from an environmental consultancy.","turns":[{"speaker":"Ms Novak","speakerAudioText":"What attracts you to environmental consulting rather than research?","options":["I want to apply evidence to client decisions within tight deadlines, not only publish findings.","I dislike all environmental work.","I only want a job with no deadlines.","I have not looked at your company."],"correctIndex":0},{"speaker":"Ms Novak","speakerAudioText":"Which of our projects did you read about?","options":["I only read the recruitment advert.","A project from a different company.","The wetland compensation scheme, especially how you monitored it after construction.","None of them."],"correctIndex":2},{"speaker":"Ms Novak","speakerAudioText":"Our graduate applications close on Friday. Do you have a CV?","options":["Yes, I have a one-page CV and can tailor the cover letter tonight.","No, and I cannot write one.","I will apply next year.","I only have a school report."],"correctIndex":0}],"summaryPrompt":"Summarise your motivation, the project you mentioned, and the application deadline."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are at a careers fair speaking to a recruiter from an environmental consultancy.","turns":[{"speaker":"Ms Novak","speakerAudioText":"What attracts you to environmental consulting rather than research?","options":["I have not looked at your company.","I want to apply evidence to client decisions within tight deadlines, not only publish findings.","I dislike all environmental work.","I only want a job with no deadlines."],"correctIndex":1},{"speaker":"Ms Novak","speakerAudioText":"Which of our projects did you read about?","options":["None of them.","I only read the recruitment advert.","A project from a different company.","The wetland compensation scheme, especially how you monitored it after construction."],"correctIndex":3},{"speaker":"Ms Novak","speakerAudioText":"Our graduate applications close on Friday. Do you have a CV?","options":["I only have a school report.","Yes, I have a one-page CV and can tailor the cover letter tonight.","No, and I cannot write one.","I will apply next year."],"correctIndex":1}],"summaryPrompt":"Summarise your motivation, the project you mentioned, and the application deadline."}',
+  '{"turnsAnswers":[1,3,1]}',
   150,
   true
 )
@@ -4563,8 +4923,8 @@ VALUES (
   'ibil-34',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are requesting exam access arrangements from the disability service.","turns":[{"speaker":"Advisor Martinez","speakerAudioText":"What arrangement did you use previously, and what evidence do you have?","options":["I have no evidence and no diagnosis.","I had 25 percent extra time last year, and my assessment report is attached.","I have never had any arrangement.","I want the exam cancelled."],"correctIndex":1},{"speaker":"Advisor Martinez","speakerAudioText":"The deadline for this semester is Friday. Can you submit the form today?","options":["I need a year to find the report.","I cannot use the online form.","I will submit after the exam.","Yes, I have the report and can upload the form before five."],"correctIndex":3},{"speaker":"Advisor Martinez","speakerAudioText":"We will confirm with the department within three working days.","options":["I do not check email.","Thank you. I will check my email and contact you if the confirmation does not arrive.","I will assume it is approved.","I will tell other students my result."],"correctIndex":1}],"summaryPrompt":"Summarise the requested arrangement, the evidence you provided, and the confirmation process."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are requesting exam access arrangements from the disability service.","turns":[{"speaker":"Advisor Martinez","speakerAudioText":"What arrangement did you use previously, and what evidence do you have?","options":["I have never had any arrangement.","I want the exam cancelled.","I have no evidence and no diagnosis.","I had 25 percent extra time last year, and my assessment report is attached."],"correctIndex":3},{"speaker":"Advisor Martinez","speakerAudioText":"The deadline for this semester is Friday. Can you submit the form today?","options":["I will submit after the exam.","Yes, I have the report and can upload the form before five.","I need a year to find the report.","I cannot use the online form."],"correctIndex":1},{"speaker":"Advisor Martinez","speakerAudioText":"We will confirm with the department within three working days.","options":["Thank you. I will check my email and contact you if the confirmation does not arrive.","I will assume it is approved.","I will tell other students my result.","I do not check email."],"correctIndex":0}],"summaryPrompt":"Summarise the requested arrangement, the evidence you provided, and the confirmation process."}',
+  '{"turnsAnswers":[3,1,0]}',
   150,
   true
 )
@@ -4581,8 +4941,8 @@ VALUES (
   'ibil-35',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are asking a research ethics officer whether your interview study needs full review.","turns":[{"speaker":"Dr Weber","speakerAudioText":"Will you collect identifiable information or discuss sensitive topics?","options":["I will record names during recruitment but anonymise transcripts, and the topic is financial stress.","I will collect no data at all.","The topic is completely uncontroversial.","I plan to publish names without consent."],"correctIndex":0},{"speaker":"Dr Weber","speakerAudioText":"Then full review is likely. Do you have a consent form?","options":["I was going to ask for consent afterwards.","Consent is unnecessary for interviews.","I have not written anything.","I have a draft that explains withdrawal, storage and who will see the data."],"correctIndex":3},{"speaker":"Dr Weber","speakerAudioText":"Submit the form this week and allow three weeks for review.","options":["I will ignore the committee.","I will submit after finishing the study.","I will submit today and delay recruitment until approval arrives.","I will start interviews tomorrow."],"correctIndex":2}],"summaryPrompt":"Summarise the ethics concern, the consent form, and the timeline before recruitment."}',
-  '{"turnsAnswers":[0,3,2]}',
+  '{"scenario":"You are asking a research ethics officer whether your interview study needs full review.","turns":[{"speaker":"Dr Weber","speakerAudioText":"Will you collect identifiable information or discuss sensitive topics?","options":["The topic is completely uncontroversial.","I plan to publish names without consent.","I will record names during recruitment but anonymise transcripts, and the topic is financial stress.","I will collect no data at all."],"correctIndex":2},{"speaker":"Dr Weber","speakerAudioText":"Then full review is likely. Do you have a consent form?","options":["I was going to ask for consent afterwards.","Consent is unnecessary for interviews.","I have not written anything.","I have a draft that explains withdrawal, storage and who will see the data."],"correctIndex":3},{"speaker":"Dr Weber","speakerAudioText":"Submit the form this week and allow three weeks for review.","options":["I will ignore the committee.","I will submit after finishing the study.","I will submit today and delay recruitment until approval arrives.","I will start interviews tomorrow."],"correctIndex":2}],"summaryPrompt":"Summarise the ethics concern, the consent form, and the timeline before recruitment."}',
+  '{"turnsAnswers":[2,3,2]}',
   150,
   true
 )
@@ -4599,8 +4959,8 @@ VALUES (
   'ibil-36',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at a library workshop asking how to use a reference manager for a long essay.","turns":[{"speaker":"Librarian Chen","speakerAudioText":"Which part of referencing causes you the most trouble?","options":["I only write bibliographies by hand.","I have never written an essay.","Keeping the in-text citations and the bibliography consistent when I add sources.","I do not use citations."],"correctIndex":2},{"speaker":"Librarian Chen","speakerAudioText":"Have you imported the library catalogue records or typed them manually?","options":["I deleted the catalogue.","I typed them manually, which is why several author names are inconsistent.","I imported every record correctly.","I do not have any sources."],"correctIndex":1},{"speaker":"Librarian Chen","speakerAudioText":"Let us import the records and apply one citation style. Can you test it on a paragraph?","options":["Yes, I will add three citations and check the bibliography updates automatically.","I would rather retype everything.","Styles do not matter.","I will test it after submission."],"correctIndex":0}],"summaryPrompt":"Summarise the referencing problem, the cause identified, and the test you will run."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are at a library workshop asking how to use a reference manager for a long essay.","turns":[{"speaker":"Librarian Chen","speakerAudioText":"Which part of referencing causes you the most trouble?","options":["I have never written an essay.","Keeping the in-text citations and the bibliography consistent when I add sources.","I do not use citations.","I only write bibliographies by hand."],"correctIndex":1},{"speaker":"Librarian Chen","speakerAudioText":"Have you imported the library catalogue records or typed them manually?","options":["I imported every record correctly.","I do not have any sources.","I deleted the catalogue.","I typed them manually, which is why several author names are inconsistent."],"correctIndex":3},{"speaker":"Librarian Chen","speakerAudioText":"Let us import the records and apply one citation style. Can you test it on a paragraph?","options":["Yes, I will add three citations and check the bibliography updates automatically.","I would rather retype everything.","Styles do not matter.","I will test it after submission."],"correctIndex":0}],"summaryPrompt":"Summarise the referencing problem, the cause identified, and the test you will run."}',
+  '{"turnsAnswers":[1,3,0]}',
   150,
   true
 )
@@ -4617,8 +4977,8 @@ VALUES (
   'ibil-37',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are asking your seminar tutor for a reference letter for a summer research scholarship.","turns":[{"speaker":"Dr Whitfield","speakerAudioText":"You have caught me between classes. What do you need from me?","options":["I have already finished my degree.","I am applying for a research scholarship and would be grateful if you could write a reference.","I need directions to the train station.","I wanted to complain about the seminar room temperature."],"correctIndex":1},{"speaker":"Dr Whitfield","speakerAudioText":"When is the deadline, and what should the letter emphasise?","options":["The form is due next Friday; it asks about my laboratory work and ability to work independently.","The deadline was last month and I forgot.","It should mention my favourite football team.","I have not looked at the form yet."],"correctIndex":0},{"speaker":"Dr Whitfield","speakerAudioText":"Send me your CV and the project description by Monday.","options":["I will bring them next semester.","I do not have a CV.","Please write it without any information about me.","I will email both this afternoon and confirm the submission link."],"correctIndex":3}],"summaryPrompt":"Write a 3-sentence summary of the request: the purpose, the deadline and the material you promised to send."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are asking your seminar tutor for a reference letter for a summer research scholarship.","turns":[{"speaker":"Dr Whitfield","speakerAudioText":"You have caught me between classes. What do you need from me?","options":["I have already finished my degree.","I am applying for a research scholarship and would be grateful if you could write a reference.","I need directions to the train station.","I wanted to complain about the seminar room temperature."],"correctIndex":1},{"speaker":"Dr Whitfield","speakerAudioText":"When is the deadline, and what should the letter emphasise?","options":["It should mention my favourite football team.","I have not looked at the form yet.","The form is due next Friday; it asks about my laboratory work and ability to work independently.","The deadline was last month and I forgot."],"correctIndex":2},{"speaker":"Dr Whitfield","speakerAudioText":"Send me your CV and the project description by Monday.","options":["I will email both this afternoon and confirm the submission link.","I will bring them next semester.","I do not have a CV.","Please write it without any information about me."],"correctIndex":0}],"summaryPrompt":"Write a 3-sentence summary of the request: the purpose, the deadline and the material you promised to send."}',
+  '{"turnsAnswers":[1,2,0]}',
   150,
   true
 )
@@ -4635,8 +4995,8 @@ VALUES (
   'ibil-38',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are at the campus bike workshop asking why your rear tyre keeps losing pressure.","turns":[{"speaker":"Mechanic Luis","speakerAudioText":"How often does it go flat?","options":["The lights are too dim at night.","I have never ridden this bicycle.","The saddle is the wrong colour.","It loses pressure within a day, and I cannot find a visible hole in the tube."],"correctIndex":3},{"speaker":"Mechanic Luis","speakerAudioText":"Have you checked the rim tape and the valve?","options":["The chain is clean.","I do not know what a tyre is.","The valve looks fine, but the rim tape is worn and the spokes are exposed.","I only checked the bell."],"correctIndex":2},{"speaker":"Mechanic Luis","speakerAudioText":"I will replace the tape and the tube, then test it.","options":["I will ride it now without the wheel.","Thank you. How long should I wait before riding it?","I would rather buy a new bicycle.","Please remove the brakes."],"correctIndex":1}],"summaryPrompt":"Summarise the fault, what the mechanic found and what you asked before leaving."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are at the campus bike workshop asking why your rear tyre keeps losing pressure.","turns":[{"speaker":"Mechanic Luis","speakerAudioText":"How often does it go flat?","options":["I have never ridden this bicycle.","The saddle is the wrong colour.","It loses pressure within a day, and I cannot find a visible hole in the tube.","The lights are too dim at night."],"correctIndex":2},{"speaker":"Mechanic Luis","speakerAudioText":"Have you checked the rim tape and the valve?","options":["The valve looks fine, but the rim tape is worn and the spokes are exposed.","I only checked the bell.","The chain is clean.","I do not know what a tyre is."],"correctIndex":0},{"speaker":"Mechanic Luis","speakerAudioText":"I will replace the tape and the tube, then test it.","options":["I will ride it now without the wheel.","Thank you. How long should I wait before riding it?","I would rather buy a new bicycle.","Please remove the brakes."],"correctIndex":1}],"summaryPrompt":"Summarise the fault, what the mechanic found and what you asked before leaving."}',
+  '{"turnsAnswers":[2,0,1]}',
   150,
   true
 )
@@ -4653,8 +5013,8 @@ VALUES (
   'ibil-39',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are asking a tutor how to form a study group for a statistics module.","turns":[{"speaker":"Tutor Osei","speakerAudioText":"Why do you want a group rather than individual revision?","options":["We want someone else to take the exam for us.","The lecture hall is usually cold.","I enjoy group work because it is shorter.","We want to work through problem sets together and explain solutions to each other."],"correctIndex":3},{"speaker":"Tutor Osei","speakerAudioText":"How many students, and how will you keep the group focused?","options":["Four of us, with a rotating chair and a short agenda for each meeting.","Thirty students, with no plan.","Just me, but I will talk aloud.","We will meet only when we feel like it."],"correctIndex":0},{"speaker":"Tutor Osei","speakerAudioText":"Book a room and send me your first agenda.","options":["We do not need a room.","We will book the small seminar room and share the agenda by Wednesday.","We will meet in the corridor.","I will send it after the exam."],"correctIndex":1}],"summaryPrompt":"Write a short summary of the plan: the group size, the method and the next administrative step."}',
-  '{"turnsAnswers":[3,0,1]}',
+  '{"scenario":"You are asking a tutor how to form a study group for a statistics module.","turns":[{"speaker":"Tutor Osei","speakerAudioText":"Why do you want a group rather than individual revision?","options":["I enjoy group work because it is shorter.","We want to work through problem sets together and explain solutions to each other.","We want someone else to take the exam for us.","The lecture hall is usually cold."],"correctIndex":1},{"speaker":"Tutor Osei","speakerAudioText":"How many students, and how will you keep the group focused?","options":["Just me, but I will talk aloud.","We will meet only when we feel like it.","Four of us, with a rotating chair and a short agenda for each meeting.","Thirty students, with no plan."],"correctIndex":2},{"speaker":"Tutor Osei","speakerAudioText":"Book a room and send me your first agenda.","options":["We will book the small seminar room and share the agenda by Wednesday.","We will meet in the corridor.","I will send it after the exam.","We do not need a room."],"correctIndex":0}],"summaryPrompt":"Write a short summary of the plan: the group size, the method and the next administrative step."}',
+  '{"turnsAnswers":[1,2,0]}',
   150,
   true
 )
@@ -4671,8 +5031,8 @@ VALUES (
   'ibil-40',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the library asking for an interlibrary loan of a thesis held by another university.","turns":[{"speaker":"Librarian Novak","speakerAudioText":"Do you have the full citation?","options":["I only remember the cover colour.","No, I hoped you could guess it.","It is a novel I saw in a shop.","Yes, I have the author, title, year and the repository record."],"correctIndex":3},{"speaker":"Librarian Novak","speakerAudioText":"The loan may take two weeks and the thesis may be print-only.","options":["That is fine; I can plan around the delay and use a reading room copy.","I need it in ten minutes.","I refuse to use a reading room.","Print is not useful to me."],"correctIndex":0},{"speaker":"Librarian Novak","speakerAudioText":"I will submit the request and email you the reference number.","options":["I have already read it.","Thank you. Could you also tell me whether renewal is possible?","Please cancel my library account.","I will not need the number."],"correctIndex":1}],"summaryPrompt":"Summarise the request, the expected delay and the question you asked about renewal."}',
-  '{"turnsAnswers":[3,0,1]}',
+  '{"scenario":"You are at the library asking for an interlibrary loan of a thesis held by another university.","turns":[{"speaker":"Librarian Novak","speakerAudioText":"Do you have the full citation?","options":["I only remember the cover colour.","No, I hoped you could guess it.","It is a novel I saw in a shop.","Yes, I have the author, title, year and the repository record."],"correctIndex":3},{"speaker":"Librarian Novak","speakerAudioText":"The loan may take two weeks and the thesis may be print-only.","options":["I need it in ten minutes.","I refuse to use a reading room.","Print is not useful to me.","That is fine; I can plan around the delay and use a reading room copy."],"correctIndex":3},{"speaker":"Librarian Novak","speakerAudioText":"I will submit the request and email you the reference number.","options":["I have already read it.","Thank you. Could you also tell me whether renewal is possible?","Please cancel my library account.","I will not need the number."],"correctIndex":1}],"summaryPrompt":"Summarise the request, the expected delay and the question you asked about renewal."}',
+  '{"turnsAnswers":[3,3,1]}',
   150,
   true
 )
@@ -4689,8 +5049,8 @@ VALUES (
   'ibil-41',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are explaining to the laboratory coordinator why you missed a compulsory practical session.","turns":[{"speaker":"Coordinator Brennan","speakerAudioText":"Your attendance record shows an absence on Tuesday. What happened?","options":["I do not attend practicals.","I had a medical appointment and can provide a note from the clinic.","I forgot because the session was optional.","I was at the beach with friends."],"correctIndex":1},{"speaker":"Coordinator Brennan","speakerAudioText":"The class was full, but there may be a catch-up group on Friday.","options":["Friday is inconvenient because of television.","Please cancel the module for everyone.","I would be grateful to join it; I have already read the protocol.","I do not need to catch up."],"correctIndex":2},{"speaker":"Coordinator Brennan","speakerAudioText":"Send the note and sign the catch-up list at reception.","options":["I will do it next term.","I cannot sign anything.","The reception is closed forever.","I will send the note today and sign the list before noon."],"correctIndex":3}],"summaryPrompt":"Write a 3-sentence summary: the reason for the absence, the catch-up arrangement and your next actions."}',
-  '{"turnsAnswers":[1,2,3]}',
+  '{"scenario":"You are explaining to the laboratory coordinator why you missed a compulsory practical session.","turns":[{"speaker":"Coordinator Brennan","speakerAudioText":"Your attendance record shows an absence on Tuesday. What happened?","options":["I forgot because the session was optional.","I was at the beach with friends.","I do not attend practicals.","I had a medical appointment and can provide a note from the clinic."],"correctIndex":3},{"speaker":"Coordinator Brennan","speakerAudioText":"The class was full, but there may be a catch-up group on Friday.","options":["I do not need to catch up.","Friday is inconvenient because of television.","Please cancel the module for everyone.","I would be grateful to join it; I have already read the protocol."],"correctIndex":3},{"speaker":"Coordinator Brennan","speakerAudioText":"Send the note and sign the catch-up list at reception.","options":["I will send the note today and sign the list before noon.","I will do it next term.","I cannot sign anything.","The reception is closed forever."],"correctIndex":0}],"summaryPrompt":"Write a 3-sentence summary: the reason for the absence, the catch-up arrangement and your next actions."}',
+  '{"turnsAnswers":[3,3,0]}',
   150,
   true
 )
@@ -4707,8 +5067,8 @@ VALUES (
   'ibil-42',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the student union asking how to start a film society.","turns":[{"speaker":"Union Officer Priya","speakerAudioText":"What kind of society do you have in mind?","options":["A group that only meets online.","I have not thought about it.","A weekly screening group with short discussions and occasional guest speakers.","A society for people who dislike films."],"correctIndex":2},{"speaker":"Union Officer Priya","speakerAudioText":"You will need a committee, a constitution and a risk assessment.","options":["I want the union to run it for me.","I have three members ready and can draft the documents this week.","I will do everything alone without documents.","We do not need a room."],"correctIndex":1},{"speaker":"Union Officer Priya","speakerAudioText":"Submit the form and book a room for the first meeting.","options":["I will submit the form and book the small theatre for Thursday.","I will submit it next year.","I cannot book rooms.","Please give me a cinema."],"correctIndex":0}],"summaryPrompt":"Summarise the society proposal, the paperwork required and the first practical step."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are at the student union asking how to start a film society.","turns":[{"speaker":"Union Officer Priya","speakerAudioText":"What kind of society do you have in mind?","options":["A weekly screening group with short discussions and occasional guest speakers.","A society for people who dislike films.","A group that only meets online.","I have not thought about it."],"correctIndex":0},{"speaker":"Union Officer Priya","speakerAudioText":"You will need a committee, a constitution and a risk assessment.","options":["I will do everything alone without documents.","We do not need a room.","I want the union to run it for me.","I have three members ready and can draft the documents this week."],"correctIndex":3},{"speaker":"Union Officer Priya","speakerAudioText":"Submit the form and book a room for the first meeting.","options":["I will submit the form and book the small theatre for Thursday.","I will submit it next year.","I cannot book rooms.","Please give me a cinema."],"correctIndex":0}],"summaryPrompt":"Summarise the society proposal, the paperwork required and the first practical step."}',
+  '{"turnsAnswers":[0,3,0]}',
   150,
   true
 )
@@ -4725,8 +5085,8 @@ VALUES (
   'ibil-43',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are asking cafeteria staff about options for a severe nut allergy.","turns":[{"speaker":"Catering Assistant Marco","speakerAudioText":"What can I help you with?","options":["The music is too loud.","I am looking for a job.","I have a severe nut allergy and need to know which dishes are prepared without nuts.","I would like a larger table."],"correctIndex":2},{"speaker":"Catering Assistant Marco","speakerAudioText":"The soups change daily; the kitchen uses shared equipment.","options":["I do not have an allergy.","Could you check the ingredient list and tell me whether cross-contact is possible?","I will take the soup without asking.","Shared equipment is always safe."],"correctIndex":1},{"speaker":"Catering Assistant Marco","speakerAudioText":"I will ask the chef and show you the sealed options.","options":["Thank you. I will wait here while you check.","I will eat it and see what happens.","Please remove all food from the menu.","I do not need the packaging."],"correctIndex":0}],"summaryPrompt":"Summarise the allergy concern, the cross-contact question and the staff response."}',
-  '{"turnsAnswers":[2,1,0]}',
+  '{"scenario":"You are asking cafeteria staff about options for a severe nut allergy.","turns":[{"speaker":"Catering Assistant Marco","speakerAudioText":"What can I help you with?","options":["I am looking for a job.","I have a severe nut allergy and need to know which dishes are prepared without nuts.","I would like a larger table.","The music is too loud."],"correctIndex":1},{"speaker":"Catering Assistant Marco","speakerAudioText":"The soups change daily; the kitchen uses shared equipment.","options":["Shared equipment is always safe.","I do not have an allergy.","Could you check the ingredient list and tell me whether cross-contact is possible?","I will take the soup without asking."],"correctIndex":2},{"speaker":"Catering Assistant Marco","speakerAudioText":"I will ask the chef and show you the sealed options.","options":["Thank you. I will wait here while you check.","I will eat it and see what happens.","Please remove all food from the menu.","I do not need the packaging."],"correctIndex":0}],"summaryPrompt":"Summarise the allergy concern, the cross-contact question and the staff response."}',
+  '{"turnsAnswers":[1,2,0]}',
   150,
   true
 )
@@ -4743,8 +5103,8 @@ VALUES (
   'ibil-44',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are asking your professor to move your presentation because it clashes with an academic conference.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"The schedule is tight. Why do you need a different date?","options":["The room is too far from the cafe.","I am presenting at a student conference that day and cannot attend both.","I would prefer a later start on Fridays.","I have not prepared anything."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"I could move you to the following week, but the panel will be different.","options":["That is acceptable; I will prepare for the new panel and confirm the topic.","I want the same panel and a shorter talk.","I refuse to present at all.","Please cancel the assessment."],"correctIndex":0},{"speaker":"Professor Adeyemi","speakerAudioText":"Email me the conference programme and I will confirm.","options":["I will send it after the semester.","I do not have a programme.","I already presented.","I will send the programme this afternoon. Thank you for accommodating me."],"correctIndex":3}],"summaryPrompt":"Summarise the clash, the proposed new date and the document the professor requested."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are asking your professor to move your presentation because it clashes with an academic conference.","turns":[{"speaker":"Professor Adeyemi","speakerAudioText":"The schedule is tight. Why do you need a different date?","options":["The room is too far from the cafe.","I am presenting at a student conference that day and cannot attend both.","I would prefer a later start on Fridays.","I have not prepared anything."],"correctIndex":1},{"speaker":"Professor Adeyemi","speakerAudioText":"I could move you to the following week, but the panel will be different.","options":["I refuse to present at all.","Please cancel the assessment.","That is acceptable; I will prepare for the new panel and confirm the topic.","I want the same panel and a shorter talk."],"correctIndex":2},{"speaker":"Professor Adeyemi","speakerAudioText":"Email me the conference programme and I will confirm.","options":["I already presented.","I will send the programme this afternoon. Thank you for accommodating me.","I will send it after the semester.","I do not have a programme."],"correctIndex":1}],"summaryPrompt":"Summarise the clash, the proposed new date and the document the professor requested."}',
+  '{"turnsAnswers":[1,2,1]}',
   150,
   true
 )
@@ -4761,8 +5121,8 @@ VALUES (
   'ibil-45',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the print shop because the conference poster was printed at the wrong size.","turns":[{"speaker":"Print Assistant Hana","speakerAudioText":"Do you have the order number and the file you sent?","options":["I did not order anything.","Yes, the order is 4821 and the file specified A0, but the print is A2.","I lost the receipt and the file.","The poster is for a birthday party."],"correctIndex":1},{"speaker":"Print Assistant Hana","speakerAudioText":"We can reprint today, but the larger paper costs more.","options":["Please reprint it at A0; I accept the difference and need it by four o’clock.","I will take the small one and hope nobody notices.","Please print ten copies for free.","I do not need it today."],"correctIndex":0},{"speaker":"Print Assistant Hana","speakerAudioText":"I will rush the order and call you when it is ready.","options":["Do not call me.","Please fold it into a box.","I will collect it next month.","Thank you. Could you check that the margins are not cut?"],"correctIndex":3}],"summaryPrompt":"Summarise the printing error, the agreed reprint and the extra check you requested."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are at the print shop because the conference poster was printed at the wrong size.","turns":[{"speaker":"Print Assistant Hana","speakerAudioText":"Do you have the order number and the file you sent?","options":["I lost the receipt and the file.","The poster is for a birthday party.","I did not order anything.","Yes, the order is 4821 and the file specified A0, but the print is A2."],"correctIndex":3},{"speaker":"Print Assistant Hana","speakerAudioText":"We can reprint today, but the larger paper costs more.","options":["Please reprint it at A0; I accept the difference and need it by four o’clock.","I will take the small one and hope nobody notices.","Please print ten copies for free.","I do not need it today."],"correctIndex":0},{"speaker":"Print Assistant Hana","speakerAudioText":"I will rush the order and call you when it is ready.","options":["Do not call me.","Please fold it into a box.","I will collect it next month.","Thank you. Could you check that the margins are not cut?"],"correctIndex":3}],"summaryPrompt":"Summarise the printing error, the agreed reprint and the extra check you requested."}',
+  '{"turnsAnswers":[3,0,3]}',
   150,
   true
 )
@@ -4779,8 +5139,8 @@ VALUES (
   'ibil-46',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are asking a course administrator whether credits from a summer school can count toward your degree.","turns":[{"speaker":"Administrator Kowalski","speakerAudioText":"Which institution and modules did you complete?","options":["I have no transcripts.","I completed two economics modules at a summer school and have the transcripts.","I attended a concert at another university.","I cannot remember the institution."],"correctIndex":1},{"speaker":"Administrator Kowalski","speakerAudioText":"We need the syllabus and the learning outcomes, not only the grades.","options":["I do not have a syllabus.","Please approve them without evidence.","I can send both and a copy of the reading list.","The grades should be enough."],"correctIndex":2},{"speaker":"Administrator Kowalski","speakerAudioText":"The committee meets in three weeks; I will add your case.","options":["I need an answer before lunch.","I will not attend the meeting.","Please decide without me.","Thank you. I will send the documents today and check the decision date."],"correctIndex":3}],"summaryPrompt":"Summarise the credit request, the evidence required and the timeline for a decision."}',
-  '{"turnsAnswers":[1,2,3]}',
+  '{"scenario":"You are asking a course administrator whether credits from a summer school can count toward your degree.","turns":[{"speaker":"Administrator Kowalski","speakerAudioText":"Which institution and modules did you complete?","options":["I cannot remember the institution.","I have no transcripts.","I completed two economics modules at a summer school and have the transcripts.","I attended a concert at another university."],"correctIndex":2},{"speaker":"Administrator Kowalski","speakerAudioText":"We need the syllabus and the learning outcomes, not only the grades.","options":["The grades should be enough.","I do not have a syllabus.","Please approve them without evidence.","I can send both and a copy of the reading list."],"correctIndex":3},{"speaker":"Administrator Kowalski","speakerAudioText":"The committee meets in three weeks; I will add your case.","options":["I need an answer before lunch.","I will not attend the meeting.","Please decide without me.","Thank you. I will send the documents today and check the decision date."],"correctIndex":3}],"summaryPrompt":"Summarise the credit request, the evidence required and the timeline for a decision."}',
+  '{"turnsAnswers":[2,3,3]}',
   150,
   true
 )
@@ -4797,8 +5157,8 @@ VALUES (
   'ibil-47',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are discussing a placement offer with the placement coordinator before accepting it.","turns":[{"speaker":"Coordinator Ellis","speakerAudioText":"What concerns you about the offer?","options":["I have not read the offer.","The start date overlaps with my final exams, and the travel allowance is unclear.","I dislike the company logo.","The office is on a nice street."],"correctIndex":1},{"speaker":"Coordinator Ellis","speakerAudioText":"The employer may allow a later start; should I ask?","options":["No, I will simply not turn up.","Please reject the offer for me.","I want a different career.","Yes, please ask whether I can begin after the last exam and confirm the allowance in writing."],"correctIndex":3},{"speaker":"Coordinator Ellis","speakerAudioText":"I will email them today and copy you.","options":["I have already accepted elsewhere.","Thank you. I will reply with my exam dates so they have the full picture.","I will not check my email.","Please hide my dates from them."],"correctIndex":1}],"summaryPrompt":"Write a short summary of the two concerns and the action the coordinator will take."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are discussing a placement offer with the placement coordinator before accepting it.","turns":[{"speaker":"Coordinator Ellis","speakerAudioText":"What concerns you about the offer?","options":["The office is on a nice street.","I have not read the offer.","The start date overlaps with my final exams, and the travel allowance is unclear.","I dislike the company logo."],"correctIndex":2},{"speaker":"Coordinator Ellis","speakerAudioText":"The employer may allow a later start; should I ask?","options":["Please reject the offer for me.","I want a different career.","Yes, please ask whether I can begin after the last exam and confirm the allowance in writing.","No, I will simply not turn up."],"correctIndex":2},{"speaker":"Coordinator Ellis","speakerAudioText":"I will email them today and copy you.","options":["Please hide my dates from them.","I have already accepted elsewhere.","Thank you. I will reply with my exam dates so they have the full picture.","I will not check my email."],"correctIndex":2}],"summaryPrompt":"Write a short summary of the two concerns and the action the coordinator will take."}',
+  '{"turnsAnswers":[2,2,2]}',
   150,
   true
 )
@@ -4815,8 +5175,8 @@ VALUES (
   'ibil-48',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the sports centre because your membership card stopped working at the gate.","turns":[{"speaker":"Receptionist Tessa","speakerAudioText":"When did it last work, and do you have the card?","options":["I have never had a card.","The card is for a different gym.","It worked yesterday; the card is demagnetised and the number is still readable.","I lost it in another city."],"correctIndex":2},{"speaker":"Receptionist Tessa","speakerAudioText":"I can issue a replacement for a small fee or reactivate this one.","options":["I want a free lifetime membership.","Please give me another person’s card.","I do not need access.","Please reactivate it if possible; otherwise I will pay for a replacement."],"correctIndex":3},{"speaker":"Receptionist Tessa","speakerAudioText":"I will test it at the gate and update your photo.","options":["That works for me. I will wait by the gate.","I will test it at home.","Do not change the photo.","I am in a hurry tomorrow."],"correctIndex":0}],"summaryPrompt":"Summarise the card problem, the options offered and the chosen solution."}',
-  '{"turnsAnswers":[2,3,0]}',
+  '{"scenario":"You are at the sports centre because your membership card stopped working at the gate.","turns":[{"speaker":"Receptionist Tessa","speakerAudioText":"When did it last work, and do you have the card?","options":["It worked yesterday; the card is demagnetised and the number is still readable.","I lost it in another city.","I have never had a card.","The card is for a different gym."],"correctIndex":0},{"speaker":"Receptionist Tessa","speakerAudioText":"I can issue a replacement for a small fee or reactivate this one.","options":["Please reactivate it if possible; otherwise I will pay for a replacement.","I want a free lifetime membership.","Please give me another person’s card.","I do not need access."],"correctIndex":0},{"speaker":"Receptionist Tessa","speakerAudioText":"I will test it at the gate and update your photo.","options":["Do not change the photo.","I am in a hurry tomorrow.","That works for me. I will wait by the gate.","I will test it at home."],"correctIndex":2}],"summaryPrompt":"Summarise the card problem, the options offered and the chosen solution."}',
+  '{"turnsAnswers":[0,0,2]}',
   150,
   true
 )
@@ -4833,8 +5193,8 @@ VALUES (
   'ibil-49',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are at the exams office reporting that an online submission failed before the deadline.","turns":[{"speaker":"Exams Officer Rahman","speakerAudioText":"Do you have evidence that you tried to submit on time?","options":["I only have a verbal memory.","I submitted it by post.","I did not try to submit.","Yes, I have a screenshot of the error and the confirmation email from the system."],"correctIndex":3},{"speaker":"Exams Officer Rahman","speakerAudioText":"The timestamp on the file may still be accepted if the system failed.","options":["The file was saved at 11:40, twenty minutes before the deadline, and the upload error appeared at 11:47.","I finished it after the deadline.","The file has no timestamp.","I deleted the file."],"correctIndex":0},{"speaker":"Exams Officer Rahman","speakerAudioText":"Complete this form and the board will review it.","options":["Please change my grade immediately.","I will complete it now and attach the evidence. When should I expect a decision?","I will complete it next month.","I do not want a review."],"correctIndex":1}],"summaryPrompt":"Summarise the failed submission, the evidence you have and the review process."}',
-  '{"turnsAnswers":[3,0,1]}',
+  '{"scenario":"You are at the exams office reporting that an online submission failed before the deadline.","turns":[{"speaker":"Exams Officer Rahman","speakerAudioText":"Do you have evidence that you tried to submit on time?","options":["I did not try to submit.","Yes, I have a screenshot of the error and the confirmation email from the system.","I only have a verbal memory.","I submitted it by post."],"correctIndex":1},{"speaker":"Exams Officer Rahman","speakerAudioText":"The timestamp on the file may still be accepted if the system failed.","options":["The file was saved at 11:40, twenty minutes before the deadline, and the upload error appeared at 11:47.","I finished it after the deadline.","The file has no timestamp.","I deleted the file."],"correctIndex":0},{"speaker":"Exams Officer Rahman","speakerAudioText":"Complete this form and the board will review it.","options":["Please change my grade immediately.","I will complete it now and attach the evidence. When should I expect a decision?","I will complete it next month.","I do not want a review."],"correctIndex":1}],"summaryPrompt":"Summarise the failed submission, the evidence you have and the review process."}',
+  '{"turnsAnswers":[1,0,1]}',
   150,
   true
 )
@@ -4851,8 +5211,8 @@ VALUES (
   'ibil-50',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are asking a language exchange partner to help you rehearse a presentation.","turns":[{"speaker":"Partner Sofia","speakerAudioText":"What would you like to practise?","options":["I want to learn a completely new language today.","I need help with my bicycle.","I do not have a presentation.","I need to slow down and pronounce the technical terms clearly."],"correctIndex":3},{"speaker":"Partner Sofia","speakerAudioText":"Should I interrupt when I hear a mistake, or wait until the end?","options":["Never tell me anything.","Correct only my handwriting.","Please note the errors and discuss them after each section, so I keep the flow.","Interrupt every word."],"correctIndex":2},{"speaker":"Partner Sofia","speakerAudioText":"Send me the slides and we can meet on Thursday.","options":["Thursday is in another month.","I will send them tonight and book a quiet room for Thursday.","I will send them after the presentation.","I cannot share slides."],"correctIndex":1}],"summaryPrompt":"Summarise what you want to improve, the feedback method and the meeting plan."}',
-  '{"turnsAnswers":[3,2,1]}',
+  '{"scenario":"You are asking a language exchange partner to help you rehearse a presentation.","turns":[{"speaker":"Partner Sofia","speakerAudioText":"What would you like to practise?","options":["I need to slow down and pronounce the technical terms clearly.","I want to learn a completely new language today.","I need help with my bicycle.","I do not have a presentation."],"correctIndex":0},{"speaker":"Partner Sofia","speakerAudioText":"Should I interrupt when I hear a mistake, or wait until the end?","options":["Never tell me anything.","Correct only my handwriting.","Please note the errors and discuss them after each section, so I keep the flow.","Interrupt every word."],"correctIndex":2},{"speaker":"Partner Sofia","speakerAudioText":"Send me the slides and we can meet on Thursday.","options":["I will send them after the presentation.","I cannot share slides.","Thursday is in another month.","I will send them tonight and book a quiet room for Thursday."],"correctIndex":3}],"summaryPrompt":"Summarise what you want to improve, the feedback method and the meeting plan."}',
+  '{"turnsAnswers":[0,2,3]}',
   150,
   true
 )
@@ -4869,8 +5229,8 @@ VALUES (
   'ibil-51',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the museum asking about volunteering as a gallery guide.","turns":[{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"What experience do you have with visitors?","options":["I only want to clean the floors.","I have led campus tours and worked at a school open day.","I prefer to avoid all people.","I have never spoken in public."],"correctIndex":1},{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"Guides need training on the collection and on safeguarding.","options":["I cannot attend any training.","Safeguarding is unnecessary.","I already know everything.","I can attend the six-week course and the safeguarding session."],"correctIndex":3},{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"We ask for two shifts a month.","options":["I will decide after the season.","That fits my timetable; I can start after the training.","I can come once a year.","I want to be paid as a director."],"correctIndex":1}],"summaryPrompt":"Summarise the volunteering role, the training required and the time commitment."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are at the museum asking about volunteering as a gallery guide.","turns":[{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"What experience do you have with visitors?","options":["I have never spoken in public.","I only want to clean the floors.","I have led campus tours and worked at a school open day.","I prefer to avoid all people."],"correctIndex":2},{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"Guides need training on the collection and on safeguarding.","options":["Safeguarding is unnecessary.","I already know everything.","I can attend the six-week course and the safeguarding session.","I cannot attend any training."],"correctIndex":2},{"speaker":"Volunteer Coordinator Adams","speakerAudioText":"We ask for two shifts a month.","options":["I want to be paid as a director.","I will decide after the season.","That fits my timetable; I can start after the training.","I can come once a year."],"correctIndex":2}],"summaryPrompt":"Summarise the volunteering role, the training required and the time commitment."}',
+  '{"turnsAnswers":[2,2,2]}',
   150,
   true
 )
@@ -4905,8 +5265,8 @@ VALUES (
   'ibil-53',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are at the finance office asking about the payment deadline for a field trip.","turns":[{"speaker":"Finance Officer Iqbal","speakerAudioText":"The deposit was due last week. Did you receive the reminder?","options":["I never check email.","I do not intend to pay.","The trip is not happening.","I did, but my funding arrived late; can I pay the deposit today?"],"correctIndex":3},{"speaker":"Finance Officer Iqbal","speakerAudioText":"I can extend the deadline by two days, but the balance is still due before departure.","options":["Thank you. I will pay the deposit now and the balance on Friday.","I want a full refund instead.","Please cancel the trip for everyone.","I will pay after I return."],"correctIndex":0},{"speaker":"Finance Officer Iqbal","speakerAudioText":"I will note the extension and send a receipt.","options":["I will ignore the balance.","I will check the receipt and keep it for my records.","I do not need a receipt.","Please send it to someone else."],"correctIndex":1}],"summaryPrompt":"Summarise the late deposit, the extension and the remaining payment date."}',
-  '{"turnsAnswers":[3,0,1]}',
+  '{"scenario":"You are at the finance office asking about the payment deadline for a field trip.","turns":[{"speaker":"Finance Officer Iqbal","speakerAudioText":"The deposit was due last week. Did you receive the reminder?","options":["I did, but my funding arrived late; can I pay the deposit today?","I never check email.","I do not intend to pay.","The trip is not happening."],"correctIndex":0},{"speaker":"Finance Officer Iqbal","speakerAudioText":"I can extend the deadline by two days, but the balance is still due before departure.","options":["Thank you. I will pay the deposit now and the balance on Friday.","I want a full refund instead.","Please cancel the trip for everyone.","I will pay after I return."],"correctIndex":0},{"speaker":"Finance Officer Iqbal","speakerAudioText":"I will note the extension and send a receipt.","options":["Please send it to someone else.","I will ignore the balance.","I will check the receipt and keep it for my records.","I do not need a receipt."],"correctIndex":2}],"summaryPrompt":"Summarise the late deposit, the extension and the remaining payment date."}',
+  '{"turnsAnswers":[0,0,2]}',
   150,
   true
 )
@@ -4923,8 +5283,8 @@ VALUES (
   'ibil-54',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are asking the captain of a university sports club about training times and selection.","turns":[{"speaker":"Captain Deniz","speakerAudioText":"We train three evenings a week. What is your availability?","options":["I want to change the schedule for everyone.","I can attend Tuesday and Thursday but have a laboratory class on Monday.","I am free only at breakfast.","I do not play any sport."],"correctIndex":1},{"speaker":"Captain Deniz","speakerAudioText":"Selection is based on attendance and a fitness test.","options":["I understand; when is the test and what should I bring?","I expect automatic selection.","I will skip the test.","I do not need to attend training."],"correctIndex":0},{"speaker":"Captain Deniz","speakerAudioText":"Come to a trial session on Thursday and bring indoor shoes.","options":["I will come next year.","I do not own shoes.","Thursday is impossible forever.","I will be there at six with the right shoes."],"correctIndex":3}],"summaryPrompt":"Summarise your availability, the selection process and the trial arrangement."}',
-  '{"turnsAnswers":[1,0,3]}',
+  '{"scenario":"You are asking the captain of a university sports club about training times and selection.","turns":[{"speaker":"Captain Deniz","speakerAudioText":"We train three evenings a week. What is your availability?","options":["I do not play any sport.","I want to change the schedule for everyone.","I can attend Tuesday and Thursday but have a laboratory class on Monday.","I am free only at breakfast."],"correctIndex":2},{"speaker":"Captain Deniz","speakerAudioText":"Selection is based on attendance and a fitness test.","options":["I understand; when is the test and what should I bring?","I expect automatic selection.","I will skip the test.","I do not need to attend training."],"correctIndex":0},{"speaker":"Captain Deniz","speakerAudioText":"Come to a trial session on Thursday and bring indoor shoes.","options":["I do not own shoes.","Thursday is impossible forever.","I will be there at six with the right shoes.","I will come next year."],"correctIndex":2}],"summaryPrompt":"Summarise your availability, the selection process and the trial arrangement."}',
+  '{"turnsAnswers":[2,0,2]}',
   150,
   true
 )
@@ -4941,8 +5301,8 @@ VALUES (
   'ibil-55',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are asking a lecturer whether the recorded lectures can include captions.","turns":[{"speaker":"Dr Moreau","speakerAudioText":"The recordings are automatic and often inaccurate. Why do you need captions?","options":["The captions are for my friend who lives abroad.","I have a hearing difficulty and rely on captions to follow technical terms.","I prefer watching videos at double speed.","I do not attend lectures."],"correctIndex":1},{"speaker":"Dr Moreau","speakerAudioText":"I can enable the edited captions, but it takes a day.","options":["Please remove all captions.","I do not want to provide terms.","That would help; I can also send a list of subject-specific terms.","I need them immediately or not at all."],"correctIndex":2},{"speaker":"Dr Moreau","speakerAudioText":"I will ask the digital team and confirm by Friday.","options":["I will not check.","Please cancel the module.","I do not need a reply.","Thank you. I will check on Friday and let you know if anything is missing."],"correctIndex":3}],"summaryPrompt":"Summarise the access need, the caption solution and the agreed follow-up."}',
-  '{"turnsAnswers":[1,2,3]}',
+  '{"scenario":"You are asking a lecturer whether the recorded lectures can include captions.","turns":[{"speaker":"Dr Moreau","speakerAudioText":"The recordings are automatic and often inaccurate. Why do you need captions?","options":["The captions are for my friend who lives abroad.","I have a hearing difficulty and rely on captions to follow technical terms.","I prefer watching videos at double speed.","I do not attend lectures."],"correctIndex":1},{"speaker":"Dr Moreau","speakerAudioText":"I can enable the edited captions, but it takes a day.","options":["Please remove all captions.","I do not want to provide terms.","That would help; I can also send a list of subject-specific terms.","I need them immediately or not at all."],"correctIndex":2},{"speaker":"Dr Moreau","speakerAudioText":"I will ask the digital team and confirm by Friday.","options":["Thank you. I will check on Friday and let you know if anything is missing.","I will not check.","Please cancel the module.","I do not need a reply."],"correctIndex":0}],"summaryPrompt":"Summarise the access need, the caption solution and the agreed follow-up."}',
+  '{"turnsAnswers":[1,2,0]}',
   150,
   true
 )
@@ -4959,8 +5319,8 @@ VALUES (
   'ibil-56',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are practising for a scholarship interview with a careers adviser.","turns":[{"speaker":"Adviser Campbell","speakerAudioText":"Tell me in one minute why you deserve the scholarship.","options":["I have strong results, a clear research question and a plan to use the award for fieldwork.","I deserve it because I am lucky.","I have no plan.","I want the money for a holiday."],"correctIndex":0},{"speaker":"Adviser Campbell","speakerAudioText":"What will you say when asked about your weaknesses?","options":["I will claim to have none.","I will blame my teachers.","I will change the subject.","I will name one real weakness and describe the steps I am taking to improve."],"correctIndex":3},{"speaker":"Adviser Campbell","speakerAudioText":"Let us run a mock interview on Monday.","options":["I will skip the mock.","Monday is not a day.","I will prepare answers and send you my research summary beforehand.","I cannot prepare."],"correctIndex":2}],"summaryPrompt":"Summarise the scholarship case, the weakness answer and the mock interview plan."}',
-  '{"turnsAnswers":[0,3,2]}',
+  '{"scenario":"You are practising for a scholarship interview with a careers adviser.","turns":[{"speaker":"Adviser Campbell","speakerAudioText":"Tell me in one minute why you deserve the scholarship.","options":["I want the money for a holiday.","I have strong results, a clear research question and a plan to use the award for fieldwork.","I deserve it because I am lucky.","I have no plan."],"correctIndex":1},{"speaker":"Adviser Campbell","speakerAudioText":"What will you say when asked about your weaknesses?","options":["I will claim to have none.","I will blame my teachers.","I will change the subject.","I will name one real weakness and describe the steps I am taking to improve."],"correctIndex":3},{"speaker":"Adviser Campbell","speakerAudioText":"Let us run a mock interview on Monday.","options":["I cannot prepare.","I will skip the mock.","Monday is not a day.","I will prepare answers and send you my research summary beforehand."],"correctIndex":3}],"summaryPrompt":"Summarise the scholarship case, the weakness answer and the mock interview plan."}',
+  '{"turnsAnswers":[1,3,3]}',
   150,
   true
 )
@@ -4977,8 +5337,8 @@ VALUES (
   'ibil-57',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are meeting a residence adviser about repeated problems in a shared kitchen.","turns":[{"speaker":"Residence Adviser Gomez","speakerAudioText":"What has been happening?","options":["Food is left out, bins overflow and nobody follows the cleaning rota.","The kitchen is spotless.","I have my own private kitchen.","I never use the kitchen."],"correctIndex":0},{"speaker":"Residence Adviser Gomez","speakerAudioText":"Have you spoken to your flatmates directly?","options":["I have not met them.","I want them evicted.","Yes, twice, and we agreed a rota that was ignored after a week.","No, I prefer to complain anonymously."],"correctIndex":2},{"speaker":"Residence Adviser Gomez","speakerAudioText":"I can chair a flat meeting and help you write a clear agreement.","options":["That would help; I will suggest a meeting on Wednesday evening.","I do not want a meeting.","Please search their rooms.","I will move out today."],"correctIndex":0}],"summaryPrompt":"Summarise the kitchen problems, what you have already tried and the adviser offer."}',
-  '{"turnsAnswers":[0,2,0]}',
+  '{"scenario":"You are meeting a residence adviser about repeated problems in a shared kitchen.","turns":[{"speaker":"Residence Adviser Gomez","speakerAudioText":"What has been happening?","options":["The kitchen is spotless.","I have my own private kitchen.","I never use the kitchen.","Food is left out, bins overflow and nobody follows the cleaning rota."],"correctIndex":3},{"speaker":"Residence Adviser Gomez","speakerAudioText":"Have you spoken to your flatmates directly?","options":["I want them evicted.","Yes, twice, and we agreed a rota that was ignored after a week.","No, I prefer to complain anonymously.","I have not met them."],"correctIndex":1},{"speaker":"Residence Adviser Gomez","speakerAudioText":"I can chair a flat meeting and help you write a clear agreement.","options":["That would help; I will suggest a meeting on Wednesday evening.","I do not want a meeting.","Please search their rooms.","I will move out today."],"correctIndex":0}],"summaryPrompt":"Summarise the kitchen problems, what you have already tried and the adviser offer."}',
+  '{"turnsAnswers":[3,1,0]}',
   150,
   true
 )
@@ -4995,8 +5355,8 @@ VALUES (
   'ibil-58',
   'INTERACTIVE_LISTENING',
   'B1',
-  '{"scenario":"You are asking your department about funding to attend a conference.","turns":[{"speaker":"Department Officer Shaw","speakerAudioText":"Have you been accepted to present?","options":["I want to attend as a tourist.","I was rejected.","Yes, my abstract was accepted for a poster session.","I have not applied."],"correctIndex":2},{"speaker":"Department Officer Shaw","speakerAudioText":"We cover travel and registration but not meals.","options":["I can cover meals; could you confirm the maximum for the train fare?","I expect everything including souvenirs.","I do not need to know the limit.","Please pay for my friend."],"correctIndex":0},{"speaker":"Department Officer Shaw","speakerAudioText":"Submit the form with the acceptance letter and an estimate.","options":["I have no estimate.","I will not keep receipts.","I will send both today and keep the receipts.","I will submit after the trip."],"correctIndex":2}],"summaryPrompt":"Summarise the conference acceptance, the funding limits and the documents required."}',
-  '{"turnsAnswers":[2,0,2]}',
+  '{"scenario":"You are asking your department about funding to attend a conference.","turns":[{"speaker":"Department Officer Shaw","speakerAudioText":"Have you been accepted to present?","options":["I was rejected.","Yes, my abstract was accepted for a poster session.","I have not applied.","I want to attend as a tourist."],"correctIndex":1},{"speaker":"Department Officer Shaw","speakerAudioText":"We cover travel and registration but not meals.","options":["Please pay for my friend.","I can cover meals; could you confirm the maximum for the train fare?","I expect everything including souvenirs.","I do not need to know the limit."],"correctIndex":1},{"speaker":"Department Officer Shaw","speakerAudioText":"Submit the form with the acceptance letter and an estimate.","options":["I have no estimate.","I will not keep receipts.","I will send both today and keep the receipts.","I will submit after the trip."],"correctIndex":2}],"summaryPrompt":"Summarise the conference acceptance, the funding limits and the documents required."}',
+  '{"turnsAnswers":[1,1,2]}',
   150,
   true
 )
@@ -5013,8 +5373,8 @@ VALUES (
   'ibil-59',
   'INTERACTIVE_LISTENING',
   'B2',
-  '{"scenario":"You are asking a peer mentor how to prepare for your first seminar.","turns":[{"speaker":"Peer Mentor Aisha","speakerAudioText":"What worries you most about the seminar?","options":["I know everything already.","I am unsure how much reading is expected and whether I should speak in the first session.","I am worried about the colour of the chairs.","I do not plan to attend."],"correctIndex":1},{"speaker":"Peer Mentor Aisha","speakerAudioText":"Read the core text and bring one question.","options":["I will read nothing.","I will bring no questions.","I will only bring snacks.","I will take notes on the main argument and prepare a question about the evidence."],"correctIndex":3},{"speaker":"Peer Mentor Aisha","speakerAudioText":"Sit near the front and join a small group discussion.","options":["I will leave after five minutes.","I will try that and ask the tutor if I am unsure.","I will sit at the back and stay silent.","I will interrupt constantly."],"correctIndex":1}],"summaryPrompt":"Summarise your concerns, the preparation advice and the plan for the first session."}',
-  '{"turnsAnswers":[1,3,1]}',
+  '{"scenario":"You are asking a peer mentor how to prepare for your first seminar.","turns":[{"speaker":"Peer Mentor Aisha","speakerAudioText":"What worries you most about the seminar?","options":["I am unsure how much reading is expected and whether I should speak in the first session.","I am worried about the colour of the chairs.","I do not plan to attend.","I know everything already."],"correctIndex":0},{"speaker":"Peer Mentor Aisha","speakerAudioText":"Read the core text and bring one question.","options":["I will take notes on the main argument and prepare a question about the evidence.","I will read nothing.","I will bring no questions.","I will only bring snacks."],"correctIndex":0},{"speaker":"Peer Mentor Aisha","speakerAudioText":"Sit near the front and join a small group discussion.","options":["I will try that and ask the tutor if I am unsure.","I will sit at the back and stay silent.","I will interrupt constantly.","I will leave after five minutes."],"correctIndex":0}],"summaryPrompt":"Summarise your concerns, the preparation advice and the plan for the first session."}',
+  '{"turnsAnswers":[0,0,0]}',
   150,
   true
 )
@@ -5031,8 +5391,872 @@ VALUES (
   'ibil-60',
   'INTERACTIVE_LISTENING',
   'C1',
-  '{"scenario":"You are at the theatre box office asking about accessible seating for a performance.","turns":[{"speaker":"Box Office Clerk Iris","speakerAudioText":"What kind of access do you need?","options":["A wheelchair space with a companion seat and a route without steps.","A seat on the roof.","I need a microphone.","I do not need any access."],"correctIndex":0},{"speaker":"Box Office Clerk Iris","speakerAudioText":"The lift is on the side street and the auditorium has two accessible spaces.","options":["I do not need a reservation.","Could you reserve one space and confirm the lift will be open that evening?","I will climb the stairs with the chair.","Please close the lift."],"correctIndex":1},{"speaker":"Box Office Clerk Iris","speakerAudioText":"I will book the space and email you the access guide.","options":["Please cancel the performance.","I will arrive without a ticket.","Thank you. I will check the guide and call if anything is unclear.","I will not read it."],"correctIndex":2}],"summaryPrompt":"Summarise the access requirements, the booking and the information you will receive."}',
+  '{"scenario":"You are at the theatre box office asking about accessible seating for a performance.","turns":[{"speaker":"Box Office Clerk Iris","speakerAudioText":"What kind of access do you need?","options":["I need a microphone.","I do not need any access.","A wheelchair space with a companion seat and a route without steps.","A seat on the roof."],"correctIndex":2},{"speaker":"Box Office Clerk Iris","speakerAudioText":"The lift is on the side street and the auditorium has two accessible spaces.","options":["I do not need a reservation.","Could you reserve one space and confirm the lift will be open that evening?","I will climb the stairs with the chair.","Please close the lift."],"correctIndex":1},{"speaker":"Box Office Clerk Iris","speakerAudioText":"I will book the space and email you the access guide.","options":["I will arrive without a ticket.","Thank you. I will check the guide and call if anything is unclear.","I will not read it.","Please cancel the performance."],"correctIndex":1}],"summaryPrompt":"Summarise the access requirements, the booking and the information you will receive."}',
+  '{"turnsAnswers":[2,1,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-61',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the library help desk because a core e-book has disappeared from your reading list two weeks before the essay deadline.","turns":[{"speaker":"Librarian Fraser","speakerAudioText":"How can I help you today?","options":["The reading room is too cold in the morning.","I have already returned all my books.","The e-book for my policy module has vanished from the reading list and I can no longer open it.","I would like to donate some old novels."],"correctIndex":2},{"speaker":"Librarian Fraser","speakerAudioText":"The licence may have expired. How many students are relying on that title?","options":["The library closes at nine.","About forty of us were assigned chapters from it for next week.","The author visited our class last year.","I prefer paper books to screens."],"correctIndex":1},{"speaker":"Librarian Fraser","speakerAudioText":"I can request a short-term licence and put a print copy on reserve.","options":["Please remove the title from the list.","I do not need the book after all.","That would solve it. Could you email the class when the print copy is ready?","I will buy the whole edition myself."],"correctIndex":2}],"summaryPrompt":"Summarise the problem with the e-book, what the librarian offered, and what you asked her to do."}',
+  '{"turnsAnswers":[2,1,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-62',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking your statistics lecturer whether you may complete the assignment in a different software package from the one taught in class.","turns":[{"speaker":"Dr Nwosu","speakerAudioText":"You wanted to discuss the assignment software?","options":["I think the lecture room is too small.","Yes. I am more confident in R than in the package used in lectures, and I would like permission to submit in R.","Yes, I would like to change the assignment deadline.","No, I have already finished the assignment."],"correctIndex":1},{"speaker":"Dr Nwosu","speakerAudioText":"The marking rubric rewards correct interpretation, not a particular menu.","options":["So the rubric only checks the software name.","Then I can skip the interpretation section.","So as long as my code and output are included, the choice of software does not affect the mark?","Then I do not need to submit any output."],"correctIndex":2},{"speaker":"Dr Nwosu","speakerAudioText":"Exactly. Add a short appendix explaining your commands.","options":["I will use three packages at once.","I will include the script and a brief note on each step.","I will delete the appendix to save space.","I will submit only a screenshot."],"correctIndex":1}],"summaryPrompt":"Summarise the permission you requested, the lecturer’s explanation of the rubric, and what you will add to the submission."}',
+  '{"turnsAnswers":[1,2,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-63',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the accommodation office reporting that the heating in your room has failed during a cold spell.","turns":[{"speaker":"Housing Officer Petrov","speakerAudioText":"What is the problem in the flat?","options":["My neighbour plays music at night.","The radiator in my room has been cold since Monday, and the temperature is below what the contract promises.","The kitchen bin has not been emptied.","I would like to move to a larger room."],"correctIndex":1},{"speaker":"Housing Officer Petrov","speakerAudioText":"Has anyone checked the boiler room?","options":["The warden looked at it yesterday and said the fault is in our flat, not the building.","I have not told anyone about it.","The boiler is in a different city.","I fixed it myself with tape."],"correctIndex":0},{"speaker":"Housing Officer Petrov","speakerAudioText":"I will send a technician tomorrow morning. Can you be in?","options":["Yes, I have a seminar in the afternoon, so any time before noon suits me.","No, I am away for the whole term.","I would rather wait until summer.","Please come at midnight."],"correctIndex":0}],"summaryPrompt":"Summarise the heating fault, what the warden found, and the visit you agreed to."}',
+  '{"turnsAnswers":[1,0,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-64',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are arranging the filming schedule for a group video assignment with a teammate.","turns":[{"speaker":"Teammate Jonas","speakerAudioText":"When can we film the interviews for our documentary?","options":["Our topic is about transport.","The lab is free on Thursday afternoon, so we could record the first two then.","I have not watched the documentary yet.","The camera belongs to the department."],"correctIndex":1},{"speaker":"Teammate Jonas","speakerAudioText":"I have a lecture until three. Could we start at half past?","options":["I would prefer to cancel the project.","The lecture is about economics.","We do not need any equipment.","Half past three works. I will book the room and the microphone for four hours."],"correctIndex":3},{"speaker":"Teammate Jonas","speakerAudioText":"And who will edit the footage?","options":["We can submit the raw files.","I can do the first cut if you check the audio and add the captions.","Nobody needs to edit it.","The tutor will film everything."],"correctIndex":1}],"summaryPrompt":"Summarise the filming plan, the equipment booking and the division of editing work."}',
+  '{"turnsAnswers":[1,3,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-65',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the careers service asking how to present a gap year on graduate job applications.","turns":[{"speaker":"Adviser Whitmore","speakerAudioText":"What did you do during your year away from study?","options":["I have not left university yet.","I spent the year preparing for exams.","I would like a job in this building.","I worked in a hotel and volunteered at a community kitchen, so I have customer and teamwork experience."],"correctIndex":3},{"speaker":"Adviser Whitmore","speakerAudioText":"Employers will ask what you learned, not just where you were.","options":["I would rather discuss my hobbies.","I can describe handling complaints and training new volunteers, with examples of what changed.","I will leave the year off my CV.","I only remember the weather."],"correctIndex":1},{"speaker":"Adviser Whitmore","speakerAudioText":"Put that in a short section called experience, not travel.","options":["I will write a whole page about the hotel.","I will rewrite it with two bullet points and a measurable result for each.","I will call it holiday photos.","I will remove all dates."],"correctIndex":1}],"summaryPrompt":"Summarise the gap-year experience, the advice about framing it, and how you will rewrite the section."}',
+  '{"turnsAnswers":[3,1,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-66',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a laboratory technician to reserve a microscope for a dissertation experiment.","turns":[{"speaker":"Technician Mrs Iqbal","speakerAudioText":"Which instrument do you need?","options":["The poster printer is broken.","I am looking for the fire exit.","The inverted microscope with the camera, for three sessions next week.","I need a new pair of glasses."],"correctIndex":2},{"speaker":"Technician Mrs Iqbal","speakerAudioText":"It is booked on Tuesday. Would Wednesday morning suit you?","options":["I only work in the evening.","I do not need a microscope.","Tuesday is my birthday.","Wednesday from nine to twelve would be ideal, if the camera is free."],"correctIndex":3},{"speaker":"Technician Mrs Iqbal","speakerAudioText":"I will reserve it and show you the calibration procedure.","options":["I already know everything about it.","Please cancel the booking.","Thank you. I will arrive ten minutes early for the induction.","I will skip the induction."],"correctIndex":2}],"summaryPrompt":"Summarise the equipment you need, the time agreed and the induction you must attend."}',
+  '{"turnsAnswers":[2,3,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-67',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the student conduct office explaining a misunderstanding about notes you shared in a group chat.","turns":[{"speaker":"Conduct Officer Mr Ade","speakerAudioText":"The report says your notes appeared in another student’s submission. What happened?","options":["I posted my summary in our study group chat, but I did not know anyone would copy it into an essay.","I have never used a group chat.","I wrote the essay for another student.","I do not attend that module."],"correctIndex":0},{"speaker":"Conduct Officer Mr Ade","speakerAudioText":"Did you label the file as your own work?","options":["I cannot remember my own name.","Yes, my name and the module code were on every page.","No, I left it blank on purpose.","I deleted it immediately."],"correctIndex":1},{"speaker":"Conduct Officer Mr Ade","speakerAudioText":"We will treat this as a sharing issue, not plagiarism, if you attend a workshop.","options":["I will share more files next time.","I would like the other student punished.","I understand. I will attend the session and keep future drafts private.","I refuse to attend anything."],"correctIndex":2}],"summaryPrompt":"Summarise how your notes were shared, what the officer concluded and what you agreed to do."}',
   '{"turnsAnswers":[0,1,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-68',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking your seminar leader whether you may record discussions to help with revision.","turns":[{"speaker":"Dr Halvorsen","speakerAudioText":"You asked about recording the seminar?","options":["I want to record a music concert.","Yes. I find it hard to take notes and follow the discussion at the same time, so I would like to record the audio.","Yes, I would like to lead the seminar.","No, I have lost my notebook."],"correctIndex":1},{"speaker":"Dr Halvorsen","speakerAudioText":"Other students may not want to be recorded. How would you handle that?","options":["I would record without telling them.","I would keep it forever.","I would ask everyone’s consent first and delete the file at the end of term.","I would publish it online."],"correctIndex":2},{"speaker":"Dr Halvorsen","speakerAudioText":"That is acceptable. Please also share the file with anyone who misses a session.","options":["I will charge them for it.","I will sell it to another class.","I would rather not share anything.","Of course. I will send it to the group and note that it is for revision only."],"correctIndex":3}],"summaryPrompt":"Summarise why you want to record, how you will protect other students and what you will share."}',
+  '{"turnsAnswers":[1,2,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-69',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the student health centre asking about a vaccination required before a hospital placement.","turns":[{"speaker":"Nurse Abara","speakerAudioText":"What do you need for the placement?","options":["The hospital requires proof of measles vaccination, and I cannot find my childhood record.","I need a note for a missed lecture.","I would like to change my course.","I have a dentist appointment."],"correctIndex":0},{"speaker":"Nurse Abara","speakerAudioText":"We can check your immunity with a blood test first.","options":["The test is for my eyesight.","I have already had the test twice.","If the test shows I am not immune, how soon could I be vaccinated?","I would rather not know the result."],"correctIndex":2},{"speaker":"Nurse Abara","speakerAudioText":"We can vaccinate the same week and issue a letter.","options":["That is a relief. I will book the blood test for tomorrow morning.","I will wait until after the placement.","I do not need a letter.","Please cancel the placement."],"correctIndex":0}],"summaryPrompt":"Summarise the placement requirement, the test proposed and the next appointment you booked."}',
+  '{"turnsAnswers":[0,2,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-70',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the exams office requesting a deferred exam after a family emergency.","turns":[{"speaker":"Exams Officer Mrs Duarte","speakerAudioText":"What are you asking for?","options":["I want my mark changed to a pass.","I am looking for the exam timetable.","I would like to defer my Friday exam because my grandmother died and I have been away from campus.","I would like a different examiner."],"correctIndex":2},{"speaker":"Exams Officer Mrs Duarte","speakerAudioText":"Do you have supporting evidence?","options":["My friend can confirm it.","Yes, the hospital and the funeral director have provided letters.","No, I prefer not to explain.","I have a cinema ticket."],"correctIndex":1},{"speaker":"Exams Officer Mrs Duarte","speakerAudioText":"The deferral board meets on Monday. You will sit the exam in August.","options":["I cannot take an exam in August.","I will not attend the board.","Please delete my record.","Thank you. I will check the August date and keep the evidence on file."],"correctIndex":3}],"summaryPrompt":"Summarise the reason for the deferral, the evidence supplied and the new exam date."}',
+  '{"turnsAnswers":[2,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-71',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the international office asking how to open a local bank account as a new student.","turns":[{"speaker":"Adviser Ms Kowal","speakerAudioText":"Have you tried the bank on the high street?","options":["Yes, I have closed my account.","I do not need a bank account.","The bank is next to my house.","Not yet. I was told I need a letter confirming my address and enrolment."],"correctIndex":3},{"speaker":"Adviser Ms Kowal","speakerAudioText":"We can issue that letter today. Do you have your passport and visa?","options":["I have both, and I can bring the tenancy agreement as well.","I left my passport abroad.","My visa expired last year.","I only have a library card."],"correctIndex":0},{"speaker":"Adviser Ms Kowal","speakerAudioText":"Then book an appointment with the bank and take all four documents.","options":["I will go without documents.","I will ask the bank to come here.","I will book online this afternoon and keep copies of everything.","I will post the originals."],"correctIndex":2}],"summaryPrompt":"Summarise the documents you need, the letter the office will issue and your next step."}',
+  '{"turnsAnswers":[3,0,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-72',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking your professor for feedback on a conference abstract that was rejected.","turns":[{"speaker":"Professor Lindgren","speakerAudioText":"You received the decision?","options":["No, I never submitted anything.","I am going to the conference as a speaker.","Yes, it was rejected, and the reviews say the method section was too vague.","Yes, I have not opened the email."],"correctIndex":2},{"speaker":"Professor Lindgren","speakerAudioText":"Did they explain what was missing?","options":["They want a different conference.","One reviewer asked for the sample size and another for the statistical test.","They praised the title only.","They asked me to change hotels."],"correctIndex":1},{"speaker":"Professor Lindgren","speakerAudioText":"We can revise and submit to the spring meeting.","options":["I will submit the same version.","I will abandon the project.","I will remove the results.","I will rewrite the method, add the numbers and send you a draft by Friday."],"correctIndex":3}],"summaryPrompt":"Summarise the rejection, the reviewers’ objections and the revision plan."}',
+  '{"turnsAnswers":[2,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-73',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the campus transport office asking about a discounted annual bus pass.","turns":[{"speaker":"Transport Assistant Mr Bell","speakerAudioText":"Are you a full-time student?","options":["I do not use public transport.","I live next to the campus.","Yes, I am in my second year and I commute from the other side of the city.","No, I graduated five years ago."],"correctIndex":2},{"speaker":"Transport Assistant Mr Bell","speakerAudioText":"The annual pass is cheaper, but it is paid in one instalment.","options":["I will pay in ten years.","I do not need a pass at all.","Could I pay monthly instead, even if it costs a little more?","I would like a free ticket."],"correctIndex":2},{"speaker":"Transport Assistant Mr Bell","speakerAudioText":"Yes, there is a monthly plan for students. Bring your ID card.","options":["I will send my brother instead.","I will wait until the pass expires.","I will bring my card and set up the payment tomorrow.","I will bring my passport photo only."],"correctIndex":2}],"summaryPrompt":"Summarise your commuting situation, the payment problem and the plan you chose."}',
+  '{"turnsAnswers":[2,2,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-74',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are discussing the working hours of a part-time research assistant role with a postdoctoral researcher.","turns":[{"speaker":"Dr Mensah","speakerAudioText":"The project needs about ten hours a week. Does that fit your timetable?","options":["Ten hours is fine, but I have lectures on Tuesday and Thursday mornings.","I can only work sixty hours a week.","I do not have a timetable.","I would like to work at night only."],"correctIndex":0},{"speaker":"Dr Mensah","speakerAudioText":"We could schedule you on Monday and Wednesday afternoons.","options":["Monday is a public holiday forever.","That suits me. Would the hours be flexible during exam weeks?","I would prefer every day at dawn.","I do not want any schedule."],"correctIndex":1},{"speaker":"Dr Mensah","speakerAudioText":"Yes, as long as the total is agreed in advance.","options":["I will change the total without asking.","Then I will confirm my hours each month and log them in the shared sheet.","I will never log my time.","I will work without telling you."],"correctIndex":1}],"summaryPrompt":"Summarise the hours offered, the scheduling problem and how you will record your time."}',
+  '{"turnsAnswers":[0,1,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-75',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a music teacher how to practise a difficult passage without hurting your wrist.","turns":[{"speaker":"Teacher Mr Rossi","speakerAudioText":"Where does the pain appear?","options":["In my left ankle when I walk.","Behind my eyes when I read.","In my shoulder when I sleep.","On the outside of my right wrist, mostly when I play repeated chords."],"correctIndex":3},{"speaker":"Teacher Mr Rossi","speakerAudioText":"Do you tense up before the difficult bar?","options":["No, I never practise that bar.","I only play with my elbow.","I have not touched the piano.","Yes, I notice my fingers curl and my forearm tightens just before it."],"correctIndex":3},{"speaker":"Teacher Mr Rossi","speakerAudioText":"Slow the passage down and release the tension between each chord.","options":["I will stop playing for a year.","I will practise it at half speed and stop whenever I feel the grip tighten.","I will play it faster to finish sooner.","I will ignore the pain and continue."],"correctIndex":1}],"summaryPrompt":"Summarise the pain, its cause in your playing and the practice method you will try."}',
+  '{"turnsAnswers":[3,3,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-76',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the sustainability office proposing a reusable cup scheme for the library café.","turns":[{"speaker":"Sustainability Officer Ms Feld","speakerAudioText":"What is the idea?","options":["A campaign against cycling.","A deposit scheme where students borrow a cup and return it to any campus café.","A plan to close the library café.","A new brand of paper napkin."],"correctIndex":1},{"speaker":"Sustainability Officer Ms Feld","speakerAudioText":"How would you keep the cups from disappearing?","options":["By giving cups away free.","By hiding the cups.","By asking staff to buy them.","A small deposit, return points in three buildings and a weekly count."],"correctIndex":3},{"speaker":"Sustainability Officer Ms Feld","speakerAudioText":"We could pilot it for one term in two cafés.","options":["I will not measure anything.","I will cancel the cafés.","I will draft the pilot plan and measure returns and washing costs.","I will launch it across the country."],"correctIndex":2}],"summaryPrompt":"Summarise the scheme you proposed, how cups would be tracked and the pilot plan."}',
+  '{"turnsAnswers":[1,3,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-77',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking your dissertation supervisor to help narrow an overbroad research question.","turns":[{"speaker":"Dr Ferreira","speakerAudioText":"What is your current question?","options":["I want to know how social media affects young people, which is far too wide.","I have not chosen a topic yet.","I would like to change supervisor.","My question is about the library."],"correctIndex":0},{"speaker":"Dr Ferreira","speakerAudioText":"Pick one platform, one age group and one outcome.","options":["Then I could study how short videos affect sleep in first-year students.","Then I could study everything at once.","Then I could ignore the evidence.","Then I could change country."],"correctIndex":0},{"speaker":"Dr Ferreira","speakerAudioText":"That is answerable within your word limit. What data will you use?","options":["I will rely on my own opinion.","A survey of about eighty students plus a small set of interviews.","I will use no data at all.","I will interview the whole city."],"correctIndex":1}],"summaryPrompt":"Summarise the original question, the narrower version agreed and the data you plan to collect."}',
+  '{"turnsAnswers":[0,0,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-78',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the sports centre booking a badminton court for a departmental tournament.","turns":[{"speaker":"Receptionist Mr Osei","speakerAudioText":"How many courts do you need?","options":["One court for ten minutes.","A swimming pool for the term.","I do not need a court.","Three courts for four hours on a Saturday, if they are available."],"correctIndex":3},{"speaker":"Receptionist Mr Osei","speakerAudioText":"Saturday mornings are busy. Would the afternoon work?","options":["I can only play at midnight.","Saturday is impossible every week.","I would rather cancel the tournament.","The afternoon is fine, as long as we can finish before six."],"correctIndex":3},{"speaker":"Receptionist Mr Osei","speakerAudioText":"I will hold the courts and send you a booking form.","options":["I will pay after the event.","I will not complete any form.","I will book a different sport.","I will complete the form and pay the deposit today."],"correctIndex":3}],"summaryPrompt":"Summarise the courts you need, the time change and the paperwork you must complete."}',
+  '{"turnsAnswers":[3,3,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-79',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are asking a language tutor for advice before your oral exam.","turns":[{"speaker":"Tutor Ms Almeida","speakerAudioText":"Which part of the oral exam worries you most?","options":["The listening test.","The exam building.","The discussion, because I freeze when I cannot find the right word.","The written essay."],"correctIndex":2},{"speaker":"Tutor Ms Almeida","speakerAudioText":"What do you do when a word is missing?","options":["I usually stop. I could describe the idea instead of searching for the exact term.","I speak in my first language.","I leave the room.","I ask the examiner for the answer."],"correctIndex":0},{"speaker":"Tutor Ms Almeida","speakerAudioText":"Practise paraphrasing with a partner for ten minutes a day.","options":["I will avoid speaking practice.","I will only read grammar books.","I will record myself describing three topics and review the pauses.","I will memorise every word."],"correctIndex":2}],"summaryPrompt":"Summarise the part of the exam that worries you, the strategy discussed and your practice plan."}',
+  '{"turnsAnswers":[2,0,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-80',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the museum studies department asking to borrow a handling collection for a school workshop.","turns":[{"speaker":"Curator Dr Beaumont","speakerAudioText":"What would you like to borrow?","options":["The museum entrance desk.","A box of domestic objects from the 1950s that students can touch safely.","The entire Egyptian gallery.","A painting from the main hall."],"correctIndex":1},{"speaker":"Curator Dr Beaumont","speakerAudioText":"Some items are fragile. How will you supervise them?","options":["Students can take them home.","I will leave them unattended.","I will not count anything.","Two adults will sit with each table and count the objects before and after."],"correctIndex":3},{"speaker":"Curator Dr Beaumont","speakerAudioText":"We can lend the box for one week with a condition report.","options":["I will replace broken items with new ones.","I will sign the report and return everything in the same condition.","I will keep it for a year.","I will skip the report."],"correctIndex":1}],"summaryPrompt":"Summarise the objects requested, the supervision plan and the conditions of the loan."}',
+  '{"turnsAnswers":[1,3,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-81',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are reporting a lost USB stick containing unpublished research data to the IT security team.","turns":[{"speaker":"Security Analyst Mr Haas","speakerAudioText":"When did you last see the drive?","options":["I have never owned a USB stick.","It is in my bag right now.","I found it this morning.","Yesterday afternoon in the psychology lab, after I copied the interview files."],"correctIndex":3},{"speaker":"Security Analyst Mr Haas","speakerAudioText":"Was the data encrypted?","options":["It was encrypted with a password I lost.","No, and it included participant names, so I am worried about disclosure.","Yes, and it was empty.","It contained only music."],"correctIndex":1},{"speaker":"Security Analyst Mr Haas","speakerAudioText":"We will log the loss and ask you to notify the ethics committee.","options":["I will delete the project.","I will email the committee today and describe exactly which files are missing.","I will wait until next year.","I will not tell anyone."],"correctIndex":1}],"summaryPrompt":"Summarise what was lost, why it is sensitive and the notifications you must make."}',
+  '{"turnsAnswers":[3,1,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-82',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are asking your course representative to raise a concern about overcrowded tutorials.","turns":[{"speaker":"Course Rep Amara","speakerAudioText":"What should I take to the staff meeting?","options":["A request for longer holidays.","The timetable for another course.","That our tutorial group has thirty students for a room with twenty chairs.","My opinion of the cafeteria."],"correctIndex":2},{"speaker":"Course Rep Amara","speakerAudioText":"Have you raised it with the tutor directly?","options":["No, I have told nobody.","The tutor refused to speak to us.","I do not attend tutorials.","Yes, she agrees but says the room allocation is out of her hands."],"correctIndex":3},{"speaker":"Course Rep Amara","speakerAudioText":"I will ask for a larger room or a second group.","options":["Thank you. Could you also ask whether the group can be split before the next assessment?","Please keep the group as it is.","I would like fewer tutorials.","Ask them to cancel the module."],"correctIndex":0}],"summaryPrompt":"Summarise the overcrowding problem, what the tutor said and what you asked the representative to do."}',
+  '{"turnsAnswers":[2,3,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-83',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the print room asking for a bound copy of your dissertation.","turns":[{"speaker":"Print Assistant Mr Varga","speakerAudioText":"What format do you need?","options":["A set of business cards.","A birthday banner.","A soft-bound copy with the title on the cover and the pages printed single-sided.","A poster for a conference."],"correctIndex":2},{"speaker":"Print Assistant Mr Varga","speakerAudioText":"We need the file as a PDF with margins of at least two centimetres.","options":["I will write it by hand.","I will check the margins and send the final PDF this afternoon.","I will send a photograph.","I do not have a file."],"correctIndex":1},{"speaker":"Print Assistant Mr Varga","speakerAudioText":"Binding takes two working days. Is Thursday early enough?","options":["I need it last week.","I will collect it in a month.","Please post it abroad.","Thursday is fine, as the submission desk closes on Friday at noon."],"correctIndex":3}],"summaryPrompt":"Summarise the printing requirements, the file you must send and the collection date."}',
+  '{"turnsAnswers":[2,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-84',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a university counsellor for help with anxiety before presentations.","turns":[{"speaker":"Counsellor Ms Adeyemi","speakerAudioText":"What happens before you present?","options":["I have never given a presentation.","My hands shake, my mouth dries up and I cannot sleep the night before.","I feel very calm and confident.","I enjoy standing on stage."],"correctIndex":1},{"speaker":"Counsellor Ms Adeyemi","speakerAudioText":"Have you tried practising in the room where you will speak?","options":["The room is always locked.","Not yet. I usually rehearse alone in my bedroom.","Yes, I rehearse on a bus.","I do not need to practise."],"correctIndex":1},{"speaker":"Counsellor Ms Adeyemi","speakerAudioText":"We can also work on breathing and a short opening you know well.","options":["I will avoid all presentations.","I will read the whole script silently.","I will speak for an hour.","I will write the first two sentences and practise them with a friend."],"correctIndex":3}],"summaryPrompt":"Summarise the symptoms you described, the practice you have done and the plan you agreed."}',
+  '{"turnsAnswers":[1,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-85',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are asking the campus shop manager to stock cheaper stationery for students.","turns":[{"speaker":"Shop Manager Mr Doyle","speakerAudioText":"What are students asking for?","options":["Basic notebooks and pens that cost less than the branded sets on the shelf.","More imported chocolate.","A larger car park.","Longer opening hours on Sunday."],"correctIndex":0},{"speaker":"Shop Manager Mr Doyle","speakerAudioText":"The cheap lines have thin margins. Would a student discount help?","options":["Yes, a discount on own-brand items would make them affordable.","No, prices should rise.","I would like free products.","Discounts are illegal."],"correctIndex":0},{"speaker":"Shop Manager Mr Doyle","speakerAudioText":"I will trial an own-brand range for one term.","options":["I will order luxury pens only.","I will close the shop.","I will ask students which three items they need most and report back.","I will choose nothing."],"correctIndex":2}],"summaryPrompt":"Summarise the products requested, the discount idea and the trial the manager agreed to."}',
+  '{"turnsAnswers":[0,0,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-86',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at a postgraduate open day asking a PhD student about their path into research.","turns":[{"speaker":"PhD Student Ravi","speakerAudioText":"What did you study before starting your PhD?","options":["I did a physics degree, then worked in a lab for two years before applying.","I have never studied science.","I started a PhD at sixteen.","I only studied art."],"correctIndex":0},{"speaker":"PhD Student Ravi","speakerAudioText":"Was the gap between degrees useful?","options":["No, it was a waste of time.","I cannot remember it.","It made me leave research.","Very. It showed me which questions I actually wanted to spend years on."],"correctIndex":3},{"speaker":"PhD Student Ravi","speakerAudioText":"Talk to potential supervisors early and read their recent papers.","options":["I will email two supervisors with a short proposal and ask for a meeting.","I will apply without reading anything.","I will email every professor at once.","I will wait until the deadline."],"correctIndex":0}],"summaryPrompt":"Summarise the speaker’s route into research, what the gap gave them and the advice you received."}',
+  '{"turnsAnswers":[0,3,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-87',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the exams office disputing a mark that appears to have been added up incorrectly.","turns":[{"speaker":"Exams Officer Mr Takahashi","speakerAudioText":"Which module is affected?","options":["A module I never took.","The whole degree programme.","A module from another university.","Introduction to Statistics. My coursework and exam marks do not add up to the grade shown."],"correctIndex":3},{"speaker":"Exams Officer Mr Takahashi","speakerAudioText":"We can request a clerical check. Do you have the breakdown?","options":["Yes, the portal shows sixty percent coursework and forty percent exam.","No, I have no evidence.","I would like a new examiner.","The breakdown is secret."],"correctIndex":0},{"speaker":"Exams Officer Mr Takahashi","speakerAudioText":"The check takes ten working days and may confirm the mark.","options":["I will not accept any answer.","Please cancel the module.","I understand. Please tell me if the mark changes or stays the same.","I expect it changed today."],"correctIndex":2}],"summaryPrompt":"Summarise the mark you are disputing, the evidence you have and what happens next."}',
+  '{"turnsAnswers":[3,0,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-88',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are asking a lecturer for the reading list before term starts.","turns":[{"speaker":"Dr Sørensen","speakerAudioText":"Why do you need the list so early?","options":["I want to avoid all reading.","I am not enrolled yet.","I prefer not to buy books.","The two key books are expensive, so I want to borrow them before the library runs out."],"correctIndex":3},{"speaker":"Dr Sørensen","speakerAudioText":"The list is not final, but the core text is settled.","options":["I will wait until the exam.","I do not need the core text.","Could you tell me the core text and which chapters are most important?","Please send every book ever written."],"correctIndex":2},{"speaker":"Dr Sørensen","speakerAudioText":"I will send the first four weeks by Friday.","options":["I will buy the whole library.","I will change modules.","Thank you. I will reserve the core text and start the opening chapter.","I will ignore the email."],"correctIndex":2}],"summaryPrompt":"Summarise why you asked for the list early, the information the lecturer offered and your plan."}',
+  '{"turnsAnswers":[3,2,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-89',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the volunteering office signing up to tutor pupils at a local school.","turns":[{"speaker":"Volunteering Officer Ms Grant","speakerAudioText":"What subject would you like to teach?","options":["I would like to coach football.","I do not want to teach anything.","I am only interested in cooking.","Maths, preferably with pupils preparing for their final school exams."],"correctIndex":3},{"speaker":"Volunteering Officer Ms Grant","speakerAudioText":"We need a police check and two references.","options":["I have no identification.","I would rather not be checked.","I can provide both, and I already have a recent background certificate.","I cannot give any names."],"correctIndex":2},{"speaker":"Volunteering Officer Ms Grant","speakerAudioText":"Training is on Wednesday evening. Can you attend?","options":["I will skip the training.","I will arrive at midnight.","Yes, I can be there at six and stay for the whole session.","I am busy every Wednesday forever."],"correctIndex":2}],"summaryPrompt":"Summarise the subject you want to tutor, the checks required and the training you will attend."}',
+  '{"turnsAnswers":[3,2,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-90',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a laboratory technician why the centrifuge stopped in the middle of a run.","turns":[{"speaker":"Technician Dr Malik","speakerAudioText":"What did the display show?","options":["An imbalance warning, and the lid stayed locked for a minute.","The time and date.","A weather forecast.","Nothing at all."],"correctIndex":0},{"speaker":"Technician Dr Malik","speakerAudioText":"Were the tubes filled to the same level?","options":["Not exactly. One tube had noticeably less liquid than the others.","They were all empty.","I did not load any tubes.","They were filled with sand."],"correctIndex":0},{"speaker":"Technician Dr Malik","speakerAudioText":"That triggered the safety brake. Balance them by weight next time.","options":["I will run it with the lid open.","I will weigh each tube and pair them before starting the rotor.","I will ignore the warning.","I will use one tube only."],"correctIndex":1}],"summaryPrompt":"Summarise what the machine reported, the cause of the stop and how you will prevent it."}',
+  '{"turnsAnswers":[0,0,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-91',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are discussing with your personal tutor whether to take a placement year in industry.","turns":[{"speaker":"Dr Ibarra","speakerAudioText":"What is holding you back?","options":["I want to leave university now.","I worry that a year away will make me forget the theory and lose touch with my friends.","I have already accepted a placement.","I do not know what a placement is."],"correctIndex":1},{"speaker":"Dr Ibarra","speakerAudioText":"Placements often sharpen final-year work. Have you found a host?","options":["I want to be paid to sleep.","I have an interview with a water company next month.","No, I have not looked.","I would like to work abroad forever."],"correctIndex":1},{"speaker":"Dr Ibarra","speakerAudioText":"Keep the four-year route open until the interview result.","options":["I will confirm the interview and decide after I hear back.","I will withdraw today.","I will never decide.","I will change my degree subject."],"correctIndex":0}],"summaryPrompt":"Summarise your doubts about a placement year, the interview you have and the advice given."}',
+  '{"turnsAnswers":[1,1,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-92',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the library desk asking to book a quiet study room during the exam period.","turns":[{"speaker":"Library Assistant Ms Rossi","speakerAudioText":"How long do you need the room?","options":["The whole building for a party.","Ten minutes tomorrow.","I do not need a room.","Two hours each morning for the next week, if possible."],"correctIndex":3},{"speaker":"Library Assistant Ms Rossi","speakerAudioText":"Those slots are popular. Are you working alone?","options":["No, with a brass band.","I have not decided.","I want the largest room.","Yes, alone, so a small single room is enough."],"correctIndex":3},{"speaker":"Library Assistant Ms Rossi","speakerAudioText":"I can offer nine to eleven. Bring your card to collect the key.","options":["I will come at noon.","I will keep the key.","I will send someone else.","I will be there at nine and return the key straight after."],"correctIndex":3}],"summaryPrompt":"Summarise the room you need, the slot offered and what you must bring."}',
+  '{"turnsAnswers":[3,3,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-93',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a careers adviser how to negotiate a deadline for accepting a job offer.","turns":[{"speaker":"Adviser Ms Byrne","speakerAudioText":"When does the employer want an answer?","options":["They never contacted me.","I do not want the job.","They asked for a decision by Friday, but I am still waiting for a second interview.","I have already accepted."],"correctIndex":2},{"speaker":"Adviser Ms Byrne","speakerAudioText":"You can ask for an extension without sounding ungrateful.","options":["I could demand a higher salary first.","I could accept both jobs.","I could thank them, explain the other process and ask for one more week.","I could ignore the email."],"correctIndex":2},{"speaker":"Adviser Ms Byrne","speakerAudioText":"That is reasonable. Keep the request short and specific.","options":["I will send a polite email today asking whether Monday week is possible.","I will send nothing.","I will ask for a year.","I will withdraw my application."],"correctIndex":0}],"summaryPrompt":"Summarise the deadline problem, the wording the adviser suggested and the email you will send."}',
+  '{"turnsAnswers":[2,2,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-94',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are in a tutorial explaining why you think the essay marking criteria were applied unfairly.","turns":[{"speaker":"Tutor Dr Kaur","speakerAudioText":"Which criterion do you think was misapplied?","options":["The handwriting mark.","The attendance mark.","The room booking.","The structure mark. My paragraphs follow the plan, but the feedback says there is no argument."],"correctIndex":3},{"speaker":"Tutor Dr Kaur","speakerAudioText":"Can you show me where the argument is stated?","options":["The argument is in another module.","In the second paragraph, though I now see it is buried under background detail.","I cannot find my essay.","I did not write an essay."],"correctIndex":1},{"speaker":"Tutor Dr Kaur","speakerAudioText":"That is a fair point. I will reread it with you.","options":["I want the mark changed without review.","I will appeal to the vice-chancellor.","I will stop attending.","Thank you. I would like to understand how to make the claim visible earlier."],"correctIndex":3}],"summaryPrompt":"Summarise the criterion you questioned, what you noticed in your essay and the tutor’s response."}',
+  '{"turnsAnswers":[3,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-95',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the student union society fair asking about joining the debate society.","turns":[{"speaker":"Society Secretary Mr Lang","speakerAudioText":"Have you debated before?","options":["I am a professional judge.","I do not like arguing.","Only in school, and I am nervous about speaking without notes.","I have never spoken aloud."],"correctIndex":2},{"speaker":"Society Secretary Mr Lang","speakerAudioText":"We run beginner sessions on Tuesdays. Would that suit you?","options":["I will bring my own podium.","Tuesday works. Do I need to prepare anything for the first session?","I can only come on Sunday.","I do not want to learn."],"correctIndex":1},{"speaker":"Society Secretary Mr Lang","speakerAudioText":"Just bring an open mind. We pair beginners with a mentor.","options":["That sounds ideal. I will come along next week and try one round.","I will skip the beginner sessions.","I will demand a trophy.","I will argue with the mentor."],"correctIndex":0}],"summaryPrompt":"Summarise your debating experience, the beginner session and the plan for your first visit."}',
+  '{"turnsAnswers":[2,1,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-96',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking a visiting lecturer about a study they mentioned during a guest lecture.","turns":[{"speaker":"Dr Moreau","speakerAudioText":"Which study do you mean?","options":["The one about the history of chess.","The lecture about marine biology.","The study I presented last year.","The one about noise and reading speed, with the primary school sample."],"correctIndex":3},{"speaker":"Dr Moreau","speakerAudioText":"It was published in a journal I can send you.","options":["Could you send the citation? I would like to read the method section closely.","I do not read journals.","Please summarise the whole field.","I only need the title."],"correctIndex":0},{"speaker":"Dr Moreau","speakerAudioText":"I will email it, but the sample was small.","options":["I will quote the abstract only.","I will keep that limitation in mind when I cite it.","I will treat it as definitive.","I will ignore the sample."],"correctIndex":1}],"summaryPrompt":"Summarise the study you asked about, what the lecturer will send and the limitation you noted."}',
+  '{"turnsAnswers":[3,0,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-97',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the fire safety briefing for your residential hall.","turns":[{"speaker":"Fire Officer Mr Okafor","speakerAudioText":"Where is your nearest fire exit?","options":["Through the window on the third floor.","I have not looked.","In the basement car park.","At the end of the corridor, past the shared kitchen on the left."],"correctIndex":3},{"speaker":"Fire Officer Mr Okafor","speakerAudioText":"What would you do if the alarm sounded at night?","options":["Finish my essay first.","Go back to sleep.","Wake my flatmates, leave by the stairs and meet at the assembly point.","Wait for the lift."],"correctIndex":2},{"speaker":"Fire Officer Mr Okafor","speakerAudioText":"Where is the assembly point for this building?","options":["In my room on the second floor.","At the bus stop across the road.","On the grass behind the sports hall, away from the building.","In the lobby next to the lifts."],"correctIndex":2}],"summaryPrompt":"Summarise the exit route, the action to take at night and the assembly point."}',
+  '{"turnsAnswers":[3,2,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-98',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking a research nurse what taking part in a psychology experiment would involve.","turns":[{"speaker":"Research Nurse Ms Haddad","speakerAudioText":"Have you read the information sheet?","options":["No, I cannot read.","I have already finished it.","I do not want to take part.","Yes, but I am unsure how long the memory task will take."],"correctIndex":3},{"speaker":"Research Nurse Ms Haddad","speakerAudioText":"About forty minutes, with breaks. You may withdraw at any time.","options":["I will bring a friend to answer.","I will not sign anything.","If I withdraw halfway, will my data still be used?","I will demand payment."],"correctIndex":2},{"speaker":"Research Nurse Ms Haddad","speakerAudioText":"No, you can ask us to delete it before analysis.","options":["I do not need the sheet.","Then I am happy to take part and I will sign the consent form.","I will sign for someone else.","I will withdraw after the results."],"correctIndex":1}],"summaryPrompt":"Summarise what the experiment involves, your question about withdrawal and your decision."}',
+  '{"turnsAnswers":[3,2,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-99',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the department office asking about a replacement student ID card.","turns":[{"speaker":"Administrator Mrs Novak","speakerAudioText":"What happened to your card?","options":["My card works perfectly.","I lost it on the bus, and I need a new one before the library exam booking opens.","I never collected one.","I want a new photograph."],"correctIndex":1},{"speaker":"Administrator Mrs Novak","speakerAudioText":"There is a small fee and you need photo identification.","options":["I cannot pay anything.","I would rather use my gym card.","I have my passport and can pay by card today.","I have no identification."],"correctIndex":2},{"speaker":"Administrator Mrs Novak","speakerAudioText":"The new card will be ready tomorrow afternoon.","options":["I will collect it next term.","I will not test it.","I will keep using the old one.","I will collect it after my lecture and check that the library access works."],"correctIndex":3}],"summaryPrompt":"Summarise why you need a new card, what you must provide and when it will be ready."}',
+  '{"turnsAnswers":[1,2,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-100',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are asking your tutor to approve a change of topic for your term paper.","turns":[{"speaker":"Tutor Dr Bianchi","speakerAudioText":"Why do you want to change?","options":["My original topic on housing policy has too few sources, but I have found good material on rent controls.","I have not started the course.","I dislike writing essays.","I want a longer deadline."],"correctIndex":0},{"speaker":"Tutor Dr Bianchi","speakerAudioText":"Rent controls is narrower. Can you still use your reading?","options":["No, I will start from nothing.","I have not read anything.","I would rather keep both topics.","Yes, three of my sources discuss both, so the work is not wasted."],"correctIndex":3},{"speaker":"Tutor Dr Bianchi","speakerAudioText":"Send me a one-page outline by Monday and I will approve it.","options":["I will not send anything.","I will change topic again tomorrow.","I will send the outline with a short source list on Sunday evening.","I will send a hundred pages."],"correctIndex":2}],"summaryPrompt":"Summarise why you want to change topic, how your reading still helps and the outline you will send."}',
+  '{"turnsAnswers":[0,3,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-101',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are at the lost property office looking for a lab coat left in a lecture theatre.","turns":[{"speaker":"Lost Property Assistant Mr Costa","speakerAudioText":"When and where did you lose it?","options":["In another country last year.","At a football match.","On Tuesday after the chemistry lecture in the Faraday building.","I never had a lab coat."],"correctIndex":2},{"speaker":"Lost Property Assistant Mr Costa","speakerAudioText":"Does it have a name inside?","options":["I cannot remember my name.","Yes, my surname is written on the collar in black marker.","No, it is brand new.","It has someone else’s name."],"correctIndex":1},{"speaker":"Lost Property Assistant Mr Costa","speakerAudioText":"We have one matching that description. Can you describe the size?","options":["It is enormous and green.","I do not know what it looks like.","It has no sleeves.","It is a medium, with a small burn mark on the left sleeve."],"correctIndex":3}],"summaryPrompt":"Summarise where and when the coat was lost, how it is marked and how you identified it."}',
+  '{"turnsAnswers":[2,1,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-102',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are asking your supervisor about authorship order on a paper you helped write.","turns":[{"speaker":"Professor Nakamura","speakerAudioText":"What is your concern?","options":["I do not want to be an author.","I have not contributed anything.","I want the paper withdrawn.","I wrote the analysis and two sections, but the draft lists me after a student who joined late."],"correctIndex":3},{"speaker":"Professor Nakamura","speakerAudioText":"Authorship should reflect contribution. Can you document yours?","options":["No, my work was invisible.","I only made coffee.","I would rather not say.","Yes, I have the scripts, drafts and notes from our meetings."],"correctIndex":3},{"speaker":"Professor Nakamura","speakerAudioText":"Send me that record and we will discuss it with the whole team.","options":["I will share a short contribution statement before our next meeting.","I will publish the paper alone.","I will remove everyone else.","I will refuse to meet."],"correctIndex":0}],"summaryPrompt":"Summarise your contribution, why the order seems wrong and the evidence you will provide."}',
+  '{"turnsAnswers":[3,3,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-103',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are at the wellbeing service asking about group sessions for exam stress.","turns":[{"speaker":"Wellbeing Adviser Ms Lindberg","speakerAudioText":"Have you attended anything like this before?","options":["I never feel stressed.","I do not take exams.","No, but I have been waking at four and cannot concentrate on revision.","Yes, I run the sessions."],"correctIndex":2},{"speaker":"Wellbeing Adviser Ms Lindberg","speakerAudioText":"The group meets on Thursdays and is led by a counsellor.","options":["I cannot attend any weekday.","I want a medical certificate.","That sounds manageable. Is it a drop-in group or do I need to commit to all six weeks?","I would like individual therapy instead."],"correctIndex":2},{"speaker":"Wellbeing Adviser Ms Lindberg","speakerAudioText":"It is a closed group, so attendance matters.","options":["I will send a friend.","I will decide at the end.","Then I will commit to the six sessions and tell you now if I cannot come.","I will come only once."],"correctIndex":2}],"summaryPrompt":"Summarise your symptoms, the group format and the commitment you accepted."}',
+  '{"turnsAnswers":[2,2,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-104',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking a lecturer to clarify what critical analysis means in the essay rubric.","turns":[{"speaker":"Dr Whitfield","speakerAudioText":"Which part of the rubric is unclear?","options":["The font size.","The phrase critical analysis. I am not sure whether it means criticising the author or weighing evidence.","The word essay.","The submission date."],"correctIndex":1},{"speaker":"Dr Whitfield","speakerAudioText":"It means examining how an argument is built, not simply disagreeing.","options":["So I should identify the author’s assumptions and test them against other studies?","So I should insult the author.","So I should summarise only.","So I should ignore the question."],"correctIndex":0},{"speaker":"Dr Whitfield","speakerAudioText":"Exactly. Show one strength and one limitation in each section.","options":["I will write only quotations.","I will shorten the essay to a page.","I will revise my draft to add a limitation and a counter-example.","I will remove all analysis."],"correctIndex":2}],"summaryPrompt":"Summarise what confused you, the lecturer’s definition and how you will revise the draft."}',
+  '{"turnsAnswers":[1,0,2]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-105',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the alumni office asking about mentoring current students as a recent graduate.","turns":[{"speaker":"Alumni Officer Mr Duarte","speakerAudioText":"How much time could you offer?","options":["I have no time at all.","I can work full-time for free.","I do not want to help students.","About two hours a month, mostly online in the evening."],"correctIndex":3},{"speaker":"Alumni Officer Mr Duarte","speakerAudioText":"We match mentors with final-year students in your field.","options":["I would rather mentor children.","That suits me. I studied civil engineering and now work on water projects.","I studied something unrelated.","I have no professional experience."],"correctIndex":1},{"speaker":"Alumni Officer Mr Duarte","speakerAudioText":"There is a short training session and a confidentiality agreement.","options":["I will start without training.","I will complete both before the first meeting.","I will skip the agreement.","I will share student details publicly."],"correctIndex":1}],"summaryPrompt":"Summarise the time you can offer, your professional background and what you must complete first."}',
+  '{"turnsAnswers":[3,1,1]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-106',
+  'INTERACTIVE_LISTENING',
+  'B1',
+  '{"scenario":"You are on the phone reporting a broken lock at a campus bike-share station.","turns":[{"speaker":"Helpline Operator Ms Sanchez","speakerAudioText":"What is the bike number?","options":["I do not have a bike.","The station is in another city.","I cannot read numbers.","It is 4127, at the rack outside the engineering building."],"correctIndex":3},{"speaker":"Helpline Operator Ms Sanchez","speakerAudioText":"Does the lock release at all?","options":["The bike is not there.","No, the app says the ride ended, but the lock is still closed.","Yes, it opens perfectly.","I have not tried it."],"correctIndex":1},{"speaker":"Helpline Operator Ms Sanchez","speakerAudioText":"We will send a mechanic and end the charge.","options":["Thank you. Will the app confirm when the bike is available again?","I will leave with the bike.","I do not want a refund.","I will break the lock myself."],"correctIndex":0}],"summaryPrompt":"Summarise the fault, the bike’s location and what the operator will do."}',
+  '{"turnsAnswers":[3,1,0]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-107',
+  'INTERACTIVE_LISTENING',
+  'B2',
+  '{"scenario":"You are asking a lab demonstrator to repeat the explanation of a titration.","turns":[{"speaker":"Demonstrator Ms Owusu","speakerAudioText":"Which step was unclear?","options":["When to stop adding the solution from the burette.","How to switch on the lights.","Where to hang my coat.","Why we are in the lab."],"correctIndex":0},{"speaker":"Demonstrator Ms Owusu","speakerAudioText":"You stop at the first permanent colour change.","options":["So I add drop by drop once the colour starts to fade, and swirl after each one?","So I pour the whole bottle at once.","So I stop before adding anything.","So I wait until it turns black."],"correctIndex":0},{"speaker":"Demonstrator Ms Owusu","speakerAudioText":"Exactly, and record the volume to two decimal places.","options":["I will estimate roughly.","I will read the top of the tube.","I will record nothing.","I will read the bottom of the meniscus and write the value immediately."],"correctIndex":3}],"summaryPrompt":"Summarise the step you did not understand, the method explained and how you will record the result."}',
+  '{"turnsAnswers":[0,0,3]}',
+  150,
+  true
+)
+ON CONFLICT (id) DO UPDATE SET
+  type = EXCLUDED.type,
+  difficulty_band = EXCLUDED.difficulty_band,
+  content_payload = EXCLUDED.content_payload,
+  correct_answers = EXCLUDED.correct_answers,
+  time_limit_sec = EXCLUDED.time_limit_sec,
+  is_active = true;
+
+INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
+VALUES (
+  'ibil-108',
+  'INTERACTIVE_LISTENING',
+  'C1',
+  '{"scenario":"You are at the international student society planning a cultural evening.","turns":[{"speaker":"Society Chair Mr Haddad","speakerAudioText":"What should our cultural evening include?","options":["A single long film with no introduction.","Only speeches by the committee.","A sports tournament.","A short programme of music and food from four countries, with students introducing each part."],"correctIndex":3},{"speaker":"Society Chair Mr Haddad","speakerAudioText":"We have a small budget. How should we spend it?","options":["On nothing at all.","On ingredients and room hire, with costumes borrowed rather than bought.","On expensive gifts for guests.","On a fireworks display."],"correctIndex":1},{"speaker":"Society Chair Mr Haddad","speakerAudioText":"Can you coordinate the food stalls?","options":["I will cook everything alone.","I will not contact anyone.","I will cancel the stalls.","Yes, I will contact four student groups and confirm their dishes by Friday."],"correctIndex":3}],"summaryPrompt":"Summarise the programme, the budget plan and your responsibility for the food stalls."}',
+  '{"turnsAnswers":[3,1,3]}',
   150,
   true
 )
@@ -7892,4 +9116,4 @@ ON CONFLICT (id) DO UPDATE SET
 UPDATE questions
 SET is_active = false
 WHERE id LIKE 'ib%'
-  AND id NOT IN ('ibir-1', 'ibir-2', 'ibir-3', 'ibir-4', 'ibir-5', 'ibir-6', 'ibir-7', 'ibir-8', 'ibir-9', 'ibir-10', 'ibir-11', 'ibir-12', 'ibir-13', 'ibir-14', 'ibir-15', 'ibir-16', 'ibir-17', 'ibir-18', 'ibir-19', 'ibir-20', 'ibir-21', 'ibir-22', 'ibir-23', 'ibir-24', 'ibir-25', 'ibir-26', 'ibir-27', 'ibir-28', 'ibir-29', 'ibir-30', 'ibir-31', 'ibir-32', 'ibir-33', 'ibir-34', 'ibir-35', 'ibir-36', 'ibir-37', 'ibir-38', 'ibir-39', 'ibir-40', 'ibir-41', 'ibir-42', 'ibir-43', 'ibir-44', 'ibir-45', 'ibir-46', 'ibir-47', 'ibir-48', 'ibir-49', 'ibir-50', 'ibir-51', 'ibir-52', 'ibir-53', 'ibir-54', 'ibir-55', 'ibir-56', 'ibir-57', 'ibir-58', 'ibir-59', 'ibir-60', 'ibir-61', 'ibir-62', 'ibir-63', 'ibir-64', 'ibir-65', 'ibir-66', 'ibir-67', 'ibir-68', 'ibir-69', 'ibir-70', 'ibir-71', 'ibir-72', 'ibir-73', 'ibir-74', 'ibir-75', 'ibir-76', 'ibir-77', 'ibir-78', 'ibir-79', 'ibir-80', 'ibir-81', 'ibir-82', 'ibir-83', 'ibir-84', 'ibir-85', 'ibir-86', 'ibir-87', 'ibir-88', 'ibir-89', 'ibir-90', 'ibir-91', 'ibir-92', 'ibir-93', 'ibir-94', 'ibir-95', 'ibir-96', 'ibir-97', 'ibir-98', 'ibir-99', 'ibir-100', 'ibct-1', 'ibct-2', 'ibct-3', 'ibct-4', 'ibct-5', 'ibct-6', 'ibct-7', 'ibct-8', 'ibct-9', 'ibct-10', 'ibct-11', 'ibct-12', 'ibct-13', 'ibct-14', 'ibct-15', 'ibct-16', 'ibct-17', 'ibct-18', 'ibct-19', 'ibct-20', 'ibct-21', 'ibct-22', 'ibct-23', 'ibct-24', 'ibct-25', 'ibct-26', 'ibct-27', 'ibct-28', 'ibct-29', 'ibct-30', 'ibct-31', 'ibct-32', 'ibct-33', 'ibct-34', 'ibct-35', 'ibct-36', 'ibct-37', 'ibct-38', 'ibct-39', 'ibct-40', 'ibct-41', 'ibct-42', 'ibct-43', 'ibct-44', 'ibct-45', 'ibct-46', 'ibct-47', 'ibct-48', 'ibct-49', 'ibct-50', 'ibct-51', 'ibct-52', 'ibct-53', 'ibct-54', 'ibct-55', 'ibct-56', 'ibct-57', 'ibct-58', 'ibct-59', 'ibct-60', 'ibct-61', 'ibct-62', 'ibct-63', 'ibct-64', 'ibct-65', 'ibct-66', 'ibct-67', 'ibct-68', 'ibct-69', 'ibct-70', 'ibct-71', 'ibct-72', 'ibct-73', 'ibct-74', 'ibct-75', 'ibct-76', 'ibct-77', 'ibct-78', 'ibct-79', 'ibct-80', 'ibct-81', 'ibct-82', 'ibct-83', 'ibct-84', 'ibct-85', 'ibct-86', 'ibct-87', 'ibct-88', 'ibct-89', 'ibct-90', 'ibct-91', 'ibct-92', 'ibct-93', 'ibct-94', 'ibct-95', 'ibct-96', 'ibct-97', 'ibct-98', 'ibct-99', 'ibct-100', 'ibct-101', 'ibct-102', 'ibct-103', 'ibct-104', 'ibct-105', 'ibct-106', 'ibct-107', 'ibct-108', 'ibct-109', 'ibct-110', 'ibct-111', 'ibct-112', 'ibct-113', 'ibct-114', 'ibct-115', 'ibct-116', 'ibct-117', 'ibct-118', 'ibct-119', 'ibct-120', 'ibil-1', 'ibil-2', 'ibil-3', 'ibil-4', 'ibil-5', 'ibil-6', 'ibil-7', 'ibil-8', 'ibil-9', 'ibil-10', 'ibil-11', 'ibil-12', 'ibil-13', 'ibil-14', 'ibil-15', 'ibil-16', 'ibil-17', 'ibil-18', 'ibil-19', 'ibil-20', 'ibil-21', 'ibil-22', 'ibil-23', 'ibil-24', 'ibil-25', 'ibil-26', 'ibil-27', 'ibil-28', 'ibil-29', 'ibil-30', 'ibil-31', 'ibil-32', 'ibil-33', 'ibil-34', 'ibil-35', 'ibil-36', 'ibil-37', 'ibil-38', 'ibil-39', 'ibil-40', 'ibil-41', 'ibil-42', 'ibil-43', 'ibil-44', 'ibil-45', 'ibil-46', 'ibil-47', 'ibil-48', 'ibil-49', 'ibil-50', 'ibil-51', 'ibil-52', 'ibil-53', 'ibil-54', 'ibil-55', 'ibil-56', 'ibil-57', 'ibil-58', 'ibil-59', 'ibil-60', 'ibrts-1', 'ibrts-2', 'ibrts-3', 'ibrts-4', 'ibrts-5', 'ibrts-6', 'ibrts-7', 'ibrts-8', 'ibrts-9', 'ibrts-10', 'ibrts-11', 'ibrts-12', 'ibrts-13', 'ibrts-14', 'ibrts-15', 'ibrts-16', 'ibrts-17', 'ibrts-18', 'ibrts-19', 'ibrts-20', 'ibrts-21', 'ibrts-22', 'ibrts-23', 'ibrts-24', 'ibrts-25', 'ibrts-26', 'ibrts-27', 'ibrts-28', 'ibrts-29', 'ibrts-30', 'ibrts-31', 'ibrts-32', 'ibrts-33', 'ibrts-34', 'ibrts-35', 'ibrts-36', 'ibrts-37', 'ibrts-38', 'ibrts-39', 'ibrts-40', 'ibrts-41', 'ibrts-42', 'ibrts-43', 'ibrts-44', 'ibrts-45', 'ibrts-46', 'ibrts-47', 'ibrts-48', 'ibrts-49', 'ibrts-50', 'ibrts-51', 'ibrts-52', 'ibrts-53', 'ibrts-54', 'ibrts-55', 'ibrts-56', 'ibrts-57', 'ibrts-58', 'ibrts-59', 'ibrts-60', 'ibrts-61', 'ibrts-62', 'ibrts-63', 'ibrts-64', 'ibrts-65', 'ibrts-66', 'ibrts-67', 'ibrts-68', 'ibrts-69', 'ibrts-70', 'ibrts-71', 'ibrts-72', 'ibrts-73', 'ibrts-74', 'ibrts-75', 'ibrts-76', 'ibrts-77', 'ibrts-78', 'ibis-1', 'ibis-2', 'ibis-3', 'ibis-4', 'ibis-5', 'ibis-6', 'ibis-7', 'ibis-8', 'ibis-9', 'ibis-10', 'ibis-11', 'ibis-12', 'ibis-13', 'ibis-14', 'ibis-15', 'ibis-16', 'ibis-17', 'ibis-18', 'ibis-19', 'ibis-20', 'ibis-21', 'ibis-22', 'ibis-23', 'ibis-24', 'ibis-25', 'ibis-26', 'ibis-27', 'ibis-28', 'ibis-29', 'ibis-30', 'ibis-31', 'ibis-32', 'ibis-33', 'ibis-34', 'ibis-35', 'ibis-36', 'ibis-37', 'ibis-38', 'ibis-39', 'ibis-40', 'ibis-41', 'ibis-42', 'ibis-43', 'ibis-44', 'ibis-45', 'ibis-46', 'ibis-47', 'ibis-48', 'ibis-49', 'ibis-50', 'ibis-51', 'ibis-52', 'ibis-53', 'ibis-54', 'ibis-55', 'ibis-56', 'ibis-57', 'ibis-58', 'ibis-59', 'ibis-60', 'ibis-61', 'ibis-62', 'ibis-63', 'ibis-64', 'ibis-65', 'ibis-66', 'ibis-67', 'ibis-68', 'ibis-69', 'ibis-70', 'ibis-71', 'ibis-72', 'ibis-73', 'ibis-74', 'ibis-75', 'ibis-76', 'ibis-77', 'ibis-78', 'ibis-79', 'ibis-80');
+  AND id NOT IN ('ibir-1', 'ibir-2', 'ibir-3', 'ibir-4', 'ibir-5', 'ibir-6', 'ibir-7', 'ibir-8', 'ibir-9', 'ibir-10', 'ibir-11', 'ibir-12', 'ibir-13', 'ibir-14', 'ibir-15', 'ibir-16', 'ibir-17', 'ibir-18', 'ibir-19', 'ibir-20', 'ibir-21', 'ibir-22', 'ibir-23', 'ibir-24', 'ibir-25', 'ibir-26', 'ibir-27', 'ibir-28', 'ibir-29', 'ibir-30', 'ibir-31', 'ibir-32', 'ibir-33', 'ibir-34', 'ibir-35', 'ibir-36', 'ibir-37', 'ibir-38', 'ibir-39', 'ibir-40', 'ibir-41', 'ibir-42', 'ibir-43', 'ibir-44', 'ibir-45', 'ibir-46', 'ibir-47', 'ibir-48', 'ibir-49', 'ibir-50', 'ibir-51', 'ibir-52', 'ibir-53', 'ibir-54', 'ibir-55', 'ibir-56', 'ibir-57', 'ibir-58', 'ibir-59', 'ibir-60', 'ibir-61', 'ibir-62', 'ibir-63', 'ibir-64', 'ibir-65', 'ibir-66', 'ibir-67', 'ibir-68', 'ibir-69', 'ibir-70', 'ibir-71', 'ibir-72', 'ibir-73', 'ibir-74', 'ibir-75', 'ibir-76', 'ibir-77', 'ibir-78', 'ibir-79', 'ibir-80', 'ibir-81', 'ibir-82', 'ibir-83', 'ibir-84', 'ibir-85', 'ibir-86', 'ibir-87', 'ibir-88', 'ibir-89', 'ibir-90', 'ibir-91', 'ibir-92', 'ibir-93', 'ibir-94', 'ibir-95', 'ibir-96', 'ibir-97', 'ibir-98', 'ibir-99', 'ibir-100', 'ibir-101', 'ibir-102', 'ibir-103', 'ibir-104', 'ibir-105', 'ibir-106', 'ibir-107', 'ibir-108', 'ibir-109', 'ibir-110', 'ibir-111', 'ibir-112', 'ibir-113', 'ibir-114', 'ibir-115', 'ibir-116', 'ibir-117', 'ibir-118', 'ibir-119', 'ibir-120', 'ibct-1', 'ibct-2', 'ibct-3', 'ibct-4', 'ibct-5', 'ibct-6', 'ibct-7', 'ibct-8', 'ibct-9', 'ibct-10', 'ibct-11', 'ibct-12', 'ibct-13', 'ibct-14', 'ibct-15', 'ibct-16', 'ibct-17', 'ibct-18', 'ibct-19', 'ibct-20', 'ibct-21', 'ibct-22', 'ibct-23', 'ibct-24', 'ibct-25', 'ibct-26', 'ibct-27', 'ibct-28', 'ibct-29', 'ibct-30', 'ibct-31', 'ibct-32', 'ibct-33', 'ibct-34', 'ibct-35', 'ibct-36', 'ibct-37', 'ibct-38', 'ibct-39', 'ibct-40', 'ibct-41', 'ibct-42', 'ibct-43', 'ibct-44', 'ibct-45', 'ibct-46', 'ibct-47', 'ibct-48', 'ibct-49', 'ibct-50', 'ibct-51', 'ibct-52', 'ibct-53', 'ibct-54', 'ibct-55', 'ibct-56', 'ibct-57', 'ibct-58', 'ibct-59', 'ibct-60', 'ibct-61', 'ibct-62', 'ibct-63', 'ibct-64', 'ibct-65', 'ibct-66', 'ibct-67', 'ibct-68', 'ibct-69', 'ibct-70', 'ibct-71', 'ibct-72', 'ibct-73', 'ibct-74', 'ibct-75', 'ibct-76', 'ibct-77', 'ibct-78', 'ibct-79', 'ibct-80', 'ibct-81', 'ibct-82', 'ibct-83', 'ibct-84', 'ibct-85', 'ibct-86', 'ibct-87', 'ibct-88', 'ibct-89', 'ibct-90', 'ibct-91', 'ibct-92', 'ibct-93', 'ibct-94', 'ibct-95', 'ibct-96', 'ibct-97', 'ibct-98', 'ibct-99', 'ibct-100', 'ibct-101', 'ibct-102', 'ibct-103', 'ibct-104', 'ibct-105', 'ibct-106', 'ibct-107', 'ibct-108', 'ibct-109', 'ibct-110', 'ibct-111', 'ibct-112', 'ibct-113', 'ibct-114', 'ibct-115', 'ibct-116', 'ibct-117', 'ibct-118', 'ibct-119', 'ibct-120', 'ibil-1', 'ibil-2', 'ibil-3', 'ibil-4', 'ibil-5', 'ibil-6', 'ibil-7', 'ibil-8', 'ibil-9', 'ibil-10', 'ibil-11', 'ibil-12', 'ibil-13', 'ibil-14', 'ibil-15', 'ibil-16', 'ibil-17', 'ibil-18', 'ibil-19', 'ibil-20', 'ibil-21', 'ibil-22', 'ibil-23', 'ibil-24', 'ibil-25', 'ibil-26', 'ibil-27', 'ibil-28', 'ibil-29', 'ibil-30', 'ibil-31', 'ibil-32', 'ibil-33', 'ibil-34', 'ibil-35', 'ibil-36', 'ibil-37', 'ibil-38', 'ibil-39', 'ibil-40', 'ibil-41', 'ibil-42', 'ibil-43', 'ibil-44', 'ibil-45', 'ibil-46', 'ibil-47', 'ibil-48', 'ibil-49', 'ibil-50', 'ibil-51', 'ibil-52', 'ibil-53', 'ibil-54', 'ibil-55', 'ibil-56', 'ibil-57', 'ibil-58', 'ibil-59', 'ibil-60', 'ibil-61', 'ibil-62', 'ibil-63', 'ibil-64', 'ibil-65', 'ibil-66', 'ibil-67', 'ibil-68', 'ibil-69', 'ibil-70', 'ibil-71', 'ibil-72', 'ibil-73', 'ibil-74', 'ibil-75', 'ibil-76', 'ibil-77', 'ibil-78', 'ibil-79', 'ibil-80', 'ibil-81', 'ibil-82', 'ibil-83', 'ibil-84', 'ibil-85', 'ibil-86', 'ibil-87', 'ibil-88', 'ibil-89', 'ibil-90', 'ibil-91', 'ibil-92', 'ibil-93', 'ibil-94', 'ibil-95', 'ibil-96', 'ibil-97', 'ibil-98', 'ibil-99', 'ibil-100', 'ibil-101', 'ibil-102', 'ibil-103', 'ibil-104', 'ibil-105', 'ibil-106', 'ibil-107', 'ibil-108', 'ibrts-1', 'ibrts-2', 'ibrts-3', 'ibrts-4', 'ibrts-5', 'ibrts-6', 'ibrts-7', 'ibrts-8', 'ibrts-9', 'ibrts-10', 'ibrts-11', 'ibrts-12', 'ibrts-13', 'ibrts-14', 'ibrts-15', 'ibrts-16', 'ibrts-17', 'ibrts-18', 'ibrts-19', 'ibrts-20', 'ibrts-21', 'ibrts-22', 'ibrts-23', 'ibrts-24', 'ibrts-25', 'ibrts-26', 'ibrts-27', 'ibrts-28', 'ibrts-29', 'ibrts-30', 'ibrts-31', 'ibrts-32', 'ibrts-33', 'ibrts-34', 'ibrts-35', 'ibrts-36', 'ibrts-37', 'ibrts-38', 'ibrts-39', 'ibrts-40', 'ibrts-41', 'ibrts-42', 'ibrts-43', 'ibrts-44', 'ibrts-45', 'ibrts-46', 'ibrts-47', 'ibrts-48', 'ibrts-49', 'ibrts-50', 'ibrts-51', 'ibrts-52', 'ibrts-53', 'ibrts-54', 'ibrts-55', 'ibrts-56', 'ibrts-57', 'ibrts-58', 'ibrts-59', 'ibrts-60', 'ibrts-61', 'ibrts-62', 'ibrts-63', 'ibrts-64', 'ibrts-65', 'ibrts-66', 'ibrts-67', 'ibrts-68', 'ibrts-69', 'ibrts-70', 'ibrts-71', 'ibrts-72', 'ibrts-73', 'ibrts-74', 'ibrts-75', 'ibrts-76', 'ibrts-77', 'ibrts-78', 'ibis-1', 'ibis-2', 'ibis-3', 'ibis-4', 'ibis-5', 'ibis-6', 'ibis-7', 'ibis-8', 'ibis-9', 'ibis-10', 'ibis-11', 'ibis-12', 'ibis-13', 'ibis-14', 'ibis-15', 'ibis-16', 'ibis-17', 'ibis-18', 'ibis-19', 'ibis-20', 'ibis-21', 'ibis-22', 'ibis-23', 'ibis-24', 'ibis-25', 'ibis-26', 'ibis-27', 'ibis-28', 'ibis-29', 'ibis-30', 'ibis-31', 'ibis-32', 'ibis-33', 'ibis-34', 'ibis-35', 'ibis-36', 'ibis-37', 'ibis-38', 'ibis-39', 'ibis-40', 'ibis-41', 'ibis-42', 'ibis-43', 'ibis-44', 'ibis-45', 'ibis-46', 'ibis-47', 'ibis-48', 'ibis-49', 'ibis-50', 'ibis-51', 'ibis-52', 'ibis-53', 'ibis-54', 'ibis-55', 'ibis-56', 'ibis-57', 'ibis-58', 'ibis-59', 'ibis-60', 'ibis-61', 'ibis-62', 'ibis-63', 'ibis-64', 'ibis-65', 'ibis-66', 'ibis-67', 'ibis-68', 'ibis-69', 'ibis-70', 'ibis-71', 'ibis-72', 'ibis-73', 'ibis-74', 'ibis-75', 'ibis-76', 'ibis-77', 'ibis-78', 'ibis-79', 'ibis-80');

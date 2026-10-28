@@ -388,9 +388,11 @@ function buildListeningRows() {
     const turns = dialogue.turns.map((turn, turnIndex) => {
       const options = [turn.correct, ...turn.wrong];
       // A stable hash keeps the three-turn answer pattern from repeating
-      // across the pool while staying deterministic between builds.
-      const base = stableHash(dialogueIndex);
-      const offset = (base + turnIndex * (1 + (base % 3))) % 4;
+      // across the pool while staying deterministic between builds. The turn
+      // has its own hash: deriving every turn from one dialogue-level base
+      // value collapses the answer key into twelve possible patterns, which
+      // the pattern gate rejects once the dialogue pool grows.
+      const offset = stableHash(dialogueIndex * 4 + turnIndex + 1) % 4;
       const rotated = [...options.slice(offset), ...options.slice(0, offset)];
       return {
         speaker: turn.speaker,

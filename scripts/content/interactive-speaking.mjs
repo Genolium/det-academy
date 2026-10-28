@@ -725,6 +725,582 @@ export const listeningDialogues = [
       'In 35-65 words, explain what seating you need and what the box office arranged.',
     ],
   },
+  {
+    scenario: 'You are at the library help desk because a core e-book has disappeared from your reading list two weeks before the essay deadline.',
+    turns: [
+      { speaker: 'Librarian Fraser', audio: 'How can I help you today?', correct: 'The e-book for my policy module has vanished from the reading list and I can no longer open it.', wrong: ['I would like to donate some old novels.', 'The reading room is too cold in the morning.', 'I have already returned all my books.'] },
+      { speaker: 'Librarian Fraser', audio: 'The licence may have expired. How many students are relying on that title?', correct: 'About forty of us were assigned chapters from it for next week.', wrong: ['The author visited our class last year.', 'I prefer paper books to screens.', 'The library closes at nine.'] },
+      { speaker: 'Librarian Fraser', audio: 'I can request a short-term licence and put a print copy on reserve.', correct: 'That would solve it. Could you email the class when the print copy is ready?', wrong: ['I will buy the whole edition myself.', 'Please remove the title from the list.', 'I do not need the book after all.'] },
+    ],
+    summaries: [
+      'Summarise the problem with the e-book, what the librarian offered, and what you asked her to do.',
+      'In 35-65 words, explain why you went to the help desk and what was arranged for your class.',
+    ],
+  },
+  {
+    scenario: 'You are asking your statistics lecturer whether you may complete the assignment in a different software package from the one taught in class.',
+    turns: [
+      { speaker: 'Dr Nwosu', audio: 'You wanted to discuss the assignment software?', correct: 'Yes. I am more confident in R than in the package used in lectures, and I would like permission to submit in R.', wrong: ['Yes, I would like to change the assignment deadline.', 'No, I have already finished the assignment.', 'I think the lecture room is too small.'] },
+      { speaker: 'Dr Nwosu', audio: 'The marking rubric rewards correct interpretation, not a particular menu.', correct: 'So as long as my code and output are included, the choice of software does not affect the mark?', wrong: ['Then I do not need to submit any output.', 'So the rubric only checks the software name.', 'Then I can skip the interpretation section.'] },
+      { speaker: 'Dr Nwosu', audio: 'Exactly. Add a short appendix explaining your commands.', correct: 'I will include the script and a brief note on each step.', wrong: ['I will delete the appendix to save space.', 'I will submit only a screenshot.', 'I will use three packages at once.'] },
+    ],
+    summaries: [
+      'Summarise the permission you requested, the lecturer\u2019s explanation of the rubric, and what you will add to the submission.',
+      'In 35-65 words, describe the software discussion and the agreed format of your appendix.',
+    ],
+  },
+  {
+    scenario: 'You are at the accommodation office reporting that the heating in your room has failed during a cold spell.',
+    turns: [
+      { speaker: 'Housing Officer Petrov', audio: 'What is the problem in the flat?', correct: 'The radiator in my room has been cold since Monday, and the temperature is below what the contract promises.', wrong: ['The kitchen bin has not been emptied.', 'I would like to move to a larger room.', 'My neighbour plays music at night.'] },
+      { speaker: 'Housing Officer Petrov', audio: 'Has anyone checked the boiler room?', correct: 'The warden looked at it yesterday and said the fault is in our flat, not the building.', wrong: ['I have not told anyone about it.', 'The boiler is in a different city.', 'I fixed it myself with tape.'] },
+      { speaker: 'Housing Officer Petrov', audio: 'I will send a technician tomorrow morning. Can you be in?', correct: 'Yes, I have a seminar in the afternoon, so any time before noon suits me.', wrong: ['No, I am away for the whole term.', 'I would rather wait until summer.', 'Please come at midnight.'] },
+    ],
+    summaries: [
+      'Summarise the heating fault, what the warden found, and the visit you agreed to.',
+      'In 35-65 words, explain the problem in your room and what the accommodation office will do.',
+    ],
+  },
+  {
+    scenario: 'You are arranging the filming schedule for a group video assignment with a teammate.',
+    turns: [
+      { speaker: 'Teammate Jonas', audio: 'When can we film the interviews for our documentary?', correct: 'The lab is free on Thursday afternoon, so we could record the first two then.', wrong: ['I have not watched the documentary yet.', 'The camera belongs to the department.', 'Our topic is about transport.'] },
+      { speaker: 'Teammate Jonas', audio: 'I have a lecture until three. Could we start at half past?', correct: 'Half past three works. I will book the room and the microphone for four hours.', wrong: ['I would prefer to cancel the project.', 'The lecture is about economics.', 'We do not need any equipment.'] },
+      { speaker: 'Teammate Jonas', audio: 'And who will edit the footage?', correct: 'I can do the first cut if you check the audio and add the captions.', wrong: ['Nobody needs to edit it.', 'The tutor will film everything.', 'We can submit the raw files.'] },
+    ],
+    summaries: [
+      'Summarise the filming plan, the equipment booking and the division of editing work.',
+      'In 35-65 words, describe when you will film, what you booked and who will do which task.',
+    ],
+  },
+  {
+    scenario: 'You are at the careers service asking how to present a gap year on graduate job applications.',
+    turns: [
+      { speaker: 'Adviser Whitmore', audio: 'What did you do during your year away from study?', correct: 'I worked in a hotel and volunteered at a community kitchen, so I have customer and teamwork experience.', wrong: ['I have not left university yet.', 'I spent the year preparing for exams.', 'I would like a job in this building.'] },
+      { speaker: 'Adviser Whitmore', audio: 'Employers will ask what you learned, not just where you were.', correct: 'I can describe handling complaints and training new volunteers, with examples of what changed.', wrong: ['I will leave the year off my CV.', 'I only remember the weather.', 'I would rather discuss my hobbies.'] },
+      { speaker: 'Adviser Whitmore', audio: 'Put that in a short section called experience, not travel.', correct: 'I will rewrite it with two bullet points and a measurable result for each.', wrong: ['I will call it holiday photos.', 'I will remove all dates.', 'I will write a whole page about the hotel.'] },
+    ],
+    summaries: [
+      'Summarise the gap-year experience, the advice about framing it, and how you will rewrite the section.',
+      'In 35-65 words, explain what you did in your gap year and how the adviser told you to present it.',
+    ],
+  },
+  {
+    scenario: 'You are asking a laboratory technician to reserve a microscope for a dissertation experiment.',
+    turns: [
+      { speaker: 'Technician Mrs Iqbal', audio: 'Which instrument do you need?', correct: 'The inverted microscope with the camera, for three sessions next week.', wrong: ['I need a new pair of glasses.', 'The poster printer is broken.', 'I am looking for the fire exit.'] },
+      { speaker: 'Technician Mrs Iqbal', audio: 'It is booked on Tuesday. Would Wednesday morning suit you?', correct: 'Wednesday from nine to twelve would be ideal, if the camera is free.', wrong: ['I only work in the evening.', 'I do not need a microscope.', 'Tuesday is my birthday.'] },
+      { speaker: 'Technician Mrs Iqbal', audio: 'I will reserve it and show you the calibration procedure.', correct: 'Thank you. I will arrive ten minutes early for the induction.', wrong: ['I will skip the induction.', 'I already know everything about it.', 'Please cancel the booking.'] },
+    ],
+    summaries: [
+      'Summarise the equipment you need, the time agreed and the induction you must attend.',
+      'In 35-65 words, describe the booking and what you must do before using the microscope.',
+    ],
+  },
+  {
+    scenario: 'You are at the student conduct office explaining a misunderstanding about notes you shared in a group chat.',
+    turns: [
+      { speaker: 'Conduct Officer Mr Ade', audio: 'The report says your notes appeared in another student\u2019s submission. What happened?', correct: 'I posted my summary in our study group chat, but I did not know anyone would copy it into an essay.', wrong: ['I have never used a group chat.', 'I wrote the essay for another student.', 'I do not attend that module.'] },
+      { speaker: 'Conduct Officer Mr Ade', audio: 'Did you label the file as your own work?', correct: 'Yes, my name and the module code were on every page.', wrong: ['No, I left it blank on purpose.', 'I deleted it immediately.', 'I cannot remember my own name.'] },
+      { speaker: 'Conduct Officer Mr Ade', audio: 'We will treat this as a sharing issue, not plagiarism, if you attend a workshop.', correct: 'I understand. I will attend the session and keep future drafts private.', wrong: ['I refuse to attend anything.', 'I will share more files next time.', 'I would like the other student punished.'] },
+    ],
+    summaries: [
+      'Summarise how your notes were shared, what the officer concluded and what you agreed to do.',
+      'In 35-65 words, explain the misunderstanding and the outcome of the meeting.',
+    ],
+  },
+  {
+    scenario: 'You are asking your seminar leader whether you may record discussions to help with revision.',
+    turns: [
+      { speaker: 'Dr Halvorsen', audio: 'You asked about recording the seminar?', correct: 'Yes. I find it hard to take notes and follow the discussion at the same time, so I would like to record the audio.', wrong: ['Yes, I would like to lead the seminar.', 'No, I have lost my notebook.', 'I want to record a music concert.'] },
+      { speaker: 'Dr Halvorsen', audio: 'Other students may not want to be recorded. How would you handle that?', correct: 'I would ask everyone\u2019s consent first and delete the file at the end of term.', wrong: ['I would publish it online.', 'I would record without telling them.', 'I would keep it forever.'] },
+      { speaker: 'Dr Halvorsen', audio: 'That is acceptable. Please also share the file with anyone who misses a session.', correct: 'Of course. I will send it to the group and note that it is for revision only.', wrong: ['I will charge them for it.', 'I will sell it to another class.', 'I would rather not share anything.'] },
+    ],
+    summaries: [
+      'Summarise why you want to record, how you will protect other students and what you will share.',
+      'In 35-65 words, describe the permission you requested and the conditions attached to it.',
+    ],
+  },
+  {
+    scenario: 'You are at the student health centre asking about a vaccination required before a hospital placement.',
+    turns: [
+      { speaker: 'Nurse Abara', audio: 'What do you need for the placement?', correct: 'The hospital requires proof of measles vaccination, and I cannot find my childhood record.', wrong: ['I need a note for a missed lecture.', 'I would like to change my course.', 'I have a dentist appointment.'] },
+      { speaker: 'Nurse Abara', audio: 'We can check your immunity with a blood test first.', correct: 'If the test shows I am not immune, how soon could I be vaccinated?', wrong: ['I would rather not know the result.', 'The test is for my eyesight.', 'I have already had the test twice.'] },
+      { speaker: 'Nurse Abara', audio: 'We can vaccinate the same week and issue a letter.', correct: 'That is a relief. I will book the blood test for tomorrow morning.', wrong: ['I will wait until after the placement.', 'I do not need a letter.', 'Please cancel the placement.'] },
+    ],
+    summaries: [
+      'Summarise the placement requirement, the test proposed and the next appointment you booked.',
+      'In 35-65 words, explain what the hospital requires and what the nurse arranged.',
+    ],
+  },
+  {
+    scenario: 'You are at the exams office requesting a deferred exam after a family emergency.',
+    turns: [
+      { speaker: 'Exams Officer Mrs Duarte', audio: 'What are you asking for?', correct: 'I would like to defer my Friday exam because my grandmother died and I have been away from campus.', wrong: ['I would like a different examiner.', 'I want my mark changed to a pass.', 'I am looking for the exam timetable.'] },
+      { speaker: 'Exams Officer Mrs Duarte', audio: 'Do you have supporting evidence?', correct: 'Yes, the hospital and the funeral director have provided letters.', wrong: ['No, I prefer not to explain.', 'I have a cinema ticket.', 'My friend can confirm it.'] },
+      { speaker: 'Exams Officer Mrs Duarte', audio: 'The deferral board meets on Monday. You will sit the exam in August.', correct: 'Thank you. I will check the August date and keep the evidence on file.', wrong: ['I cannot take an exam in August.', 'I will not attend the board.', 'Please delete my record.'] },
+    ],
+    summaries: [
+      'Summarise the reason for the deferral, the evidence supplied and the new exam date.',
+      'In 35-65 words, describe your request to the exams office and what you were told.',
+    ],
+  },
+  {
+    scenario: 'You are at the international office asking how to open a local bank account as a new student.',
+    turns: [
+      { speaker: 'Adviser Ms Kowal', audio: 'Have you tried the bank on the high street?', correct: 'Not yet. I was told I need a letter confirming my address and enrolment.', wrong: ['Yes, I have closed my account.', 'I do not need a bank account.', 'The bank is next to my house.'] },
+      { speaker: 'Adviser Ms Kowal', audio: 'We can issue that letter today. Do you have your passport and visa?', correct: 'I have both, and I can bring the tenancy agreement as well.', wrong: ['I left my passport abroad.', 'My visa expired last year.', 'I only have a library card.'] },
+      { speaker: 'Adviser Ms Kowal', audio: 'Then book an appointment with the bank and take all four documents.', correct: 'I will book online this afternoon and keep copies of everything.', wrong: ['I will post the originals.', 'I will go without documents.', 'I will ask the bank to come here.'] },
+    ],
+    summaries: [
+      'Summarise the documents you need, the letter the office will issue and your next step.',
+      'In 35-65 words, explain what you must take to the bank and what you will do first.',
+    ],
+  },
+  {
+    scenario: 'You are asking your professor for feedback on a conference abstract that was rejected.',
+    turns: [
+      { speaker: 'Professor Lindgren', audio: 'You received the decision?', correct: 'Yes, it was rejected, and the reviews say the method section was too vague.', wrong: ['Yes, I have not opened the email.', 'No, I never submitted anything.', 'I am going to the conference as a speaker.'] },
+      { speaker: 'Professor Lindgren', audio: 'Did they explain what was missing?', correct: 'One reviewer asked for the sample size and another for the statistical test.', wrong: ['They praised the title only.', 'They asked me to change hotels.', 'They want a different conference.'] },
+      { speaker: 'Professor Lindgren', audio: 'We can revise and submit to the spring meeting.', correct: 'I will rewrite the method, add the numbers and send you a draft by Friday.', wrong: ['I will submit the same version.', 'I will abandon the project.', 'I will remove the results.'] },
+    ],
+    summaries: [
+      'Summarise the rejection, the reviewers\u2019 objections and the revision plan.',
+      'In 35-65 words, explain what the reviews said and what you will change before resubmitting.',
+    ],
+  },
+  {
+    scenario: 'You are at the campus transport office asking about a discounted annual bus pass.',
+    turns: [
+      { speaker: 'Transport Assistant Mr Bell', audio: 'Are you a full-time student?', correct: 'Yes, I am in my second year and I commute from the other side of the city.', wrong: ['No, I graduated five years ago.', 'I do not use public transport.', 'I live next to the campus.'] },
+      { speaker: 'Transport Assistant Mr Bell', audio: 'The annual pass is cheaper, but it is paid in one instalment.', correct: 'Could I pay monthly instead, even if it costs a little more?', wrong: ['I would like a free ticket.', 'I will pay in ten years.', 'I do not need a pass at all.'] },
+      { speaker: 'Transport Assistant Mr Bell', audio: 'Yes, there is a monthly plan for students. Bring your ID card.', correct: 'I will bring my card and set up the payment tomorrow.', wrong: ['I will bring my passport photo only.', 'I will send my brother instead.', 'I will wait until the pass expires.'] },
+    ],
+    summaries: [
+      'Summarise your commuting situation, the payment problem and the plan you chose.',
+      'In 35-65 words, describe the pass you asked about and what you need to bring.',
+    ],
+  },
+  {
+    scenario: 'You are discussing the working hours of a part-time research assistant role with a postdoctoral researcher.',
+    turns: [
+      { speaker: 'Dr Mensah', audio: 'The project needs about ten hours a week. Does that fit your timetable?', correct: 'Ten hours is fine, but I have lectures on Tuesday and Thursday mornings.', wrong: ['I can only work sixty hours a week.', 'I do not have a timetable.', 'I would like to work at night only.'] },
+      { speaker: 'Dr Mensah', audio: 'We could schedule you on Monday and Wednesday afternoons.', correct: 'That suits me. Would the hours be flexible during exam weeks?', wrong: ['I would prefer every day at dawn.', 'I do not want any schedule.', 'Monday is a public holiday forever.'] },
+      { speaker: 'Dr Mensah', audio: 'Yes, as long as the total is agreed in advance.', correct: 'Then I will confirm my hours each month and log them in the shared sheet.', wrong: ['I will never log my time.', 'I will work without telling you.', 'I will change the total without asking.'] },
+    ],
+    summaries: [
+      'Summarise the hours offered, the scheduling problem and how you will record your time.',
+      'In 35-65 words, explain what hours you can work and what was agreed about exams.',
+    ],
+  },
+  {
+    scenario: 'You are asking a music teacher how to practise a difficult passage without hurting your wrist.',
+    turns: [
+      { speaker: 'Teacher Mr Rossi', audio: 'Where does the pain appear?', correct: 'On the outside of my right wrist, mostly when I play repeated chords.', wrong: ['In my left ankle when I walk.', 'Behind my eyes when I read.', 'In my shoulder when I sleep.'] },
+      { speaker: 'Teacher Mr Rossi', audio: 'Do you tense up before the difficult bar?', correct: 'Yes, I notice my fingers curl and my forearm tightens just before it.', wrong: ['No, I never practise that bar.', 'I only play with my elbow.', 'I have not touched the piano.'] },
+      { speaker: 'Teacher Mr Rossi', audio: 'Slow the passage down and release the tension between each chord.', correct: 'I will practise it at half speed and stop whenever I feel the grip tighten.', wrong: ['I will play it faster to finish sooner.', 'I will ignore the pain and continue.', 'I will stop playing for a year.'] },
+    ],
+    summaries: [
+      'Summarise the pain, its cause in your playing and the practice method you will try.',
+      'In 35-65 words, describe the problem with your wrist and the teacher\u2019s advice.',
+    ],
+  },
+  {
+    scenario: 'You are at the sustainability office proposing a reusable cup scheme for the library café.',
+    turns: [
+      { speaker: 'Sustainability Officer Ms Feld', audio: 'What is the idea?', correct: 'A deposit scheme where students borrow a cup and return it to any campus café.', wrong: ['A plan to close the library café.', 'A new brand of paper napkin.', 'A campaign against cycling.'] },
+      { speaker: 'Sustainability Officer Ms Feld', audio: 'How would you keep the cups from disappearing?', correct: 'A small deposit, return points in three buildings and a weekly count.', wrong: ['By giving cups away free.', 'By hiding the cups.', 'By asking staff to buy them.'] },
+      { speaker: 'Sustainability Officer Ms Feld', audio: 'We could pilot it for one term in two cafés.', correct: 'I will draft the pilot plan and measure returns and washing costs.', wrong: ['I will launch it across the country.', 'I will not measure anything.', 'I will cancel the cafés.'] },
+    ],
+    summaries: [
+      'Summarise the scheme you proposed, how cups would be tracked and the pilot plan.',
+      'In 35-65 words, explain your idea to reduce cup waste and what the officer suggested.',
+    ],
+  },
+  {
+    scenario: 'You are asking your dissertation supervisor to help narrow an overbroad research question.',
+    turns: [
+      { speaker: 'Dr Ferreira', audio: 'What is your current question?', correct: 'I want to know how social media affects young people, which is far too wide.', wrong: ['I have not chosen a topic yet.', 'I would like to change supervisor.', 'My question is about the library.'] },
+      { speaker: 'Dr Ferreira', audio: 'Pick one platform, one age group and one outcome.', correct: 'Then I could study how short videos affect sleep in first-year students.', wrong: ['Then I could study everything at once.', 'Then I could ignore the evidence.', 'Then I could change country.'] },
+      { speaker: 'Dr Ferreira', audio: 'That is answerable within your word limit. What data will you use?', correct: 'A survey of about eighty students plus a small set of interviews.', wrong: ['I will use no data at all.', 'I will interview the whole city.', 'I will rely on my own opinion.'] },
+    ],
+    summaries: [
+      'Summarise the original question, the narrower version agreed and the data you plan to collect.',
+      'In 35-65 words, explain how your supervisor helped you focus the dissertation.',
+    ],
+  },
+  {
+    scenario: 'You are at the sports centre booking a badminton court for a departmental tournament.',
+    turns: [
+      { speaker: 'Receptionist Mr Osei', audio: 'How many courts do you need?', correct: 'Three courts for four hours on a Saturday, if they are available.', wrong: ['One court for ten minutes.', 'A swimming pool for the term.', 'I do not need a court.'] },
+      { speaker: 'Receptionist Mr Osei', audio: 'Saturday mornings are busy. Would the afternoon work?', correct: 'The afternoon is fine, as long as we can finish before six.', wrong: ['I can only play at midnight.', 'Saturday is impossible every week.', 'I would rather cancel the tournament.'] },
+      { speaker: 'Receptionist Mr Osei', audio: 'I will hold the courts and send you a booking form.', correct: 'I will complete the form and pay the deposit today.', wrong: ['I will pay after the event.', 'I will not complete any form.', 'I will book a different sport.'] },
+    ],
+    summaries: [
+      'Summarise the courts you need, the time change and the paperwork you must complete.',
+      'In 35-65 words, describe your tournament booking and what the receptionist arranged.',
+    ],
+  },
+  {
+    scenario: 'You are asking a language tutor for advice before your oral exam.',
+    turns: [
+      { speaker: 'Tutor Ms Almeida', audio: 'Which part of the oral exam worries you most?', correct: 'The discussion, because I freeze when I cannot find the right word.', wrong: ['The written essay.', 'The listening test.', 'The exam building.'] },
+      { speaker: 'Tutor Ms Almeida', audio: 'What do you do when a word is missing?', correct: 'I usually stop. I could describe the idea instead of searching for the exact term.', wrong: ['I speak in my first language.', 'I leave the room.', 'I ask the examiner for the answer.'] },
+      { speaker: 'Tutor Ms Almeida', audio: 'Practise paraphrasing with a partner for ten minutes a day.', correct: 'I will record myself describing three topics and review the pauses.', wrong: ['I will memorise every word.', 'I will avoid speaking practice.', 'I will only read grammar books.'] },
+    ],
+    summaries: [
+      'Summarise the part of the exam that worries you, the strategy discussed and your practice plan.',
+      'In 35-65 words, explain the difficulty you described and how you will prepare for it.',
+    ],
+  },
+  {
+    scenario: 'You are at the museum studies department asking to borrow a handling collection for a school workshop.',
+    turns: [
+      { speaker: 'Curator Dr Beaumont', audio: 'What would you like to borrow?', correct: 'A box of domestic objects from the 1950s that students can touch safely.', wrong: ['The entire Egyptian gallery.', 'A painting from the main hall.', 'The museum entrance desk.'] },
+      { speaker: 'Curator Dr Beaumont', audio: 'Some items are fragile. How will you supervise them?', correct: 'Two adults will sit with each table and count the objects before and after.', wrong: ['Students can take them home.', 'I will leave them unattended.', 'I will not count anything.'] },
+      { speaker: 'Curator Dr Beaumont', audio: 'We can lend the box for one week with a condition report.', correct: 'I will sign the report and return everything in the same condition.', wrong: ['I will keep it for a year.', 'I will skip the report.', 'I will replace broken items with new ones.'] },
+    ],
+    summaries: [
+      'Summarise the objects requested, the supervision plan and the conditions of the loan.',
+      'In 35-65 words, describe what you want to borrow and how you will keep it safe.',
+    ],
+  },
+  {
+    scenario: 'You are reporting a lost USB stick containing unpublished research data to the IT security team.',
+    turns: [
+      { speaker: 'Security Analyst Mr Haas', audio: 'When did you last see the drive?', correct: 'Yesterday afternoon in the psychology lab, after I copied the interview files.', wrong: ['I have never owned a USB stick.', 'It is in my bag right now.', 'I found it this morning.'] },
+      { speaker: 'Security Analyst Mr Haas', audio: 'Was the data encrypted?', correct: 'No, and it included participant names, so I am worried about disclosure.', wrong: ['Yes, and it was empty.', 'It contained only music.', 'It was encrypted with a password I lost.'] },
+      { speaker: 'Security Analyst Mr Haas', audio: 'We will log the loss and ask you to notify the ethics committee.', correct: 'I will email the committee today and describe exactly which files are missing.', wrong: ['I will wait until next year.', 'I will not tell anyone.', 'I will delete the project.'] },
+    ],
+    summaries: [
+      'Summarise what was lost, why it is sensitive and the notifications you must make.',
+      'In 35-65 words, explain the data loss and the steps the security team required.',
+    ],
+  },
+  {
+    scenario: 'You are asking your course representative to raise a concern about overcrowded tutorials.',
+    turns: [
+      { speaker: 'Course Rep Amara', audio: 'What should I take to the staff meeting?', correct: 'That our tutorial group has thirty students for a room with twenty chairs.', wrong: ['My opinion of the cafeteria.', 'A request for longer holidays.', 'The timetable for another course.'] },
+      { speaker: 'Course Rep Amara', audio: 'Have you raised it with the tutor directly?', correct: 'Yes, she agrees but says the room allocation is out of her hands.', wrong: ['No, I have told nobody.', 'The tutor refused to speak to us.', 'I do not attend tutorials.'] },
+      { speaker: 'Course Rep Amara', audio: 'I will ask for a larger room or a second group.', correct: 'Thank you. Could you also ask whether the group can be split before the next assessment?', wrong: ['Please keep the group as it is.', 'I would like fewer tutorials.', 'Ask them to cancel the module.'] },
+    ],
+    summaries: [
+      'Summarise the overcrowding problem, what the tutor said and what you asked the representative to do.',
+      'In 35-65 words, describe the concern you raised and the request made at the staff meeting.',
+    ],
+  },
+  {
+    scenario: 'You are at the print room asking for a bound copy of your dissertation.',
+    turns: [
+      { speaker: 'Print Assistant Mr Varga', audio: 'What format do you need?', correct: 'A soft-bound copy with the title on the cover and the pages printed single-sided.', wrong: ['A poster for a conference.', 'A set of business cards.', 'A birthday banner.'] },
+      { speaker: 'Print Assistant Mr Varga', audio: 'We need the file as a PDF with margins of at least two centimetres.', correct: 'I will check the margins and send the final PDF this afternoon.', wrong: ['I will send a photograph.', 'I do not have a file.', 'I will write it by hand.'] },
+      { speaker: 'Print Assistant Mr Varga', audio: 'Binding takes two working days. Is Thursday early enough?', correct: 'Thursday is fine, as the submission desk closes on Friday at noon.', wrong: ['I need it last week.', 'I will collect it in a month.', 'Please post it abroad.'] },
+    ],
+    summaries: [
+      'Summarise the printing requirements, the file you must send and the collection date.',
+      'In 35-65 words, explain what you ordered and why the timing matters.',
+    ],
+  },
+  {
+    scenario: 'You are asking a university counsellor for help with anxiety before presentations.',
+    turns: [
+      { speaker: 'Counsellor Ms Adeyemi', audio: 'What happens before you present?', correct: 'My hands shake, my mouth dries up and I cannot sleep the night before.', wrong: ['I feel very calm and confident.', 'I enjoy standing on stage.', 'I have never given a presentation.'] },
+      { speaker: 'Counsellor Ms Adeyemi', audio: 'Have you tried practising in the room where you will speak?', correct: 'Not yet. I usually rehearse alone in my bedroom.', wrong: ['Yes, I rehearse on a bus.', 'I do not need to practise.', 'The room is always locked.'] },
+      { speaker: 'Counsellor Ms Adeyemi', audio: 'We can also work on breathing and a short opening you know well.', correct: 'I will write the first two sentences and practise them with a friend.', wrong: ['I will avoid all presentations.', 'I will read the whole script silently.', 'I will speak for an hour.'] },
+    ],
+    summaries: [
+      'Summarise the symptoms you described, the practice you have done and the plan you agreed.',
+      'In 35-65 words, explain your presentation anxiety and what the counsellor suggested.',
+    ],
+  },
+  {
+    scenario: 'You are asking the campus shop manager to stock cheaper stationery for students.',
+    turns: [
+      { speaker: 'Shop Manager Mr Doyle', audio: 'What are students asking for?', correct: 'Basic notebooks and pens that cost less than the branded sets on the shelf.', wrong: ['More imported chocolate.', 'A larger car park.', 'Longer opening hours on Sunday.'] },
+      { speaker: 'Shop Manager Mr Doyle', audio: 'The cheap lines have thin margins. Would a student discount help?', correct: 'Yes, a discount on own-brand items would make them affordable.', wrong: ['No, prices should rise.', 'I would like free products.', 'Discounts are illegal.'] },
+      { speaker: 'Shop Manager Mr Doyle', audio: 'I will trial an own-brand range for one term.', correct: 'I will ask students which three items they need most and report back.', wrong: ['I will choose nothing.', 'I will order luxury pens only.', 'I will close the shop.'] },
+    ],
+    summaries: [
+      'Summarise the products requested, the discount idea and the trial the manager agreed to.',
+      'In 35-65 words, explain what you asked the shop to stock and how the trial will be reviewed.',
+    ],
+  },
+  {
+    scenario: 'You are at a postgraduate open day asking a PhD student about their path into research.',
+    turns: [
+      { speaker: 'PhD Student Ravi', audio: 'What did you study before starting your PhD?', correct: 'I did a physics degree, then worked in a lab for two years before applying.', wrong: ['I have never studied science.', 'I started a PhD at sixteen.', 'I only studied art.'] },
+      { speaker: 'PhD Student Ravi', audio: 'Was the gap between degrees useful?', correct: 'Very. It showed me which questions I actually wanted to spend years on.', wrong: ['No, it was a waste of time.', 'I cannot remember it.', 'It made me leave research.'] },
+      { speaker: 'PhD Student Ravi', audio: 'Talk to potential supervisors early and read their recent papers.', correct: 'I will email two supervisors with a short proposal and ask for a meeting.', wrong: ['I will apply without reading anything.', 'I will email every professor at once.', 'I will wait until the deadline.'] },
+    ],
+    summaries: [
+      'Summarise the speaker\u2019s route into research, what the gap gave them and the advice you received.',
+      'In 35-65 words, describe what you learned about preparing for a PhD application.',
+    ],
+  },
+  {
+    scenario: 'You are at the exams office disputing a mark that appears to have been added up incorrectly.',
+    turns: [
+      { speaker: 'Exams Officer Mr Takahashi', audio: 'Which module is affected?', correct: 'Introduction to Statistics. My coursework and exam marks do not add up to the grade shown.', wrong: ['A module I never took.', 'The whole degree programme.', 'A module from another university.'] },
+      { speaker: 'Exams Officer Mr Takahashi', audio: 'We can request a clerical check. Do you have the breakdown?', correct: 'Yes, the portal shows sixty percent coursework and forty percent exam.', wrong: ['No, I have no evidence.', 'I would like a new examiner.', 'The breakdown is secret.'] },
+      { speaker: 'Exams Officer Mr Takahashi', audio: 'The check takes ten working days and may confirm the mark.', correct: 'I understand. Please tell me if the mark changes or stays the same.', wrong: ['I expect it changed today.', 'I will not accept any answer.', 'Please cancel the module.'] },
+    ],
+    summaries: [
+      'Summarise the mark you are disputing, the evidence you have and what happens next.',
+      'In 35-65 words, explain why you think the mark is wrong and what the office will do.',
+    ],
+  },
+  {
+    scenario: 'You are asking a lecturer for the reading list before term starts.',
+    turns: [
+      { speaker: 'Dr S\u00f8rensen', audio: 'Why do you need the list so early?', correct: 'The two key books are expensive, so I want to borrow them before the library runs out.', wrong: ['I want to avoid all reading.', 'I am not enrolled yet.', 'I prefer not to buy books.'] },
+      { speaker: 'Dr S\u00f8rensen', audio: 'The list is not final, but the core text is settled.', correct: 'Could you tell me the core text and which chapters are most important?', wrong: ['Please send every book ever written.', 'I will wait until the exam.', 'I do not need the core text.'] },
+      { speaker: 'Dr S\u00f8rensen', audio: 'I will send the first four weeks by Friday.', correct: 'Thank you. I will reserve the core text and start the opening chapter.', wrong: ['I will ignore the email.', 'I will buy the whole library.', 'I will change modules.'] },
+    ],
+    summaries: [
+      'Summarise why you asked for the list early, the information the lecturer offered and your plan.',
+      'In 35-65 words, explain your request and what you will do when the list arrives.',
+    ],
+  },
+  {
+    scenario: 'You are at the volunteering office signing up to tutor pupils at a local school.',
+    turns: [
+      { speaker: 'Volunteering Officer Ms Grant', audio: 'What subject would you like to teach?', correct: 'Maths, preferably with pupils preparing for their final school exams.', wrong: ['I would like to coach football.', 'I do not want to teach anything.', 'I am only interested in cooking.'] },
+      { speaker: 'Volunteering Officer Ms Grant', audio: 'We need a police check and two references.', correct: 'I can provide both, and I already have a recent background certificate.', wrong: ['I cannot give any names.', 'I have no identification.', 'I would rather not be checked.'] },
+      { speaker: 'Volunteering Officer Ms Grant', audio: 'Training is on Wednesday evening. Can you attend?', correct: 'Yes, I can be there at six and stay for the whole session.', wrong: ['I am busy every Wednesday forever.', 'I will skip the training.', 'I will arrive at midnight.'] },
+    ],
+    summaries: [
+      'Summarise the subject you want to tutor, the checks required and the training you will attend.',
+      'In 35-65 words, describe your volunteering application and what happens next.',
+    ],
+  },
+  {
+    scenario: 'You are asking a laboratory technician why the centrifuge stopped in the middle of a run.',
+    turns: [
+      { speaker: 'Technician Dr Malik', audio: 'What did the display show?', correct: 'An imbalance warning, and the lid stayed locked for a minute.', wrong: ['The time and date.', 'A weather forecast.', 'Nothing at all.'] },
+      { speaker: 'Technician Dr Malik', audio: 'Were the tubes filled to the same level?', correct: 'Not exactly. One tube had noticeably less liquid than the others.', wrong: ['They were all empty.', 'I did not load any tubes.', 'They were filled with sand.'] },
+      { speaker: 'Technician Dr Malik', audio: 'That triggered the safety brake. Balance them by weight next time.', correct: 'I will weigh each tube and pair them before starting the rotor.', wrong: ['I will ignore the warning.', 'I will use one tube only.', 'I will run it with the lid open.'] },
+    ],
+    summaries: [
+      'Summarise what the machine reported, the cause of the stop and how you will prevent it.',
+      'In 35-65 words, explain the centrifuge problem and the technician\u2019s instruction.',
+    ],
+  },
+  {
+    scenario: 'You are discussing with your personal tutor whether to take a placement year in industry.',
+    turns: [
+      { speaker: 'Dr Ibarra', audio: 'What is holding you back?', correct: 'I worry that a year away will make me forget the theory and lose touch with my friends.', wrong: ['I have already accepted a placement.', 'I do not know what a placement is.', 'I want to leave university now.'] },
+      { speaker: 'Dr Ibarra', audio: 'Placements often sharpen final-year work. Have you found a host?', correct: 'I have an interview with a water company next month.', wrong: ['No, I have not looked.', 'I would like to work abroad forever.', 'I want to be paid to sleep.'] },
+      { speaker: 'Dr Ibarra', audio: 'Keep the four-year route open until the interview result.', correct: 'I will confirm the interview and decide after I hear back.', wrong: ['I will withdraw today.', 'I will never decide.', 'I will change my degree subject.'] },
+    ],
+    summaries: [
+      'Summarise your doubts about a placement year, the interview you have and the advice given.',
+      'In 35-65 words, explain the decision you are facing and what you will do next.',
+    ],
+  },
+  {
+    scenario: 'You are at the library desk asking to book a quiet study room during the exam period.',
+    turns: [
+      { speaker: 'Library Assistant Ms Rossi', audio: 'How long do you need the room?', correct: 'Two hours each morning for the next week, if possible.', wrong: ['The whole building for a party.', 'Ten minutes tomorrow.', 'I do not need a room.'] },
+      { speaker: 'Library Assistant Ms Rossi', audio: 'Those slots are popular. Are you working alone?', correct: 'Yes, alone, so a small single room is enough.', wrong: ['No, with a brass band.', 'I have not decided.', 'I want the largest room.'] },
+      { speaker: 'Library Assistant Ms Rossi', audio: 'I can offer nine to eleven. Bring your card to collect the key.', correct: 'I will be there at nine and return the key straight after.', wrong: ['I will come at noon.', 'I will keep the key.', 'I will send someone else.'] },
+    ],
+    summaries: [
+      'Summarise the room you need, the slot offered and what you must bring.',
+      'In 35-65 words, describe your study-room booking and the arrangements for the key.',
+    ],
+  },
+  {
+    scenario: 'You are asking a careers adviser how to negotiate a deadline for accepting a job offer.',
+    turns: [
+      { speaker: 'Adviser Ms Byrne', audio: 'When does the employer want an answer?', correct: 'They asked for a decision by Friday, but I am still waiting for a second interview.', wrong: ['I have already accepted.', 'They never contacted me.', 'I do not want the job.'] },
+      { speaker: 'Adviser Ms Byrne', audio: 'You can ask for an extension without sounding ungrateful.', correct: 'I could thank them, explain the other process and ask for one more week.', wrong: ['I could ignore the email.', 'I could demand a higher salary first.', 'I could accept both jobs.'] },
+      { speaker: 'Adviser Ms Byrne', audio: 'That is reasonable. Keep the request short and specific.', correct: 'I will send a polite email today asking whether Monday week is possible.', wrong: ['I will send nothing.', 'I will ask for a year.', 'I will withdraw my application.'] },
+    ],
+    summaries: [
+      'Summarise the deadline problem, the wording the adviser suggested and the email you will send.',
+      'In 35-65 words, explain your situation and how you plan to ask for more time.',
+    ],
+  },
+  {
+    scenario: 'You are in a tutorial explaining why you think the essay marking criteria were applied unfairly.',
+    turns: [
+      { speaker: 'Tutor Dr Kaur', audio: 'Which criterion do you think was misapplied?', correct: 'The structure mark. My paragraphs follow the plan, but the feedback says there is no argument.', wrong: ['The handwriting mark.', 'The attendance mark.', 'The room booking.'] },
+      { speaker: 'Tutor Dr Kaur', audio: 'Can you show me where the argument is stated?', correct: 'In the second paragraph, though I now see it is buried under background detail.', wrong: ['I cannot find my essay.', 'I did not write an essay.', 'The argument is in another module.'] },
+      { speaker: 'Tutor Dr Kaur', audio: 'That is a fair point. I will reread it with you.', correct: 'Thank you. I would like to understand how to make the claim visible earlier.', wrong: ['I want the mark changed without review.', 'I will appeal to the vice-chancellor.', 'I will stop attending.'] },
+    ],
+    summaries: [
+      'Summarise the criterion you questioned, what you noticed in your essay and the tutor\u2019s response.',
+      'In 35-65 words, explain your disagreement and what you hope to learn from the review.',
+    ],
+  },
+  {
+    scenario: 'You are at the student union society fair asking about joining the debate society.',
+    turns: [
+      { speaker: 'Society Secretary Mr Lang', audio: 'Have you debated before?', correct: 'Only in school, and I am nervous about speaking without notes.', wrong: ['I have never spoken aloud.', 'I am a professional judge.', 'I do not like arguing.'] },
+      { speaker: 'Society Secretary Mr Lang', audio: 'We run beginner sessions on Tuesdays. Would that suit you?', correct: 'Tuesday works. Do I need to prepare anything for the first session?', wrong: ['I can only come on Sunday.', 'I do not want to learn.', 'I will bring my own podium.'] },
+      { speaker: 'Society Secretary Mr Lang', audio: 'Just bring an open mind. We pair beginners with a mentor.', correct: 'That sounds ideal. I will come along next week and try one round.', wrong: ['I will skip the beginner sessions.', 'I will demand a trophy.', 'I will argue with the mentor.'] },
+    ],
+    summaries: [
+      'Summarise your debating experience, the beginner session and the plan for your first visit.',
+      'In 35-65 words, explain why you want to join and what the secretary told you.',
+    ],
+  },
+  {
+    scenario: 'You are asking a visiting lecturer about a study they mentioned during a guest lecture.',
+    turns: [
+      { speaker: 'Dr Moreau', audio: 'Which study do you mean?', correct: 'The one about noise and reading speed, with the primary school sample.', wrong: ['The one about the history of chess.', 'The lecture about marine biology.', 'The study I presented last year.'] },
+      { speaker: 'Dr Moreau', audio: 'It was published in a journal I can send you.', correct: 'Could you send the citation? I would like to read the method section closely.', wrong: ['I do not read journals.', 'Please summarise the whole field.', 'I only need the title.'] },
+      { speaker: 'Dr Moreau', audio: 'I will email it, but the sample was small.', correct: 'I will keep that limitation in mind when I cite it.', wrong: ['I will treat it as definitive.', 'I will ignore the sample.', 'I will quote the abstract only.'] },
+    ],
+    summaries: [
+      'Summarise the study you asked about, what the lecturer will send and the limitation you noted.',
+      'In 35-65 words, describe your question after the lecture and the lecturer\u2019s reply.',
+    ],
+  },
+  {
+    scenario: 'You are at the fire safety briefing for your residential hall.',
+    turns: [
+      { speaker: 'Fire Officer Mr Okafor', audio: 'Where is your nearest fire exit?', correct: 'At the end of the corridor, past the shared kitchen on the left.', wrong: ['Through the window on the third floor.', 'I have not looked.', 'In the basement car park.'] },
+      { speaker: 'Fire Officer Mr Okafor', audio: 'What would you do if the alarm sounded at night?', correct: 'Wake my flatmates, leave by the stairs and meet at the assembly point.', wrong: ['Wait for the lift.', 'Finish my essay first.', 'Go back to sleep.'] },
+      { speaker: 'Fire Officer Mr Okafor', audio: 'Where is the assembly point for this building?', correct: 'On the grass behind the sports hall, away from the building.', wrong: ['In the lobby next to the lifts.', 'In my room on the second floor.', 'At the bus stop across the road.'] },
+    ],
+    summaries: [
+      'Summarise the exit route, the action to take at night and the assembly point.',
+      'In 35-65 words, describe what you learned at the fire safety briefing.',
+    ],
+  },
+  {
+    scenario: 'You are asking a research nurse what taking part in a psychology experiment would involve.',
+    turns: [
+      { speaker: 'Research Nurse Ms Haddad', audio: 'Have you read the information sheet?', correct: 'Yes, but I am unsure how long the memory task will take.', wrong: ['No, I cannot read.', 'I have already finished it.', 'I do not want to take part.'] },
+      { speaker: 'Research Nurse Ms Haddad', audio: 'About forty minutes, with breaks. You may withdraw at any time.', correct: 'If I withdraw halfway, will my data still be used?', wrong: ['I will demand payment.', 'I will bring a friend to answer.', 'I will not sign anything.'] },
+      { speaker: 'Research Nurse Ms Haddad', audio: 'No, you can ask us to delete it before analysis.', correct: 'Then I am happy to take part and I will sign the consent form.', wrong: ['I will sign for someone else.', 'I will withdraw after the results.', 'I do not need the sheet.'] },
+    ],
+    summaries: [
+      'Summarise what the experiment involves, your question about withdrawal and your decision.',
+      'In 35-65 words, explain what you learned about taking part and what you agreed to.',
+    ],
+  },
+  {
+    scenario: 'You are at the department office asking about a replacement student ID card.',
+    turns: [
+      { speaker: 'Administrator Mrs Novak', audio: 'What happened to your card?', correct: 'I lost it on the bus, and I need a new one before the library exam booking opens.', wrong: ['I never collected one.', 'I want a new photograph.', 'My card works perfectly.'] },
+      { speaker: 'Administrator Mrs Novak', audio: 'There is a small fee and you need photo identification.', correct: 'I have my passport and can pay by card today.', wrong: ['I have no identification.', 'I cannot pay anything.', 'I would rather use my gym card.'] },
+      { speaker: 'Administrator Mrs Novak', audio: 'The new card will be ready tomorrow afternoon.', correct: 'I will collect it after my lecture and check that the library access works.', wrong: ['I will collect it next term.', 'I will not test it.', 'I will keep using the old one.'] },
+    ],
+    summaries: [
+      'Summarise why you need a new card, what you must provide and when it will be ready.',
+      'In 35-65 words, describe your visit to the department office and the replacement process.',
+    ],
+  },
+  {
+    scenario: 'You are asking your tutor to approve a change of topic for your term paper.',
+    turns: [
+      { speaker: 'Tutor Dr Bianchi', audio: 'Why do you want to change?', correct: 'My original topic on housing policy has too few sources, but I have found good material on rent controls.', wrong: ['I have not started the course.', 'I dislike writing essays.', 'I want a longer deadline.'] },
+      { speaker: 'Tutor Dr Bianchi', audio: 'Rent controls is narrower. Can you still use your reading?', correct: 'Yes, three of my sources discuss both, so the work is not wasted.', wrong: ['No, I will start from nothing.', 'I have not read anything.', 'I would rather keep both topics.'] },
+      { speaker: 'Tutor Dr Bianchi', audio: 'Send me a one-page outline by Monday and I will approve it.', correct: 'I will send the outline with a short source list on Sunday evening.', wrong: ['I will send a hundred pages.', 'I will not send anything.', 'I will change topic again tomorrow.'] },
+    ],
+    summaries: [
+      'Summarise why you want to change topic, how your reading still helps and the outline you will send.',
+      'In 35-65 words, explain the new topic and what your tutor asked you to submit.',
+    ],
+  },
+  {
+    scenario: 'You are at the lost property office looking for a lab coat left in a lecture theatre.',
+    turns: [
+      { speaker: 'Lost Property Assistant Mr Costa', audio: 'When and where did you lose it?', correct: 'On Tuesday after the chemistry lecture in the Faraday building.', wrong: ['I never had a lab coat.', 'In another country last year.', 'At a football match.'] },
+      { speaker: 'Lost Property Assistant Mr Costa', audio: 'Does it have a name inside?', correct: 'Yes, my surname is written on the collar in black marker.', wrong: ['No, it is brand new.', 'It has someone else\u2019s name.', 'I cannot remember my name.'] },
+      { speaker: 'Lost Property Assistant Mr Costa', audio: 'We have one matching that description. Can you describe the size?', correct: 'It is a medium, with a small burn mark on the left sleeve.', wrong: ['It is enormous and green.', 'I do not know what it looks like.', 'It has no sleeves.'] },
+    ],
+    summaries: [
+      'Summarise where and when the coat was lost, how it is marked and how you identified it.',
+      'In 35-65 words, describe your visit to lost property and the item you claimed.',
+    ],
+  },
+  {
+    scenario: 'You are asking your supervisor about authorship order on a paper you helped write.',
+    turns: [
+      { speaker: 'Professor Nakamura', audio: 'What is your concern?', correct: 'I wrote the analysis and two sections, but the draft lists me after a student who joined late.', wrong: ['I do not want to be an author.', 'I have not contributed anything.', 'I want the paper withdrawn.'] },
+      { speaker: 'Professor Nakamura', audio: 'Authorship should reflect contribution. Can you document yours?', correct: 'Yes, I have the scripts, drafts and notes from our meetings.', wrong: ['No, my work was invisible.', 'I only made coffee.', 'I would rather not say.'] },
+      { speaker: 'Professor Nakamura', audio: 'Send me that record and we will discuss it with the whole team.', correct: 'I will share a short contribution statement before our next meeting.', wrong: ['I will publish the paper alone.', 'I will remove everyone else.', 'I will refuse to meet.'] },
+    ],
+    summaries: [
+      'Summarise your contribution, why the order seems wrong and the evidence you will provide.',
+      'In 35-65 words, explain your authorship concern and what your supervisor proposed.',
+    ],
+  },
+  {
+    scenario: 'You are at the wellbeing service asking about group sessions for exam stress.',
+    turns: [
+      { speaker: 'Wellbeing Adviser Ms Lindberg', audio: 'Have you attended anything like this before?', correct: 'No, but I have been waking at four and cannot concentrate on revision.', wrong: ['Yes, I run the sessions.', 'I never feel stressed.', 'I do not take exams.'] },
+      { speaker: 'Wellbeing Adviser Ms Lindberg', audio: 'The group meets on Thursdays and is led by a counsellor.', correct: 'That sounds manageable. Is it a drop-in group or do I need to commit to all six weeks?', wrong: ['I would like individual therapy instead.', 'I cannot attend any weekday.', 'I want a medical certificate.'] },
+      { speaker: 'Wellbeing Adviser Ms Lindberg', audio: 'It is a closed group, so attendance matters.', correct: 'Then I will commit to the six sessions and tell you now if I cannot come.', wrong: ['I will come only once.', 'I will send a friend.', 'I will decide at the end.'] },
+    ],
+    summaries: [
+      'Summarise your symptoms, the group format and the commitment you accepted.',
+      'In 35-65 words, explain why you contacted the service and what was arranged.',
+    ],
+  },
+  {
+    scenario: 'You are asking a lecturer to clarify what critical analysis means in the essay rubric.',
+    turns: [
+      { speaker: 'Dr Whitfield', audio: 'Which part of the rubric is unclear?', correct: 'The phrase critical analysis. I am not sure whether it means criticising the author or weighing evidence.', wrong: ['The word essay.', 'The submission date.', 'The font size.'] },
+      { speaker: 'Dr Whitfield', audio: 'It means examining how an argument is built, not simply disagreeing.', correct: 'So I should identify the author\u2019s assumptions and test them against other studies?', wrong: ['So I should insult the author.', 'So I should summarise only.', 'So I should ignore the question.'] },
+      { speaker: 'Dr Whitfield', audio: 'Exactly. Show one strength and one limitation in each section.', correct: 'I will revise my draft to add a limitation and a counter-example.', wrong: ['I will remove all analysis.', 'I will write only quotations.', 'I will shorten the essay to a page.'] },
+    ],
+    summaries: [
+      'Summarise what confused you, the lecturer\u2019s definition and how you will revise the draft.',
+      'In 35-65 words, explain what critical analysis means and what you will change.',
+    ],
+  },
+  {
+    scenario: 'You are at the alumni office asking about mentoring current students as a recent graduate.',
+    turns: [
+      { speaker: 'Alumni Officer Mr Duarte', audio: 'How much time could you offer?', correct: 'About two hours a month, mostly online in the evening.', wrong: ['I have no time at all.', 'I can work full-time for free.', 'I do not want to help students.'] },
+      { speaker: 'Alumni Officer Mr Duarte', audio: 'We match mentors with final-year students in your field.', correct: 'That suits me. I studied civil engineering and now work on water projects.', wrong: ['I studied something unrelated.', 'I have no professional experience.', 'I would rather mentor children.'] },
+      { speaker: 'Alumni Officer Mr Duarte', audio: 'There is a short training session and a confidentiality agreement.', correct: 'I will complete both before the first meeting.', wrong: ['I will skip the agreement.', 'I will share student details publicly.', 'I will start without training.'] },
+    ],
+    summaries: [
+      'Summarise the time you can offer, your professional background and what you must complete first.',
+      'In 35-65 words, describe your mentoring offer and the requirements for volunteers.',
+    ],
+  },
+  {
+    scenario: 'You are on the phone reporting a broken lock at a campus bike-share station.',
+    turns: [
+      { speaker: 'Helpline Operator Ms Sanchez', audio: 'What is the bike number?', correct: 'It is 4127, at the rack outside the engineering building.', wrong: ['I do not have a bike.', 'The station is in another city.', 'I cannot read numbers.'] },
+      { speaker: 'Helpline Operator Ms Sanchez', audio: 'Does the lock release at all?', correct: 'No, the app says the ride ended, but the lock is still closed.', wrong: ['Yes, it opens perfectly.', 'I have not tried it.', 'The bike is not there.'] },
+      { speaker: 'Helpline Operator Ms Sanchez', audio: 'We will send a mechanic and end the charge.', correct: 'Thank you. Will the app confirm when the bike is available again?', wrong: ['I will leave with the bike.', 'I do not want a refund.', 'I will break the lock myself.'] },
+    ],
+    summaries: [
+      'Summarise the fault, the bike\u2019s location and what the operator will do.',
+      'In 35-65 words, explain the problem with the bike-share lock and the outcome of your call.',
+    ],
+  },
+  {
+    scenario: 'You are asking a lab demonstrator to repeat the explanation of a titration.',
+    turns: [
+      { speaker: 'Demonstrator Ms Owusu', audio: 'Which step was unclear?', correct: 'When to stop adding the solution from the burette.', wrong: ['How to switch on the lights.', 'Where to hang my coat.', 'Why we are in the lab.'] },
+      { speaker: 'Demonstrator Ms Owusu', audio: 'You stop at the first permanent colour change.', correct: 'So I add drop by drop once the colour starts to fade, and swirl after each one?', wrong: ['So I pour the whole bottle at once.', 'So I stop before adding anything.', 'So I wait until it turns black.'] },
+      { speaker: 'Demonstrator Ms Owusu', audio: 'Exactly, and record the volume to two decimal places.', correct: 'I will read the bottom of the meniscus and write the value immediately.', wrong: ['I will estimate roughly.', 'I will read the top of the tube.', 'I will record nothing.'] },
+    ],
+    summaries: [
+      'Summarise the step you did not understand, the method explained and how you will record the result.',
+      'In 35-65 words, describe your question in the lab and what the demonstrator told you.',
+    ],
+  },
+  {
+    scenario: 'You are at the international student society planning a cultural evening.',
+    turns: [
+      { speaker: 'Society Chair Mr Haddad', audio: 'What should our cultural evening include?', correct: 'A short programme of music and food from four countries, with students introducing each part.', wrong: ['A single long film with no introduction.', 'Only speeches by the committee.', 'A sports tournament.'] },
+      { speaker: 'Society Chair Mr Haddad', audio: 'We have a small budget. How should we spend it?', correct: 'On ingredients and room hire, with costumes borrowed rather than bought.', wrong: ['On expensive gifts for guests.', 'On a fireworks display.', 'On nothing at all.'] },
+      { speaker: 'Society Chair Mr Haddad', audio: 'Can you coordinate the food stalls?', correct: 'Yes, I will contact four student groups and confirm their dishes by Friday.', wrong: ['I will cook everything alone.', 'I will not contact anyone.', 'I will cancel the stalls.'] },
+    ],
+    summaries: [
+      'Summarise the programme, the budget plan and your responsibility for the food stalls.',
+      'In 35-65 words, describe the cultural evening you planned and what you agreed to organise.',
+    ],
+  },
 ];
 
 export const readThenSpeakTopics = [

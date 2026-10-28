@@ -22,7 +22,7 @@ test('speaking result shows delivery metrics and pause markers', async ({ page }
 
   await expect(page.getByText('Разбор устной и письменной речи')).toBeVisible();
   await expect(page.getByText('Доля пауз')).toBeVisible();
-  await expect(page.getByText('18%')).toBeVisible();
+  await expect(page.getByText('18%', { exact: true })).toBeVisible();
   await expect(page.getByText('Слова-заполнители')).toBeVisible();
   await expect(page.getByText('Стабильность подачи')).toBeVisible();
   await expect(page.getByRole('img', { name: /Речь с 4 паузами/ })).toBeVisible();

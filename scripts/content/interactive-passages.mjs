@@ -2146,6 +2146,446 @@ export const readingPassages = [
       'Regular inspection is unnecessary once a building has passed its initial check.',
     ],
   },
+  {
+    title: 'Ant Colonies as Distributed Problem Solvers',
+    text:
+      'A single ant follows simple rules: follow a chemical trail, pick up food, carry it home. A colony of thousands nevertheless solves problems that no individual grasps. When two routes lead to the same feeder, foragers explore both at first, but the shorter route receives more traffic and therefore more scent, so it attracts still more ants. This feedback is not planning; it is amplification. Researchers test such explanations by building models in which every agent is deliberately simple, then checking whether the colony\u2019s behaviour emerges anyway. The lesson extends beyond insects. Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed.',
+    gaps: ['amplification', 'deliberately', 'emerges'],
+    gapDistractors: [
+      ['instruction', 'calculation', 'supervision'],
+      ['accidentally', 'temporarily', 'reluctantly'],
+      ['disappears', 'collapses', 'repeats'],
+    ],
+    highlights: [
+      'When two routes lead to the same feeder, foragers explore both at first, but the shorter route receives more traffic and therefore more scent, so it attracts still more ants.',
+      'Delivery firms, traffic systems and some computer networks rely on the same principle: local decisions, repeated often enough, can produce a global pattern that nobody designed.',
+    ],
+    titles: ['Ant Colonies as Distributed Problem Solvers', 'The Social Life of Honeybees', 'How Insects Survive Winter', 'A Guide to Keeping Ants as Pets'],
+    mainIdeas: [
+      'Simple local rules, repeated by many individuals, can produce complex collective behaviour.',
+      'Ants plan routes in advance by sharing a mental map of the area.',
+      'Only the queen ant makes decisions for the whole colony.',
+      'Computer networks were designed by studying a single ant.',
+    ],
+  },
+  {
+    title: 'How an MRI Scanner Builds an Image',
+    text:
+      'An MRI scanner does not photograph tissue. It aligns the nuclei of hydrogen atoms, most of which sit in water, with an extremely strong magnetic field. A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal. Magnetic gradients applied across the body make the signal depend on position, so a computer can reconstruct a slice image from many such measurements. Unlike X-rays, the method uses no ionising radiation, which is why it is preferred for repeated scans. It is not effortless: the machine is loud, the bore is cramped, and any movement blurs the result. Metal implants and pacemakers may make scanning unsafe, so patients are screened carefully first.',
+    gaps: ['aligns', 'reconstruct', 'ionising'],
+    gapDistractors: [
+      ['covers', 'removes', 'divides'],
+      ['predict', 'measure', 'broadcast'],
+      ['visible', 'mechanical', 'chemical'],
+    ],
+    highlights: [
+      'A burst of radio waves then knocks them out of alignment, and as they relax they emit a faint signal.',
+      'Unlike X-rays, the method uses no ionising radiation, which is why it is preferred for repeated scans.',
+    ],
+    titles: ['How an MRI Scanner Builds an Image', 'The Invention of the X-Ray', 'Why Hospitals Are So Expensive', 'A History of Medical Photography'],
+    mainIdeas: [
+      'MRI locates hydrogen nuclei by their signals, producing images without ionising radiation.',
+      'MRI works by photographing the surface of the skin with visible light.',
+      'MRI scans are always safe for every patient, including those with implants.',
+      'The technique produces images instantly without any computation.',
+    ],
+  },
+  {
+    title: 'The Slow Acceptance of Surgical Anaesthesia',
+    text:
+      'Before the 1840s, a surgeon\u2019s reputation depended partly on speed, because every operation was performed on a conscious patient. Ether and then chloroform changed that, but acceptance was not immediate. Some surgeons distrusted a practice that removed the patient\u2019s protective response, and others worried about deaths during induction. Religious objections were voiced too. Meanwhile, the deeper problem remained: painless surgery did not prevent infection, so mortality in hospitals stayed high. What anaesthesia did achieve was to make longer, more careful operations conceivable. It also raised new questions about dosage, monitoring and consent that took decades to answer. The modern anaesthetist is therefore the heir of a long argument, not a single discovery.',
+    gaps: ['acceptance', 'induction', 'dosage'],
+    gapDistractors: [
+      ['payment', 'training', 'refusal'],
+      ['recovery', 'arrival', 'closing'],
+      ['lighting', 'staffing', 'billing'],
+    ],
+    highlights: [
+      'Before the 1840s, a surgeon\u2019s reputation depended partly on speed, because every operation was performed on a conscious patient.',
+      'What anaesthesia did achieve was to make longer, more careful operations conceivable.',
+    ],
+    titles: ['The Slow Acceptance of Surgical Anaesthesia', 'The History of the Hospital Uniform', 'How Broken Bones Heal', 'The Discovery of Blood Groups'],
+    mainIdeas: [
+      'Anaesthesia was resisted at first and only gradually changed surgery, without solving infection.',
+      'Anaesthesia was welcomed immediately by every surgeon and eliminated hospital deaths.',
+      'Chloroform was abandoned because it made operations too slow.',
+      'Painless surgery was irrelevant to the length of operations.',
+    ],
+  },
+  {
+    title: 'Why Roundabouts Calm Traffic',
+    text:
+      'A roundabout replaces the hard edges of a crossroads with a gentle curve, and that geometry changes behaviour. Drivers approaching a circular junction must slow down to enter, so crashes that do occur happen at lower speeds and at shallower angles. Because the most dangerous collision, a side impact at speed, becomes rare, injury severity falls even where the number of minor bumps rises. The design is not a universal cure. Pedestrians must cross a stream of moving vehicles without the protection of a signal phase, and cyclists need careful lane design to avoid being cut off. Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre.',
+    gaps: ['geometry', 'severity', 'capacity'],
+    gapDistractors: [
+      ['weather', 'lighting', 'policing'],
+      ['frequency', 'cost', 'colour'],
+      ['parking', 'signage', 'comfort'],
+    ],
+    highlights: [
+      'Drivers approaching a circular junction must slow down to enter, so crashes that do occur happen at lower speeds and at shallower angles.',
+      'Capacity also depends on the balance of traffic: a roundabout that works well in a quiet suburb can jam in a dense city centre.',
+    ],
+    titles: ['Why Roundabouts Calm Traffic', 'The Design of Traffic Lights', 'How Roads Are Resurfaced', 'A History of the Motorway'],
+    mainIdeas: [
+      'Roundabouts reduce injury by lowering approach speeds, though they suit some places better than others.',
+      'Roundabouts eliminate every kind of crash at a junction.',
+      'Traffic signals are always safer than circular junctions.',
+      'Roundabouts are equally effective in every traffic condition.',
+    ],
+  },
+  {
+    title: 'The Bystander Effect and the Cost of Ambiguity',
+    text:
+      'People often fail to help in an emergency, and the reason is rarely indifference. When several witnesses are present, each may assume that someone else has already called for help, a diffusion of responsibility. Ambiguity makes this worse: if nobody else looks alarmed, a person may decide that nothing serious is happening. Experiments with staged incidents found that a lone witness intervenes far more often than one in a crowd. The practical lesson is not to scold crowds but to remove the ambiguity. Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance. Training that rehearses this wording changes behaviour more reliably than general appeals.',
+    gaps: ['indifference', 'ambiguity', 'rehearses'],
+    gapDistractors: [
+      ['hostility', 'curiosity', 'generosity'],
+      ['distance', 'silence', 'urgency'],
+      ['forbids', 'records', 'avoids'],
+    ],
+    highlights: [
+      'When several witnesses are present, each may assume that someone else has already called for help, a diffusion of responsibility.',
+      'Emergency instructions work best when they name a person, describe the action and assign it clearly, for example by asking the man in the blue jacket to call an ambulance.',
+    ],
+    titles: ['The Bystander Effect and the Cost of Ambiguity', 'Why Crowds Become Violent', 'The Psychology of First Impressions', 'How to Train a Rescue Dog'],
+    mainIdeas: [
+      'Unclear situations and shared responsibility suppress helping, so specific instructions help more than appeals.',
+      'People never help because they are naturally cruel.',
+      'A larger crowd always makes intervention more likely.',
+      'General appeals to the public are the most effective way to increase helping.',
+    ],
+  },
+  {
+    title: 'How Limestone Caves Grow Their Shapes',
+    text:
+      'Caves in limestone begin as cracks. Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along fractures. Over thousands of years the fractures widen into passages, and the shape of those passages records how the water flowed: tall vertical shafts form where water falls, while wide horizontal galleries form where it moves sideways. Once a cave drains, the story changes. Water seeping from above loses carbon dioxide and deposits calcite, building stalactites, stalagmites and columns at rates of millimetres per century. Because the deposits trap minerals and pollen, they preserve a record of ancient rainfall. A cave is therefore both a hollow and an archive.',
+    gaps: ['fractures', 'galleries', 'deposits'],
+    gapDistractors: [
+      ['layers', 'springs', 'shadows'],
+      ['roofs', 'floors', 'exits'],
+      ['currents', 'gases', 'grains'],
+    ],
+    highlights: [
+      'Rainwater absorbs carbon dioxide from the air and from soil, becoming a weak acid that dissolves calcite along fractures.',
+      'Because the deposits trap minerals and pollen, they preserve a record of ancient rainfall.',
+    ],
+    titles: ['How Limestone Caves Grow Their Shapes', 'The Formation of Desert Sand', 'A Guide to Cave Tourism', 'Why Rivers Flood in Spring'],
+    mainIdeas: [
+      'Caves are shaped by dissolving rock and later filled with deposits that record past climates.',
+      'Caves are formed by earthquakes that split limestone in a single event.',
+      'Stalactites grow upwards from the cave floor within a few years.',
+      'Cave deposits contain no useful information about the past.',
+    ],
+  },
+  {
+    title: 'Whale Falls and the Deep-Sea Floor',
+    text:
+      'When a whale dies, its carcass sinks and delivers an enormous meal to a place that usually receives almost nothing. Scavengers arrive first, stripping soft tissue within months. Then a second community settles on the bones, living among sediments enriched by fats that soak into the mud. The final stage is the strangest: bacteria break down the remaining oils and release hydrogen sulphide, supporting organisms that make their own food chemically rather than using sunlight. Some of these species were unknown before whale falls were studied, and they resemble animals found at hydrothermal vents. A single carcass can therefore act as a stepping stone across an otherwise empty plain, sustaining life for decades after the animal has disappeared.',
+    gaps: ['carcass', 'enriched', 'sustaining'],
+    gapDistractors: [
+      ['wreck', 'harvest', 'current'],
+      ['cooled', 'diluted', 'exposed'],
+      ['ending', 'hiding', 'slowing'],
+    ],
+    highlights: [
+      'Scavengers arrive first, stripping soft tissue within months.',
+      'A single carcass can therefore act as a stepping stone across an otherwise empty plain, sustaining life for decades after the animal has disappeared.',
+    ],
+    titles: ['Whale Falls and the Deep-Sea Floor', 'How Whales Communicate', 'The History of Whaling', 'Life in a Coral Reef'],
+    mainIdeas: [
+      'A dead whale creates a long-lasting deep-sea ecosystem that can connect distant vent communities.',
+      'Whale carcasses are unimportant because the deep sea is already rich in food.',
+      'Only fish, never bacteria, live on a whale skeleton.',
+      'Whale falls last only a few days before disappearing.',
+    ],
+  },
+  {
+    title: 'What a Microwave Oven Actually Heats',
+    text:
+      'A microwave oven does not heat food from the inside out. Its magnetron produces waves that make polar molecules, especially water, rotate billions of times a second; that friction generates heat. The waves penetrate only a centimetre or two into most foods, so the interior cooks mainly by conduction from the outer layer. Heating is uneven because the waves form standing patterns inside the cabinet, which is why most ovens rotate the food. Containers matter too: glass and most plastics pass the waves through, while metal reflects them and can cause sparks. The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water.',
+    gaps: ['penetrate', 'conduction', 'browning'],
+    gapDistractors: [
+      ['reflect', 'escape', 'freeze'],
+      ['radiation', 'evaporation', 'reflection'],
+      ['cooling', 'washing', 'drying'],
+    ],
+    highlights: [
+      'The waves penetrate only a centimetre or two into most foods, so the interior cooks mainly by conduction from the outer layer.',
+      'The appliance is efficient at warming water-rich food and poor at browning it, since browning requires surface temperatures well above the boiling point of water.',
+    ],
+    titles: ['What a Microwave Oven Actually Heats', 'The Invention of the Electric Kettle', 'How Refrigerators Make Ice', 'A History of Cooking Fire'],
+    mainIdeas: [
+      'Microwaves heat water near the surface, and the rest of the food warms by conduction.',
+      'Microwaves cook food evenly from the centre outwards.',
+      'Metal containers are recommended because they spread the waves.',
+      'Microwaves brown food more effectively than a conventional oven.',
+    ],
+  },
+  {
+    title: 'Tsunami Walls and the Limits of Defence',
+    text:
+      'After a tsunami, coastal towns often build concrete walls. The walls can delay the arrival of water and deflect its force, buying minutes for people to reach higher ground. But they are not a guarantee. A wave taller than the wall will overtop it, and the falling water can trap people on the seaward side. Walls also require maintenance, block access to the beach and may create a false sense of safety that discourages evacuation. Engineers now prefer a mix of measures: raised roads, shelter buildings, early warning and land-use rules that keep new housing away from the most exposed ground. The most effective defence is usually not a single structure but a habit of leaving early.',
+    gaps: ['deflect', 'overtop', 'evacuation'],
+    gapDistractors: [
+      ['absorb', 'increase', 'measure'],
+      ['surround', 'deepen', 'avoid'],
+      ['construction', 'celebration', 'irrigation'],
+    ],
+    highlights: [
+      'A wave taller than the wall will overtop it, and the falling water can trap people on the seaward side.',
+      'The most effective defence is usually not a single structure but a habit of leaving early.',
+    ],
+    titles: ['Tsunami Walls and the Limits of Defence', 'How Tides Are Predicted', 'The Building of the Panama Canal', 'Why Coastal Cities Attract Tourists'],
+    mainIdeas: [
+      'Seawalls help but cannot replace warning, land-use planning and prompt evacuation.',
+      'A tall enough wall removes all tsunami risk for a coastal town.',
+      'Tsunami walls improve beach access and are cheap to maintain.',
+      'Evacuation is unnecessary once a wall has been built.',
+    ],
+  },
+  {
+    title: 'The Gut Microbiome and What It Eats',
+    text:
+      'The bacteria in the human gut are not passengers. They ferment fibres that human enzymes cannot digest, producing short-chain fatty acids that feed the cells lining the intestine and influence appetite, immunity and mood. Diets rich in varied plant fibres tend to support a more diverse community, while a narrow diet of highly processed food narrows it. Diversity is not a score to maximise for its own sake, but it is associated with stability after disturbance such as a course of antibiotics. Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules. The field is young, and many claims outrun the data. Still, the basic message is unglamorous: what you eat shapes who lives inside you.',
+    gaps: ['ferment', 'diverse', 'colonise'],
+    gapDistractors: [
+      ['freeze', 'inspect', 'forget'],
+      ['silent', 'expensive', 'nervous'],
+      ['destroy', 'imitate', 'measure'],
+    ],
+    highlights: [
+      'They ferment fibres that human enzymes cannot digest, producing short-chain fatty acids that feed the cells lining the intestine and influence appetite, immunity and mood.',
+      'Probiotic supplements rarely colonise the gut permanently, so most evidence favours food rather than capsules.',
+    ],
+    titles: ['The Gut Microbiome and What It Eats', 'How the Stomach Produces Acid', 'The History of Food Preservation', 'Why Antibiotics Were Invented'],
+    mainIdeas: [
+      'Dietary fibre feeds gut bacteria whose products affect health, and food is more reliable than supplements.',
+      'Gut bacteria play no role in digestion or immunity.',
+      'Probiotic capsules permanently replace the gut community.',
+      'A narrow diet of processed food increases bacterial diversity.',
+    ],
+  },
+  {
+    title: 'Why Accents Change Over a Lifetime',
+    text:
+      'Most people assume that an accent is fixed in childhood. It is not. Speakers adjust their pronunciation throughout life, often unconsciously, towards the people they spend time with or the identity they wish to project. Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others. Social factors matter as much as geography: a speaker may strengthen a local accent to signal belonging, or soften it in a formal setting. This flexibility complicates forensic work, because a recording cannot reliably reveal where someone grew up. It also undermines the idea that an accent is a defect to be corrected; it is a moving record of where a person has lived and whom they have wanted to sound like.',
+    gaps: ['unconsciously', 'flexibility', 'undermines'],
+    gapDistractors: [
+      ['deliberately', 'loudly', 'officially'],
+      ['honesty', 'accuracy', 'volume'],
+      ['supports', 'repeats', 'delays'],
+    ],
+    highlights: [
+      'Students who move for university may return with vowels that have shifted; adults who change region often keep some features and lose others.',
+      'It also undermines the idea that an accent is a defect to be corrected; it is a moving record of where a person has lived and whom they have wanted to sound like.',
+    ],
+    titles: ['Why Accents Change Over a Lifetime', 'How Children Learn to Read', 'The Origin of Family Names', 'A History of Public Speaking'],
+    mainIdeas: [
+      'Accents shift through life in response to social contact and identity, so they are unreliable markers of origin.',
+      'Accents are permanently fixed by the age of five.',
+      'A regional accent always disappears after moving away.',
+      'Accents have no social meaning and are purely biological.',
+    ],
+  },
+  {
+    title: 'The Return of Overnight Trains',
+    text:
+      'Night trains once carried business travellers across Europe, then lost ground to cheap flights and motorways. Now several routes have reopened, promoted by passengers who want to sleep through a journey rather than endure an early flight. The economics remain difficult. A sleeper carriage holds far fewer people than a seated one, requires attendants and linen, and pays the same track charges, so tickets cannot be as cheap as a budget airline\u2019s. Crossing borders adds paperwork and incompatible signalling systems. Yet the model can work where the distance is right: long enough for a night\u2019s sleep, short enough to arrive before morning meetings. The train\u2019s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed.',
+    gaps: ['reopened', 'attendants', 'incompatible'],
+    gapDistractors: [
+      ['closed', 'painted', 'shortened'],
+      ['engines', 'tickets', 'stations'],
+      ['identical', 'modern', 'cheaper'],
+    ],
+    highlights: [
+      'A sleeper carriage holds far fewer people than a seated one, requires attendants and linen, and pays the same track charges, so tickets cannot be as cheap as a budget airline\u2019s.',
+      'The train\u2019s advantage is not speed but the use of hours that would otherwise be spent in an airport queue or a hotel bed.',
+    ],
+    titles: ['The Return of Overnight Trains', 'The History of the Bicycle', 'How Airports Choose Destinations', 'Why Roads Need Repair'],
+    mainIdeas: [
+      'Sleeper trains are returning because they use travelling time well, even though their costs are high.',
+      'Night trains are cheaper to operate than any airline.',
+      'Sleeper carriages carry more passengers than seated carriages.',
+      'Border procedures have no effect on international rail services.',
+    ],
+  },
+  {
+    title: 'Equal Temperament and the Modern Piano',
+    text:
+      'Tuning a piano is an act of compromise. Pure intervals, in which the frequencies of two notes form simple ratios, sound smooth, but a keyboard tuned entirely to them cannot play in every key. Medieval and Renaissance musicians therefore used temperaments that kept some keys sweet and left others harsh. Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable. The result made modulation and remote keys ordinary, which shaped the music written for the piano. Audiences adjusted too: what once sounded impure became the normal sound of a keyboard. The modern piano therefore embodies a mathematical decision as much as a craft tradition.',
+    gaps: ['compromise', 'temperaments', 'modulation'],
+    gapDistractors: [
+      ['mistake', 'victory', 'tradition'],
+      ['instruments', 'melodies', 'rhythms'],
+      ['rehearsal', 'applause', 'printing'],
+    ],
+    highlights: [
+      'Equal temperament divides the octave into twelve steps of identical size, so every semitone is slightly out of tune with a pure ratio while no key is unusable.',
+      'Audiences adjusted too: what once sounded impure became the normal sound of a keyboard.',
+    ],
+    titles: ['Equal Temperament and the Modern Piano', 'The Construction of a Violin', 'A History of Concert Halls', 'How Music Is Printed'],
+    mainIdeas: [
+      'Equal temperament sacrifices pure intervals so that every key works, and this compromise shaped keyboard music.',
+      'Equal temperament makes every interval acoustically perfect.',
+      'Pianos are tuned to pure intervals in all twelve keys.',
+      'Keyboards were unaffected by tuning systems.',
+    ],
+  },
+  {
+    title: 'The Hidden Labour of Data Cleaning',
+    text:
+      'Analysts rarely spend their days fitting elegant models. Much of the work is cleaning: finding duplicate records, reconciling units, deciding what a missing value means and repairing dates that were entered in different formats. These choices are not neutral. If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish. Good practice is therefore to document every rule, keep the original data untouched and write scripts that can be rerun. Teaching often emphasises algorithms because they are easier to examine, yet the reliability of a result depends heavily on these unglamorous steps. A model trained on badly cleaned data will produce confident answers to questions nobody asked.',
+    gaps: ['reconciling', 'neutral', 'confident'],
+    gapDistractors: [
+      ['deleting', 'printing', 'postponing'],
+      ['obvious', 'illegal', 'temporary'],
+      ['correct', 'sceptical', 'silent'],
+    ],
+    highlights: [
+      'If missing income is quietly replaced by zero, average income falls; if duplicate customers are deleted carelessly, the most loyal ones may vanish.',
+      'A model trained on badly cleaned data will produce confident answers to questions nobody asked.',
+    ],
+    titles: ['The Hidden Labour of Data Cleaning', 'How to Design a Survey', 'The History of the Spreadsheet', 'Why Computers Need Electricity'],
+    mainIdeas: [
+      'Cleaning decisions shape results, so they must be documented and repeatable.',
+      'Data cleaning is a trivial step with no effect on findings.',
+      'Replacing missing values with zero always improves accuracy.',
+      'Algorithms matter far more than the quality of the input data.',
+    ],
+  },
+  {
+    title: 'How Sand Dunes Move',
+    text:
+      'A dune is a pile of sand shaped by wind. Grains bounce along the surface in short hops, knocking others forward, until they reach an obstacle or a patch of vegetation and settle. The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest. In this way the whole dune migrates, sometimes several metres a year, burying fences, roads and fields. Coastal dunes also protect the land behind them, absorbing wave energy and storing sand that can be released during storms. Attempts to stop movement with hard walls often fail, because the wind simply carries sand around them. Planting marram grass, which traps grains and tolerates salt, is usually more durable.',
+    gaps: ['obstacle', 'migrates', 'tolerates'],
+    gapDistractors: [
+      ['signal', 'holiday', 'promise'],
+      ['shrinks', 'freezes', 'echoes'],
+      ['avoids', 'requires', 'removes'],
+    ],
+    highlights: [
+      'The windward slope stays gentle because grains are carried up it; the leeward face is steep because grains tumble down once they pass the crest.',
+      'Planting marram grass, which traps grains and tolerates salt, is usually more durable.',
+    ],
+    titles: ['How Sand Dunes Move', 'The Formation of Glaciers', 'A History of Desert Travel', 'Why Beaches Are Crowded'],
+    mainIdeas: [
+      'Dunes shift as wind moves grains up the gentle side and down the steep side, and vegetation can hold them.',
+      'Dunes are stationary and never change their shape.',
+      'Hard walls are the most effective way to stabilise a dune.',
+      'Sand moves only when it is wet.',
+    ],
+  },
+  {
+    title: 'What Happens in Museum Storage',
+    text:
+      'Most of a museum\u2019s collection is not on display. Objects sit in storerooms where temperature and humidity are controlled, pests are monitored and light is limited, because damage accumulates quietly. A wooden panel that dries too fast may split; a textile exposed to sunlight fades within weeks. Storage is therefore active work rather than forgotten shelving. Curators document each item\u2019s condition, track loans and decide what should be treated by a conservator. Digitisation has changed access, allowing researchers to study objects remotely, but a photograph cannot replace the evidence of weight, texture and repair. The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose.',
+    gaps: ['accumulates', 'conservator', 'tension'],
+    gapDistractors: [
+      ['disappears', 'freezes', 'belongs'],
+      ['visitor', 'guard', 'installer'],
+      ['silence', 'comfort', 'speed'],
+    ],
+    highlights: [
+      'Objects sit in storerooms where temperature and humidity are controlled, pests are monitored and light is limited, because damage accumulates quietly.',
+      'The tension is familiar: the more an object is used, the more it wears, yet a collection that nobody studies serves no purpose.',
+    ],
+    titles: ['What Happens in Museum Storage', 'How to Visit a Gallery', 'The History of Photography', 'Why Buildings Have Basements'],
+    mainIdeas: [
+      'Storage is active conservation work, balancing preservation against the value of access.',
+      'Objects in storage are left alone because they are unimportant.',
+      'Digitisation makes physical conservation unnecessary.',
+      'Light and humidity have no effect on museum objects.',
+    ],
+  },
+  {
+    title: 'How Thermometers Measure Heat',
+    text:
+      'The first thermoscopes showed that something changed when air warmed, but they had no scale, so two observers could not compare readings. A usable thermometer needed fixed points. Fahrenheit chose a mixture of ice, water and salt, and the temperature of the human body; Celsius later used the freezing and boiling points of water. Once those anchors were agreed, the expansion of mercury or alcohol could be marked in equal steps. Modern instruments avoid liquids: a thermocouple generates a small voltage that depends on temperature, and a resistance sensor changes its electrical behaviour in a predictable way. Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured.',
+    gaps: ['observers', 'anchors', 'predictable'],
+    gapDistractors: [
+      ['machines', 'prices', 'colours'],
+      ['windows', 'errors', 'engines'],
+      ['random', 'hidden', 'expensive'],
+    ],
+    highlights: [
+      'Fahrenheit chose a mixture of ice, water and salt, and the temperature of the human body; Celsius later used the freezing and boiling points of water.',
+      'Each method measures a different physical effect, which is why a very precise reading still requires agreement about what, exactly, is being measured.',
+    ],
+    titles: ['How Thermometers Measure Heat', 'The Invention of the Barometer', 'Why Metal Expands When Heated', 'A History of Weather Forecasting'],
+    mainIdeas: [
+      'Thermometers became useful once fixed reference points allowed readings to be compared.',
+      'The first thermoscopes were accurate enough to compare across laboratories.',
+      'All thermometers rely on the expansion of mercury.',
+      'Temperature can be measured without agreeing on any scale.',
+    ],
+  },
+  {
+    title: 'The Design of Children\u2019s Playgrounds',
+    text:
+      'Playgrounds are designed around a contradiction. Adults want equipment that is safe; children want uncertainty, height, speed and the chance to test themselves. Removing every risk produces a tidy space that children quickly abandon. Surfaces, guardrails and inspection records matter, but so does the quality of play: a slope to run down or loose materials to build with can be more valuable than a fixed climbing frame. Some cities now use risk-benefit assessment, weighing the likelihood of injury against the developmental benefit of challenge. Adventure playgrounds, where children build with tools and scrap under supervision, take this further. The aim is not to eliminate bruises but to keep serious harm rare while allowing the small failures through which children learn.',
+    gaps: ['uncertainty', 'developmental', 'supervision'],
+    gapDistractors: [
+      ['cleanliness', 'silence', 'payment'],
+      ['financial', 'legal', 'musical'],
+      ['decoration', 'transport', 'advertising'],
+    ],
+    highlights: [
+      'Removing every risk produces a tidy space that children quickly abandon.',
+      'The aim is not to eliminate bruises but to keep serious harm rare while allowing the small failures through which children learn.',
+    ],
+    titles: ['The Design of Children\u2019s Playgrounds', 'How Schools Build Timetables', 'The History of Children\u2019s Books', 'Why Parks Attract Birds'],
+    mainIdeas: [
+      'Good playgrounds balance safety against the developmental value of manageable risk.',
+      'The safest playground is always the best playground for children.',
+      'Children prefer fixed equipment to loose materials.',
+      'Risk-benefit assessment ignores the possibility of injury.',
+    ],
+  },
+  {
+    title: 'The Physics of Sailing Upwind',
+    text:
+      'A sailboat cannot sail directly into the wind, yet it can reach a destination upwind by tacking. The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways. A keel or centreboard resists the sideways push, so most of the force becomes forward motion. The closer the boat points to the wind, the slower it usually goes, so sailors choose a course that balances speed against distance. Modern racing boats with hydrofoils lift their hulls clear of the water, reducing drag and allowing higher speeds, though the same principles apply. Sailing is therefore a lesson in vectors: progress towards a goal often requires accepting a direction that is not straight at it.',
+    gaps: ['centreboard', 'hydrofoils', 'vectors'],
+    gapDistractors: [
+      ['compass', 'anchor', 'engine'],
+      ['sails', 'ropes', 'cabins'],
+      ['tides', 'colours', 'prices'],
+    ],
+    highlights: [
+      'The sail acts like a wing: air flowing across its curved surface produces lift, which pulls the boat forward as well as sideways.',
+      'Sailing is therefore a lesson in vectors: progress towards a goal often requires accepting a direction that is not straight at it.',
+    ],
+    titles: ['The Physics of Sailing Upwind', 'The History of the Lighthouse', 'How Fish Breathe Underwater', 'Why Ships Carry Ballast'],
+    mainIdeas: [
+      'A sail generates lift and a keel converts it into forward motion, so upwind travel requires indirect courses.',
+      'A sailboat can sail straight into the wind without changing course.',
+      'The keel exists mainly to make the boat heavier.',
+      'Hydrofoils remove the need for a sail.',
+    ],
+  },
+  {
+    title: 'The History of Standardised Testing',
+    text:
+      'Written examinations are old, but the multiple-choice test is a product of the twentieth century. Early mass testing promised speed and consistency: thousands of scripts could be marked by machine, and candidates would face identical questions. That promise appealed to armies, universities and employers, and it shaped schooling as teachers prepared students for the format. Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge. They also warned about washback, the way assessment narrows what is taught. Defenders reply that a flawed common measure is fairer than an unreliable private one. The argument continues because it is really about what education is for, a question no scoring machine can settle.',
+    gaps: ['consistency', 'washback', 'flawed'],
+    gapDistractors: [
+      ['creativity', 'silence', 'weather'],
+      ['feedback', 'homework', 'tuition'],
+      ['perfect', 'cheap', 'recent'],
+    ],
+    highlights: [
+      'Critics pointed out that a test measures performance on one day, not understanding, and that coaching can raise scores without deepening knowledge.',
+      'The argument continues because it is really about what education is for, a question no scoring machine can settle.',
+    ],
+    titles: ['The History of Standardised Testing', 'How Universities Choose Students', 'The Invention of the Printing Press', 'Why Exams Cause Stress'],
+    mainIdeas: [
+      'Standardised tests spread because they are efficient and comparable, but they measure only part of learning.',
+      'Multiple-choice tests were used in ancient schools.',
+      'Standardised tests measure deep understanding perfectly.',
+      'Coaching has no effect on test scores.',
+    ],
+  },
 ];
 
 // The first sixteen passages predate the embedded-distractor format. Their

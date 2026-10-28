@@ -40,6 +40,7 @@ function ProfileContent() {
   const router = useRouter();
   const { locale } = useSettingsStore();
   const c = profileCopy[locale];
+  const ru = locale === 'ru';
   const searchParams = useSearchParams();
   const { user, isAuthenticated, logout, updateProfile } = useAuthStore();
   const { completedLessons, bestTypingWpm, testResults, candidateName, setCandidateName } = useProgressStore();
@@ -98,11 +99,15 @@ function ProfileContent() {
       setDigestEnabled(saved.digestEnabled);
       setSuccessMsg(
         saved.digestEnabled
-          ? 'Недельный дайджест включён.'
-          : 'Недельный дайджест отключён.'
+          ? ru
+            ? 'Недельный дайджест включён.'
+            : 'Weekly digest enabled.'
+          : ru
+            ? 'Недельный дайджест отключён.'
+            : 'Weekly digest disabled.'
       );
     } catch {
-      setErrorMsg('Не удалось сохранить настройку дайджеста.');
+      setErrorMsg(ru ? 'Не удалось сохранить настройку дайджеста.' : 'Could not save the digest preference.');
     } finally {
       setIsSavingDigest(false);
     }
@@ -545,12 +550,14 @@ function ProfileContent() {
               <Mail className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Недельный дайджест</h2>
+              <h2 className="text-sm font-bold text-white">{ru ? 'Недельный дайджест' : 'Weekly digest'}</h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Прогресс, слабый сабскор и следующий шаг раз в неделю.
+                {ru
+                  ? 'Прогресс, слабый сабскор и следующий шаг раз в неделю.'
+                  : 'Progress, weakest subscore and next step once a week.'}
               </p>
               <p className="text-[11px] text-neutral-500 mt-1" data-testid="digest-status">
-                {digestEnabled ? 'Включён' : 'Отключён'}
+                {digestEnabled ? (ru ? 'Включён' : 'On') : ru ? 'Отключён' : 'Off'}
               </p>
             </div>
           </div>
@@ -565,7 +572,17 @@ function ProfileContent() {
                 : 'bg-neutral-900 border border-neutral-700 text-neutral-200 hover:border-neutral-500'
             }`}
           >
-            {isSavingDigest ? 'Сохраняем…' : digestEnabled ? 'Отключить' : 'Включить'}
+            {isSavingDigest
+              ? ru
+                ? 'Сохраняем…'
+                : 'Saving…'
+              : digestEnabled
+                ? ru
+                  ? 'Отключить'
+                  : 'Turn off'
+                : ru
+                  ? 'Включить'
+                  : 'Turn on'}
           </button>
         </div>
       </div>
