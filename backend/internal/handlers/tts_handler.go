@@ -34,6 +34,11 @@ type TTSHandler struct {
 	NewPerIPPerDay  int
 	NewGlobalPerDay int
 
+	// OnSynthesis is called after a paid synthesis succeeds (cache misses
+	// only). It feeds the admin analytics counter without touching the audio
+	// response path.
+	OnSynthesis func(provider string)
+
 	mu      sync.Mutex
 	flights map[string]*ttsFlight
 
@@ -115,6 +120,9 @@ func (h *TTSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		RespondError(w, http.StatusBadGateway, "speech synthesis failed")
 		return
+	}
+	if h.OnSynthesis != nil {
+		h.OnSynthesis(h.Provider.Name())
 	}
 	if err := os.MkdirAll(h.Dir, 0o755); err != nil {
 		RespondError(w, http.StatusInternalServerError, "speech cache is unavailable")

@@ -9,9 +9,9 @@ const nextConfig: NextConfig = {
     // been installed yet. HSTS is ignored by browsers over plain HTTP.
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com",
-      "connect-src 'self' https://api.dictionaryapi.dev https://accounts.google.com https://www.gstatic.com wss://det-academy.ru http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*",
-      "img-src 'self' data: https:",
+      "script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://mc.yandex.ru",
+      "connect-src 'self' https://api.dictionaryapi.dev https://accounts.google.com https://www.gstatic.com https://mc.yandex.ru wss://det-academy.ru http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*",
+      "img-src 'self' data: https: https://mc.yandex.ru",
       "style-src 'self' 'unsafe-inline'",
       'frame-src https://accounts.google.com',
       "font-src 'self' data:",

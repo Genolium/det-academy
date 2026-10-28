@@ -19,6 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const jsonPath = path.join(root, 'scripts/content/dictionary.generated.json');
 const sqlPath = path.join(root, 'backend/db/10-dictionary.sql');
+const snapshotPath = path.join(root, 'src/data/dictionary.generated.json');
 const cacheDir = '/tmp/det-dict-cache';
 
 const LEVELS = new Set(['A2', 'B1', 'B2', 'C1', 'C2']);
@@ -335,11 +336,17 @@ if (process.argv.includes('--check')) {
     console.error(`dictionary drift: ${path.relative(root, sqlPath)} differs from the JSON source`);
     process.exit(1);
   }
+  const snapshot = fs.existsSync(snapshotPath) ? fs.readFileSync(snapshotPath, 'utf8') : '';
+  if (snapshot !== `${JSON.stringify(entries, null, 2)}\n`) {
+    console.error(`dictionary snapshot drift: ${path.relative(root, snapshotPath)} is stale`);
+    process.exit(1);
+  }
   console.log(`dictionary ok (${entries.length} entries, sha256 ${crypto.createHash('sha256').update(sql).digest('hex').slice(0, 12)})`);
   console.log(`  levels: ${JSON.stringify(levels)}`);
   process.exit(0);
 }
 
 fs.writeFileSync(sqlPath, sql, 'utf8');
-console.log(`wrote ${path.relative(root, sqlPath)} (${entries.length} entries)`);
+fs.writeFileSync(snapshotPath, `${JSON.stringify(entries, null, 2)}\n`);
+console.log(`wrote ${path.relative(root, sqlPath)} and ${path.relative(root, snapshotPath)} (${entries.length} entries)`);
 console.log(`  levels: ${JSON.stringify(levels)}`);

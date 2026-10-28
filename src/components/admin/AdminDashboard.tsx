@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { api, AIUsageSummary, AdminStats, User, BackendTestSession, AdBannerData, BackendQuestion, Institution } from '@/lib/api';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { AdminAnalyticsDashboard } from '@/components/admin/AdminAnalyticsDashboard';
 import {
   Users,
   Award,
@@ -34,7 +35,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-type Tab = 'overview' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions' | 'ai';
+type Tab = 'overview' | 'analytics' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions' | 'ai';
 
 export const AdminDashboard: React.FC = () => {
   const { user, login, logout, isLoading } = useAuthStore();
@@ -443,6 +444,18 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'analytics'
+                ? 'bg-[#0E1012] text-[#D2F544] shadow-sm'
+                : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Аналитика</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'users'
@@ -611,6 +624,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'analytics' && <AdminAnalyticsDashboard />}
 
         {activeTab === 'overview' && stats && (
           <div className="space-y-8">

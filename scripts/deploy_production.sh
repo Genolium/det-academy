@@ -72,6 +72,14 @@ git checkout --quiet master
 git merge --ff-only --quiet origin/master
 git log --oneline -1
 
+# Bash reads this file incrementally. If the pull changed the deploy script
+# itself (for example a new seed), the running copy may not contain it. Re-exec
+# once with the updated file so seeds and checks are never skipped.
+if [ "${DET_DEPLOY_REEXEC:-0}" != "1" ] && git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null | grep -q '^scripts/deploy_production.sh$'; then
+  export DET_DEPLOY_REEXEC=1
+  exec "$0" "$@"
+fi
+
 if [ "$BACKUP" = true ]; then
   log "Backing up PostgreSQL"
   # The effective connection string is taken from the running container, so the
@@ -129,6 +137,8 @@ if [ "$TTS" = true ]; then
         [ -z "$sentence" ] && continue
         curl -fsS --max-time 30 -o /dev/null --get --data-urlencode "text=$sentence" \
           http://127.0.0.1:18080/api/v1/tts || echo "tts warm failed: $sentence" >&2
+        # Stay under the 120 requests/minute route limit.
+        sleep 0.6
       done
   echo "speech cache warmed"
 fi

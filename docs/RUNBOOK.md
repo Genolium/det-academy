@@ -17,8 +17,9 @@ through the backend container (`docker compose exec backend /app/server migrate`
 waits for `/api/v1/health` and verifies `/api/v1/ready` and `/api/v1/vocabulary`.
 It never drops the database.
 
-`--seed` re-applies `03-content-seed.sql` and `04-vocabulary-seed.sql`. It is
-opt-in because the vocabulary seed resets the publication status of the
+`--seed` re-applies `03-content-seed.sql`, `04-vocabulary-seed.sql`, the
+question banks (`05`–`09`) and the generated dictionary (`10`). It is opt-in
+because the vocabulary seed resets the publication status of the
 vocabulary entries, which is managed by the editorial workflow.
 
 Manual equivalent:
@@ -285,7 +286,7 @@ provider.
   part of speech, CEFR level, Russian meaning, English definition, example,
   collocations and pronunciation. Filters: level and source (AWL, course
   vocabulary, B1 core). Data comes from `backend/db/04-vocabulary-seed.sql` and
-  the generated `backend/db/10-dictionary.sql` (1,446 entries).
+  the generated `backend/db/10-dictionary.sql` (1,432 entries).
 - The dictionary generator is deterministic after the one-time fetch:
 
 ```bash
@@ -297,3 +298,36 @@ node scripts/generate_dictionary.mjs --check   # CI
   The fetched JSON (`scripts/content/dictionary.generated.json`) is committed,
   so CI never calls the model. `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` and
   `AI_FOLDER_ID` are required only for `--fetch`.
+
+## Product analytics
+
+- Yandex Metrika counter **113844701** is installed in the root layout and
+  documented in `docs/metrika.md`. By default it loads only after the visitor
+  accepts cookies (`det_cookie_consent === 'true'`); "Только необходимое"
+  leaves `mc.yandex.ru` untouched. `NEXT_PUBLIC_YM_CONSENT_MODE=always` is the
+  explicit legal escape hatch.
+- The admin analytics dashboard reads only server-side aggregates (users,
+  activity, mocks, evaluations, TTS) through `/api/v1/admin/analytics`; no PII
+  is returned. Metrika remains the source for page views and acquisition.
+- Verification: `npm run test:seo`, `playwright.mjs` Metrika config, and a
+  `mc.yandex.ru` network check after accepting the banner.
+
+## Admin analytics
+
+The `/admin` area has an **Analytics** tab backed by `/api/v1/admin/analytics`
+(admin role only):
+
+- `overview?range=24h|7d|30d|90d` — users, new users, DAU/WAU/MAU, sessions,
+  completed mocks, evaluations, speaking/writing, TTS, XP, pipeline errors;
+- `timeseries?metric=...&bucket=hour|day` — continuous buckets (hour is disabled
+  for 30d/90d);
+- `features` — top actions from `learning_events`, `practice_attempts` and
+  `evaluations`;
+- `retention` — D1/D7/D30 cohorts; `null` means the cohort is too young.
+
+Queries are parameterised, ranges capped at 90 days, and the response contains
+aggregates only. The cache is per-process for 45 seconds; multiple replicas do
+not share it. There is no page-view table, so page views and acquisition come
+from Yandex Metrika, while the admin tab covers product activity. TTS is counted
+only for new syntheses after `OnSynthesis` was introduced; historical calls are
+not backfilled.

@@ -176,6 +176,7 @@ func main() {
 		store.Banners(),
 		store.Institutions(),
 	)
+	analyticsService := service.NewAnalyticsService(store.Analytics())
 	aiProvider := ai.NewFromEnv()
 	if aiProvider != nil {
 		// Every provider call is recorded for the admin cost dashboard.
@@ -221,6 +222,7 @@ func main() {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
+	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	studyHandler := handlers.NewStudyHandler(studyService)
 	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
 
@@ -237,6 +239,20 @@ func main() {
 		log.Printf("[AI] speech synthesis: %s", ttsProvider.Name())
 	}
 	ttsHandler := handlers.NewTTSHandler(ttsProvider, filepath.Join(mediaUploadDir, "tts"))
+	// Only paid cache misses reach this hook, so the admin counter reflects
+	// real synthesis cost rather than lesson audio plays.
+	ttsHandler.OnSynthesis = func(provider string) {
+		if provider == "" {
+			provider = "tts"
+		}
+		recordCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = store.Study().RecordAIUsage(recordCtx, &models.AIUsageEvent{
+			ID:    uuid.NewString(),
+			Kind:  "tts",
+			Model: provider,
+		})
+	}
 
 	arenaHub := handlers.NewArenaHub()
 	go arenaHub.Run()
@@ -408,6 +424,12 @@ func main() {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(handlers.AdminMiddleware(authService))
 			r.Get("/stats", adminHandler.GetStats)
+			r.Route("/analytics", func(r chi.Router) {
+				r.Get("/overview", analyticsHandler.Overview)
+				r.Get("/timeseries", analyticsHandler.Timeseries)
+				r.Get("/features", analyticsHandler.Features)
+				r.Get("/retention", analyticsHandler.Retention)
+			})
 			r.Get("/ai-usage", studyHandler.GetAIUsage)
 			r.Get("/users", adminHandler.ListUsers)
 			r.Patch("/users/{id}/role", adminHandler.UpdateUserRole)

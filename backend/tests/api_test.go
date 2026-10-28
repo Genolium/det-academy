@@ -51,6 +51,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 		store.Banners(),
 		store.Institutions(),
 	)
+	analyticsService := service.NewAnalyticsService(store.Analytics())
 
 	authHandler := handlers.NewAuthHandler(authService)
 	theoryHandler := handlers.NewTheoryHandler(theoryService)
@@ -59,6 +60,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	bannerHandler := handlers.NewBannerHandler(bannerService)
 	institutionHandler := handlers.NewInstitutionHandler(institutionService)
 	adminHandler := handlers.NewAdminHandler(adminService, authService)
+	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	studyService := service.NewStudyService(store, theoryService, catService)
 	studyHandler := handlers.NewStudyHandler(studyService)
 	vocabularyService := service.NewVocabularyService(store.Vocabulary())
@@ -152,6 +154,12 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(handlers.AdminMiddleware(authService))
 			r.Get("/stats", adminHandler.GetStats)
+			r.Route("/analytics", func(r chi.Router) {
+				r.Get("/overview", analyticsHandler.Overview)
+				r.Get("/timeseries", analyticsHandler.Timeseries)
+				r.Get("/features", analyticsHandler.Features)
+				r.Get("/retention", analyticsHandler.Retention)
+			})
 			r.Get("/users", adminHandler.ListUsers)
 			r.Patch("/users/{id}/role", adminHandler.UpdateUserRole)
 			r.Delete("/users/{id}", adminHandler.DeleteUser)

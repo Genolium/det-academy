@@ -141,9 +141,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     checkAuthPromise = (async () => {
       if (typeof window === 'undefined') return;
       if (!hasAuthSession()) {
-        // The backend can still have an HttpOnly session cookie, so verify once
-        // instead of trusting the absence of a local token.
+        // No local access token: do not probe /auth/me and /auth/refresh just
+        // to render a 401 in the console for every anonymous visitor.
         useProgressStore.getState().resetProgressState();
+        useErrorNotebookStore.getState().resetForUser();
+        set({ user: null, isAuthenticated: false, isLoading: false });
+        return;
       }
 
       set({ isLoading: true });

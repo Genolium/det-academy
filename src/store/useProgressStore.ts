@@ -336,8 +336,13 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
     }
 
+    // Anonymous visitors keep only the local cache; no server probe, no 401s.
+    if (!hasAuthSession()) {
+      return;
+    }
+
     // Server-owned streak is authoritative when the API is reachable.
-    if (hasAuthSession()) {
+    {
       try {
         const streak = await api.getUserStreak(-new Date().getTimezoneOffset());
         set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });

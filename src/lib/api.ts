@@ -525,6 +525,73 @@ export interface AdminStats {
   recentRegistrations: User[];
 }
 
+export type AnalyticsRange = '24h' | '7d' | '30d' | '90d';
+export type AnalyticsBucket = 'hour' | 'day';
+export type AnalyticsMetric = 'users' | 'signups' | 'active' | 'mocks' | 'evaluations' | 'tts';
+
+export interface AnalyticsOverview {
+  range: AnalyticsRange;
+  from: string;
+  to: string;
+  generatedAt: string;
+  totalUsers: number;
+  newUsers: number;
+  activeUsers: { dau: number; wau: number; mau: number };
+  sessions: number;
+  completedMocks: number;
+  evaluations: number;
+  speakingEvaluations: number;
+  writingEvaluations: number;
+  ttsCalls: number;
+  xpAwarded: number;
+  errorCount: number;
+}
+
+export interface AnalyticsPoint {
+  t: string;
+  value: number;
+}
+
+export interface AnalyticsSeries {
+  metric: AnalyticsMetric;
+  range: AnalyticsRange;
+  bucket: AnalyticsBucket;
+  points: AnalyticsPoint[];
+  total: number;
+  cumulative: boolean;
+}
+
+export interface AnalyticsFeature {
+  source: 'learning_events' | 'practice_attempts' | 'evaluations';
+  key: string;
+  count: number;
+  users: number;
+}
+
+export interface AnalyticsFeatures {
+  range: AnalyticsRange;
+  items: AnalyticsFeature[];
+  pageViewsAvailable: boolean;
+  note: string;
+}
+
+export interface AnalyticsRetentionCohort {
+  cohort: string;
+  size: number;
+  d1: number | null;
+  d7: number | null;
+  d30: number | null;
+  d1Users: number;
+  d7Users: number;
+  d30Users: number;
+}
+
+export interface AnalyticsRetention {
+  range: AnalyticsRange;
+  cohorts: AnalyticsRetentionCohort[];
+  note: string;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -1195,6 +1262,59 @@ class ApiClient {
     if (!res.ok) {
       throw new Error('Admin access required');
     }
+    return res.json();
+  }
+
+  // --- Admin analytics ---
+
+  async getAdminAnalyticsOverview(
+    range: AnalyticsRange,
+    signal?: AbortSignal
+  ): Promise<AnalyticsOverview> {
+    const res = await fetch(
+      `${API_BASE_URL}/api/v1/admin/analytics/overview?range=${range}`,
+      { headers: this.getHeaders(), signal }
+    );
+    if (!res.ok) throw new ApiError('Failed to load analytics overview', res.status);
+    return res.json();
+  }
+
+  async getAdminAnalyticsTimeseries(
+    metric: AnalyticsMetric,
+    range: AnalyticsRange,
+    bucket: AnalyticsBucket,
+    signal?: AbortSignal
+  ): Promise<AnalyticsSeries> {
+    const query = new URLSearchParams({ metric, range, bucket });
+    const res = await fetch(
+      `${API_BASE_URL}/api/v1/admin/analytics/timeseries?${query.toString()}`,
+      { headers: this.getHeaders(), signal }
+    );
+    if (!res.ok) throw new ApiError('Failed to load analytics series', res.status);
+    return res.json();
+  }
+
+  async getAdminAnalyticsFeatures(
+    range: AnalyticsRange,
+    signal?: AbortSignal
+  ): Promise<AnalyticsFeatures> {
+    const res = await fetch(
+      `${API_BASE_URL}/api/v1/admin/analytics/features?range=${range}`,
+      { headers: this.getHeaders(), signal }
+    );
+    if (!res.ok) throw new ApiError('Failed to load analytics features', res.status);
+    return res.json();
+  }
+
+  async getAdminAnalyticsRetention(
+    range: AnalyticsRange,
+    signal?: AbortSignal
+  ): Promise<AnalyticsRetention> {
+    const res = await fetch(
+      `${API_BASE_URL}/api/v1/admin/analytics/retention?range=${range}`,
+      { headers: this.getHeaders(), signal }
+    );
+    if (!res.ok) throw new ApiError('Failed to load retention cohorts', res.status);
     return res.json();
   }
 

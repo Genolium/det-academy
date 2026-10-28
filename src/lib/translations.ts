@@ -615,7 +615,7 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Подробнее',
     },
     cookie: {
-      text: 'Необходимые cookie: вход и прогресс. Без рекламы и трекинга.',
+      text: 'Необходимые cookie: вход и прогресс. Аналитика — только после согласия.',
       accept: 'Принять',
       decline: 'Только необходимое',
       privacy: 'Подробнее',
@@ -1102,7 +1102,7 @@ export const translations: Record<Locale, Translations> = {
       applyBtn: 'Learn More',
     },
     cookie: {
-      text: 'Essential cookies: sign-in and progress. No ads, no tracking.',
+      text: 'Essential cookies: sign-in and progress. Analytics only after consent.',
       accept: 'Accept',
       decline: 'Essential only',
       privacy: 'Details',

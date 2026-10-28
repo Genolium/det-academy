@@ -195,6 +195,16 @@ type VocabularyRepository interface {
 	UpdateStatus(ctx context.Context, id, status string) error
 }
 
+// AnalyticsRepository exposes read-only aggregates for the admin dashboard.
+// It is intentionally separate from the student-facing repositories: every
+// method returns counts only and never row-level personal data.
+type AnalyticsRepository interface {
+	AnalyticsOverview(ctx context.Context, from, to, now time.Time) (*models.AnalyticsOverview, error)
+	AnalyticsTimeseries(ctx context.Context, metric string, from, to time.Time, bucket string) ([]models.AnalyticsPoint, error)
+	AnalyticsFeatures(ctx context.Context, from, to time.Time, limit int) ([]models.AnalyticsFeature, error)
+	AnalyticsRetention(ctx context.Context, from, to, now time.Time) ([]models.RetentionCohort, error)
+}
+
 type Storage interface {
 	Users() UserRepository
 	Theory() TheoryRepository
@@ -208,6 +218,7 @@ type Storage interface {
 	OAuthTransactions() OAuthTransactionRepository
 	RefreshTokens() RefreshTokenRepository
 	Limits() LimitRepository
+	Analytics() AnalyticsRepository
 	Ping(ctx context.Context) error
 	Close() error
 }

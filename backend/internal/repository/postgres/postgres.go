@@ -32,6 +32,7 @@ type PostgresStorage struct {
 	oauthTransactions *OAuthTransactionRepo
 	refreshTokens     *RefreshTokenRepo
 	limits            *LimitRepo
+	analytics         *AnalyticsRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -63,6 +64,7 @@ func New(dbURL string) (*PostgresStorage, error) {
 		oauthTransactions: &OAuthTransactionRepo{db: db},
 		refreshTokens:     &RefreshTokenRepo{db: db},
 		limits:            &LimitRepo{db: db},
+		analytics:         &AnalyticsRepo{db: db},
 	}
 
 	return s, nil

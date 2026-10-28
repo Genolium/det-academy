@@ -11,6 +11,7 @@ import { OfflineIndicator } from '@/components/system/OfflineIndicator';
 import { ErrorReporter } from '@/components/system/ErrorReporter';
 import { AuthBootstrap } from '@/components/system/AuthBootstrap';
 import { LocaleSync } from '@/components/system/LocaleSync';
+import { YandexMetrika } from '@/components/analytics/YandexMetrika';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -57,6 +58,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
+        <YandexMetrika />
         <SkipLink />
         <AdBanner placement="HEADER" />
         <Navbar />
