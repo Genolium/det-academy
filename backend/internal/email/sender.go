@@ -99,7 +99,8 @@ func (s *ResendSender) SendVerification(ctx context.Context, to, link string) er
 func NewFromEnv() Sender {
 	// The Postbox HTTPS API is preferred when configured: it survives hosting
 	// providers that block outbound SMTP ports and uses the same sender domain.
-	if accessKey := strings.TrimSpace(os.Getenv("POSTBOX_ACCESS_KEY")); accessKey != "" {
+	accessKey := firstNonEmpty(os.Getenv("POSTBOX_ACCESS_KEY"), os.Getenv("POSTBOX_ACCESS_KEY_ID"))
+	if accessKey != "" {
 		from := firstNonEmpty(
 			os.Getenv("POSTBOX_FROM"),
 			os.Getenv("SMTP_FROM"),
@@ -108,7 +109,7 @@ func NewFromEnv() Sender {
 		)
 		sender := &PostboxSender{
 			AccessKey: accessKey,
-			SecretKey: os.Getenv("POSTBOX_SECRET_KEY"),
+			SecretKey: firstNonEmpty(os.Getenv("POSTBOX_SECRET_KEY"), os.Getenv("POSTBOX_SECRET_ACCESS_KEY")),
 			Region:    firstNonEmpty(os.Getenv("POSTBOX_REGION"), "ru-central1"),
 			Endpoint:  firstNonEmpty(os.Getenv("POSTBOX_ENDPOINT"), "https://postbox.cloud.yandex.net"),
 			From:      from,

@@ -45,8 +45,8 @@ provider to unblock them or configure the HTTPS API (port 443):
 
 | Variable | Notes |
 |---|---|
-| `POSTBOX_ACCESS_KEY` | service-account static key ID with `postbox.sender` |
-| `POSTBOX_SECRET_KEY` | static key secret |
+| `POSTBOX_ACCESS_KEY` (or `POSTBOX_ACCESS_KEY_ID`) | service-account static key ID with `postbox.sender` |
+| `POSTBOX_SECRET_KEY` (or `POSTBOX_SECRET_ACCESS_KEY`) | static key secret |
 | `POSTBOX_REGION` | `ru-central1` |
 | `POSTBOX_FROM` | verified sender, falls back to `SMTP_FROM`/`EMAIL_FROM` |
 
