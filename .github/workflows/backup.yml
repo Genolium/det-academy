@@ -1,9 +1,9 @@
 name: Nightly database backup
 
 # Runs on the production host over SSH: the database is not exposed to the
-# internet, so the dump must be produced where Postgres lives. Credentials for
-# the S3-compatible bucket live in /root/det-academy/.env (AWS_ACCESS_KEY_ID,
-# AWS_SECRET_ACCESS_KEY, BACKUP_S3_URI).
+# internet, so the dump must be produced where Postgres lives. The latest dump
+# is streamed to the runner, encrypted with BACKUP_ENCRYPTION_KEY and retained
+# as an offsite GitHub Actions artifact for 14 days.
 on:
   schedule:
     - cron: '0 2 * * *'
@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Dump and upload
+      - name: Dump on the production host
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -41,3 +41,32 @@ jobs:
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
             'cd /root/det-academy && set -a && . ./.env && set +a && BACKUP_DIR=/var/backups/det ./scripts/backup_postgres.sh'
+
+      - name: Fetch and encrypt the latest dump
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BACKUP_ENCRYPTION_KEY" ]; then
+            echo "::error::BACKUP_ENCRYPTION_KEY is required"
+            exit 1
+          fi
+          LATEST="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            "ls -t /var/backups/det/det_academy_*.dump | head -1")"
+          scp -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}:$LATEST" ./backup.dump
+          openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
+            -in ./backup.dump -out ./det_academy_latest.dump.enc
+          rm -f ./backup.dump
+          sha256sum ./det_academy_latest.dump.enc > ./det_academy_latest.dump.enc.sha256
+
+      - name: Upload encrypted offsite artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: det-academy-backup-${{ github.run_id }}
+          path: |
+            det_academy_latest.dump.enc
+            det_academy_latest.dump.enc.sha256
+          retention-days: 14
+          if-no-files-found: error
