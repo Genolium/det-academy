@@ -37,6 +37,12 @@ type EnrichInput struct {
 	Transcript   string
 	Score        float64
 	CEFR         string
+	// RuleScore and RuleStatus come from the deterministic rubric and bound
+	// what the model is allowed to return (see reconcileEvaluation).
+	RuleScore   float64
+	RuleStatus  string
+	WordCount   int
+	DurationSec float64
 }
 
 type Evaluation struct {
@@ -221,13 +227,7 @@ func cleanJSONContent(content string) string {
 }
 
 func (p *OpenAICompatible) Enrich(ctx context.Context, input EnrichInput) (Enrichment, error) {
-	system := `You are an English assessment coach for the Duolingo English Test.
-Return strict JSON: {"feedback": string, "evidence": [{"start": number, "end": number, "text": string, "label": string, "suggestion": string}]}.
-Use only evidence present in the learner response. Do not change the numeric score.`
-	user := fmt.Sprintf("Task: %s\nPrompt: %s\nLearner response: %s\nTranscript: %s\nCurrent rule-based score: %.2f (%s)",
-		input.QuestionType, input.Prompt, input.Response, input.Transcript, input.Score, input.CEFR)
-
-	content, err := p.chatCompletion(ctx, "enrich", p.fastModel(), system, user, 0.2)
+	content, err := p.chatCompletion(ctx, "enrich", p.fastModel(), enrichmentSystemPrompt, buildEnrichUserMessage(input), 0.2)
 	if err != nil {
 		return Enrichment{}, err
 	}
@@ -240,46 +240,34 @@ Use only evidence present in the learner response. Do not change the numeric sco
 	}
 	return Enrichment{
 		Feedback: parsed.Feedback,
-		Evidence: parsed.Evidence,
+		Evidence: alignEvidence(parsed.Evidence, firstNonEmpty(input.Response, input.Transcript)),
 		Provider: p.Name(),
-		Model:    p.fastModel(),
+		Model:    shortModelName(p.fastModel()),
 	}, nil
 }
 
 func (p *OpenAICompatible) Evaluate(ctx context.Context, input EnrichInput) (Evaluation, error) {
-	system := `You are a calibrated DET rubric evaluator. Return strict JSON:
-{"score": 0..1, "cefr": "Pre-A1|A1|A2|B1|B2|C1|C2", "feedback": string,
- "evidence": [{"start": number, "end": number, "text": string, "label": string, "suggestion": string}]}.
-Judge task completion, organization, grammar, vocabulary and fluency. Use only the response.
-Never reward silence, empty text or off-topic content.`
-	user := fmt.Sprintf("Task: %s\nPrompt: %s\nResponse: %s\nTranscript: %s",
-		input.QuestionType, input.Prompt, input.Response, input.Transcript)
-
-	content, err := p.chatCompletion(ctx, "evaluate", p.evalModel(), system, user, 0.1)
+	content, err := p.chatCompletion(ctx, "evaluate", p.evalModel(), evaluationSystemPrompt, buildEvaluateUserMessage(input), 0.1)
 	if err != nil {
 		return Evaluation{}, err
 	}
 	var parsed struct {
-		Score    float64    `json:"score"`
-		CEFR     string     `json:"cefr"`
-		Feedback string     `json:"feedback"`
-		Evidence []Evidence `json:"evidence"`
+		Score          float64    `json:"score"`
+		CEFR           string     `json:"cefr"`
+		TaskCompletion *float64   `json:"taskCompletion"`
+		OffTopic       *bool      `json:"offTopic"`
+		Feedback       string     `json:"feedback"`
+		Evidence       []Evidence `json:"evidence"`
 	}
 	if err := json.Unmarshal([]byte(content), &parsed); err != nil {
 		return Evaluation{}, fmt.Errorf("invalid ai evaluation json: %w", err)
 	}
-	if parsed.Score < 0 {
-		parsed.Score = 0
-	}
-	if parsed.Score > 1 {
-		parsed.Score = 1
-	}
-	if parsed.CEFR == "" {
-		parsed.CEFR = "B1"
-	}
+
+	signals := evaluationSignals{taskCompletion: parsed.TaskCompletion, offTopic: parsed.OffTopic}
+	score, cefr, feedback, evidence := reconcileEvaluation(parsed.Score, parsed.Feedback, parsed.Evidence, input, signals)
 	return Evaluation{
-		Score: parsed.Score, CEFR: parsed.CEFR, Feedback: parsed.Feedback,
-		Evidence: parsed.Evidence, Provider: p.Name(), Model: p.evalModel(),
+		Score: score, CEFR: cefr, Feedback: feedback,
+		Evidence: evidence, Provider: p.Name(), Model: shortModelName(p.evalModel()),
 	}, nil
 }
 

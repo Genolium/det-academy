@@ -830,6 +830,15 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 	return isCorrect, calculatedScore, s.sessionRepo.RecordResponse(ctx, resp)
 }
 
+func firstString(content map[string]interface{}, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := content[key].(string); ok && strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
 func questionPromptText(questionType string, payload json.RawMessage, fallback string) string {
 	var content map[string]interface{}
 	if err := json.Unmarshal(payload, &content); err != nil {
@@ -857,7 +866,22 @@ func questionPromptText(questionType string, payload json.RawMessage, fallback s
 		return "Interactive Reading: " + toString("passageTitle")
 	case "INTERACTIVE_LISTENING":
 		return "Interactive Listening: " + toString("scenario")
+	case "WRITE_PHOTO", "SPEAK_PHOTO", "WRITING_SAMPLE", "SPEAKING_SAMPLE",
+		"READ_THEN_SPEAK", "INTERACTIVE_WRITING", "INTERACTIVE_SPEAKING":
+		// Productive tasks store the actual instruction in "prompt"; passing the
+		// question UUID as the prompt made every evaluation blind to the task.
+		prompt := firstString(content, "prompt", "question", "topic")
+		if prompt == "" {
+			return fallback
+		}
+		if context := toString("altText"); context != "" {
+			return prompt + " Context: " + context
+		}
+		return prompt
 	default:
+		if prompt := firstString(content, "prompt", "question", "topic", "scenario", "instructions"); prompt != "" {
+			return prompt
+		}
 		return fallback
 	}
 }
@@ -922,7 +946,7 @@ func (s *CATService) recordMistake(ctx context.Context, userID string, question 
 	if s.studyRepo == nil || userID == "" {
 		return
 	}
-	prompt := questionPromptText(question.Type, question.ContentPayload, req.QuestionID)
+	prompt := questionPromptText(question.Type, question.ContentPayload, "")
 	correct := correctAnswerText(question.Type, question.CorrectAnswers)
 	if prompt == "" || correct == "" {
 		return

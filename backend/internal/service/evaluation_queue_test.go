@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -366,5 +368,122 @@ func TestEvaluationQueueRejectsUntrustedTranscriptWhenDisabled(t *testing.T) {
 	evaluations, _ := store.Sessions().GetSessionEvaluations(context.Background(), session.ID)
 	if len(evaluations) != 1 || evaluations[0].Status != "INSUFFICIENT" {
 		t.Fatalf("strict mode must not score a client transcript: %#v", evaluations)
+	}
+}
+
+func TestQuestionPromptTextForProductiveTasks(t *testing.T) {
+	payload := json.RawMessage(`{"prompt":"Describe this image in 3-4 sentences.","altText":"A researcher in a laboratory"}`)
+	got := questionPromptText("WRITE_PHOTO", payload, "")
+	want := "Describe this image in 3-4 sentences. Context: A researcher in a laboratory"
+	if got != want {
+		t.Fatalf("prompt = %q, want %q", got, want)
+	}
+
+	// The question UUID must never leak into the rater prompt.
+	if uuid := questionPromptText("WRITING_SAMPLE", json.RawMessage(`{}`), "9f1c-uuid"); uuid != "9f1c-uuid" {
+		t.Fatalf("fallback = %q", uuid)
+	}
+	if got := questionPromptText("WRITE_PHOTO", json.RawMessage(`{"prompt":"Describe the scene."}`), ""); got != "Describe the scene." {
+		t.Fatalf("prompt = %q", got)
+	}
+
+	// Unknown types fall back to a generic prompt field before the fallback.
+	if got := questionPromptText("NEW_TASK", json.RawMessage(`{"prompt":"Explain the chart."}`), ""); got != "Explain the chart." {
+		t.Fatalf("generic prompt = %q", got)
+	}
+}
+
+type failingNeuralProvider struct{}
+
+func (failingNeuralProvider) Name() string    { return "failing-neural" }
+func (failingNeuralProvider) Version() string { return "test-v1" }
+func (failingNeuralProvider) Enrich(ctx context.Context, input ai.EnrichInput) (ai.Enrichment, error) {
+	return ai.Enrichment{}, errors.New("provider down")
+}
+func (failingNeuralProvider) Evaluate(ctx context.Context, input ai.EnrichInput) (ai.Evaluation, error) {
+	return ai.Evaluation{}, errors.New("provider down")
+}
+
+type capturingNeuralProvider struct{ input ai.EnrichInput }
+
+func (c *capturingNeuralProvider) Name() string    { return "capturing-neural" }
+func (c *capturingNeuralProvider) Version() string { return "test-v1" }
+func (c *capturingNeuralProvider) Enrich(ctx context.Context, input ai.EnrichInput) (ai.Enrichment, error) {
+	return ai.Enrichment{}, nil
+}
+func (c *capturingNeuralProvider) Evaluate(ctx context.Context, input ai.EnrichInput) (ai.Evaluation, error) {
+	c.input = input
+	return ai.Evaluation{Score: 0.6, CEFR: "B1", Feedback: "ok", Provider: "capturing-neural", Model: "test-v1"}, nil
+}
+
+func TestEvaluationQueueKeepsRubricWhenNeuralFails(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS", StageName: "WRITING_SAMPLE", CurrentStage: 12, DifficultyLevel: "B1"}
+	_ = store.Sessions().Create(ctx, session)
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		QuestionType: "WRITING_SAMPLE", Status: "PENDING", FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+	_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		EvaluationID: evaluation.ID, Mode: "writing",
+		ClientTranscript: "Practical skills help students find work quickly. However, theory builds long-term reasoning. A balanced curriculum gives both.",
+		Status:           "queued", MaxAttempts: 3, NextAttemptAt: time.Now().Add(-time.Second),
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	})
+
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, failingNeuralProvider{})
+	claimed, _ := store.Sessions().ClaimEvaluationJob(ctx)
+	queue.processJob(ctx, claimed)
+
+	evaluations, _ := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if len(evaluations) != 1 {
+		t.Fatalf("evaluations = %d", len(evaluations))
+	}
+	if evaluations[0].FeedbackStatus != "completed" {
+		t.Fatalf("feedback status = %q, want completed", evaluations[0].FeedbackStatus)
+	}
+	if evaluations[0].Provider != "practice_feedback" {
+		t.Fatalf("provider = %q, want the rubric fallback", evaluations[0].Provider)
+	}
+	if evaluations[0].Score <= 0 {
+		t.Fatalf("rubric score = %v", evaluations[0].Score)
+	}
+	jobs, _ := store.Sessions().EvaluationQueueStats(ctx)
+	if jobs.PermanentlyFailed != 0 {
+		t.Fatalf("job should not fail permanently: %+v", jobs)
+	}
+}
+
+func TestEvaluationQueuePassesTaskPromptToNeural(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.New().String(), UserID: uuid.New().String(), Status: "IN_PROGRESS", StageName: "WRITING_SAMPLE", CurrentStage: 12, DifficultyLevel: "B1"}
+	_ = store.Sessions().Create(ctx, session)
+	evaluation := &models.EvaluationResult{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		QuestionType: "WRITING_SAMPLE", Status: "PENDING", FeedbackStatus: "queued", CreatedAt: time.Now().UTC(),
+	}
+	_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+	_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID: uuid.New().String(), SessionID: session.ID, QuestionID: "q-ws-01",
+		EvaluationID: evaluation.ID, Mode: "writing",
+		ClientTranscript: "Practical skills help students find work quickly, while theory builds long-term reasoning.",
+		Status:           "queued", MaxAttempts: 3, NextAttemptAt: time.Now().Add(-time.Second),
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	})
+
+	provider := &capturingNeuralProvider{}
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, provider)
+	claimed, _ := store.Sessions().ClaimEvaluationJob(ctx)
+	queue.processJob(ctx, claimed)
+
+	if !strings.Contains(provider.input.Prompt, "practical career skills") {
+		t.Fatalf("rater prompt = %q, want the task instruction", provider.input.Prompt)
+	}
+	if provider.input.RuleScore <= 0 || provider.input.RuleStatus == "" {
+		t.Fatalf("rule baseline was not passed: %+v", provider.input)
 	}
 }

@@ -148,9 +148,11 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 
 	questionType := "SPEAKING_SAMPLE"
 	var keywords []string
+	var promptText string
 	if question, questionErr := q.questionRepo.GetByID(ctx, job.QuestionID); questionErr == nil && question != nil {
 		questionType = question.Type
 		keywords = extractContextKeywords(question.ContentPayload)
+		promptText = questionPromptText(question.Type, question.ContentPayload, "")
 	}
 	result := q.evaluator.EvaluateSpeaking(job.SessionID, job.QuestionID, questionType, transcript, evaluation.SpeakingDuration, keywords)
 	result.ID = evaluation.ID
@@ -163,31 +165,43 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 	result.RetryCount = job.Attempts
 	result.CreatedAt = evaluation.CreatedAt
 
-	if evaluator, ok := q.provider.(ai.Evaluator); ok {
+	if evaluator, ok := q.provider.(ai.Evaluator); ok && result.Status != "EMPTY" {
 		neural, neuralErr := evaluator.Evaluate(ctx, ai.EnrichInput{
 			QuestionType: questionType,
-			Prompt:       questionPromptText(questionType, nil, job.QuestionID),
+			Prompt:       promptText,
 			Response:     transcript,
 			Transcript:   transcript,
+			RuleScore:    result.Score,
+			RuleStatus:   result.Status,
+			WordCount:    result.WordCount,
+			DurationSec:  evaluation.SpeakingDuration,
 		})
-		if neuralErr != nil {
+		switch {
+		case neuralErr != nil && q.requireNeural:
 			evaluation.FeedbackStatus = "retryable_failed"
 			evaluation.LastError = neuralErr.Error()
 			_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
 			q.fail(ctx, job, neuralErr)
 			return
-		}
-		result.Score = neural.Score
-		result.CEFRLevel = neural.CEFR
-		result.Feedback = neural.Feedback
-		result.Provider = neural.Provider
-		result.EvaluatorVersion = neural.Model
-		result.EvidenceSpans = nil
-		for _, span := range neural.Evidence {
-			result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
-				Start: span.Start, End: span.End, Text: span.Text,
-				Label: span.Label, Suggestion: span.Suggestion,
-			})
+		case neuralErr != nil:
+			// A provider outage must not lose the learner's result: the
+			// deterministic rubric is still a valid, explainable score.
+			log.Printf("[EvaluationQueue] neural evaluation unavailable, keeping rubric result: %v", neuralErr)
+			result.LastError = neuralErr.Error()
+		default:
+			log.Printf("[EvaluationQueue] %s rubric %.2f -> model %.2f (%s)", questionType, result.Score, neural.Score, neural.Model)
+			result.Score = neural.Score
+			result.CEFRLevel = neural.CEFR
+			result.Feedback = neural.Feedback
+			result.Provider = neural.Provider
+			result.EvaluatorVersion = neural.Model
+			result.EvidenceSpans = nil
+			for _, span := range neural.Evidence {
+				result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
+					Start: span.Start, End: span.End, Text: span.Text,
+					Label: span.Label, Suggestion: span.Suggestion,
+				})
+			}
 		}
 	} else if q.requireNeural {
 		evaluation.Status = "INSUFFICIENT"
@@ -221,31 +235,49 @@ func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.Eva
 	}
 	responseText := strings.TrimSpace(job.ClientTranscript)
 
-	var result models.EvaluationResult
-	if evaluator, ok := q.provider.(ai.Evaluator); ok {
+	// The rubric always produces a fallback result first; the model may improve
+	// it, but its absence must not lose the submission.
+	result := q.evaluator.EvaluateWriting(job.SessionID, job.QuestionID, questionType, responseText, keywords)
+	result.ID = evaluation.ID
+	result.Provider = "practice_feedback"
+	result.EvaluatorVersion = "2026.1"
+	result.FeedbackStatus = "completed"
+	result.RetryCount = job.Attempts
+	result.CreatedAt = evaluation.CreatedAt
+
+	if evaluator, ok := q.provider.(ai.Evaluator); ok && result.Status != "EMPTY" {
 		neural, err := evaluator.Evaluate(ctx, ai.EnrichInput{
 			QuestionType: questionType,
 			Prompt:       prompt,
 			Response:     responseText,
+			RuleScore:    result.Score,
+			RuleStatus:   result.Status,
+			WordCount:    result.WordCount,
 		})
-		if err != nil {
+		switch {
+		case err != nil && q.requireNeural:
 			evaluation.FeedbackStatus = "retryable_failed"
 			evaluation.LastError = err.Error()
 			_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
 			q.fail(ctx, job, err)
 			return
-		}
-		result = models.EvaluationResult{
-			ID: evaluation.ID, SessionID: job.SessionID, QuestionID: job.QuestionID,
-			QuestionType: questionType, Status: "COMPLETED", Score: neural.Score,
-			CEFRLevel: neural.CEFR, Feedback: neural.Feedback, Provider: neural.Provider,
-			EvaluatorVersion: neural.Model, FeedbackStatus: "completed", CreatedAt: evaluation.CreatedAt,
-		}
-		for _, span := range neural.Evidence {
-			result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
-				Start: span.Start, End: span.End, Text: span.Text,
-				Label: span.Label, Suggestion: span.Suggestion,
-			})
+		case err != nil:
+			log.Printf("[EvaluationQueue] neural evaluation unavailable, keeping rubric result: %v", err)
+			result.LastError = err.Error()
+		default:
+			log.Printf("[EvaluationQueue] %s rubric %.2f -> model %.2f (%s)", questionType, result.Score, neural.Score, neural.Model)
+			result.Score = neural.Score
+			result.CEFRLevel = neural.CEFR
+			result.Feedback = neural.Feedback
+			result.Provider = neural.Provider
+			result.EvaluatorVersion = neural.Model
+			result.EvidenceSpans = nil
+			for _, span := range neural.Evidence {
+				result.EvidenceSpans = append(result.EvidenceSpans, models.EvidenceSpan{
+					Start: span.Start, End: span.End, Text: span.Text,
+					Label: span.Label, Suggestion: span.Suggestion,
+				})
+			}
 		}
 	} else if q.requireNeural {
 		evaluation.Status = "INSUFFICIENT"
@@ -255,13 +287,6 @@ func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.Eva
 		_ = q.sessionRepo.UpdateEvaluation(ctx, evaluation)
 		_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
 		return
-	} else {
-		result = q.evaluator.EvaluateWriting(job.SessionID, job.QuestionID, questionType, responseText, keywords)
-		result.ID = evaluation.ID
-		result.Provider = "practice_feedback"
-		result.EvaluatorVersion = "2026.1"
-		result.FeedbackStatus = "completed"
-		result.RetryCount = job.Attempts
 	}
 
 	if err := q.sessionRepo.UpdateEvaluation(ctx, &result); err != nil {

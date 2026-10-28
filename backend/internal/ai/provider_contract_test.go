@@ -22,7 +22,7 @@ func TestOpenAICompatibleEnrichParsesFeedbackAndEvidence(t *testing.T) {
 	}))
 	defer server.Close()
 	provider := &OpenAICompatible{BaseURL: server.URL, Model: "test-model", Client: server.Client()}
-	enrichment, err := provider.Enrich(context.Background(), EnrichInput{QuestionType: "WRITING_SAMPLE", Prompt: "p", Response: "r", Score: 0.5, CEFR: "B1"})
+	enrichment, err := provider.Enrich(context.Background(), EnrichInput{QuestionType: "WRITING_SAMPLE", Prompt: "p", Response: "I think this works.", Score: 0.5, CEFR: "B1"})
 	if err != nil {
 		t.Fatalf("enrich: %v", err)
 	}

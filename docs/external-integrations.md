@@ -117,7 +117,7 @@ path is labelled practice-grade in the coach.
 ### Yandex AI Studio model routing
 
 Yandex AI Studio exposes an OpenAI-compatible endpoint
-(`https://ai.api.cloud.yandex.net/v1`). Model identifiers look like
+(`https://llm.api.cloud.yandex.net/v1`). Model identifiers look like
 `gpt://<folder_id>/<model>`, and the folder is also sent as `x-folder-id`.
 
 | Variable | Purpose |
@@ -131,22 +131,73 @@ Yandex AI Studio exposes an OpenAI-compatible endpoint
 Verified routing (AI Studio, 2026-10-27):
 
 ```bash
-AI_BASE_URL=https://ai.api.cloud.yandex.net/v1
+AI_BASE_URL=https://llm.api.cloud.yandex.net/v1
 AI_FOLDER_ID=<folder>
-AI_MODEL=gpt://<folder>/aliceai-llm/latest          # fallback
-AI_MODEL_FAST=gpt://<folder>/yandexgpt-5-lite/latest # enrichment
-AI_MODEL_EVAL=gpt://<folder>/aliceai-llm/latest      # rubric evaluation
-AI_PRICE_INPUT_PER_1M=...                            # Yandex tariff
+AI_MODEL=gpt://<folder>/deepseek-v4-flash/latest      # fallback
+AI_MODEL_FAST=gpt://<folder>/deepseek-v4-flash/latest # enrichment
+AI_MODEL_EVAL=gpt://<folder>/deepseek-v4-flash/latest # rubric evaluation
+AI_PRICE_INPUT_PER_1M=...                             # Yandex tariff
 AI_PRICE_OUTPUT_PER_1M=...
 AI_PRICE_CURRENCY=RUB
 ```
 
-`aliceai-llm` answers strict JSON in about two seconds; `yandexgpt-5-lite`
-is the fastest and is used for hints. DeepSeek V4.1 Flash via AI Studio returns
-reasoning in `reasoning_content`, so the client also reads that field and strips
-markdown fences. `npm run preflight:ai` verifies chat (and STT when enabled).
-Server-side speech recognition needs a Yandex SpeechKit adapter (SpeechKit is
-not OpenAI-compatible); until then the browser transcript path stays active.
+`deepseek-v4-flash` answers strict JSON in 1-3 seconds and handled every
+calibration case correctly (see below). It occasionally returns the answer in
+`reasoning_content`, so the client reads that field too and strips markdown
+fences. `npm run preflight:ai` verifies chat (and STT when enabled).
+
+### Evaluation prompts and calibration
+
+Both prompts live in `backend/internal/ai/prompts.go` and are covered by unit
+tests, so a prompt change is a reviewable code change rather than a string edit
+in a handler.
+
+The rater prompt (`evaluationSystemPrompt`) contains:
+
+- the DET productive rubric with weights: task completion 35%, coherence 25%,
+  lexical sophistication 20%, grammatical accuracy 20% (for speaking, task
+  completion becomes delivery/fluency);
+- explicit score-to-CEFR band anchors from Pre-A1 to C2;
+- hard rules: fewer than five words ≤ 0.05, off-topic or memorised template
+  ≤ 0.15, non-English ≤ 0.05, no credit for length alone;
+- an explicit statement that the learner response is untrusted data, and the
+  response is wrapped in `<<<RESPONSE ... RESPONSE>>>` delimiters (prompt
+  injection in a test answer is treated as off-topic, verified live);
+- a request for `taskCompletion` (0..1) and `offTopic` in addition to the score;
+- Russian feedback with one concrete next step, and evidence that must be an
+  exact substring of the response.
+
+The code does not trust the model blindly (`evaluation_validation.go`):
+
+- the score may not exceed the deterministic rubric by more than 0.30, but it
+  may be lower — a harsher, better-informed model score is kept;
+- `offTopic=true` or `taskCompletion < 0.25` caps the score at 0.15, and
+  `taskCompletion < 0.50` caps it at 0.55, so fluent prose that ignores the
+  question cannot score well;
+- empty or insufficient answers are capped at 0.10 (and at 0.05 below five
+  words) regardless of what the model returns;
+- CEFR is derived from the final score, so `{"score":0.9,"cefr":"A1"}` is
+  impossible;
+- evidence spans are re-anchored to real substrings; invented quotes are
+  dropped (a wrong highlight is worse than none).
+
+If the provider is unavailable the queue keeps the deterministic rubric result
+and logs the failure instead of losing the submission; with
+`REQUIRE_NEURAL_EVALUATION=true` the job stays failed and is retried instead.
+
+Calibration is checked against reference answers with an opt-in live test:
+
+```bash
+cd backend
+AI_API_KEY=... AI_BASE_URL=https://llm.api.cloud.yandex.net/v1 \
+AI_MODEL="gpt://<folder>/deepseek-v4-flash/latest" AI_FOLDER_ID=<folder> \
+go test ./internal/ai -tags live -run TestLiveEvaluationCalibration -v
+```
+
+Verified bands: A1 answer 0.28, B1 0.55, C1 0.78, off-topic recipe 0.10,
+prompt-injection answer 0.05, empty answer 0.05. `evaluator_version` stores the
+short model name (`deepseek-v4-flash`), not the full `gpt://` URI, because the
+column is `varchar(30)`.
 
 Every call records `kind`, `model`, `prompt_tokens` and `completion_tokens` in
 `ai_usage_events`; `GET /api/v1/admin/ai-usage?days=7` aggregates them and the
