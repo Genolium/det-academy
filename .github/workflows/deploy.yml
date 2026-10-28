@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            "cd /root/det-academy && git fetch --tags --force && git checkout --force '$TAG' && docker compose build backend frontend && docker compose up -d backend frontend"
+            "cd /root/det-academy && git fetch origin --tags --force '$TAG' && git checkout --force FETCH_HEAD && docker compose build backend frontend && docker compose up -d backend frontend"
 
       - name: Health gate
         run: |
