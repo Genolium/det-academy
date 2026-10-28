@@ -6,6 +6,8 @@ import { api, XPProfile } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 
+const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
+
 export const XpLeagueCard: React.FC = () => {
   const { locale } = useSettingsStore();
   const copy = translations[locale].dashboard;
@@ -13,6 +15,7 @@ export const XpLeagueCard: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
 
   useEffect(() => {
+    if (!ARENA_ENABLED) return;
     let mounted = true;
     api
       .getXPProfile()
@@ -32,6 +35,8 @@ export const XpLeagueCard: React.FC = () => {
       mounted = false;
     };
   }, []);
+
+  if (!ARENA_ENABLED) return null;
 
   if (status === 'loading') {
     return (

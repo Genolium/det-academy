@@ -49,6 +49,8 @@ import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { translations } from '@/lib/translations';
 
+const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
+
 const CATEGORY_NAMES: Record<'ru' | 'en', Record<string, string>> = {
   ru: {
     all: 'Все разделы',
@@ -260,9 +262,9 @@ function DashboardContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <OnboardingPrompt />
         {!goalsConfigured && <GoalOnboarding />}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`grid grid-cols-1 gap-6 ${ARENA_ENABLED ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
           <PlacementCard />
-          <XpLeagueCard />
+          {ARENA_ENABLED && <XpLeagueCard />}
           <DailyLimitsCard />
         </div>
 

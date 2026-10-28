@@ -12,6 +12,8 @@ test.describe('dashboard insights', () => {
 
   test('shows the score range with its confidence and basis', async ({ page }) => {
     await page.goto('/dashboard');
+    // The arena is disabled, so the weekly league card must not appear.
+    await expect(page.getByText(/Лига недели|Weekly league/)).toHaveCount(0);
     await expect(page.getByText(/Прогноз:/)).toBeVisible();
     await expect(page.getByText('110–130')).toBeVisible();
     await expect(page.getByText(/высокая уверенность/)).toBeVisible();
