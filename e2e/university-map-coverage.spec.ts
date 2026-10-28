@@ -62,7 +62,8 @@ test('the map catalogue is verified and complete', async ({ request }) => {
 
 test('the map shows scores, cities and working category filters', async ({ page }) => {
   await page.goto('/institutions');
-  await page.getByRole('button', { name: /Карта с проверенными координатами|Интерактивная карта/ }).click();
+  // The map is the default tab.
+  await expect(page.getByRole('button', { name: /Карта с проверенными координатами/ })).toBeVisible();
   await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 20000 });
 
   const found = page.locator('[data-testid="map-found-count"]');
@@ -73,11 +74,10 @@ test('the map shows scores, cities and working category filters', async ({ page 
   }
 
   await page.getByPlaceholder(/Поиск/).fill('Harvard University');
-  const card = page.locator('h4', { hasText: 'Harvard University' }).first();
+  const card = page.getByRole('option', { name: /Harvard University/ }).first();
   await expect(card).toBeVisible();
-  const cardRow = page.locator('div').filter({ has: card }).last();
-  await expect(cardRow).toContainText('125');
-  await expect(cardRow).toContainText('Cambridge');
+  await expect(card).toContainText('125');
+  await expect(card).toContainText('Cambridge');
 });
 
 test('every admission requirement carries provenance and unknown stays unknown', async ({ request }) => {

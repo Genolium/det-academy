@@ -605,9 +605,9 @@ export const InstitutionsMap: React.FC = () => {
                 <span className={`ml-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${selectedInstitution.source === 'duolingo' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
                   {selectedInstitution.source === 'duolingo' ? 'DET official' : 'DET extended'}
                 </span>
-                <h4 className="text-base font-extrabold text-[#0E1012] mt-1">
+                <p className="text-base font-extrabold text-[#0E1012] mt-1">
                   {selectedInstitution.name}
-                </h4>
+                </p>
                 <p className="text-xs text-neutral-500">
                   📍 {formatLocation(selectedInstitution)} • {t.minScoreLabel}{' '}
                   <strong className="text-emerald-700">
@@ -634,9 +634,9 @@ export const InstitutionsMap: React.FC = () => {
         <div className="lg:col-span-4 space-y-4">
           <div className="bg-white p-5 rounded-3xl border border-neutral-200 shadow-sm flex items-center justify-between">
             <div>
-              <h3 className="text-base font-black uppercase text-[#0E1012]">
+              <h2 className="text-base font-black uppercase text-[#0E1012]">
                 {t.sidebarTitle}
-              </h3>
+              </h2>
               <p className="text-xs text-neutral-400">
                 {t.sidebarSubtitle}
               </p>
@@ -657,18 +657,32 @@ export const InstitutionsMap: React.FC = () => {
           ) : filteredInstitutions.length === 0 ? (
             <div className="bg-white p-8 rounded-3xl border border-neutral-200 text-center py-12 space-y-3">
               <GraduationCap className="w-8 h-8 text-neutral-400 mx-auto" />
-              <h4 className="text-sm font-bold text-neutral-800">{t.notFoundTitle}</h4>
+              <h3 className="text-sm font-bold text-neutral-800">{t.notFoundTitle}</h3>
               <p className="text-xs text-neutral-400">{t.notFoundDesc}</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+            <div
+              role="listbox"
+              aria-label={t.sidebarTitle}
+              tabIndex={0}
+              className="space-y-3 max-h-[460px] overflow-y-auto pr-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1012]/30"
+            >
               {filteredInstitutions.slice(0, 100).map((inst) => {
                 const isSelected = selectedInstitution?.id === inst.id;
                 return (
                   <div
                     key={inst.id}
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={isSelected}
                     onClick={() => handleFocusInstitution(inst)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleFocusInstitution(inst);
+                      }
+                    }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1012]/40 ${
                       isSelected
                         ? 'bg-neutral-900 text-white border-neutral-800 shadow-md scale-[1.01]'
                         : 'bg-white hover:bg-neutral-50 border-neutral-200'
@@ -695,9 +709,9 @@ export const InstitutionsMap: React.FC = () => {
                       </span>
                     </div>
 
-                    <h4 className={`text-sm font-bold leading-snug mb-1 ${isSelected ? 'text-white' : 'text-[#0E1012]'}`}>
+                    <p className={`text-sm font-bold leading-snug mb-1 ${isSelected ? 'text-white' : 'text-[#0E1012]'}`}>
                       {inst.name}
-                    </h4>
+                    </p>
 
                     {inst.subscoreReqs && (
                       <p className={`text-[11px] mb-2 leading-relaxed ${isSelected ? 'text-neutral-300' : 'text-neutral-600'}`}>

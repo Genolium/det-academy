@@ -28,7 +28,8 @@ const InstitutionsMap = dynamic(
 export default function InstitutionsPage() {
   const { locale } = useSettingsStore();
   const t = translations[locale].institutions;
-  const [activeTab, setActiveTab] = useState<'registry' | 'map'>('registry');
+  // The map is the primary way to explore the catalogue: it opens first.
+  const [activeTab, setActiveTab] = useState<'registry' | 'map'>('map');
 
   return (
     <div className="min-h-screen py-12 ambient-glow">
@@ -74,18 +75,6 @@ export default function InstitutionsPage() {
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
           <button
-            onClick={() => setActiveTab('registry')}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-              activeTab === 'registry'
-                ? 'bg-[#0E1012] text-white shadow-lg shadow-neutral-900/20'
-                : 'bg-white text-neutral-600 hover:text-[#0E1012] border border-neutral-200 hover:border-neutral-300'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 text-[#D2F544]" />
-            {locale === 'ru' ? 'Официальный реестр (4 087 вузов)' : 'Official registry (4,087 institutions)'}
-          </button>
-
-          <button
             onClick={() => setActiveTab('map')}
             className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'map'
@@ -95,6 +84,18 @@ export default function InstitutionsPage() {
           >
             <Map className="w-4 h-4 text-[#D2F544]" />
             {locale === 'ru' ? 'Карта с проверенными координатами' : 'Map with verified coordinates'}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('registry')}
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+              activeTab === 'registry'
+                ? 'bg-[#0E1012] text-white shadow-lg shadow-neutral-900/20'
+                : 'bg-white text-neutral-600 hover:text-[#0E1012] border border-neutral-200 hover:border-neutral-300'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-[#D2F544]" />
+            {locale === 'ru' ? 'Официальный реестр (4 087 вузов)' : 'Official registry (4,087 institutions)'}
           </button>
         </div>
 

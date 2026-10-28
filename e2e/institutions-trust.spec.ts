@@ -48,6 +48,8 @@ test('registry hides the unsupported score filter', async ({ page }) => {
   expect(registry.length).toBeGreaterThan(4000);
 
   await page.goto('/institutions');
+  // The map opens first; the registry is one click away.
+  await page.getByRole('button', { name: /Официальный реестр/ }).click();
   await expect(page.getByText(/Официальный реестр/)).toBeVisible();
   await expect(page.getByText(/Фильтр: Подходит под мой балл/)).toHaveCount(0);
   await expect(page.getByText(/Требования вузов пока не подтверждены/)).toBeVisible();
