@@ -155,24 +155,14 @@ export const Navbar: React.FC = () => {
             href="/" 
             className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544] rounded-xl shrink-0"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#0E1012] flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform duration-200 border border-neutral-800 shrink-0">
-              <Image
-                src="/logo.svg"
-                alt="DET Academy"
-                width={26}
-                height={26}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-base tracking-tight text-[#0E1012] flex items-center gap-1.5 leading-none">
-                DET <span className="bg-[#D2F544] text-[#0C2418] text-[10px] px-1.5 py-0.5 rounded-full font-black tracking-normal">ACADEMY</span>
-              </span>
-              <span className="text-[9px] font-semibold text-neutral-600 tracking-wider mt-0.5">
-                {locale === 'ru' ? 'Подготовка к DET' : 'DET prep'}
-              </span>
-            </div>
+            <Image
+              src="/det-academy-wordmark-v2.svg"
+              alt="DET Academy"
+              width={190}
+              height={34}
+              className="h-auto w-36 sm:w-[190px] transition-opacity duration-200 group-hover:opacity-80"
+              priority
+            />
           </Link>
 
           {/* CENTER: Floating Segmented Navigation (Apple / Linear aesthetic) */}

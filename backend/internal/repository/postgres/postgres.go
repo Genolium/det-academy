@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,6 +31,7 @@ type PostgresStorage struct {
 	vocabulary        *VocabularyRepo
 	oauthTransactions *OAuthTransactionRepo
 	refreshTokens     *RefreshTokenRepo
+	limits            *LimitRepo
 }
 
 func New(dbURL string) (*PostgresStorage, error) {
@@ -60,6 +62,7 @@ func New(dbURL string) (*PostgresStorage, error) {
 		vocabulary:        &VocabularyRepo{db: db},
 		oauthTransactions: &OAuthTransactionRepo{db: db},
 		refreshTokens:     &RefreshTokenRepo{db: db},
+		limits:            &LimitRepo{db: db},
 	}
 
 	return s, nil
@@ -110,8 +113,9 @@ func (s *PostgresStorage) OAuthTransactions() repository.OAuthTransactionReposit
 func (s *PostgresStorage) RefreshTokens() repository.RefreshTokenRepository {
 	return s.refreshTokens
 }
-func (s *PostgresStorage) Ping(ctx context.Context) error { return s.db.PingContext(ctx) }
-func (s *PostgresStorage) Close() error                   { return s.db.Close() }
+func (s *PostgresStorage) Limits() repository.LimitRepository { return s.limits }
+func (s *PostgresStorage) Ping(ctx context.Context) error     { return s.db.PingContext(ctx) }
+func (s *PostgresStorage) Close() error                       { return s.db.Close() }
 
 // --- Users ---
 
@@ -831,13 +835,17 @@ func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.Evaluatio
 			word_count, unique_words, lexical_diversity, academic_words, connectors,
 			relevance_score, cefr_level, speaking_duration, wpm, recommendations,
 			audio_url, transcript, transcript_source, provider, evaluator_version,
-			feedback_status, feedback, evidence_spans, retry_count, last_error, created_at
+			feedback_status, feedback, evidence_spans, retry_count, last_error,
+			speech_rate, pause_ratio, pause_count, filler_count, pronunciation_stability, pauses,
+			pronunciation, created_at
 		) VALUES (
 			$1, NULLIF($2, '')::uuid, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11, $12,
 			$13, $14, $15, $16, $17,
 			$18, $19, $20, $21, $22,
-			$23, $24, $25, $26, $27, $28
+			$23, $24, $25, $26, $27,
+			$28, $29, $30, $31, $32, $33,
+			$34, $35
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			status = EXCLUDED.status,
@@ -861,19 +869,30 @@ func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.Evaluatio
 			feedback = EXCLUDED.feedback,
 			evidence_spans = EXCLUDED.evidence_spans,
 			retry_count = EXCLUDED.retry_count,
-			last_error = EXCLUDED.last_error
+			last_error = EXCLUDED.last_error,
+			speech_rate = EXCLUDED.speech_rate,
+			pause_ratio = EXCLUDED.pause_ratio,
+			pause_count = EXCLUDED.pause_count,
+			filler_count = EXCLUDED.filler_count,
+			pronunciation_stability = EXCLUDED.pronunciation_stability,
+			pauses = EXCLUDED.pauses,
+			pronunciation = EXCLUDED.pronunciation
 	`
 	academicJSON, _ := json.Marshal(eval.AcademicWords)
 	connectorsJSON, _ := json.Marshal(eval.Connectors)
 	recsJSON, _ := json.Marshal(eval.Recommendations)
 	evidenceJSON, _ := json.Marshal(eval.EvidenceSpans)
+	pausesJSON, _ := json.Marshal(eval.Pauses)
+	pronunciationJSON, _ := json.Marshal(eval.Pronunciation)
 
 	_, err := r.db.ExecContext(ctx, query,
 		eval.ID, eval.ResponseID, eval.SessionID, eval.QuestionID, eval.QuestionType, eval.Status, eval.Score,
 		eval.WordCount, eval.UniqueWords, eval.LexicalDiversity, academicJSON, connectorsJSON,
 		eval.RelevanceScore, eval.CEFRLevel, eval.SpeakingDuration, eval.WPM, recsJSON,
 		eval.AudioURL, eval.Transcript, eval.TranscriptSource, eval.Provider, eval.EvaluatorVersion,
-		eval.FeedbackStatus, eval.Feedback, evidenceJSON, eval.RetryCount, eval.LastError, eval.CreatedAt,
+		eval.FeedbackStatus, eval.Feedback, evidenceJSON, eval.RetryCount, eval.LastError,
+		eval.SpeechRate, eval.PauseRatio, eval.PauseCount, eval.FillerCount, eval.PronunciationStability, pausesJSON,
+		pronunciationJSON, eval.CreatedAt,
 	)
 	return err
 }
@@ -884,7 +903,9 @@ func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID strin
 		       word_count, unique_words, lexical_diversity, academic_words, connectors,
 		       relevance_score, cefr_level, speaking_duration, wpm, recommendations,
 		       audio_url, transcript, transcript_source, provider, evaluator_version,
-		       feedback_status, feedback, evidence_spans, retry_count, last_error, created_at
+		       feedback_status, feedback, evidence_spans, retry_count, last_error,
+		       speech_rate, pause_ratio, pause_count, filler_count, pronunciation_stability, pauses,
+		       pronunciation, created_at
 		FROM evaluations WHERE session_id = $1 ORDER BY created_at ASC
 	`
 	rows, err := r.db.QueryContext(ctx, query, sessionID)
@@ -896,13 +917,15 @@ func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID strin
 	var evals []models.EvaluationResult
 	for rows.Next() {
 		var e models.EvaluationResult
-		var academicJSON, connectorsJSON, recsJSON, evidenceJSON []byte
+		var academicJSON, connectorsJSON, recsJSON, evidenceJSON, pausesJSON, pronunciationJSON []byte
 		if err := rows.Scan(
 			&e.ID, &e.ResponseID, &e.SessionID, &e.QuestionID, &e.QuestionType, &e.Status, &e.Score,
 			&e.WordCount, &e.UniqueWords, &e.LexicalDiversity, &academicJSON, &connectorsJSON,
 			&e.RelevanceScore, &e.CEFRLevel, &e.SpeakingDuration, &e.WPM, &recsJSON,
 			&e.AudioURL, &e.Transcript, &e.TranscriptSource, &e.Provider, &e.EvaluatorVersion,
-			&e.FeedbackStatus, &e.Feedback, &evidenceJSON, &e.RetryCount, &e.LastError, &e.CreatedAt,
+			&e.FeedbackStatus, &e.Feedback, &evidenceJSON, &e.RetryCount, &e.LastError,
+			&e.SpeechRate, &e.PauseRatio, &e.PauseCount, &e.FillerCount, &e.PronunciationStability, &pausesJSON,
+			&pronunciationJSON, &e.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -910,6 +933,8 @@ func (r *SessionRepo) GetSessionEvaluations(ctx context.Context, sessionID strin
 		_ = json.Unmarshal(connectorsJSON, &e.Connectors)
 		_ = json.Unmarshal(recsJSON, &e.Recommendations)
 		_ = json.Unmarshal(evidenceJSON, &e.EvidenceSpans)
+		_ = json.Unmarshal(pausesJSON, &e.Pauses)
+		_ = json.Unmarshal(pronunciationJSON, &e.Pronunciation)
 		evals = append(evals, e)
 	}
 	return evals, nil
@@ -1945,7 +1970,7 @@ func (r *StudyRepo) GetSkillMastery(ctx context.Context, userID string) (map[str
 
 type VocabularyRepo struct{ db *sql.DB }
 
-func (r *VocabularyRepo) List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error) {
+func (r *VocabularyRepo) List(ctx context.Context, search, level, source string, limit, offset int) ([]models.VocabularyEntry, error) {
 	query := `
 		SELECT id, word, COALESCE(ipa, ''), COALESCE(pos, ''), level, meaning_ru,
 		       definition_en, COALESCE(example, ''), collocations, source,
@@ -1964,8 +1989,16 @@ func (r *VocabularyRepo) List(ctx context.Context, search, level string) ([]mode
 	if level != "" && level != "ALL" {
 		query += fmt.Sprintf(" AND level = $%d", idx)
 		args = append(args, level)
+		idx++
 	}
-	query += " ORDER BY word ASC"
+	if prefix := vocabularySourcePrefix(source); prefix != "" {
+		query += fmt.Sprintf(" AND source LIKE $%d", idx)
+		args = append(args, prefix+"%")
+		idx++
+	}
+	query += " ORDER BY LOWER(word) ASC"
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", idx, idx+1)
+	args = append(args, limit, offset)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -2023,10 +2056,41 @@ func (r *VocabularyRepo) UpdateStatus(ctx context.Context, id, status string) er
 	return err
 }
 
-func (r *VocabularyRepo) Count(ctx context.Context) (int, error) {
+func (r *VocabularyRepo) CountFiltered(ctx context.Context, search, level, source string) (int, error) {
+	query := `SELECT COUNT(*) FROM vocabulary_entries WHERE status = 'published'`
+	args := []interface{}{}
+	idx := 1
+	if search != "" {
+		query += fmt.Sprintf(" AND (LOWER(word) LIKE $%d OR LOWER(meaning_ru) LIKE $%d OR LOWER(definition_en) LIKE $%d)", idx, idx, idx)
+		args = append(args, "%"+strings.ToLower(search)+"%")
+		idx++
+	}
+	if level != "" && level != "ALL" {
+		query += fmt.Sprintf(" AND level = $%d", idx)
+		args = append(args, level)
+		idx++
+	}
+	if prefix := vocabularySourcePrefix(source); prefix != "" {
+		query += fmt.Sprintf(" AND source LIKE $%d", idx)
+		args = append(args, prefix+"%")
+		idx++
+	}
 	var count int
-	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM vocabulary_entries WHERE status = 'published'`).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&count)
 	return count, err
+}
+
+func vocabularySourcePrefix(source string) string {
+	switch strings.ToLower(strings.TrimSpace(source)) {
+	case "awl":
+		return "Academic Word List"
+	case "course":
+		return "Course vocabulary"
+	case "b1":
+		return "DET B1 core"
+	default:
+		return ""
+	}
 }
 
 // --- OAuth transactions ---
@@ -2127,4 +2191,91 @@ func (r *RefreshTokenRepo) Revoke(ctx context.Context, tokenHash string) error {
 func (r *RefreshTokenRepo) RevokeAllForUser(ctx context.Context, userID string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL`, userID)
 	return err
+}
+
+// --- Daily limit counters ---
+
+// LimitRepo implements repository.LimitRepository on top of
+// daily_limit_counters. The counter is incremented in a single statement so
+// two concurrent requests cannot both pass the last slot.
+type LimitRepo struct {
+	db        *sql.DB
+	lastPurge atomic.Int64
+}
+
+const limitPurgeInterval = 6 * time.Hour
+
+func (r *LimitRepo) ConsumeDaily(ctx context.Context, scope, subject string, windowStart time.Time, limit int) (int, bool, error) {
+	if limit <= 0 || scope == "" || subject == "" {
+		return 0, true, nil
+	}
+	day := windowStart.UTC().Format("2006-01-02")
+
+	var used int
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO daily_limit_counters (scope, subject, window_start, used, updated_at)
+		VALUES ($1, $2, $3::date, 1, NOW())
+		ON CONFLICT (scope, subject, window_start) DO UPDATE
+		SET used = daily_limit_counters.used + 1, updated_at = NOW()
+		WHERE daily_limit_counters.used < $4
+		RETURNING used
+	`, scope, subject, day, limit).Scan(&used)
+	if errors.Is(err, sql.ErrNoRows) {
+		// The WHERE clause rejected the increment: the daily cap is reached.
+		_ = r.db.QueryRowContext(ctx, `
+			SELECT used FROM daily_limit_counters
+			WHERE scope = $1 AND subject = $2 AND window_start = $3::date
+		`, scope, subject, day).Scan(&used)
+		r.purgeIfDue()
+		return used, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	r.purgeIfDue()
+	return used, true, nil
+}
+
+func (r *LimitRepo) ConsumeWindow(ctx context.Context, bucket, subject string, windowStart time.Time, limit int) (int, bool, error) {
+	if limit <= 0 || bucket == "" || subject == "" {
+		return 0, true, nil
+	}
+	var used int
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO rate_limit_counters (bucket, subject, window_start, used, updated_at)
+		VALUES ($1, $2, $3, 1, NOW())
+		ON CONFLICT (bucket, subject, window_start) DO UPDATE
+		SET used = rate_limit_counters.used + 1, updated_at = NOW()
+		WHERE rate_limit_counters.used < $4
+		RETURNING used
+	`, bucket, subject, windowStart.UTC(), limit).Scan(&used)
+	if errors.Is(err, sql.ErrNoRows) {
+		_ = r.db.QueryRowContext(ctx, `
+			SELECT used FROM rate_limit_counters
+			WHERE bucket = $1 AND subject = $2 AND window_start = $3
+		`, bucket, subject, windowStart.UTC()).Scan(&used)
+		return used, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	return used, true, nil
+}
+
+func (r *LimitRepo) PurgeDailyBefore(ctx context.Context, before time.Time) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM daily_limit_counters WHERE window_start < $1::date`, before.UTC().Format("2006-01-02"))
+	return err
+}
+
+// purgeIfDue removes old windows at most once every six hours. It runs on the
+// request path but is bounded and uses the window_start index.
+func (r *LimitRepo) purgeIfDue() {
+	now := time.Now().Unix()
+	last := r.lastPurge.Load()
+	if now-last < int64(limitPurgeInterval.Seconds()) || !r.lastPurge.CompareAndSwap(last, now) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_ = r.PurgeDailyBefore(ctx, time.Now().UTC().AddDate(0, 0, -7))
 }

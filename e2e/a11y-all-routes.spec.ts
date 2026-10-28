@@ -13,6 +13,7 @@ const routes = [
   '/dashboard',
   '/profile',
   '/institutions',
+  '/welcome',
   '/vocabulary',
   '/verify',
   '/verify/unknown',

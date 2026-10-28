@@ -1062,19 +1062,19 @@ func (s *CATService) GetSessionReview(ctx context.Context, sessionID, userID str
 
 // RecordAudioResponse records uploaded audio speech, evaluates it, and stores the response.
 func (s *CATService) RecordAudioResponse(
-	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset,
+	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset, pronunciation *models.PronunciationReport,
 ) (*models.EvaluationResult, error) {
 	var evaluation *models.EvaluationResult
 	err := s.sessionRepo.WithSessionLock(ctx, sessionID, func() error {
 		var innerErr error
-		evaluation, innerErr = s.recordAudioResponseLocked(ctx, sessionID, userID, questionID, audioURL, transcript, durationSec, fileSize, asset)
+		evaluation, innerErr = s.recordAudioResponseLocked(ctx, sessionID, userID, questionID, audioURL, transcript, durationSec, fileSize, asset, pronunciation)
 		return innerErr
 	})
 	return evaluation, err
 }
 
 func (s *CATService) recordAudioResponseLocked(
-	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset,
+	ctx context.Context, sessionID, userID, questionID, audioURL, transcript string, durationSec float64, fileSize int64, asset *models.MediaAsset, pronunciation *models.PronunciationReport,
 ) (*models.EvaluationResult, error) {
 	session, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
@@ -1139,6 +1139,7 @@ func (s *CATService) recordAudioResponseLocked(
 			Provider:         "pending",
 			EvaluatorVersion: "2026.1",
 			FeedbackStatus:   "queued",
+			Pronunciation:    pronunciation,
 			CreatedAt:        time.Now().UTC(),
 		}
 		if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err != nil {
@@ -1151,6 +1152,7 @@ func (s *CATService) recordAudioResponseLocked(
 		eval = s.evaluator.EvaluateSpeaking(sessionID, questionID, qType, transcript, durationSec, keywords)
 		eval.AudioURL = audioURL
 		eval.TranscriptSource = "client"
+		eval.Pronunciation = pronunciation
 		_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
 	}
 

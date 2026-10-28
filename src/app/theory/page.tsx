@@ -39,6 +39,10 @@ export default function TheoryCatalogPage() {
           examples: d.examples,
           pitfalls: d.pitfalls,
         }));
+        const intro = lessonsData.find((lesson) => lesson.slug === 'start-here');
+        if (intro && !mapped.some((lesson) => lesson.slug === intro.slug)) {
+          mapped.unshift(intro);
+        }
         setLessons(mapped);
       }
     }).catch(() => {});
@@ -97,6 +101,8 @@ export default function TheoryCatalogPage() {
               const isDone = completedLessons.includes(lesson.slug);
               const title = locale === 'ru' ? lesson.titleRu : lesson.titleEn;
               const categoryLabel = locale === 'ru' ? lesson.categoryLabelRu : lesson.categoryLabelEn;
+              const format = locale === 'ru' ? lesson.format : (lesson.formatEn || lesson.format);
+              const timeLimit = locale === 'ru' ? lesson.timeLimit : (lesson.timeLimitEn || lesson.timeLimit);
 
               return (
                 <BentoCard
@@ -139,13 +145,13 @@ export default function TheoryCatalogPage() {
                       {title}
                     </h2>
                     <p className="text-xs text-neutral-500 mb-4 line-clamp-2">
-                      {lesson.format}
+                      {format}
                     </p>
                   </div>
 
                   <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-3 relative z-10">
                     <span className="text-xs font-medium text-neutral-400 line-clamp-1 pr-1 pointer-events-none">
-                      <span className="font-semibold text-neutral-500">{t.timingLabel}</span> {lesson.timeLimit}
+                      <span className="font-semibold text-neutral-500">{t.timingLabel}</span> {timeLimit}
                     </span>
                     <Link
                       href={`/theory/${lesson.slug}`}

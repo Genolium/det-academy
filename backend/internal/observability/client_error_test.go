@@ -12,11 +12,11 @@ type captureTransport struct {
 	events []*sentry.Event
 }
 
-func (t *captureTransport) Configure(sentry.ClientOptions) {}
-func (t *captureTransport) SendEvent(event *sentry.Event) { t.events = append(t.events, event) }
-func (t *captureTransport) Flush(time.Duration) bool      { return true }
+func (t *captureTransport) Configure(sentry.ClientOptions)        {}
+func (t *captureTransport) SendEvent(event *sentry.Event)         { t.events = append(t.events, event) }
+func (t *captureTransport) Flush(time.Duration) bool              { return true }
 func (t *captureTransport) FlushWithContext(context.Context) bool { return true }
-func (t *captureTransport) Close()                        {}
+func (t *captureTransport) Close()                                {}
 
 func TestCaptureClientErrorSendsEventWhenConfigured(t *testing.T) {
 	transport := &captureTransport{}

@@ -31,11 +31,13 @@ import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
+import { practiceCopy } from '@/lib/practiceCopy';
 
 export default function PracticeHubPage() {
   const { user, isAuthenticated } = useAuthStore();
   const { locale, strictMode, setStrictMode } = useSettingsStore();
   const hub = translations[locale].practiceHub;
+  const copy = practiceCopy[locale];
   const [activeDrillSlug, setActiveDrillSlug] = useState<string | null>(null);
   const [drillCounter, setDrillCounter] = useState(0);
   const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
@@ -51,111 +53,121 @@ export default function PracticeHubPage() {
     } catch {}
   }, [setStrictMode]);
 
+  // A recommendation elsewhere in the dashboard can open a specific drill.
+  useEffect(() => {
+    const drill = new URLSearchParams(window.location.search).get('drill');
+    const valid = new Set([
+      'read-and-complete', 'read-and-select', 'fill-in-the-blanks', 'listen-and-type',
+      'speak-about-photo', 'speaking-sample', 'writing-inspector', 'write-about-the-photo',
+    ]);
+    if (drill && valid.has(drill)) setActiveDrillSlug(drill);
+  }, []);
+
   // Strict requested order:
   // 1. скоропечатание, 2. read and complete, 3. словарный блиц, 4. fill in blanks, 5. аудио-диктанты, 6. академический словарь, потом всё остальное
   const practiceCategories = [
     {
       id: 'typing',
-      title: 'DET Typing Trainer (Скоропечатание)',
-      description: 'Тренажер скоропечатания вслепую на английском с академическим словарем DET.',
+      title: copy.categories.typing.title,
+      description: copy.categories.typing.description,
       icon: <Keyboard className="w-6 h-6 text-[#0C2418]" />,
       badge: 'Speed Drill',
       href: '/practice/typing',
-      actionText: 'Открыть тренажер печати',
+      actionText: copy.categories.typing.actionText,
     },
     {
       id: 'c-test',
       slug: 'read-and-complete',
       title: 'Read and Complete (C-Test)',
-      description: 'Интерактивное восстановление текста: допишите недостающие буквы в словах, опираясь на контекст.',
+      description: copy.categories['c-test'].description,
       icon: <FileText className="w-6 h-6 text-[#0C2418]" />,
       badge: 'C-Test Practice',
-      actionText: 'Тренировать C-Test онлайн',
+      actionText: copy.categories['c-test'].actionText,
     },
     {
       id: 'read-select',
       slug: 'read-and-select',
-      title: 'Словарный блиц (Read and Select)',
-      description: 'Распознавание реальных академических C2 слов и выявление коварных псевдослов (трапов DET).',
+      title: copy.categories['read-select'].title,
+      description: copy.categories['read-select'].description,
       icon: <CheckSquare className="w-6 h-6 text-[#0C2418]" />,
       badge: '5s Per Word',
-      actionText: 'Тренировать Read & Select',
+      actionText: copy.categories['read-select'].actionText,
     },
     {
       id: 'fill-blanks',
       slug: 'fill-in-the-blanks',
       title: 'Fill in the Blanks Sprint',
-      description: 'Контекстная вставка пропущенных частей слов. Только американский спеллинг и грамматика.',
+      description: copy.categories['fill-blanks'].description,
       icon: <Layers className="w-6 h-6 text-[#0C2418]" />,
       badge: '20s Time Limit',
-      actionText: 'Тренировать Fill in Blanks',
+      actionText: copy.categories['fill-blanks'].actionText,
     },
     {
       id: 'dictation',
       slug: 'listen-and-type',
-      title: 'Аудио-диктанты (Listen and Type)',
-      description: 'Восприятие связной речи с американским акцентом. Правило 3 воспроизведений и пунктуация.',
+      title: copy.categories.dictation.title,
+      description: copy.categories.dictation.description,
       icon: <Volume2 className="w-6 h-6 text-[#0C2418]" />,
       badge: 'Audio Speech Engine',
-      actionText: 'Тренировать диктанты',
+      actionText: copy.categories.dictation.actionText,
     },
     {
       id: 'flashcards',
-      title: 'Академический словарь (SRS Flashcards)',
-      description: 'Карточки 500+ слов Academic Word List с алгоритмом интервального повторения SuperMemo SM-2, озвучкой и коллокациями.',
+      title: copy.categories.flashcards.title,
+      description: copy.categories.flashcards.description,
       icon: <Sparkles className="w-6 h-6 text-[#0C2418]" />,
       badge: 'SuperMemo SM-2',
       href: '/practice/flashcards',
-      actionText: 'Учить слова C1/C2',
+      actionText: copy.categories.flashcards.actionText,
     },
     // Потом всё остальное:
     {
       id: 'speak-photo',
       slug: 'speak-about-photo',
       title: 'AI Speaking Studio (Speak About Photo)',
-      description: 'Живая осциллограмма голоса, замер WPM, распознавание речевых пауз и анализ лексики C1/C2 при описании фото за 90 секунд.',
+      description: copy.categories['speak-photo'].description,
       icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
       badge: 'Live Audio Waveform',
-      actionText: 'Запустить Speaking Studio',
+      actionText: copy.categories['speak-photo'].actionText,
     },
     {
       id: 'speaking-sample',
       slug: 'speaking-sample',
-      title: 'Speaking Sample (Академический монолог)',
-      description: 'Устный видеомонолог 1–3 минуты на дискуссионную тему с live спектрограммой, таймером подготовки и скорингом беглости.',
+      title: copy.categories['speaking-sample'].title,
+      description: copy.categories['speaking-sample'].description,
       icon: <MessageSquare className="w-6 h-6 text-[#0C2418]" />,
       badge: '1-3 Min Monologue',
-      actionText: 'Тренировать устный монолог',
+      actionText: copy.categories['speaking-sample'].actionText,
     },
     {
       id: 'writing-inspector',
       slug: 'writing-inspector',
       title: 'AI Writing Diagnostic Inspector',
-      description: 'Интерактивная подсветка CEFR уровней (A1–C2), экспресс-замена слабых слов на C1/C2 (Vocab Upgrades) и OREO чек-лист.',
+      description: copy.categories['writing-inspector'].description,
       icon: <TrendingUp className="w-6 h-6 text-[#0C2418]" />,
       badge: 'CEFR + OREO Diagnostic',
-      actionText: 'Открыть Writing Inspector',
+      actionText: copy.categories['writing-inspector'].actionText,
     },
     {
       id: 'photo-writing',
       slug: 'write-about-the-photo',
       title: 'Writing Lab & Photo Studio',
-      description: 'Отработка 4-шаговой формулы описания фото и академических эссе с проверкой C1/C2 лексики.',
+      description: copy.categories['photo-writing'].description,
       icon: <Camera className="w-6 h-6 text-[#0C2418]" />,
       badge: 'Production 60s/300s',
-      actionText: 'Тренировать письмо',
+      actionText: copy.categories['photo-writing'].actionText,
     },
     // Банк ошибок появляется ТОЛЬКО для авторизованных пользователей
     ...(isAuthenticated && user
       ? [
           {
             id: 'error-bank',
-            title: 'Smart Error Bank (Банк ошибок)',
-            description: `Автоматический сбор всех ваших ошибок из C-Test, Dictations, Fill Blanks и Read & Select. Отрабатывайте слабые места в изолированном режиме.`,
+            title: copy.categories['error-bank'].title,
+            description: copy.categories['error-bank'].description,
             icon: <AlertCircle className="w-6 h-6 text-[#0C2418]" />,
-            badge: unmasteredErrors > 0 ? `${unmasteredErrors} на повтор` : 'Ошибок: 0',
+            badge: unmasteredErrors > 0 ? `${unmasteredErrors} ${copy.toReview}` : copy.noErrors,
             isErrorModal: true,
-            actionText: 'Открыть банк ошибок',
+            actionText: copy.categories['error-bank'].actionText,
           },
         ]
       : []),
@@ -191,8 +203,7 @@ export default function PracticeHubPage() {
             {strictMode ? 'Strict mode: ON' : 'Strict mode: OFF'}
           </button>
           <span className="text-[11px] text-neutral-500 max-w-md text-center">
-            Строгий режим добавляет общий таймер на 10 минут. Экзаменационный тест всегда
-            использует серверный дедлайн.
+            {copy.strictNote}
           </span>
         </div>
 
@@ -203,13 +214,13 @@ export default function PracticeHubPage() {
           <div className="mb-12">
             <div className="flex items-center justify-between mb-3 bg-neutral-900 text-white px-6 py-3 rounded-2xl">
               <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#D2F544]" /> Активный тренажер: {activeDrillSlug}
+                <Sparkles className="w-4 h-4 text-[#D2F544]" /> {copy.activeDrill}: {activeDrillSlug}
               </span>
               <button
                 onClick={() => setActiveDrillSlug(null)}
                 className="text-xs text-neutral-400 hover:text-white font-bold cursor-pointer"
               >
-                ✕ Закрыть тренажер
+                ✕ {copy.closeDrill}
               </button>
             </div>
 
@@ -229,13 +240,13 @@ export default function PracticeHubPage() {
               <div className="space-y-4">
                 <div className="bg-[#0E1012] p-4 rounded-2xl border border-neutral-800">
                   <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block mb-2">
-                    Интерактивное поле ввода эссе:
+                    {copy.essayField}:
                   </span>
                   <textarea
                     rows={5}
                     value={inspectorText}
                     onChange={(e) => setInspectorText(e.target.value)}
-                    placeholder={locale === 'ru' ? 'Напишите свой черновик здесь — инспектор не подставляет готовое эссе.' : 'Write your draft here — the inspector does not seed a model essay.'}
+                    placeholder={copy.draftPlaceholder}
                     className="w-full bg-neutral-950 border border-neutral-700 focus:border-[#D2F544] rounded-xl p-3.5 text-white text-xs outline-none leading-relaxed"
                   />
                 </div>
@@ -337,6 +348,8 @@ export default function PracticeHubPage() {
 }
 
 const PracticeStrictTimer: React.FC = () => {
+  const { locale } = useSettingsStore();
+  const copy = practiceCopy[locale];
   const [secondsLeft, setSecondsLeft] = useState(10 * 60);
 
   useEffect(() => {
@@ -364,8 +377,8 @@ const PracticeStrictTimer: React.FC = () => {
         <p className="text-[10px] font-black uppercase tracking-wider">Strict practice timer</p>
         <p className="text-xs text-neutral-500">
           {expired
-            ? 'Время вышло. В реальном экзамене ответы после дедлайна не принимаются.'
-            : 'Работайте в темпе экзамена. Таймер общий для этой тренировочной сессии.'}
+            ? copy.timeUp
+            : copy.paceNote}
         </p>
       </div>
       <div className="flex items-center gap-3">
@@ -376,7 +389,7 @@ const PracticeStrictTimer: React.FC = () => {
           onClick={() => setSecondsLeft(10 * 60)}
           className="rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-bold text-neutral-600 hover:border-neutral-400"
         >
-          Сбросить
+          {copy.reset}
         </button>
       </div>
     </div>

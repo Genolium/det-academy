@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AdBanner } from '@/components/layout/AdBanner';
 import { CookieConsent } from '@/components/ui/CookieConsent';
+import { SkipLink } from '@/components/layout/SkipLink';
 import { ServiceWorkerRegister } from '@/components/system/ServiceWorkerRegister';
 import { OfflineIndicator } from '@/components/system/OfflineIndicator';
 import { ErrorReporter } from '@/components/system/ErrorReporter';
@@ -36,11 +37,11 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/logo.svg', type: 'image/svg+xml' },
-      { url: '/logo.png', sizes: '1024x1024', type: 'image/png' },
+      { url: '/det-owl-v2.svg', type: 'image/svg+xml' },
+      { url: '/det-icon-v2-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: '/logo.svg',
-    apple: '/apple-touch-icon.png',
+    shortcut: '/det-owl-v2.svg',
+    apple: '/det-apple-icon-v2.png',
   },
 };
 
@@ -56,9 +57,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-[#D2F544] focus:px-4 focus:py-2 focus:text-sm focus:font-black focus:text-[#0C2418]">
-          Перейти к основному содержимому
-        </a>
+        <SkipLink />
         <AdBanner placement="HEADER" />
         <Navbar />
         <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>

@@ -22,6 +22,7 @@ import {
   FileCheck2,
   ShieldCheck,
   ChevronRight,
+  ArrowRight,
   Sparkles,
   UserCheck,
 } from 'lucide-react';
@@ -48,6 +49,8 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           categoryLabelRu: dLesson.category_label_ru,
           categoryLabelEn: dLesson.category_label_en,
           format: dLesson.format,
+          formatEn: staticLesson?.formatEn,
+          timeLimitEn: staticLesson?.timeLimitEn,
           scoring: dLesson.scoring,
           timeLimit: dLesson.time_limit,
           mentorIntro: staticLesson?.mentorIntro,
@@ -57,6 +60,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           proTips: staticLesson?.proTips,
           examples: dLesson.examples,
           pitfalls: dLesson.pitfalls,
+          problemSolutions: staticLesson?.problemSolutions,
         });
       }
     }).catch(() => {});
@@ -76,6 +80,8 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
   const isCompleted = completedLessons.includes(lesson.slug);
   const title = locale === 'ru' ? lesson.titleRu : lesson.titleEn;
   const categoryLabel = locale === 'ru' ? lesson.categoryLabelRu : lesson.categoryLabelEn;
+  const format = locale === 'ru' ? lesson.format : (lesson.formatEn || lesson.format);
+  const timeLimit = locale === 'ru' ? lesson.timeLimit : (lesson.timeLimitEn || lesson.timeLimit);
 
   // Next and previous lesson links
   const currentIndex = lessonsData.findIndex((l) => l.slug === lesson.slug);
@@ -121,14 +127,14 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
               <span>{t.lessonPrefix.toUpperCase()} {lesson.number < 10 ? `0${lesson.number}` : lesson.number} / {lessonsData.length}</span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" /> {lesson.timeLimit}
+                <Clock className="w-3.5 h-3.5" /> {timeLimit}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white mb-4">
               {title}
             </h1>
             <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
-              {lesson.format}
+              {format}
             </p>
           </div>
 
@@ -197,6 +203,48 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                 <div className="bg-[#0C2418] text-[#D2F544] p-5 rounded-2xl font-mono text-sm leading-relaxed whitespace-pre-line shadow-inner">
                   {lesson.formula}
                 </div>
+              </BentoCard>
+            )}
+
+            {/* 3.05 Exam problem -> platform solution map */}
+            {lesson.problemSolutions && lesson.problemSolutions.length > 0 && (
+              <BentoCard variant="dark">
+                <div className="flex items-center gap-2.5 mb-1 text-white">
+                  <ShieldCheck className="w-5 h-5 text-[#D2F544]" />
+                  <h2 className="text-xl font-black uppercase tracking-tight">
+                    {locale === 'ru' ? 'Проблема экзамена → решение на платформе' : 'Exam problem → platform solution'}
+                  </h2>
+                </div>
+                <p className="text-xs text-neutral-400 mb-5">
+                  {locale === 'ru'
+                    ? 'Каждая строка ведёт в конкретный тренажёр.'
+                    : 'Each row opens the exact trainer.'}
+                </p>
+                <ul className="space-y-2">
+                  {lesson.problemSolutions.map((item, index) => {
+                    const content = (
+                      <>
+                        <span className="text-xs text-neutral-400 leading-relaxed">{item.problem}</span>
+                        <span className="mt-1 block text-sm font-bold text-white leading-snug">{item.solution}</span>
+                      </>
+                    );
+                    return (
+                      <li key={index} className="rounded-2xl border border-neutral-800 bg-neutral-900/70">
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            className="flex items-start justify-between gap-4 rounded-2xl p-4 transition-colors hover:border-[#D2F544]/50 hover:bg-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544]"
+                          >
+                            <span className="min-w-0">{content}</span>
+                            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#D2F544]" />
+                          </Link>
+                        ) : (
+                          <div className="p-4">{content}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
               </BentoCard>
             )}
 

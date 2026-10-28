@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import vocabData from '@/data/academicVocabulary.json';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import { getAuthCacheUserId, hasAuthSession } from '@/lib/auth-session';
 import { api, SRSStateResponse, SRSCardProgress } from '@/lib/api';
 import { flushSRSOutbox, submitOrQueueSRSReview } from '@/lib/srs-outbox';
@@ -24,6 +25,8 @@ interface SrsStorage {
 }
 
 export const SrsFlashcards: React.FC = () => {
+  const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
   const { user } = useAuthStore();
   const [queueMode, setQueueMode] = useState<'due' | 'new' | 'all'>('due');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -309,16 +312,16 @@ export const SrsFlashcards: React.FC = () => {
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#D2F544]/15 text-[#D2F544] border border-[#D2F544]/30 flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              Интервальное повторение (SuperMemo SM-2)
+              {ru ? 'Интервальное повторение (SuperMemo SM-2)' : 'Spaced repetition (SuperMemo SM-2)'}
             </span>
             <span className="text-neutral-500 text-xs">•</span>
-            <span className="text-xs text-neutral-400 font-medium">{vocabData.length} слов Academic Word List</span>
+            <span className="text-xs text-neutral-400 font-medium">{vocabData.length} {ru ? 'слов Academic Word List' : 'Academic Word List words'}</span>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            Академический словарь C1/C2
+            {ru ? 'Академический словарь C1/C2' : 'Academic vocabulary C1/C2'}
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Высокочастотные академические термины для максимального балла в секциях Writing и Speaking.
+            {ru ? 'Высокочастотные академические термины для максимального балла в секциях Writing и Speaking.' : 'High-frequency academic terms for a stronger Writing and Speaking score.'}
           </p>
         </div>
 
@@ -326,12 +329,12 @@ export const SrsFlashcards: React.FC = () => {
         <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
             <Flame className="w-4 h-4 fill-current text-amber-500" />
-            <span>{storage.streakDays} дн. ударный режим</span>
+            <span>{storage.streakDays} {ru ? 'дн. ударный режим' : 'day streak'}</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-bold">
             <Award className="w-4 h-4 text-[#D2F544]" />
-            <span>{storage.totalReviewed} повторений</span>
+            <span>{storage.totalReviewed} {ru ? 'повторений' : 'reviews'}</span>
           </div>
         </div>
       </div>
@@ -351,7 +354,7 @@ export const SrsFlashcards: React.FC = () => {
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <span>К повторению сегодня</span>
+            <span>{ru ? 'К повторению сегодня' : 'Due today'}</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
                 dueCards.length > 0
@@ -375,7 +378,7 @@ export const SrsFlashcards: React.FC = () => {
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <span>Новые слова</span>
+            <span>{ru ? 'Новые слова' : 'New words'}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-neutral-800 text-neutral-400">
               {newCards.length}
             </span>
@@ -393,7 +396,7 @@ export const SrsFlashcards: React.FC = () => {
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <span>Все карточки</span>
+            <span>{ru ? 'Все карточки' : 'All cards'}</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-neutral-800 text-neutral-400">
               {allCards.length}
             </span>
@@ -401,7 +404,7 @@ export const SrsFlashcards: React.FC = () => {
         </div>
 
         <div className="text-[11px] text-neutral-400 px-2 font-medium">
-          Освоено терминов: <strong className="text-[#D2F544]">{Object.values(storage.cards).filter((c) => c.repetitions >= 3).length}</strong>
+          {ru ? 'Освоено терминов' : 'Words mastered'}: <strong className="text-[#D2F544]">{Object.values(storage.cards).filter((c) => c.repetitions >= 3).length}</strong>
         </div>
       </div>
 
@@ -412,9 +415,9 @@ export const SrsFlashcards: React.FC = () => {
             <CheckCircle2 className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-white">Все карточки на сегодня повторены!</h3>
+            <h3 className="text-lg font-black text-white">{ru ? 'Все карточки на сегодня повторены!' : 'All cards for today are reviewed!'}</h3>
             <p className="text-xs text-neutral-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
-              Отличная работа по сохранению интервалов памяти. Следующие слова вернутся по графику SM-2.
+              {ru ? 'Отличная работа по сохранению интервалов памяти. Следующие слова вернутся по графику SM-2.' : 'Good work keeping the memory intervals. The next words return on the SM-2 schedule.'}
             </p>
           </div>
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
@@ -426,7 +429,7 @@ export const SrsFlashcards: React.FC = () => {
               }}
               className="px-4 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <span>Учить 15 новых слов</span>
+              <span>{ru ? 'Учить 15 новых слов' : 'Learn 15 new words'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
             <button
@@ -437,7 +440,7 @@ export const SrsFlashcards: React.FC = () => {
               }}
               className="px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all cursor-pointer"
             >
-              Просмотреть весь словарь
+              {ru ? 'Просмотреть весь словарь' : 'Browse the whole dictionary'}
             </button>
           </div>
         </div>
@@ -447,7 +450,7 @@ export const SrsFlashcards: React.FC = () => {
           {!isFlipped && (
             <div className="mb-4 rounded-2xl border border-neutral-800 bg-[#0E1012] p-4 space-y-2">
               <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
-                Recall check: выберите правильное определение
+                {ru ? 'Recall check: выберите правильное определение' : 'Recall check: choose the correct definition'}
               </p>
               {recallOptions.map((option, index) => {
                 const selected = recallChoice === option;
@@ -475,8 +478,8 @@ export const SrsFlashcards: React.FC = () => {
               {recallChecked && (
                 <p className="text-[11px] text-neutral-400">
                   {recallChoice === currentWord.definitionEn
-                    ? 'Верно. Теперь оцените, насколько легко вспомнили слово.'
-                    : 'Пока неверно. Посмотрите определение на карточке и повторите позже.'}
+                    ? (ru ? 'Верно. Теперь оцените, насколько легко вспомнили слово.' : 'Correct. Now rate how easily you recalled the word.')
+                    : (ru ? 'Пока неверно. Посмотрите определение на карточке и повторите позже.' : 'Not quite. Check the definition on the card and review it later.')}
                 </p>
               )}
             </div>
@@ -492,7 +495,7 @@ export const SrsFlashcards: React.FC = () => {
             {/* Card Top Meta */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                Уровень {currentWord.level}
+                {ru ? 'Уровень' : 'Level'} {currentWord.level}
               </span>
 
               <div className="flex items-center gap-2">
@@ -505,7 +508,7 @@ export const SrsFlashcards: React.FC = () => {
                   className={`p-2 rounded-xl border border-neutral-700 hover:border-[#D2F544] text-neutral-300 hover:text-white transition-all cursor-pointer ${
                     isSpeaking ? 'bg-[#D2F544] text-[#0C2418]' : 'bg-neutral-800/80'
                   }`}
-                  title="Произнести слово"
+                  title={ru ? 'Произнести слово' : 'Pronounce the word'}
                 >
                   <Volume2 className="w-4 h-4" />
                 </button>
@@ -522,18 +525,18 @@ export const SrsFlashcards: React.FC = () => {
                   <p className="text-sm font-mono text-neutral-400">{currentWord.ipa}</p>
                   <p className="text-xs text-neutral-400 pt-4 flex items-center justify-center gap-1.5">
                     <RotateCw className="w-3.5 h-3.5 text-[#D2F544]" />
-                    <span>Нажмите на карточку, чтобы перевернуть</span>
+                    <span>{ru ? 'Нажмите на карточку, чтобы перевернуть' : 'Tap the card to flip it'}</span>
                   </p>
                 </>
               ) : (
                 <div className="text-left space-y-3">
                   <div className="border-b border-neutral-800 pb-2">
-                    <span className="text-[10px] uppercase font-bold text-neutral-400">Перевод:</span>
+                    <span className="text-[10px] uppercase font-bold text-neutral-400">{ru ? 'Перевод:' : 'Meaning:'}</span>
                     <h4 className="text-xl font-black text-[#D2F544]">{currentWord.meaningRu}</h4>
                   </div>
 
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-neutral-400">Определение:</span>
+                    <span className="text-[10px] uppercase font-bold text-neutral-400">{ru ? 'Определение:' : 'Definition:'}</span>
                     <p className="text-xs text-neutral-300 leading-relaxed font-medium">
                       {currentWord.definitionEn}
                     </p>
@@ -560,9 +563,9 @@ export const SrsFlashcards: React.FC = () => {
             {/* Card Bottom: Progress Info */}
             <div className="flex items-center justify-between text-[11px] text-neutral-400 border-t border-neutral-800/60 pt-3">
               <span>
-                Карточка {currentIndex + 1} из {activeList.length}
+                {ru ? `Карточка ${currentIndex + 1} из ${activeList.length}` : `Card ${currentIndex + 1} of ${activeList.length}`}
               </span>
-              <span>Интервал памяти: ~{cardProgress.intervalDays} дн.</span>
+              <span>{ru ? <>Интервал памяти: ~{cardProgress.intervalDays} дн.</> : <>Memory interval: ~{cardProgress.intervalDays} d.</>}</span>
             </div>
           </div>
 
@@ -573,32 +576,32 @@ export const SrsFlashcards: React.FC = () => {
                 onClick={() => handleGrade(1)}
                 className="px-2 py-3 rounded-2xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
-                <div className="text-sm font-black">Снова</div>
-                <div className="text-[10px] text-rose-400/80">сброс</div>
+                <div className="text-sm font-black">{ru ? 'Снова' : 'Again'}</div>
+                <div className="text-[10px] text-rose-400/80">{ru ? 'сброс' : 'reset'}</div>
               </button>
 
               <button
                 onClick={() => handleGrade(3)}
                 className="px-2 py-3 rounded-2xl bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 text-amber-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
-                <div className="text-sm font-black">Трудно</div>
-                <div className="text-[10px] text-amber-400/80">короче</div>
+                <div className="text-sm font-black">{ru ? 'Трудно' : 'Hard'}</div>
+                <div className="text-[10px] text-amber-400/80">{ru ? 'короче' : 'shorter'}</div>
               </button>
 
               <button
                 onClick={() => handleGrade(4)}
                 className="px-2 py-3 rounded-2xl bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
-                <div className="text-sm font-black">Хорошо</div>
-                <div className="text-[10px] text-blue-400/80">стандарт</div>
+                <div className="text-sm font-black">{ru ? 'Хорошо' : 'Good'}</div>
+                <div className="text-[10px] text-blue-400/80">{ru ? 'стандарт' : 'standard'}</div>
               </button>
 
               <button
                 onClick={() => handleGrade(5)}
                 className="px-2 py-3 rounded-2xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 text-xs font-bold transition-all text-center cursor-pointer active:scale-95"
               >
-                <div className="text-sm font-black">Легко</div>
-                <div className="text-[10px] text-emerald-400/80">дольше</div>
+                <div className="text-sm font-black">{ru ? 'Легко' : 'Easy'}</div>
+                <div className="text-[10px] text-emerald-400/80">{ru ? 'дольше' : 'longer'}</div>
               </button>
             </div>
           )}

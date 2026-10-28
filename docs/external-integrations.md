@@ -299,8 +299,8 @@ cost and disk-abuse problem. The following guards are in place:
 
 - **Cache hits are unlimited and free.** The deploy pre-generates the whole
   dictation and vocabulary bank, so normal traffic never calls the provider.
-- **Paid synthesis is budgeted.** `TTS_NEW_PER_IP_PER_DAY` (default 20) and
-  `TTS_NEW_GLOBAL_PER_DAY` (default 500) cap new sentences per UTC day; the
+- **Paid synthesis is budgeted.** `TTS_NEW_PER_IP_PER_DAY` (default 200) and
+  `TTS_NEW_GLOBAL_PER_DAY` (default 2000) cap new sentences per UTC day; the
   response is `429` with `Retry-After`. Worst case is bounded to 500 × 600
   characters per day instead of unbounded spend.
 - **The client address cannot be rotated.** `X-Forwarded-For` is read from the

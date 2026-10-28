@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useErrorNotebookStore, ErrorItem } from '@/store/useErrorNotebookStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import {
   AlertCircle,
   CheckCircle2,
@@ -18,6 +19,8 @@ import Link from 'next/link';
 
 export const ErrorNotebookWidget: React.FC = () => {
   const { errors, recallError, removeError, clearAll } = useErrorNotebookStore();
+  const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
   const [filter, setFilter] = useState<'all' | 'unmastered' | 'mastered'>('unmastered');
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const [drillAnswer, setDrillAnswer] = useState<string>('');
@@ -82,20 +85,20 @@ export const ErrorNotebookWidget: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-bold text-white">Тетрадь ошибок</h2>
+              <h2 className="text-base sm:text-lg font-bold text-white">{ru ? 'Тетрадь ошибок' : 'Error notebook'}</h2>
               {activeCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  {activeCount} на доработку
+                  {activeCount} {ru ? 'на доработку' : 'to review'}
                 </span>
               )}
               {masteredCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {masteredCount} усвоено
+                  {masteredCount} {ru ? 'усвоено' : 'mastered'}
                 </span>
               )}
             </div>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Интервальное исправление: ошибка считается усвоенной только после 2 верных ответов подряд.
+              {ru ? 'Интервальное исправление: ошибка считается усвоенной только после 2 верных ответов подряд.' : 'Spaced correction: an error counts as mastered after two correct recalls in a row.'}
             </p>
           </div>
         </div>
@@ -110,7 +113,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              Активные ({activeCount})
+              {ru ? 'Активные' : 'Active'} ({activeCount})
             </button>
             <button
               onClick={() => setFilter('mastered')}
@@ -120,7 +123,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              Усвоенные ({masteredCount})
+              {ru ? 'Усвоенные' : 'Mastered'} ({masteredCount})
             </button>
             <button
               onClick={() => setFilter('all')}
@@ -130,14 +133,14 @@ export const ErrorNotebookWidget: React.FC = () => {
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              Все ({errors.length})
+              {ru ? 'Все' : 'All'} ({errors.length})
             </button>
           </div>
           {errors.length > 0 && (
             <button
               onClick={clearAll}
               className="p-2 text-neutral-500 hover:text-red-400 transition-colors rounded-lg hover:bg-neutral-900 cursor-pointer"
-              title="Очистить тетрадь"
+              title={ru ? 'Очистить тетрадь' : 'Clear the notebook'}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -152,12 +155,12 @@ export const ErrorNotebookWidget: React.FC = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-white">
-              {filter === 'mastered' ? 'Пока нет усвоенных ошибок' : 'Активных ошибок нет!'}
+              {filter === 'mastered' ? (ru ? 'Пока нет усвоенных ошибок' : 'No mastered errors yet') : (ru ? 'Активных ошибок нет!' : 'No active errors')}
             </p>
             <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
               {filter === 'mastered'
-                ? 'Решите активные ошибки 2 раза подряд, чтобы перевести их в статус усвоенных.'
-                : 'Все сложные моменты отработаны, либо вы еще не проходили практические тренировки.'}
+                ? (ru ? 'Решите активные ошибки 2 раза подряд, чтобы перевести их в статус усвоенных.' : 'Solve active errors twice in a row to mark them as mastered.')
+                : (ru ? 'Все сложные моменты отработаны, либо вы еще не проходили практические тренировки.' : 'Everything is reviewed, or you have not taken a practice drill yet.')}
             </p>
           </div>
           <div className="pt-1">
@@ -166,7 +169,7 @@ export const ErrorNotebookWidget: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-bold text-white transition-all cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5 text-[#D2F544]" />
-              <span>Перейти к тренажерам</span>
+              <span>{ru ? 'Перейти к тренажерам' : 'Open the drills'}</span>
             </Link>
           </div>
         </div>
@@ -190,7 +193,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                     <span className="text-amber-400 font-mono">{err.type}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-neutral-500">
-                        Попыток: {err.attemptsCount}
+                        {ru ? 'Попыток' : 'Attempts'}: {err.attemptsCount}
                       </span>
                       <span className="text-neutral-600">•</span>
                       <span className="text-neutral-500">
@@ -205,7 +208,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                   {!isDrilling && (
                     <div className="mt-2.5 space-y-1 text-xs">
                       <div className="flex items-center gap-1.5 text-red-400">
-                        <span className="text-neutral-500 text-[10px]">Ваш ответ:</span>
+                        <span className="text-neutral-500 text-[10px]">{ru ? 'Ваш ответ' : 'Your answer'}:</span>
                         <span className="font-mono bg-red-950/40 px-1.5 py-0.5 rounded border border-red-900/40">
                           {err.userAnswer || '—'}
                         </span>
@@ -224,10 +227,10 @@ export const ErrorNotebookWidget: React.FC = () => {
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-[#D2F544] font-bold flex items-center gap-1">
                           <Sparkles className="w-3 h-3" />
-                          Контрольный ввод по памяти
+                          {ru ? 'Контрольный ввод по памяти' : 'Recall from memory'}
                         </span>
                         <span className="text-neutral-400 text-[10px]">
-                          Прогресс: {err.consecutiveSuccesses}/2
+                          {ru ? 'Прогресс' : 'Progress'}: {err.consecutiveSuccesses}/2
                         </span>
                       </div>
 
@@ -239,7 +242,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleCheckDrill(err);
                           }}
-                          placeholder="Введите правильный ответ..."
+                          placeholder={ru ? 'Введите правильный ответ...' : 'Type the correct answer...'}
                           className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#D2F544]"
                           autoFocus
                         />
@@ -249,12 +252,12 @@ export const ErrorNotebookWidget: React.FC = () => {
                           className="px-3 py-1.5 bg-[#D2F544] hover:bg-[#c4f22c] disabled:opacity-40 text-[#0C2418] text-xs font-black rounded-lg transition-all cursor-pointer flex items-center gap-1"
                         >
                           <Check className="w-3 h-3" />
-                          <span>Проверить</span>
+                          <span>{ru ? 'Проверить' : 'Check'}</span>
                         </button>
                         <button
                           onClick={handleCancelDrill}
                           className="p-1.5 text-neutral-500 hover:text-white rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors"
-                          title="Отмена"
+                          title={ru ? 'Отмена' : 'Cancel'}
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -281,7 +284,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                     {err.mastered ? (
                       <span className="text-emerald-400 text-[11px] font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Усвоено (2/2)</span>
+                        <span>{ru ? 'Усвоено' : 'Mastered'} (2/2)</span>
                       </span>
                     ) : (
                       <div className="flex items-center gap-1.5">
@@ -298,7 +301,7 @@ export const ErrorNotebookWidget: React.FC = () => {
                           />
                         </div>
                         <span className="text-[10px] text-neutral-400 font-medium">
-                          {err.consecutiveSuccesses}/2 повторений
+                          {err.consecutiveSuccesses}/2 {ru ? 'повторений' : 'recalls'}
                         </span>
                       </div>
                     )}
@@ -311,13 +314,13 @@ export const ErrorNotebookWidget: React.FC = () => {
                         className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all"
                       >
                         <RotateCcw className="w-3 h-3 text-[#D2F544]" />
-                        <span>{err.mastered ? 'Повторить еще раз' : 'Отработать'}</span>
+                        <span>{err.mastered ? (ru ? 'Повторить еще раз' : 'Review again') : (ru ? 'Отработать' : 'Practise')}</span>
                       </button>
                     )}
                     <button
                       onClick={() => removeError(err.id)}
                       className="text-neutral-500 hover:text-red-400 p-1 cursor-pointer transition-colors"
-                      title="Удалить из тетради"
+                      title={ru ? 'Удалить из тетради' : 'Remove from the notebook'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

@@ -438,6 +438,8 @@ export interface Translations {
     lessons16: string;
     test105: string;
     nextStep: string;
+    scoreRangeLabel: string;
+    confidence: { low: string; medium: string; high: string };
     goToLesson: string;
     radarSubscores: string;
     radarSkills: string;
@@ -922,9 +924,11 @@ export const translations: Record<Locale, Translations> = {
       reportsTitle: 'Отчёты DET Academy',
       reportsHint: 'Сертификат существует только после выдачи сервером. Локальные баллы и прогресс теории не создают документ.',
       verifyById: 'Проверить отчёт по ID',
-      lessons16: '16 уроков',
+      lessons16: '17 уроков',
       test105: 'Тест 105+',
       nextStep: 'Рекомендуемый следующий шаг',
+      scoreRangeLabel: 'Прогноз:',
+      confidence: { low: 'низкая уверенность', medium: 'средняя уверенность', high: 'высокая уверенность' },
       goToLesson: 'Перейти к уроку',
       radarSubscores: 'Тренировочные сабскоры DET Academy',
       radarSkills: 'Четыре навыка (Reading, Listening, Writing, Speaking)',
@@ -1407,9 +1411,11 @@ export const translations: Record<Locale, Translations> = {
       reportsTitle: 'DET Academy reports',
       reportsHint: 'A report exists only after the server issues it. Local scores and theory progress do not create a document.',
       verifyById: 'Verify a report by ID',
-      lessons16: '16 lessons',
+      lessons16: '17 lessons',
       test105: 'Test 105+',
       nextStep: 'Recommended next step',
+      scoreRangeLabel: 'Estimate:',
+      confidence: { low: 'low confidence', medium: 'medium confidence', high: 'high confidence' },
       goToLesson: 'Open lesson',
       radarSubscores: 'DET Academy training subscores',
       radarSkills: 'Four skills (Reading, Listening, Writing, Speaking)',

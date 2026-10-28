@@ -179,3 +179,11 @@ func TestClientIPUsesLastForwardedHop(t *testing.T) {
 		t.Fatalf("clientIP fallback = %q", got)
 	}
 }
+
+func TestClientIPCanonicalisesEquivalentIPv6(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Forwarded-For", "2001:0db8:0:0:0:0:0:1")
+	if got := clientIP(req); got != "2001:db8::1" {
+		t.Fatalf("clientIP = %q, want canonical IPv6", got)
+	}
+}

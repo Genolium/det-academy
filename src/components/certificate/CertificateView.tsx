@@ -83,7 +83,7 @@ export const CertificateView: React.FC<CertificateViewProps> = ({ data }) => {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-2 shadow-lg shrink-0">
               <Image
-                src="/logo.svg"
+                src="/det-owl-v2.svg"
                 alt="DET Academy"
                 width={52}
                 height={52}

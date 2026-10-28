@@ -28,8 +28,8 @@ export const Footer: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-1.5 shadow-sm shrink-0">
                 <Image
-                  src="/logo.svg"
-                  alt="DET Academy"
+                  src="/det-owl-v2.svg"
+                  alt=""
                   width={28}
                   height={28}
                   className="w-full h-full object-contain"

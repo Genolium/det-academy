@@ -15,6 +15,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { localizeCountry } from '@/lib/countryNames';
 
 interface DuolingoInstitution {
   id: string;
@@ -50,6 +52,10 @@ function getVerifiedMinScore(inst: { minScore?: number } | null | undefined): nu
 
 export const DuolingoRegistry: React.FC = () => {
   const { getBestMockScore, testResults } = useProgressStore();
+  const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
+  const t = (ruText: string, enText: string) => (ru ? ruText : enText);
+  const numberLocale = ru ? 'ru-RU' : 'en-US';
   const bestScore = getBestMockScore();
 
   const [institutions, setInstitutions] = useState<DuolingoInstitution[]>([]);
@@ -74,7 +80,7 @@ export const DuolingoRegistry: React.FC = () => {
       })
       .catch(() => {
         if (!active) return;
-        setLoadError('Не удалось загрузить реестр вузов.');
+        setLoadError(t('Не удалось загрузить реестр вузов.', 'Could not load the university registry.'));
         setIsLoading(false);
       });
     return () => {
@@ -143,7 +149,7 @@ export const DuolingoRegistry: React.FC = () => {
     return (
       <div className="bg-white rounded-3xl p-10 border border-neutral-200 shadow-sm text-center">
         <div className="w-7 h-7 border-2 border-neutral-300 border-t-[#0E1012] rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-sm font-semibold text-neutral-600">Загрузка реестра вузов...</p>
+        <p className="text-sm font-semibold text-neutral-600">{t('Загрузка реестра вузов...', 'Loading the university registry...')}</p>
       </div>
     );
   }
@@ -165,7 +171,10 @@ export const DuolingoRegistry: React.FC = () => {
             <Search className="w-5 h-5 text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Поиск по названию университета, штату или стране (например, MIT, Stanford, Harvard, Toronto)..."
+              placeholder={t(
+                'Поиск по названию университета, штату или стране (например, MIT, Stanford, Harvard, Toronto)...',
+                'Search by university, state or country (e.g. MIT, Stanford, Harvard, Toronto)...'
+              )}
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#D2F544] focus:bg-white transition-all text-[#0E1012] placeholder-neutral-400 font-medium"
@@ -175,30 +184,30 @@ export const DuolingoRegistry: React.FC = () => {
           <div className="flex flex-wrap sm:flex-nowrap gap-3">
             {/* Country Selector */}
             <select
-              aria-label="Страна"
+              aria-label={t('Страна', 'Country')}
               value={selectedCountry}
               onChange={(e) => handleCountryChange(e.target.value)}
               className="w-full sm:w-auto max-w-full px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
             >
-              <option value="All">🌍 Все страны ({institutions.length})</option>
+              <option value="All">🌍 {t('Все страны', 'All countries')} ({institutions.length})</option>
               {countries.map(({ country, count }) => (
                 <option key={country} value={country}>
-                  {country} ({count})
+                  {localizeCountry(country, locale)} ({count})
                 </option>
               ))}
             </select>
 
             {/* Level Filter */}
             <select
-              aria-label="Тип программы"
+              aria-label={t('Тип программы', 'Programme type')}
               value={selectedType}
               onChange={(e) => handleTypeChange(e.target.value)}
               className="w-full sm:w-auto max-w-full px-4 py-3 bg-neutral-50 rounded-2xl border border-neutral-200 text-sm font-semibold text-[#0E1012] focus:outline-none focus:ring-2 focus:ring-[#D2F544] cursor-pointer"
             >
-              <option value="ALL">🎓 Все программы</option>
-              <option value="UNDERGRADUATE">Бакалавриат (Undergraduate)</option>
-              <option value="GRADUATE">Магистратура & PhD (Graduate)</option>
-              <option value="OTHER">Подготовительные / Курсы</option>
+              <option value="ALL">🎓 {t('Все программы', 'All programmes')}</option>
+              <option value="UNDERGRADUATE">{t('Бакалавриат (Undergraduate)', 'Undergraduate')}</option>
+              <option value="GRADUATE">{t('Магистратура & PhD (Graduate)', 'Graduate & PhD')}</option>
+              <option value="OTHER">{t('Подготовительные / Курсы', 'Preparatory / Courses')}</option>
             </select>
           </div>
         </div>
@@ -208,25 +217,31 @@ export const DuolingoRegistry: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <div
               className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-neutral-100 text-neutral-500 cursor-not-allowed"
-              title="В реестре пока нет подтверждённых требований по баллам"
+              title={t(
+                'В реестре пока нет подтверждённых требований по баллам',
+                'The registry has no confirmed score requirements yet'
+              )}
             >
               <Target className="w-3.5 h-3.5" />
-              <span>Требования вузов пока не подтверждены</span>
+              <span>{t('Требования вузов пока не подтверждены', 'University requirements are not confirmed yet')}</span>
             </div>
 
             {bestScore > 0 ? (
               <span className="text-xs text-neutral-500">
-                Ваш текущий результат: <strong className="text-emerald-700">{bestScore} / 160</strong>
+                {t('Ваш текущий результат:', 'Your current score:')} <strong className="text-emerald-700">{bestScore} / 160</strong>
               </span>
             ) : (
               <span className="text-xs text-neutral-400 italic">
-                (Тест еще не пройден — отображаются ориентировочные пороги)
+                {t(
+                  '(Тест еще не пройден — отображаются ориентировочные пороги)',
+                  '(No test completed yet — reference thresholds are shown)'
+                )}
               </span>
             )}
           </div>
 
           <div className="text-xs text-neutral-500">
-            Найдено вузов: <strong className="text-[#0E1012]">{filtered.length.toLocaleString('ru-RU')}</strong> из {institutions.length.toLocaleString('ru-RU')}
+            {t('Найдено вузов:', 'Universities found:')} <strong className="text-[#0E1012]">{filtered.length.toLocaleString(numberLocale)}</strong> {t('из', 'of')} {institutions.length.toLocaleString(numberLocale)}
           </div>
         </div>
       </div>
@@ -247,13 +262,13 @@ export const DuolingoRegistry: React.FC = () => {
                 <div className="flex items-start justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">
                     <Globe className="w-3 h-3 text-neutral-400" />
-                    {inst.country}
+                    {localizeCountry(inst.country, locale)}
                     {inst.state && ` • ${inst.state}`}
                   </span>
                   {inst.fulfillsRequirement && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      Официально DET
+                      {t('Официально DET', 'Official DET')}
                     </span>
                   )}
                 </div>
@@ -267,24 +282,24 @@ export const DuolingoRegistry: React.FC = () => {
                 {/* Score Requirement & Eligibility Pill */}
                 <div className="p-2.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-neutral-500 text-[11px] block">Проходной балл:</span>
+                    <span className="text-neutral-500 text-[11px] block">{t('Проходной балл:', 'Required score:')}</span>
                     <strong className="text-[#0E1012] font-black">
-                      {reqScore ? `${reqScore}+ DET` : 'Уточняется в вузе'}
+                      {reqScore ? `${reqScore}+ DET` : t('Уточняется в вузе', 'To be confirmed')}
                     </strong>
                   </div>
                   {reqScore && bestScore > 0 ? (
                     isEligible ? (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Вы проходите (+{bestScore - reqScore})
+                        {t('Вы проходите', 'You meet it')} (+{bestScore - reqScore})
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                        Нужно еще {scoreGap} б.
+                        {t('Нужно еще', 'Need')} {scoreGap} {t('б.', 'pts')}
                       </span>
                     )
                   ) : (
                     <span className="text-[10px] text-neutral-400">
-                      {inst.fulfillsRequirement ? 'Принимает DET' : 'Требования уточняются'}
+                      {inst.fulfillsRequirement ? t('Принимает DET', 'Accepts DET') : t('Требования уточняются', 'Requirements pending')}
                     </span>
                   )}
                 </div>
@@ -301,7 +316,7 @@ export const DuolingoRegistry: React.FC = () => {
                   ))}
                   {inst.programsCount > 1 && (
                     <span className="text-[10px] font-semibold text-neutral-400 px-1 py-0.5">
-                      +{inst.programsCount} программ
+                      +{inst.programsCount} {t('программ', 'programmes')}
                     </span>
                   )}
                 </div>
@@ -319,10 +334,10 @@ export const DuolingoRegistry: React.FC = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-bold text-[#0E1012] hover:text-emerald-600 transition-colors"
                   >
-                    Требования вуза <ExternalLink className="w-3.5 h-3.5" />
+                    {t('Требования вуза', 'University requirements')} <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 ) : (
-                  <span className="text-xs text-neutral-400">Ссылка в профиле</span>
+                  <span className="text-xs text-neutral-400">{t('Ссылка в профиле', 'Link on the profile')}</span>
                 )}
               </div>
             </div>
@@ -334,7 +349,7 @@ export const DuolingoRegistry: React.FC = () => {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-6">
           <button
-            aria-label="Предыдущая страница"
+            aria-label={t('Предыдущая страница', 'Previous page')}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="p-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
@@ -347,7 +362,7 @@ export const DuolingoRegistry: React.FC = () => {
           </span>
 
           <button
-            aria-label="Следующая страница"
+            aria-label={t('Следующая страница', 'Next page')}
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             className="p-2.5 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"

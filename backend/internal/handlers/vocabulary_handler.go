@@ -5,6 +5,7 @@ import (
 	"det-academy-backend/internal/service"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -18,10 +19,15 @@ func NewVocabularyHandler(service *service.VocabularyService) *VocabularyHandler
 }
 
 func (h *VocabularyHandler) List(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	entries, total, err := h.service.List(
 		r.Context(),
 		r.URL.Query().Get("search"),
 		r.URL.Query().Get("level"),
+		r.URL.Query().Get("source"),
+		limit,
+		offset,
 	)
 	if err != nil {
 		RespondError(w, http.StatusInternalServerError, "failed to load vocabulary")

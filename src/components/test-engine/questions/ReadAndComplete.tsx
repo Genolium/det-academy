@@ -13,12 +13,20 @@ interface ReadAndCompleteProps {
   onComplete: () => void;
 }
 
+interface CTestSegment {
+  text?: string;
+  prefix?: string;
+  missingLength?: number;
+  blankIndex?: number;
+}
+
 interface ServerCTest {
   id: string;
   title: string;
   firstSentence: string;
   lastSentence: string;
   tokens: { prefix: string; missingLength: number }[];
+  segments: CTestSegment[];
   timeLimitSec: number;
 }
 
@@ -35,16 +43,29 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
       firstSentence?: string;
       lastSentence?: string;
       damagedTokens?: Array<{ prefix?: string; missingLength?: number }>;
+      segments?: Array<{ text?: string; prefix?: string; missingLength?: number }>;
     };
+    const tokens = (payload.damagedTokens || []).map((token) => ({
+      prefix: token.prefix || '',
+      missingLength: Math.max(1, Number(token.missingLength || 1)),
+    }));
+    let blankIndex = -1;
+    const segments: CTestSegment[] = (payload.segments || []).map((segment) => {
+      if (typeof segment.text === 'string') return { text: segment.text };
+      blankIndex += 1;
+      return {
+        prefix: segment.prefix || '',
+        missingLength: Math.max(1, Number(segment.missingLength || 1)),
+        blankIndex,
+      };
+    });
     return {
       id: question.id,
       title: payload.title || 'Read and Complete',
       firstSentence: payload.firstSentence || '',
       lastSentence: payload.lastSentence || '',
-      tokens: (payload.damagedTokens || []).map((token) => ({
-        prefix: token.prefix || '',
-        missingLength: Math.max(1, Number(token.missingLength || 1)),
-      })),
+      tokens,
+      segments: segments.length > 0 ? segments : [],
       timeLimitSec: question.timeLimitSec || 180,
     };
   }, [serverQuestions]);
@@ -125,6 +146,29 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
   const seconds = timeLeft % 60;
   const limit = cTestItem.timeLimitSec || 180;
 
+  const renderBlank = (token: { prefix: string; missingLength: number }, idx: number) => (
+    <span className="inline-block whitespace-nowrap mx-1 align-baseline">
+      <span className="font-semibold text-neutral-300">{token.prefix}</span>
+      <input
+        ref={(el) => {
+          inputRefs.current[idx] = el;
+        }}
+        type="text"
+        maxLength={token.missingLength}
+        value={inputs[idx]}
+        onChange={(e) => handleInputChange(idx, e.target.value)}
+        aria-label={`Blank ${idx + 1} of ${cTestItem?.tokens.length || 0}`}
+        autoCorrect="off"
+        autoCapitalize="none"
+        autoComplete="off"
+        spellCheck={false}
+        inputMode="text"
+        className="bg-neutral-900 border-b-2 border-[#D2F544] text-[#D2F544] font-bold px-1 py-0.5 text-center outline-none font-mono tracking-widest text-base"
+        style={{ width: `${Math.max(32, token.missingLength * 16)}px` }}
+      />
+    </span>
+  );
+
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
@@ -149,33 +193,30 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
         <h3 className="text-xl font-black uppercase text-[#D2F544] mb-6">{cTestItem.title}</h3>
 
         <div className="text-lg leading-loose text-neutral-200">
-          <p className="mb-4">{cTestItem.firstSentence}</p>
-
-          <p className="inline">
-            {cTestItem.tokens.map((token, idx) => (
-              <span key={idx} className="inline-block whitespace-nowrap mx-1">
-                <span className="font-semibold text-neutral-300">{token.prefix}</span>
-                <input
-                  ref={(el) => {
-                    inputRefs.current[idx] = el;
-                  }}
-                  type="text"
-                  maxLength={token.missingLength}
-                  value={inputs[idx]}
-                  onChange={(e) => handleInputChange(idx, e.target.value)}
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  autoComplete="off"
-                  spellCheck={false}
-                  inputMode="text"
-                  className="bg-neutral-900 border-b-2 border-[#D2F544] text-[#D2F544] font-bold px-1 py-0.5 text-center outline-none font-mono tracking-widest text-base"
-                  style={{ width: `${Math.max(32, token.missingLength * 16)}px` }}
-                />
-              </span>
-            ))}
-          </p>
-
-          {cTestItem.lastSentence && <p className="mt-4">{cTestItem.lastSentence}</p>}
+          {cTestItem.segments.length > 0 ? (
+            <p className="whitespace-pre-wrap">
+              {cTestItem.segments.map((segment, index) =>
+                typeof segment.text === 'string' ? (
+                  <span key={index}>{segment.text}</span>
+                ) : (
+                  <span key={index}>{renderBlank(
+                    { prefix: segment.prefix || '', missingLength: segment.missingLength || 1 },
+                    segment.blankIndex ?? 0
+                  )}</span>
+                )
+              )}
+            </p>
+          ) : (
+            <>
+              <p className="mb-4">{cTestItem.firstSentence}</p>
+              <p className="inline">
+                {cTestItem.tokens.map((token, idx) => (
+                  <span key={idx}>{renderBlank(token, idx)}</span>
+                ))}
+              </p>
+              {cTestItem.lastSentence && <p className="mt-4">{cTestItem.lastSentence}</p>}
+            </>
+          )}
         </div>
       </div>
 

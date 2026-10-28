@@ -36,12 +36,13 @@ func verificationHTML(link string) string {
 type LogSender struct{}
 
 func (LogSender) Send(_ context.Context, msg Message) error {
-	log.Printf("[email] %s to %s: %s", msg.Subject, msg.To, msg.HTML)
+	log.Printf("[email] %s (%d bytes)", msg.Subject, len(msg.HTML))
 	return nil
 }
 
 func (l LogSender) SendVerification(ctx context.Context, to, link string) error {
-	log.Printf("[email] verification link for %s: %s", to, link)
+	// Never log the verification link or the address: the link is a bearer
+	// token for the account and mail logs are routinely shipped off-host.
 	return l.Send(ctx, Message{To: to, Subject: "Подтвердите email в DET Academy", HTML: verificationHTML(link)})
 }
 

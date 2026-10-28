@@ -21,6 +21,13 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: allowedWebSocketOrigin,
 }
 
+const (
+	arenaReadLimit  = 16 << 10
+	arenaPongWait   = 70 * time.Second
+	arenaPingPeriod = 30 * time.Second
+	arenaWriteWait  = 10 * time.Second
+)
+
 func allowedWebSocketOrigin(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
@@ -530,6 +537,11 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	conn.SetReadLimit(arenaReadLimit)
+	_ = conn.SetReadDeadline(time.Now().Add(arenaPongWait))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(arenaPongWait))
+	})
 
 	client := &ArenaClient{
 		ID:   userID,
@@ -545,15 +557,24 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Writer pump
+	// Writer pump: a bounded write deadline plus a ping keeps half-open
+	// connections from pinning a goroutine and a file descriptor forever.
 	go func() {
+		ticker := time.NewTicker(arenaPingPeriod)
 		defer func() {
+			ticker.Stop()
 			_ = conn.Close()
 		}()
 		for {
 			select {
 			case message := <-client.Send:
+				_ = conn.SetWriteDeadline(time.Now().Add(arenaWriteWait))
 				if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+					return
+				}
+			case <-ticker.C:
+				_ = conn.SetWriteDeadline(time.Now().Add(arenaWriteWait))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 					return
 				}
 			case <-client.Done:
@@ -573,6 +594,7 @@ func (h *ArenaHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			break
 		}
+		_ = conn.SetReadDeadline(time.Now().Add(arenaPongWait))
 
 		var msg ArenaMessage
 		if err := json.Unmarshal(message, &msg); err != nil {

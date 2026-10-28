@@ -18,11 +18,15 @@ const includeWords = process.argv.includes('--words');
 
 const texts = new Set();
 
-for (const seed of ['backend/db/07-theory-content.sql', 'backend/db/08-productive-bank.sql']) {
+for (const seed of ['backend/db/07-theory-content.sql', 'backend/db/08-productive-bank.sql', 'backend/db/09-interactive-bank.sql']) {
   const file = path.join(root, seed);
   if (!fs.existsSync(file)) continue;
   const content = fs.readFileSync(file, 'utf8');
   for (const match of content.matchAll(/"audioSentence"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+    texts.add(JSON.parse(`"${match[1]}"`));
+  }
+  // Interactive listening turns are spoken through the same cached voice.
+  for (const match of content.matchAll(/"speakerAudioText"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
     texts.add(JSON.parse(`"${match[1]}"`));
   }
 }

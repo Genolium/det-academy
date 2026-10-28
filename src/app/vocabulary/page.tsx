@@ -1,117 +1,139 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { readSelectBank, fillBlanksBank } from '@/data/questionBank';
-import { theoryWords, theoryVocabularyMeta } from '@/data/theoryVocabulary';
 import { api, VocabularyEntry } from '@/lib/api';
-import { BookOpen, Search, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
+import { ArrowRight, BookOpen, Search, Sparkles } from 'lucide-react';
 import { PronounceButton } from '@/components/vocabulary/PronounceButton';
+import { vocabularyCopy } from '@/lib/vocabularyCopy';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
-const levels = ['ALL', 'B1', 'B2', 'C1', 'C2'] as const;
+const levels = ['ALL', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+const sources = ['all', 'awl', 'course', 'b1'] as const;
+const PAGE_SIZE = 48;
+
+type Tab = 'dictionary' | 'read-select' | 'fill-blanks';
+
+const levelBadge = (level: string) => {
+  switch (level) {
+    case 'C2':
+    case 'C1':
+      return 'bg-purple-50 text-purple-700 border-purple-200';
+    case 'B2':
+      return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'B1':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    default:
+      return 'bg-neutral-100 text-neutral-600 border-neutral-200';
+  }
+};
 
 export default function VocabularyPage() {
+  const { locale } = useSettingsStore();
+  const copy = vocabularyCopy[locale];
+  const [tab, setTab] = useState<Tab>('dictionary');
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState<(typeof levels)[number]>('ALL');
-  const [tab, setTab] = useState<'awl' | 'theory' | 'read-select' | 'fill-blanks'>('theory');
-  const [theoryQuery, setTheoryQuery] = useState('');
+  const [source, setSource] = useState<(typeof sources)[number][0]>('all');
+
   const [entries, setEntries] = useState<VocabularyEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (tab !== 'awl') return;
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
-    const timer = setTimeout(() => {
-      api
-        .getVocabulary({ search: query.trim(), level })
-        .then((response) => {
-          if (cancelled) return;
-          setEntries(response.entries || []);
-          setTotal(response.total || 0);
-        })
-        .catch((error: unknown) => {
-          if (cancelled) return;
-          setEntries([]);
-          setLoadError(
-            error instanceof Error ? error.message : 'Не удалось загрузить опубликованный словарь'
-          );
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
+  const fetchPage = useCallback(
+    async (offset: number, append: boolean) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      setLoadError(null);
+      try {
+        const response = await api.getVocabulary({
+          search: query.trim(),
+          level,
+          source,
+          limit: PAGE_SIZE,
+          offset,
         });
+        setEntries((current) => (append ? [...current, ...response.entries] : response.entries));
+        setTotal(response.total);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : vocabularyCopy[locale].error);
+        if (!append) {
+          setEntries([]);
+          setTotal(0);
+        }
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [query, level, source]
+  );
+
+  useEffect(() => {
+    if (tab !== 'dictionary') return;
+    const timer = setTimeout(() => {
+      void fetchPage(0, false);
     }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [query, level, tab]);
+    return () => clearTimeout(timer);
+  }, [fetchPage, tab]);
 
   const readSelectWords = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return readSelectBank.filter((word) =>
-      normalized ? word.word.toLowerCase().includes(normalized) : true
-    );
+    const needle = query.trim().toLowerCase();
+    return [...readSelectBank]
+      .filter((word) => (needle ? word.word.toLowerCase().includes(needle) : true))
+      .sort((a, b) => a.word.localeCompare(b.word));
   }, [query]);
 
   const fillWords = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return fillBlanksBank.filter((item) =>
-      normalized ? item.fullWord.toLowerCase().includes(normalized) : true
-    );
+    const needle = query.trim().toLowerCase();
+    return [...fillBlanksBank]
+      .filter((item) => (needle ? item.fullWord.toLowerCase().includes(needle) : true))
+      .sort((a, b) => a.fullWord.localeCompare(b.fullWord));
   }, [query]);
 
-  const filteredTheoryWords = useMemo(() => {
-    const query = theoryQuery.trim().toLowerCase();
-    const list = query
-      ? theoryWords.filter((word) => word.toLowerCase().includes(query))
-      : theoryWords;
-    // Cap the DOM: the source list has more than a thousand words.
-    return list.slice(0, 600);
-  }, [theoryQuery]);
+  const hint =
+    source === 'awl' && level === 'B1'
+      ? copy.b1Hint
+      : null;
 
   return (
     <div className="min-h-screen py-12 ambient-glow">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#D2F544]/20 border border-[#D2F544]/40 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#0C2418] mb-4">
-            <BookOpen className="w-4 h-4" /> Открытый словарь
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto mb-10 max-w-3xl text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/20 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-[#0C2418]">
+            <BookOpen className="h-4 w-4" /> {copy.badge}
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#0E1012] tracking-tight mb-4">
-            Слова, которые встречаются в DET
+          <h1 className="mb-4 text-3xl font-black tracking-tight text-[#0E1012] sm:text-5xl">
+            {copy.title}
           </h1>
-          <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-            Academic Word List, ловушки Read & Select и слова из Fill in the Blanks. Не обещание
-            «точного списка DET», а прозрачный набор лексики из тренировок платформы.
-          </p>
+          <p className="text-sm leading-relaxed text-neutral-600 sm:text-base">{copy.subtitle}</p>
         </div>
 
-        <div className="bg-white/80 border border-neutral-200 rounded-3xl p-4 sm:p-5 shadow-sm mb-8 space-y-4">
+        <div className="mb-8 space-y-4 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-sm sm:p-5">
           <div className="relative">
-            <Search className="w-5 h-5 text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Найти слово, перевод или определение..."
+              placeholder={copy.search}
               autoCorrect="off"
               autoCapitalize="none"
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-2xl border border-neutral-200 bg-white pl-12 pr-4 py-3 text-base text-neutral-900 outline-none focus:border-[#0C2418]"
+              className="w-full rounded-2xl border border-neutral-200 bg-white py-3 pl-12 pr-4 text-base text-neutral-900 outline-none focus:border-[#0C2418]"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-1 rounded-xl bg-neutral-100 p-1 max-w-full">
+            <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl bg-neutral-100 p-1">
               {(
                 [
-                  ['theory', `Слова из программы (${theoryVocabularyMeta.count})`],
-                  ['awl', total > 0 ? `Academic Word List (${total})` : 'Academic Word List'],
-                  ['read-select', `Read & Select (${readSelectBank.length})`],
-                  ['fill-blanks', `Fill in the Blanks (${fillBlanksBank.length})`],
+                  ['dictionary', `${copy.tabs.dictionary} (${total || '…'})`],
+                  ['read-select', `${copy.tabs.readSelect} (${readSelectBank.length})`],
+                  ['fill-blanks', `${copy.tabs.fillBlanks} (${fillBlanksBank.length})`],
                 ] as const
               ).map(([key, label]) => (
                 <button
@@ -126,57 +148,8 @@ export default function VocabularyPage() {
               ))}
             </div>
 
-            {tab === 'theory' && (
-          <section aria-labelledby="theory-words-title" className="space-y-4">
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h2 id="theory-words-title" className="text-lg font-black text-[#0E1012]">
-                    Слова из программы
-                  </h2>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    {theoryVocabularyMeta.count} слов из материалов курса. Нажмите на динамик рядом со словом,
-                    чтобы услышать произношение — транскрипция подскажет звуки, но на слух быстрее.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={theoryQuery}
-                    onChange={(event) => setTheoryQuery(event.target.value)}
-                    placeholder="Поиск по слову..."
-                    aria-label="Поиск по словам из программы"
-                    className="w-full sm:w-56 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-[#0E1012] focus:outline-none focus:border-neutral-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {filteredTheoryWords.map((word) => (
-                <span
-                  key={word}
-                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white pl-3.5 pr-1.5 py-1 text-sm font-semibold text-[#0E1012] shadow-sm"
-                >
-                  {word}
-                  <PronounceButton word={word} size="sm" />
-                </span>
-              ))}
-            </div>
-
-            {filteredTheoryWords.length === 0 && (
-              <p className="text-sm text-neutral-500">По запросу «{theoryQuery}» ничего не найдено.</p>
-            )}
-            {theoryQuery === '' && filteredTheoryWords.length < theoryVocabularyMeta.count && (
-              <p className="text-[11px] text-neutral-400">
-                Показаны первые {filteredTheoryWords.length} слов — уточните поиск, чтобы найти остальные.
-              </p>
-            )}
-          </section>
-        )}
-
-        {tab === 'awl' && (
-              <div className="flex items-center gap-1">
+            {tab === 'dictionary' && (
+              <div className="flex flex-wrap items-center gap-1">
                 {levels.map((item) => (
                   <button
                     key={item}
@@ -187,142 +160,183 @@ export default function VocabularyPage() {
                         : 'bg-neutral-100 text-neutral-500 hover:text-neutral-900'
                     }`}
                   >
-                    {item === 'ALL' ? 'Все уровни' : item}
+                    {item === 'ALL' ? copy.levels.all : item}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {tab === 'dictionary' && (
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-neutral-100 pt-3">
+              <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400">{copy.sourceLabel}</span>
+              {sources.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setSource(key)}
+                  className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                    source === key
+                      ? 'border-[#0C2418] bg-[#0C2418] text-white'
+                      : 'border-neutral-200 text-neutral-500 hover:border-neutral-400 hover:text-neutral-900'
+                  }`}
+                >
+                  {copy.sources[key]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {tab === 'awl' && (
-          <>
-            {loading && (
-              <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
-                Загружаем опубликованный словарь...
-              </div>
+        {tab === 'dictionary' && (
+          <section aria-label={copy.tabs.dictionary}>
+            {hint && (
+              <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+                {hint}
+              </p>
             )}
-            {loadError && (
-              <div className="rounded-3xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-800">
-                {loadError}. Показать локальную копию нельзя: словарь должен приходить из
-                опубликованного серверного набора.
+
+            {loading ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="h-44 animate-pulse rounded-3xl border border-neutral-200 bg-white" />
+                ))}
               </div>
-            )}
-            {!loading && !loadError && entries.length === 0 && (
-              <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
-                По запросу ничего не найдено.
+            ) : loadError ? (
+              <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+                {loadError}
               </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {entries.map((entry) => (
-              <article
-                key={entry.id}
-                className="bg-white border border-neutral-200 rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-black text-[#0E1012]">{entry.word}</h2>
-                      <PronounceButton word={entry.word} size="sm" />
-                    </div>
-                    <p className="text-xs text-neutral-500 font-mono">
-                      {entry.ipa} {entry.pos ? `· ${entry.pos}` : ''}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[#D2F544]/30 border border-[#D2F544]/60 px-2.5 py-0.5 text-[10px] font-black text-[#0C2418]">
-                    {entry.level || '—'}
-                  </span>
+            ) : entries.length === 0 ? (
+              <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center">
+                <p className="text-sm text-neutral-500">{copy.emptyTitle}</p>
+                <p className="mt-2 text-xs text-neutral-400">
+                  {copy.emptyHint}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {entries.map((entry) => (
+                    <article
+                      key={entry.id}
+                      className="flex flex-col gap-3 rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-xl font-black tracking-tight text-[#0E1012]">{entry.word}</h2>
+                          <p className="mt-0.5 text-[11px] text-neutral-500">
+                            {entry.ipa || '—'} {entry.pos ? `· ${entry.pos}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${levelBadge(entry.level)}`}>
+                            {entry.level}
+                          </span>
+                          <PronounceButton word={entry.word} size="sm" />
+                        </div>
+                      </div>
+
+                      <p className="text-sm font-semibold leading-snug text-[#0E1012]">
+                        {locale === 'ru' ? entry.meaningRu : entry.definitionEn}
+                      </p>
+                      {locale === 'ru' && (
+                        <p className="text-xs leading-relaxed text-neutral-600">{entry.definitionEn}</p>
+                      )}
+                      {entry.example && (
+                        <p className="border-l-2 border-[#D2F544] pl-3 text-xs italic leading-relaxed text-neutral-500">
+                          {entry.example}
+                        </p>
+                      )}
+                      {entry.collocations && entry.collocations.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {entry.collocations.map((collocation) => (
+                            <span key={collocation} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-600">
+                              {collocation}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  ))}
                 </div>
-                <p className="mt-3 text-sm text-neutral-800">{entry.meaningRu}</p>
-                <p className="mt-1 text-xs text-neutral-500 leading-relaxed">{entry.definitionEn}</p>
-                {entry.example && (
-                  <p className="mt-3 rounded-xl bg-neutral-50 border border-neutral-100 p-3 text-xs italic text-neutral-700">
-                    {entry.example}
+
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  <p className="text-[11px] text-neutral-400">
+                    {copy.shown(entries.length, total)}
                   </p>
-                )}
-                {entry.collocations && entry.collocations.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {entry.collocations.map((collocation) => (
-                      <span
-                        key={collocation}
-                        className="rounded-full bg-neutral-100 px-2 py-1 text-[10px] font-semibold text-neutral-600"
-                      >
-                        {collocation}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </article>
-            ))}
-            </div>
-          </>
+                  {entries.length < total && (
+                    <button
+                      type="button"
+                      onClick={() => void fetchPage(entries.length, true)}
+                      disabled={loadingMore}
+                      className="rounded-full border border-neutral-300 px-5 py-2.5 text-xs font-bold text-neutral-700 transition-colors hover:border-neutral-500 disabled:opacity-50"
+                    >
+                      {loadingMore ? copy.loadingMore : copy.showMore}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
         )}
 
         {tab === 'read-select' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {readSelectWords.map((word) => (
-              <div
-                key={`${word.word}-${word.isReal}`}
-                className={`rounded-2xl border p-4 ${
-                  word.isReal
-                    ? 'bg-white border-neutral-200'
-                    : 'bg-rose-50 border-rose-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm text-[#0E1012]">{word.word}</span>
-                    <PronounceButton word={word.word} size="sm" />
-                  </span>
-                  {word.isReal ? (
-                    <Sparkles className="w-4 h-4 text-emerald-500" />
-                  ) : (
-                    <ShieldAlert className="w-4 h-4 text-rose-500" />
-                  )}
+          <section aria-label="Read and Select" className="space-y-3">
+            <p className="text-xs text-neutral-500">
+              {copy.readSelectNote(readSelectWords.length)}
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {readSelectWords.map((item) => (
+                <div key={`${item.word}-${item.difficulty}`} className="flex items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-2.5">
+                  <div className="min-w-0">
+                    <span className="truncate text-sm font-bold text-[#0E1012]">{item.word}</span>
+                    <span className="ml-2 text-[10px] font-bold text-neutral-400">{item.difficulty}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.isReal ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-600'}`}>
+                      {item.isReal ? 'real' : 'pseudo'}
+                    </span>
+                    {item.isReal && <PronounceButton word={item.word} size="sm" />}
+                  </div>
                 </div>
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-wide text-neutral-500">
-                  {word.isReal ? 'Реальное слово' : 'Псевдослово-ловушка'} · {word.difficulty}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {tab === 'fill-blanks' && (
-          <div className="space-y-3">
-            {fillWords.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-sm font-black text-[#0E1012]">
-                    {item.givenPrefix}
-                    <span className="text-emerald-600">{item.missingLetters}</span>
-                  </span>
-                  <span className="text-[10px] font-bold uppercase text-neutral-500">
-                    {item.difficulty}
-                  </span>
+          <section aria-label="Fill in the Blanks" className="space-y-3">
+            <p className="text-xs text-neutral-500">
+              {copy.fillBlanksNote(fillWords.length)}
+            </p>
+            <div className="space-y-2">
+              {fillWords.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm leading-relaxed text-neutral-700">
+                      {item.sentenceBefore}{' '}
+                      <span className="rounded bg-[#D2F544]/30 px-1 font-bold text-[#0E1012]">{item.fullWord}</span>{' '}
+                      {item.sentenceAfter}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-[10px] font-bold text-neutral-400">{item.difficulty}</span>
+                      <PronounceButton word={item.fullWord} size="sm" />
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-2 text-xs text-neutral-600">
-                  {item.sentenceBefore}{' '}
-                  <strong className="text-[#0E1012]">{item.fullWord}</strong>{' '}
-                  {item.sentenceAfter}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </section>
         )}
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/practice/flashcards"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#0E1012] px-6 py-3 text-sm font-bold text-white hover:bg-neutral-800 transition-colors"
-          >
-            Тренировать в SRS <ArrowRight className="w-4 h-4" />
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href="/practice/flashcards" className="inline-flex items-center gap-2 rounded-full bg-[#0E1012] px-6 py-3 text-xs font-black text-white transition-colors hover:bg-neutral-800">
+            {copy.srs} <ArrowRight className="h-4 w-4 text-[#D2F544]" />
           </Link>
-          <Link
-            href="/practice"
-            className="inline-flex items-center gap-2 rounded-2xl border border-neutral-300 bg-white px-6 py-3 text-sm font-bold text-[#0E1012] hover:border-neutral-400 transition-colors"
-          >
-            Открыть тренажёры <ArrowRight className="w-4 h-4" />
+          <Link href="/practice" className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-6 py-3 text-xs font-bold text-neutral-700 transition-colors hover:border-neutral-500">
+            {copy.drills} <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link href="/theory/start-here" className="inline-flex items-center gap-1.5 text-[11px] font-bold text-neutral-500 underline decoration-neutral-300 underline-offset-2 hover:text-neutral-900">
+            <Sparkles className="h-3.5 w-3.5" /> {copy.howToLearn}
           </Link>
         </div>
       </div>

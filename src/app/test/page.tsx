@@ -140,7 +140,7 @@ export default function TestLobbyPage() {
                 <span className="text-xs font-mono text-neutral-400 font-normal">{t.mvpStatusLabel}</span>
               </h2>
 
-              <div className="divide-y divide-neutral-100 max-h-[460px] overflow-y-auto pr-2" tabIndex={0} role="region" aria-label="Список активных механик">
+              <div className="divide-y divide-neutral-100 max-h-[460px] overflow-y-auto pr-2" tabIndex={0} role="region" aria-label={locale === 'ru' ? 'Список активных механик' : 'List of active task types'}>
                 {activeMechanics.map((item, idx) => (
                   <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
                     <div>

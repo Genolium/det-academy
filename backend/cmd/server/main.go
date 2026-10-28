@@ -52,6 +52,17 @@ func corsOrigins() []string {
 			}
 		}
 	}
+	// In production only HTTPS origins are accepted: a stray http://localhost
+	// entry in .env would otherwise let a local page make credentialed calls.
+	if strings.ToLower(strings.TrimSpace(os.Getenv("ENV"))) == "production" {
+		secure := origins[:0]
+		for _, origin := range origins {
+			if strings.HasPrefix(strings.ToLower(origin), "https://") {
+				secure = append(secure, origin)
+			}
+		}
+		return secure
+	}
 	return origins
 }
 
@@ -196,6 +207,12 @@ func main() {
 	studyService := service.NewStudyService(store, theoryService, catService)
 	vocabularyService := service.NewVocabularyService(store.Vocabulary())
 
+	// IP/device daily quotas for the expensive endpoints. The per-user
+	// allowances stay in the service layer; this guard adds independent
+	// counters so a second account or a cleared cookie does not reset them.
+	limitGuard := service.NewLimitGuard(store.Limits(), cfg.JWTSecret)
+	handlers.ConfigureRateLimitStore(store.Limits())
+
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(authService, cfg.Env == "production")
 	theoryHandler := handlers.NewTheoryHandler(theoryService)
@@ -225,12 +242,18 @@ func main() {
 	go arenaHub.Run()
 	arenaHandler := handlers.NewArenaHandler(arenaHub, store.Users(), store.Sessions())
 
+	authHandler.SetLimitGuard(limitGuard)
+	testHandler.SetLimitGuard(limitGuard)
+	studyHandler.SetLimitGuard(limitGuard)
+	mediaHandler.SetLimitGuard(limitGuard)
+
 	// Router setup
 	r := chi.NewRouter()
 
 	// Global Middlewares
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.RealIP)
+	r.Use(handlers.ClientIdentityMiddleware(limitGuard))
 	r.Use(chiMiddleware.RequestSize(30 << 20))
 	r.Use(handlers.MetricsMiddleware)
 	r.Use(chiMiddleware.Recoverer)
@@ -243,7 +266,7 @@ func main() {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Device-Id"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -403,11 +426,12 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      r,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	// Server runner in background

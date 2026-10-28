@@ -1,0 +1,60 @@
+name: Deploy
+
+# Production deploys happen only from an annotated tag, never from a branch
+# push. The health gate at the end fails the run when the public service does
+# not become ready, which makes a broken release visible immediately.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::error::DEPLOY_HOST and DEPLOY_SSH_KEY secrets are required"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy the tag
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            "cd /root/det-academy && git fetch --tags --force && git checkout --force '$TAG' && docker compose build backend frontend && docker compose up -d backend frontend"
+
+      - name: Health gate
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 https://det-academy.ru/api/v1/ready || echo 000)
+            echo "attempt $attempt: /api/v1/ready -> $status"
+            if [ "$status" = "200" ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::production did not become ready after the deploy"
+          exit 1

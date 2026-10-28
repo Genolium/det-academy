@@ -168,7 +168,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	// Theory progress against the actual published lesson slugs.
 	allLessonSlugs := []string{
-		"rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
+		"start-here", "rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
 		"listen-and-select", "fill-in-the-blanks", "read-and-complete",
 		"listen-and-type", "read-aloud", "interactive-reading",
 		"interactive-listening", "write-about-photo", "interactive-writing",
@@ -403,6 +403,8 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 	}
 
 	tasks = fitTasksToBudget(tasks, goal.DailyMinutes)
+	estimatedRange := estimateScoreRange(completedSessions)
+	nextBestAction := buildNextBestAction(errorsList, weakestSkill)
 
 	today := time.Now().UTC().Format("2006-01-02")
 	completions, _ := s.storage.Study().GetPlanTaskCompletions(ctx, userID, today)
@@ -427,6 +429,8 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		ReadinessBasis:     readinessBasis,
 		StatusMessage:      statusMsg,
 		TasksToday:         tasks,
+		EstimatedRange:     estimatedRange,
+		NextBestAction:     nextBestAction,
 	}, nil
 }
 
@@ -1442,6 +1446,18 @@ func fitTasksToBudget(tasks []models.DailyTask, budgetMinutes int) []models.Dail
 }
 
 // CreatePracticeAssignment issues a clean, server-side practice assignment without revealing correct answers.
+// ResolveQuestionType returns the canonical type stored for a question ID. It
+// is used by handlers so a client cannot understate the type to avoid the
+// speaking quota.
+func (s *StudyService) ResolveQuestionType(ctx context.Context, questionType, questionID string) string {
+	if questionID != "" && s.catService != nil {
+		if question, err := s.catService.QuestionByID(ctx, questionID); err == nil && question != nil && question.Type != "" {
+			return question.Type
+		}
+	}
+	return questionType
+}
+
 func (s *StudyService) CreatePracticeAssignment(ctx context.Context, userID, questionType string) (*models.PracticeAssignment, error) {
 	if questionType == "" {
 		return nil, errors.New("questionType is required")
@@ -1537,6 +1553,15 @@ func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questi
 			if q.Type != "" {
 				questionType = q.Type
 			}
+		}
+	}
+
+	// The assignment gate is not enough on its own: an attempt can be submitted
+	// with a known question ID without going through CreatePracticeAssignment.
+	// Enforce the user allowance again here, after the server-resolved type.
+	if isSpeakingType(questionType) {
+		if err := checkSpeakingDailyLimit(ctx, s.storage.Study(), userID); err != nil {
+			return nil, err
 		}
 	}
 

@@ -12,8 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#D2F544',
     lang: 'ru',
     icons: [
-      { src: '/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-      { src: '/logo.png', sizes: '1024x1024', type: 'image/png', purpose: 'any' },
+      { src: '/det-owl-v2.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      { src: '/det-icon-v2-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/det-icon-v2-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
     ],
   };
 }

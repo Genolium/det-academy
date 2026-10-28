@@ -32,9 +32,13 @@ import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal'
 import { UniversityMatchWidget } from '@/components/institutions/UniversityMatchWidget';
 import { loadGoogleIdentity } from '@/lib/google-identity';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
+import { profileCopy } from '@/lib/profileCopy';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 function ProfileContent() {
   const router = useRouter();
+  const { locale } = useSettingsStore();
+  const c = profileCopy[locale];
   const searchParams = useSearchParams();
   const { user, isAuthenticated, logout, updateProfile } = useAuthStore();
   const { completedLessons, bestTypingWpm, testResults, candidateName, setCandidateName } = useProgressStore();
@@ -61,13 +65,13 @@ function ProfileContent() {
       const ok = await updateProfile({ name: newName.trim() });
       if (ok) {
         setCandidateName(newName.trim());
-        setSuccessMsg('Имя успешно сохранено');
+        setSuccessMsg(c.nameSaved);
         setIsEditingName(false);
       } else {
-        setErrorMsg('Не удалось сохранить имя');
+        setErrorMsg(c.nameFailed);
       }
     } catch {
-      setErrorMsg('Ошибка при обновлении профиля');
+      setErrorMsg(c.profileError);
     } finally {
       setIsSavingName(false);
     }
@@ -104,7 +108,7 @@ function ProfileContent() {
   // Catch query param notifications
   useEffect(() => {
     if (searchParams.get('linked') === 'success') {
-      setSuccessMsg('Социальный аккаунт успешно привязан!');
+      setSuccessMsg(c.socialLinked);
       loadProviders();
     }
   }, [searchParams, loadProviders]);
@@ -117,20 +121,20 @@ function ProfileContent() {
       google: 'Google',
       apple: 'Apple ID',
       vk: 'VK ID',
-      yandex: 'Яндекс ID',
+      yandex: locale === 'ru' ? 'Яндекс ID' : 'Yandex ID',
     };
 
-    if (!confirm(`Вы действительно хотите отвязать ${providerNameMap[provider]}?`)) {
+    if (!confirm(c.unlinkConfirm(providerNameMap[provider]))) {
       return;
     }
 
     setActionLoading(provider);
     try {
       await api.unlinkProvider(provider);
-      setSuccessMsg(`${providerNameMap[provider]} успешно отвязан`);
+      setSuccessMsg(c.unlinked(providerNameMap[provider]));
       await loadProviders();
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Ошибка при отвязке аккаунта');
+      setErrorMsg(err instanceof Error ? err.message : c.unlinkError);
     } finally {
       setActionLoading(null);
     }
@@ -146,14 +150,14 @@ function ProfileContent() {
     if (provider === 'google') {
       const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
       if (!googleClientId) {
-        setErrorMsg('Google Client ID не настроен в .env');
+        setErrorMsg(c.googleMissing);
         return;
       }
 
       try {
         await loadGoogleIdentity();
       } catch {
-        setErrorMsg('Не удалось загрузить Google Identity SDK');
+        setErrorMsg(c.googleSdk);
         return;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,11 +182,11 @@ function ProfileContent() {
                     email: profile.email,
                     providerUserId: profile.sub || profile.id,
                   });
-                  setSuccessMsg('Google аккаунт успешно привязан!');
+                  setSuccessMsg(c.googleLinked);
                   await loadProviders();
                 }
               } catch (e: unknown) {
-                setErrorMsg(e instanceof Error ? e.message : 'Ошибка привязки Google');
+                setErrorMsg(e instanceof Error ? e.message : c.googleError);
               } finally {
                 setActionLoading(null);
               }
@@ -204,7 +208,7 @@ function ProfileContent() {
     if (provider === 'vk') {
       const vkClientId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '54805089';
       if (!vkClientId) {
-        setErrorMsg('Для привязки VK ID укажите NEXT_PUBLIC_VK_CLIENT_ID в файле конфигурации .env на сервере.');
+        setErrorMsg(c.vkMissing);
         return;
       }
       const codeVerifier = generateRandomString(64);
@@ -231,7 +235,7 @@ function ProfileContent() {
     if (provider === 'yandex') {
       const yandexClientId = process.env.NEXT_PUBLIC_YANDEX_CLIENT_ID || '';
       if (!yandexClientId) {
-        setErrorMsg('Для привязки Яндекс ID укажите NEXT_PUBLIC_YANDEX_CLIENT_ID в файле конфигурации .env на сервере.');
+        setErrorMsg(c.yandexMissing);
         return;
       }
       const authUrl = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexClientId}&redirect_uri=${encodeURIComponent(
@@ -242,7 +246,7 @@ function ProfileContent() {
     }
 
     if (provider === 'apple') {
-      setErrorMsg('Авторизация через Apple ID временно отключена.');
+      setErrorMsg(c.appleOff);
       return;
     }
   };
@@ -253,12 +257,12 @@ function ProfileContent() {
     setSuccessMsg(null);
 
     if (newPassword.length < 6) {
-      setErrorMsg('Новый пароль должен содержать не менее 6 символов');
+      setErrorMsg(c.passwordShort);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMsg('Пароли не совпадают');
+      setErrorMsg(c.passwordMismatch);
       return;
     }
 
@@ -268,14 +272,14 @@ function ProfileContent() {
         oldPassword: providerData?.hasPassword ? oldPassword : '',
         newPassword,
       });
-      setSuccessMsg(res.message || 'Пароль успешно обновлен!');
+      setSuccessMsg(res.message || c.passwordUpdated);
       setShowPasswordForm(false);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       await loadProviders();
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Ошибка при сохранении пароля');
+      setErrorMsg(err instanceof Error ? err.message : c.passwordError);
     } finally {
       setPasswordLoading(false);
     }
@@ -288,16 +292,16 @@ function ProfileContent() {
           <div className="w-16 h-16 rounded-3xl bg-neutral-900 border border-neutral-800 text-neutral-400 mx-auto flex items-center justify-center">
             <UserIcon className="w-8 h-8" />
           </div>
-          <h1 className="text-xl font-bold text-white">Требуется авторизация</h1>
+          <h1 className="text-xl font-bold text-white">{c.authTitle}</h1>
           <p className="text-xs text-neutral-400">
-            Войдите в свой аккаунт, чтобы управлять настройками безопасности и привязанными соцсетями.
+            {c.authText}
           </p>
           <div className="pt-2">
             <button
               onClick={() => router.push('/')}
               className="px-6 py-2.5 rounded-full bg-[#D2F544] text-[#0C2418] text-xs font-black hover:bg-[#bce336] transition-all cursor-pointer"
             >
-              На главную
+              {c.home}
             </button>
           </div>
         </div>
@@ -338,11 +342,11 @@ function ProfileContent() {
               className="text-neutral-400 hover:text-white flex items-center gap-2 py-3 sm:py-4 transition-colors whitespace-nowrap"
             >
               <GraduationCap className="w-4 h-4" />
-              <span>Дашборд подготовки</span>
+              <span>{c.dashboard}</span>
             </Link>
             <span className="text-[#D2F544] flex items-center gap-2 border-b-2 border-[#D2F544] py-3 sm:py-4 whitespace-nowrap">
               <Shield className="w-4 h-4" />
-              <span>Безопасность и профиль</span>
+              <span>{c.security}</span>
             </span>
           </div>
         </div>
@@ -370,10 +374,10 @@ function ProfileContent() {
                   <form onSubmit={handleSaveName} className="flex items-center gap-2">
                     <input
                       type="text"
-                      aria-label="Ваше имя"
+                      aria-label={c.yourName}
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      placeholder="Ваше имя"
+                      placeholder={c.yourName}
                       className="px-3 py-1 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm font-bold focus:outline-none focus:border-[#D2F544]"
                       autoFocus
                     />
@@ -381,7 +385,7 @@ function ProfileContent() {
                       type="submit"
                       disabled={isSavingName}
                       className="p-1.5 bg-[#D2F544] text-[#0C2418] rounded-lg hover:bg-[#c4f22c] cursor-pointer"
-                      title="Сохранить"
+                      title={c.save}
                     >
                       <Save className="w-4 h-4" />
                     </button>
@@ -389,7 +393,7 @@ function ProfileContent() {
                       type="button"
                       onClick={() => setIsEditingName(false)}
                       className="p-1.5 bg-neutral-800 text-neutral-400 rounded-lg hover:text-white cursor-pointer"
-                      title="Отмена"
+                      title={c.cancel}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -397,7 +401,7 @@ function ProfileContent() {
                 ) : (
                   <>
                     <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                      {user.name || 'Студент DET'}
+                      {user.name || c.studentDet}
                     </h1>
                     <button
                       onClick={() => {
@@ -405,21 +409,21 @@ function ProfileContent() {
                         setIsEditingName(true);
                       }}
                       className="p-1 hover:bg-neutral-800 text-neutral-500 hover:text-[#D2F544] rounded-lg transition-colors cursor-pointer"
-                      title="Редактировать имя"
+                      title={c.editName}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   </>
                 )}
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#D2F544]/15 border border-[#D2F544]/40 text-[#D2F544]">
-                  {user.role === 'admin' ? 'Администратор' : 'Студент'}
+                  {user.role === 'admin' ? c.admin : c.student}
                 </span>
               </div>
               <p className="text-xs text-neutral-400 font-mono">{user.email}</p>
               <div className="flex items-center gap-2 pt-1 text-[11px] text-neutral-500">
                 <Clock className="w-3.5 h-3.5" />
                 <span>
-                  Аккаунт создан: {new Date(user.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {c.created}: {new Date(user.createdAt).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -431,7 +435,7 @@ function ProfileContent() {
               className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm"
             >
               <Edit2 className="w-3.5 h-3.5 text-[#D2F544]" />
-              <span>Переименовать</span>
+              <span>{c.rename}</span>
             </button>
             <button
               onClick={async () => {
@@ -441,7 +445,7 @@ function ProfileContent() {
               className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-300 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5 text-neutral-400" />
-              <span>Выйти</span>
+              <span>{c.logout}</span>
             </button>
           </div>
         </div>
@@ -481,13 +485,13 @@ function ProfileContent() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-white">Профиль студента</h2>
+                <h2 className="text-sm font-bold text-white">{c.studentProfile}</h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-[#D2F544] border border-[#D2F544]/30">
                   DET Candidate
                 </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Имя для сертификатов: <span className="text-white font-bold">{user.name || 'Не указано'}</span>
+                {c.certName}: <span className="text-white font-bold">{user.name || c.notSet}</span>
               </p>
             </div>
           </div>
@@ -497,7 +501,7 @@ function ProfileContent() {
             className="px-4 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-xs font-black flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer self-start sm:self-auto"
           >
             <Edit2 className="w-3.5 h-3.5" />
-            <span>Переименовать профиль</span>
+            <span>{c.renameProfile}</span>
           </button>
         </div>
       </div>
@@ -507,10 +511,10 @@ function ProfileContent() {
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Shield className="w-5 h-5 text-[#D2F544]" />
-            <span>Безопасность и способы входа</span>
+            <span>{c.securityTitle}</span>
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Управляйте паролем учетной записи и связывайте социальные профили для быстрого входа в 1 клик.
+            {c.securityDesc}
           </p>
         </div>
 
@@ -523,19 +527,19 @@ function ProfileContent() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white">Вход по Email и паролю</h3>
+                  <h3 className="text-sm font-bold text-white">{c.emailLogin}</h3>
                   {providerData?.hasPassword ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                      Пароль установлен
+                      {c.passwordSet}
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-800/60">
-                      Вход только через соцсети
+                      {c.socialOnly}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Основной Email: <span className="text-neutral-300 font-mono">{user.email}</span>
+                  {c.primaryEmail}: <span className="text-neutral-300 font-mono">{user.email}</span>
                 </p>
               </div>
             </div>
@@ -548,7 +552,7 @@ function ProfileContent() {
               }}
               className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-bold text-white transition-all cursor-pointer self-start sm:self-auto"
             >
-              {showPasswordForm ? 'Отмена' : providerData?.hasPassword ? 'Сменить пароль' : 'Создать пароль'}
+              {showPasswordForm ? c.cancel : providerData?.hasPassword ? c.changePassword : c.createPassword}
             </button>
           </div>
 
@@ -557,11 +561,11 @@ function ProfileContent() {
               {providerData?.hasPassword && (
                 <div>
                   <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                    Текущий пароль
+                    {c.currentPassword}
                   </label>
                   <input
                     type="password"
-                    aria-label="Текущий пароль"
+                    aria-label={c.currentPassword}
                     required
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
@@ -573,11 +577,11 @@ function ProfileContent() {
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                  {providerData?.hasPassword ? 'Новый пароль' : 'Придумайте пароль (минимум 6 символов)'}
+                  {providerData?.hasPassword ? c.newPassword : c.newPasswordHint}
                 </label>
                 <input
                   type="password"
-                  aria-label="Новый пароль"
+                  aria-label={c.newPassword}
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -588,11 +592,11 @@ function ProfileContent() {
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                  Подтвердите новый пароль
+                  {c.confirmPassword}
                 </label>
                 <input
                   type="password"
-                  aria-label="Подтверждение нового пароля"
+                  aria-label={c.confirmPassword}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -607,7 +611,7 @@ function ProfileContent() {
                 className="px-5 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#bce336] text-[#0C2418] text-xs font-black transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {passwordLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Сохранить пароль</span>
+                <span>{c.savePassword}</span>
               </button>
             </form>
           )}
@@ -630,7 +634,7 @@ function ProfileContent() {
                 <div>
                   <h4 className="text-sm font-bold text-white">Google</h4>
                   <p className="text-[11px] text-neutral-400">
-                    {isGoogleLinked ? 'Привязано' : 'Не подключено'}
+                    {isGoogleLinked ? c.linked : c.notConnected}
                   </p>
                 </div>
               </div>
@@ -638,11 +642,11 @@ function ProfileContent() {
               {isGoogleLinked ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  Подключено
+                  {c.connected}
                 </span>
               ) : (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-500 border border-neutral-800">
-                  Не активно
+                  {c.inactive}
                 </span>
               )}
             </div>
@@ -655,7 +659,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-800 text-xs font-semibold text-neutral-400 hover:text-red-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'google' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  <span>Отвязать Google</span>
+                  <span>{c.unlink} Google</span>
                 </button>
               ) : (
                 <button
@@ -664,7 +668,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'google' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 text-[#D2F544]" />}
-                  <span>Привязать Google</span>
+                  <span>{c.link} Google</span>
                 </button>
               )}
             </div>
@@ -683,7 +687,7 @@ function ProfileContent() {
                 <div>
                   <h4 className="text-sm font-bold text-white">VK ID</h4>
                   <p className="text-[11px] text-neutral-400">
-                    {isVkLinked ? 'Привязано' : 'Не подключено'}
+                    {isVkLinked ? c.linked : c.notConnected}
                   </p>
                 </div>
               </div>
@@ -691,11 +695,11 @@ function ProfileContent() {
               {isVkLinked ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  Подключено
+                  {c.connected}
                 </span>
               ) : (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-500 border border-neutral-800">
-                  Не активно
+                  {c.inactive}
                 </span>
               )}
             </div>
@@ -708,7 +712,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-800 text-xs font-semibold text-neutral-400 hover:text-red-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'vk' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  <span>Отвязать VK ID</span>
+                  <span>{c.unlink} VK ID</span>
                 </button>
               ) : (
                 <button
@@ -717,7 +721,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'vk' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 text-[#0077FF]" />}
-                  <span>Привязать VK ID</span>
+                  <span>{c.link} VK ID</span>
                 </button>
               )}
             </div>
@@ -734,9 +738,9 @@ function ProfileContent() {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">Яндекс ID</h4>
+                  <h4 className="text-sm font-bold text-white">{locale === 'ru' ? 'Яндекс ID' : 'Yandex ID'}</h4>
                   <p className="text-[11px] text-neutral-400">
-                    {isYandexLinked ? 'Привязано' : 'Не подключено'}
+                    {isYandexLinked ? c.linked : c.notConnected}
                   </p>
                 </div>
               </div>
@@ -744,11 +748,11 @@ function ProfileContent() {
               {isYandexLinked ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  Подключено
+                  {c.connected}
                 </span>
               ) : (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-neutral-500 border border-neutral-800">
-                  Не активно
+                  {c.inactive}
                 </span>
               )}
             </div>
@@ -761,7 +765,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-800 text-xs font-semibold text-neutral-400 hover:text-red-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'yandex' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  <span>Отвязать Яндекс</span>
+                  <span>{c.unlink} Yandex</span>
                 </button>
               ) : (
                 <button
@@ -770,7 +774,7 @@ function ProfileContent() {
                   className="w-full py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   {actionLoading === 'yandex' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 text-[#FC3F1D]" />}
-                  <span>Привязать Яндекс</span>
+                  <span>{c.link} Yandex</span>
                 </button>
               )}
             </div>
@@ -784,10 +788,10 @@ function ProfileContent() {
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-[#D2F544]" />
-              <span>Учебный прогресс и результаты</span>
+              <span>{c.progressTitle}</span>
             </h2>
             <p className="text-xs text-neutral-400 mt-1">
-              Текущие показатели освоения программы Duolingo English Test на платформе.
+              {c.progressDesc}
             </p>
           </div>
 
@@ -795,7 +799,7 @@ function ProfileContent() {
             href="/dashboard"
             className="px-4 py-2 rounded-xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-xs font-black flex items-center gap-2 transition-all shadow-md self-start sm:self-auto"
           >
-            <span>Открыть полный дашборд</span>
+            <span>{c.openDashboard}</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -807,11 +811,11 @@ function ProfileContent() {
             className="group bg-[#0E1012] border border-neutral-800 hover:border-neutral-700 rounded-3xl p-5 transition-all"
           >
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-semibold">Теория</span>
+              <span className="text-xs font-semibold">{c.theory}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
             <div className="text-2xl font-black text-white">
-              {completedLessons.length} <span className="text-sm font-normal text-neutral-500">/ 16 уроков</span>
+              {completedLessons.length} <span className="text-sm font-normal text-neutral-500">/ {locale === 'ru' ? '17 уроков' : '17 lessons'}</span>
             </div>
             <div className="mt-3 w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden">
               <div
@@ -827,14 +831,14 @@ function ProfileContent() {
             className="group bg-[#0E1012] border border-neutral-800 hover:border-neutral-700 rounded-3xl p-5 transition-all"
           >
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-semibold">Симулятор теста</span>
+              <span className="text-xs font-semibold">{c.simulator}</span>
               <Sparkles className="w-4 h-4 text-[#D2F544]" />
             </div>
             <div className="text-2xl font-black text-white">
-              {bestScore !== null ? bestScore : '—'} <span className="text-sm font-normal text-neutral-500">/ 160 баллов</span>
+              {bestScore !== null ? bestScore : '—'} <span className="text-sm font-normal text-neutral-500">/ 160 {c.points}</span>
             </div>
             <p className="text-[11px] text-neutral-500 mt-3">
-              {testResults.length > 0 ? `Пройдено тестов: ${testResults.length}` : 'Тест еще не пройден'}
+              {testResults.length > 0 ? c.testsPassed(testResults.length) : c.noTest}
             </p>
           </Link>
 
@@ -844,14 +848,14 @@ function ProfileContent() {
             className="group bg-[#0E1012] border border-neutral-800 hover:border-neutral-700 rounded-3xl p-5 transition-all"
           >
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span className="text-xs font-semibold">Тренажер печати</span>
+              <span className="text-xs font-semibold">{c.typing}</span>
               <Keyboard className="w-4 h-4 group-hover:text-white transition-colors" />
             </div>
             <div className="text-2xl font-black text-white">
               {bestTypingWpm > 0 ? bestTypingWpm : '—'} <span className="text-sm font-normal text-neutral-500">WPM</span>
             </div>
             <p className="text-[11px] text-neutral-500 mt-3">
-              Рекомендуемый порог: 50+ WPM
+              {c.wpm}
             </p>
           </Link>
         </div>

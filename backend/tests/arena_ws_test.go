@@ -70,7 +70,7 @@ func TestArenaWebSocketRequiresAuthOriginAndHijack(t *testing.T) {
 	}
 	defer conn.Close()
 	join, _ := json.Marshal(map[string]interface{}{
-		"type": "join_queue",
+		"type":    "join_queue",
 		"payload": map[string]interface{}{"playerName": "spoofed", "playerElo": 9999},
 	})
 	if err := conn.WriteMessage(websocket.TextMessage, join); err != nil {

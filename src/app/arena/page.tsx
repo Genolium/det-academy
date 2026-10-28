@@ -48,6 +48,8 @@ interface Challenge {
 export default function MultiplayerArenaPage() {
   const { user, isAuthenticated } = useAuthStore();
   const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
+  const t = (ruText: string, enText: string) => (ru ? ruText : enText);
   const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
   const currentCandidateName = user?.name || candidateName || 'Candidate';
 
@@ -56,16 +58,19 @@ export default function MultiplayerArenaPage() {
       <div className="min-h-screen py-20 ambient-glow flex items-center justify-center px-4">
         <div className="max-w-lg w-full bg-[#0E1012] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 text-center shadow-2xl">
           <Swords className="w-10 h-10 text-[#D2F544] mx-auto mb-4" />
-          <h1 className="text-xl font-black tracking-tight">Арена временно на паузе</h1>
+          <h1 className="text-xl font-black tracking-tight">{t('Арена временно на паузе', 'The arena is paused')}</h1>
           <p className="text-sm text-neutral-400 mt-3 leading-relaxed">
-            Мы дорабатываем честный рейтинг и защиту от накрутки. Тренажёры, теория и пробный тест работают как обычно.
+            {t(
+              'Мы дорабатываем честный рейтинг и защиту от накрутки. Тренажёры, теория и пробный тест работают как обычно.',
+              'We are finishing the fair rating and anti-cheat protection. Drills, theory and the mock test work as usual.'
+            )}
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/practice" className="inline-flex items-center gap-2 bg-[#D2F544] text-[#0E1012] font-black text-sm px-5 py-2.5 rounded-full">
-              К тренажёрам <ArrowRight className="w-4 h-4" />
+              {t('К тренажёрам', 'Go to drills')} <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/dashboard" className="text-sm font-bold text-neutral-300 hover:text-white">
-              В кабинет
+              {t('В кабинет', 'Go to dashboard')}
             </Link>
           </div>
         </div>
@@ -433,10 +438,13 @@ export default function MultiplayerArenaPage() {
               </span>
             </div>
             <h1 className="text-3xl font-black uppercase text-white tracking-tight flex items-center gap-3">
-              <span>Арена скоростных дуэлей</span>
+              <span>{t('Арена скоростных дуэлей', 'Speed duel arena')}</span>
             </h1>
             <p className="text-xs text-neutral-400 mt-1">
-              Сразитесь с соперником в реальном времени на скорость и точность прохождения C-Test. Зарабатывайте очки рейтинга ELO!
+              {t(
+                'Сразитесь с соперником в реальном времени на скорость и точность прохождения C-Test. Зарабатывайте очки рейтинга ELO!',
+                'Race an opponent in real time on C-Test speed and accuracy. Earn ELO rating points!'
+              )}
             </p>
           </div>
 
@@ -444,17 +452,17 @@ export default function MultiplayerArenaPage() {
             {/* Daily Streak */}
             <div
               className="px-3 py-1.5 rounded-2xl bg-orange-500/10 border border-orange-500/25 flex items-center gap-1.5 text-orange-400 text-xs font-black"
-              title="Ежедневный ударный режим активности"
+              title={t('Ежедневный ударный режим активности', 'Daily activity streak')}
             >
               <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
-              <span>{streakDays} дн. ударный режим</span>
+              <span>{streakDays} {t('дн. ударный режим', 'day streak')}</span>
             </div>
 
             {/* League Badge */}
             <LeagueBadge elo={userElo} size="md" />
 
             <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right">
-              <span className="text-[10px] uppercase font-bold text-neutral-400 block">Ваш рейтинг ELO</span>
+              <span className="text-[10px] uppercase font-bold text-neutral-400 block">{t('Ваш рейтинг ELO', 'Your ELO rating')}</span>
               <span className="text-xl font-black text-[#D2F544] flex items-center gap-1">
                 <Shield className="w-4 h-4" /> {userElo}
               </span>
@@ -470,31 +478,34 @@ export default function MultiplayerArenaPage() {
 
               <div className="space-y-3">
                 <span className="text-xs font-bold text-[#D2F544] uppercase tracking-wider">
-                  Правила дуэли
+                  {t('Правила дуэли', 'Duel rules')}
                 </span>
-                <h2 className="text-2xl font-black text-white">Быстрый матч 1-на-1 (60 сек)</h2>
+                <h2 className="text-2xl font-black text-white">{t('Быстрый матч 1-на-1 (60 сек)', 'Quick 1v1 match (60 sec)')}</h2>
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  Вам и оппоненту одновременно выдается одинаковый академический текст с пропусками (C-Test). Побеждает тот, кто быстрее заполнит все пропущенные окончания слов с максимальной точностью.
+                  {t(
+                    'Вам и оппоненту одновременно выдается одинаковый академический текст с пропусками (C-Test). Побеждает тот, кто быстрее заполнит все пропущенные окончания слов с максимальной точностью.',
+                    'You and your opponent receive the same academic C-Test passage with gaps. The fastest accurate completion of every missing word ending wins.'
+                  )}
                 </p>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800 text-center">
                   <Timer className="w-5 h-5 text-[#D2F544] mx-auto mb-1" />
-                  <div className="text-sm font-black text-white">60 сек</div>
-                  <div className="text-[10px] text-neutral-500">Лимит времени</div>
+                  <div className="text-sm font-black text-white">{t('60 сек', '60 sec')}</div>
+                  <div className="text-[10px] text-neutral-500">{t('Лимит времени', 'Time limit')}</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800 text-center">
                   <Zap className="w-5 h-5 text-amber-400 mx-auto mb-1" />
                   <div className="text-sm font-black text-white">WPM + %</div>
-                  <div className="text-[10px] text-neutral-500">Скорость и точность</div>
+                  <div className="text-[10px] text-neutral-500">{t('Скорость и точность', 'Speed and accuracy')}</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-neutral-900/80 border border-neutral-800 text-center">
                   <Trophy className="w-5 h-5 text-purple-400 mx-auto mb-1" />
                   <div className="text-sm font-black text-white">±32 ELO</div>
-                  <div className="text-[10px] text-neutral-500">Ставка за победу</div>
+                  <div className="text-[10px] text-neutral-500">{t('Ставка за победу', 'Win stake')}</div>
                 </div>
               </div>
 
@@ -504,7 +515,7 @@ export default function MultiplayerArenaPage() {
                   className="w-full py-4 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-sm uppercase tracking-wider transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Swords className="w-5 h-5" />
-                  <span>Найти соперника (Вступить в бой)</span>
+                  <span>{t('Найти соперника (Вступить в бой)', 'Find an opponent (Enter the duel)')}</span>
                 </button>
               </div>
             </div>
@@ -514,9 +525,9 @@ export default function MultiplayerArenaPage() {
               <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-[#D2F544]" />
-                  <span>Топ дуэлянтов Академии</span>
+                  <span>{t('Топ дуэлянтов Академии', 'Academy top duelists')}</span>
                 </h3>
-                <span className="text-[10px] uppercase font-bold text-neutral-500">Сезон 2026</span>
+                <span className="text-[10px] uppercase font-bold text-neutral-500">{t('Сезон 2026', 'Season 2026')}</span>
               </div>
 
               <div className="space-y-2">
@@ -554,7 +565,7 @@ export default function MultiplayerArenaPage() {
                         <div className="text-xs font-bold text-white">{p.name}</div>
                         <div className="text-[10px] text-neutral-500">
                           {p.winRate
-                            ? `Винрейт: ${p.winRate}`
+                            ? t(`Винрейт: ${p.winRate}`, `Win rate: ${p.winRate}`)
                             : locale === 'ru'
                             ? 'Рейтинг по лучшему mock-тесту'
                             : 'Rating from the best mock test'}
@@ -580,10 +591,12 @@ export default function MultiplayerArenaPage() {
               <Swords className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white">Арена недоступна</h3>
+              <h3 className="text-xl font-black text-white">{t('Арена недоступна', 'Arena unavailable')}</h3>
               <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
-                Сервер матчей не отвечает. Рейтинг не изменён, соперник не был создан.
-                Локальная симуляция бота отключена, чтобы не показывать вымышленный результат.
+                {t(
+                  'Сервер матчей не отвечает. Рейтинг не изменён, соперник не был создан. Локальная симуляция бота отключена, чтобы не показывать вымышленный результат.',
+                  'The match server is not responding. Your rating is unchanged and no opponent was created. Local bot simulation is disabled so no invented result is shown.'
+                )}
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-3">
@@ -591,13 +604,13 @@ export default function MultiplayerArenaPage() {
                 onClick={handleFindMatch}
                 className="px-6 py-2.5 rounded-xl bg-[#D2F544] text-[#0C2418] text-xs font-black hover:bg-[#c2e534] transition-colors"
               >
-                Повторить поиск
+                {t('Повторить поиск', 'Search again')}
               </button>
               <button
                 onClick={() => setState('LOBBY')}
                 className="px-6 py-2.5 rounded-xl border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
               >
-                Вернуться в лобби
+                {t('Вернуться в лобби', 'Back to lobby')}
               </button>
             </div>
           </div>
@@ -611,9 +624,12 @@ export default function MultiplayerArenaPage() {
             </div>
 
             <div>
-              <h3 className="text-xl font-black text-white">Поиск равного соперника...</h3>
+              <h3 className="text-xl font-black text-white">{t('Поиск равного соперника...', 'Searching for a fair opponent...')}</h3>
               <p className="text-xs text-neutral-400 mt-1">
-                Подбираем кандидата с рейтингом {userElo} ± 50 ELO по всему миру
+                {t(
+                  `Подбираем кандидата с рейтингом ${userElo} ± 50 ELO по всему миру`,
+                  `Matching a candidate rated ${userElo} ± 50 ELO worldwide`
+                )}
               </p>
             </div>
 
@@ -621,7 +637,7 @@ export default function MultiplayerArenaPage() {
               onClick={() => setState('LOBBY')}
               className="px-6 py-2.5 rounded-xl border border-neutral-800 hover:border-neutral-700 text-xs font-bold text-neutral-400 hover:text-white transition-colors cursor-pointer"
             >
-              Отмена
+              {t('Отмена', 'Cancel')}
             </button>
           </div>
         )}
@@ -630,14 +646,14 @@ export default function MultiplayerArenaPage() {
         {state === 'COUNTDOWN' && (
           <div className="max-w-lg mx-auto bg-[#0E1012] border border-neutral-800 rounded-3xl p-12 text-center space-y-6 shadow-2xl animate-in fade-in zoom-in duration-300">
             <span className="text-xs font-extrabold uppercase tracking-widest text-[#D2F544]">
-              Соперник найден!
+              {t('Соперник найден!', 'Opponent found!')}
             </span>
             <div className="flex items-center justify-center gap-6">
               <div>
                 <div className="w-16 h-16 rounded-2xl bg-[#D2F544] text-[#0C2418] font-black text-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">
                   🦉
                 </div>
-                <div className="text-xs font-black text-white">Вы ({userElo})</div>
+                <div className="text-xs font-black text-white">{t('Вы', 'You')} ({userElo})</div>
               </div>
 
               <div className="text-2xl font-black text-neutral-600">VS</div>
@@ -656,7 +672,7 @@ export default function MultiplayerArenaPage() {
             <div className="text-6xl font-black text-white animate-bounce tracking-tight">
               {countdown}
             </div>
-            <p className="text-xs text-neutral-400">Приготовьтесь к вводу пропущенных букв!</p>
+            <p className="text-xs text-neutral-400">{t('Приготовьтесь к вводу пропущенных букв!', 'Get ready to type the missing letters!')}</p>
           </div>
         )}
 
@@ -668,7 +684,7 @@ export default function MultiplayerArenaPage() {
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="flex items-center gap-2 text-white">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                  Битва в прямом эфире
+                  {t('Битва в прямом эфире', 'Live battle')}
                 </span>
 
                 <div
@@ -687,9 +703,9 @@ export default function MultiplayerArenaPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-[#D2F544]">
-                    Вы: {userProgressPct}% ({userWpm} WPM • {userAccuracy}% точность)
+                    {t('Вы', 'You')}: {userProgressPct}% ({userWpm} WPM • {userAccuracy}% {t('точность', 'accuracy')})
                   </span>
-                  <span className="text-neutral-500 text-[11px]">Финиш</span>
+                  <span className="text-neutral-500 text-[11px]">{t('Финиш', 'Finish')}</span>
                 </div>
                 <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden p-0.5 border border-neutral-800">
                   <div
@@ -706,7 +722,7 @@ export default function MultiplayerArenaPage() {
                     {opponent.name}: {opponent.progressPct}% ({opponent.currentWpm} WPM • {opponent.accuracy}%)
                     {opponent.isBot && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-300">Bot</span>}
                   </span>
-                  <span className="text-neutral-500 text-[11px]">Финиш</span>
+                  <span className="text-neutral-500 text-[11px]">{t('Финиш', 'Finish')}</span>
                 </div>
                 <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden p-0.5 border border-neutral-800">
                   <div
@@ -721,11 +737,14 @@ export default function MultiplayerArenaPage() {
             <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-8 space-y-6 shadow-2xl">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D2F544]">
-                  Задание раунда
+                  {t('Задание раунда', 'Round task')}
                 </span>
                 <h3 className="text-xl font-black text-white mt-1">{challenge.title}</h3>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Заполните пропущенные части слов. Для перехода между полями используйте клавишу Tab или Enter.
+                  {t(
+                    'Заполните пропущенные части слов. Для перехода между полями используйте клавишу Tab или Enter.',
+                    'Complete the missing parts of the words. Use Tab or Enter to move between fields.'
+                  )}
                 </p>
               </div>
 
@@ -808,14 +827,14 @@ export default function MultiplayerArenaPage() {
 
               <div className="flex items-center justify-between pt-2">
                 <span className="text-xs text-neutral-400">
-                  Заполнено: {inputs.filter((x) => x.trim().length > 0).length} из {challenge.blanks.length}
+                  {t('Заполнено:', 'Completed:')} {inputs.filter((x) => x.trim().length > 0).length} {t('из', 'of')} {challenge.blanks.length}
                 </span>
 
                 <button
                   onClick={finishDuel}
                   className="px-6 py-2.5 rounded-xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs uppercase tracking-wider transition-all cursor-pointer"
                 >
-                  Завершить досрочно
+                  {t('Завершить досрочно', 'Finish early')}
                 </button>
               </div>
             </div>
@@ -843,10 +862,10 @@ export default function MultiplayerArenaPage() {
                     : 'text-rose-400 bg-rose-950/60 border-rose-800/60'
                 }`}
               >
-                {won ? 'Блестящая победа!' : 'Поражение'}
+                {won ? t('Блестящая победа!', 'Brilliant victory!') : t('Поражение', 'Defeat')}
               </span>
               <h2 className="text-3xl font-black text-white mt-3 tracking-tight">
-                {won ? 'Вы обошли соперника!' : 'Соперник оказался быстрее'}
+                {won ? t('Вы обошли соперника!', 'You beat your opponent!') : t('Соперник оказался быстрее', 'Your opponent was faster')}
               </h2>
             </div>
 
@@ -854,7 +873,7 @@ export default function MultiplayerArenaPage() {
             <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-around">
               <div>
                 <span className="text-[10px] uppercase font-bold text-neutral-500">
-                  {rankedMatch ? 'Дельта ELO' : 'Нерейтинговый бой'}
+                  {rankedMatch ? t('Дельта ELO', 'ELO delta') : t('Нерейтинговый бой', 'Unranked duel')}
                 </span>
                 <div
                   className={`text-2xl font-black ${
@@ -872,14 +891,14 @@ export default function MultiplayerArenaPage() {
               <div className="w-px h-10 bg-neutral-800" />
 
               <div>
-                <span className="text-[10px] uppercase font-bold text-neutral-500">Новый рейтинг</span>
+                <span className="text-[10px] uppercase font-bold text-neutral-500">{t('Новый рейтинг', 'New rating')}</span>
                 <div className="text-2xl font-black text-[#D2F544]">{userElo}</div>
               </div>
 
               <div className="w-px h-10 bg-neutral-800" />
 
               <div>
-                <span className="text-[10px] uppercase font-bold text-neutral-500">Ваша скорость</span>
+                <span className="text-[10px] uppercase font-bold text-neutral-500">{t('Ваша скорость', 'Your speed')}</span>
                 <div className="text-2xl font-black text-white">{userWpm} WPM</div>
               </div>
             </div>
@@ -890,14 +909,14 @@ export default function MultiplayerArenaPage() {
                 className="px-6 py-3 rounded-2xl bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Сыграть еще раз</span>
+                <span>{t('Сыграть еще раз', 'Play again')}</span>
               </button>
 
               <Link
                 href="/dashboard"
                 className="px-6 py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-bold text-neutral-300 hover:text-white transition-all cursor-pointer"
               >
-                Вернуться на Дашборд
+                {t('Вернуться на Дашборд', 'Back to dashboard')}
               </Link>
             </div>
           </div>

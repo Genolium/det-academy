@@ -92,7 +92,7 @@ export const XpLeagueCard: React.FC = () => {
 
       <p className="text-[10px] text-neutral-500 mt-3 flex items-start gap-1.5 leading-relaxed">
         <Info className="w-3 h-3 mt-0.5 shrink-0" />
-        {profile.leagueBasis}
+        {ru ? profile.leagueBasis : 'League is based on XP for the current week (from Monday 00:00 UTC). A repeated event with the same key does not award XP twice.'}
       </p>
     </div>
   );

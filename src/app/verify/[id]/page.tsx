@@ -15,6 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 interface VerifyPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,9 @@ interface CertificateData {
 
 export default function CertificateVerificationPage({ params }: VerifyPageProps) {
   const resolvedParams = use(params);
+  const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
+  const t = (ruText: string, enText: string) => (ru ? ruText : enText);
   const certId = resolvedParams?.id || '';
 
   const [loading, setLoading] = useState(true);
@@ -47,7 +51,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
   useEffect(() => {
     let isMounted = true;
     if (!certId) {
-      setError('Идентификатор сертификата не указан');
+      setError(t('Идентификатор сертификата не указан', 'No certificate identifier provided'));
       setErrorKind('not_found');
       setLoading(false);
       return;
@@ -63,7 +67,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           if (data && data.id) {
             setCert({
               id: data.id,
-              candidateName: data.candidateName || 'Кандидат',
+              candidateName: data.candidateName || t('Кандидат', 'Candidate'),
               overallScore: data.overallScore ?? 0,
               literacyScore: data.literacyScore ?? 0,
               comprehensionScore: data.comprehensionScore ?? 0,
@@ -77,7 +81,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             setError(null);
           } else {
             setCert(null);
-            setError('Сертификат с указанным идентификатором не найден');
+            setError(t('Сертификат с указанным идентификатором не найден', 'No certificate found with this identifier'));
             setErrorKind('not_found');
           }
         }
@@ -86,13 +90,19 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           setCert(null);
           if (err instanceof ApiError && err.status === 404) {
             setErrorKind('not_found');
-            setError('Сертификат с указанным идентификатором не зарегистрирован');
+            setError(t('Сертификат с указанным идентификатором не зарегистрирован', 'A certificate with this identifier is not registered'));
           } else if (err instanceof ApiError && err.status === 0) {
             setErrorKind('network');
-            setError('Реестр сертификатов временно недоступен. Это не означает, что сертификат отсутствует.');
+            setError(t(
+              'Реестр сертификатов временно недоступен. Это не означает, что сертификат отсутствует.',
+              'The certificate registry is temporarily unavailable. This does not mean the certificate is missing.'
+            ));
           } else {
             setErrorKind('unknown');
-            setError('Не удалось проверить сертификат из-за ошибки реестра. Повторите попытку позже.');
+            setError(t(
+              'Не удалось проверить сертификат из-за ошибки реестра. Повторите попытку позже.',
+              'The certificate could not be verified because of a registry error. Try again later.'
+            ));
           }
         }
       } finally {
@@ -106,7 +116,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
     return () => {
       isMounted = false;
     };
-  }, [certId]);
+  }, [certId, locale]);
 
   const getCefrBadge = (score: number) => {
     if (score >= 130) return { band: 'C1 / C2 Advanced Mastery', color: 'text-emerald-400 bg-emerald-950/60 border-emerald-800/60' };
@@ -134,7 +144,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
       <div className="min-h-screen bg-[#070809] text-white flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-8 h-8 border-2 border-[#D2F544] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-neutral-400 font-medium">Проверка подлинности сертификата в реестре...</p>
+          <p className="text-sm text-neutral-400 font-medium">{t('Проверка подлинности сертификата в реестре...', 'Verifying the certificate in the registry...')}</p>
         </div>
       </div>
     );
@@ -150,19 +160,18 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           <div>
             <h1 className="text-2xl font-black text-white">
               {errorKind === 'network'
-                ? 'Реестр недоступен'
+                ? t('Реестр недоступен', 'Registry unavailable')
                 : errorKind === 'not_found'
-                ? 'Сертификат не найден'
-                : 'Не удалось проверить сертификат'}
+                ? t('Сертификат не найден', 'Certificate not found')
+                : t('Не удалось проверить сертификат', 'Could not verify the certificate')}
             </h1>
             <p className="text-sm text-neutral-400 mt-2">
               {errorKind === 'network' ? (
                 error
               ) : (
                 <>
-                  Документ с номером{' '}
-                  <span className="font-mono text-neutral-200">{certId}</span> не зарегистрирован
-                  в реестре отчётов DET Academy.
+                  {t('Документ с номером', 'Document number')}{' '}
+                  <span className="font-mono text-neutral-200">{certId}</span> {t('не зарегистрирован в реестре отчётов DET Academy.', 'is not registered in the DET Academy report registry.')}
                 </>
               )}
             </p>
@@ -172,13 +181,13 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
               href="/verify"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm transition-colors"
             >
-              <Search className="w-4 h-4" /> Проверить другой номер
+              <Search className="w-4 h-4" /> {t('Проверить другой номер', 'Check another number')}
             </Link>
             <Link
               href="/"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-transparent hover:text-white text-neutral-400 font-semibold text-sm transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" /> На главную
+              <ArrowLeft className="w-4 h-4" /> {t('На главную', 'Home')}
             </Link>
           </div>
         </div>
@@ -198,7 +207,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Проверить другой сертификат
+            {t('Проверить другой сертификат', 'Check another certificate')}
           </Link>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -207,14 +216,14 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-semibold text-neutral-200 hover:text-white hover:border-neutral-700 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
-              {copied ? 'Ссылка скопирована' : 'Поделиться'}
+              {copied ? t('Ссылка скопирована', 'Link copied') : t('Поделиться', 'Share')}
             </button>
             <button
               onClick={handlePrint}
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#D2F544] text-[#0C2418] font-bold text-xs hover:bg-[#c2e534] transition-colors shadow-sm"
             >
               <Printer className="w-3.5 h-3.5" />
-              Печать отчёта
+              {t('Печать отчёта', 'Print report')}
             </button>
           </div>
         </div>
@@ -226,7 +235,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             <div className="flex items-center gap-2 text-emerald-400">
               <ShieldCheck className="w-5 h-5" />
               <span className="text-xs font-bold uppercase tracking-wider">
-                Отчёт тренировочного экзамена DET Academy
+                {t('Отчёт тренировочного экзамена DET Academy', 'DET Academy training exam report')}
               </span>
             </div>
             <div className="font-mono text-xs text-neutral-400 bg-neutral-900 px-3 py-1.5 rounded-lg border border-neutral-800">
@@ -261,18 +270,18 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-2">
             <div>
               <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                ФИО Кандидата
+                {t('ФИО Кандидата', 'Candidate name')}
               </span>
               <p className="text-lg font-black text-white">{cert.candidateName}</p>
             </div>
 
             <div>
               <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                Дата экзамена
+                {t('Дата экзамена', 'Exam date')}
               </span>
               <p className="text-sm font-bold text-neutral-200 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-neutral-400" />
-                {new Date(cert.issuedAt).toLocaleDateString('ru-RU', {
+                {new Date(cert.issuedAt).toLocaleDateString(ru ? 'ru-RU' : 'en-US', {
                   day: 'numeric',
                   month: 'long',
                   year: 'numeric',
@@ -282,10 +291,10 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
 
             <div>
               <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                Статус в реестре DET Academy
+                {t('Статус в реестре DET Academy', 'DET Academy registry status')}
               </span>
               <p className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> {cert.isVerified ? 'Зарегистрирован в реестре DET Academy' : 'Ожидает проверки'}
+                <CheckCircle2 className="w-4 h-4" /> {cert.isVerified ? t('Зарегистрирован в реестре DET Academy', 'Registered in the DET Academy registry') : t('Ожидает проверки', 'Pending verification')}
               </p>
             </div>
           </div>
@@ -294,7 +303,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
           <div className="bg-gradient-to-br from-[#12161A] to-[#0A0D0F] border border-neutral-800 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
               <span className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">
-                Тренировочная оценка (Overall Estimate)
+                {t('Тренировочная оценка (Overall Estimate)', 'Training estimate (Overall Estimate)')}
               </span>
               <div className="flex items-baseline justify-center md:justify-start gap-2 mt-1">
                 <span className="text-6xl sm:text-7xl font-black text-[#D2F544] tracking-tight">
@@ -303,7 +312,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
                 <span className="text-xl text-neutral-500 font-bold">/ 160</span>
               </div>
               <p className="text-xs text-neutral-400 mt-2 max-w-sm">
-                Оценочный балл по тренировочному симулятору платформы DET Academy.
+                {t('Оценочный балл по тренировочному симулятору платформы DET Academy.', 'Estimated score from the DET Academy training simulator.')}
               </p>
             </div>
 
@@ -314,7 +323,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
                   <span className="text-xs font-bold text-neutral-300">Literacy</span>
                   <span className="text-sm font-black text-white">{cert.literacyScore}</span>
                 </div>
-                <div className="text-[10px] text-neutral-500">Чтение + Письмо</div>
+                <div className="text-[10px] text-neutral-500">{t('Чтение + Письмо', 'Reading + Writing')}</div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800">
@@ -322,7 +331,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
                   <span className="text-xs font-bold text-neutral-300">Comprehension</span>
                   <span className="text-sm font-black text-white">{cert.comprehensionScore}</span>
                 </div>
-                <div className="text-[10px] text-neutral-500">Чтение + Аудирование</div>
+                <div className="text-[10px] text-neutral-500">{t('Чтение + Аудирование', 'Reading + Listening')}</div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800">
@@ -330,7 +339,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
                   <span className="text-xs font-bold text-neutral-300">Conversation</span>
                   <span className="text-sm font-black text-white">{cert.conversationScore}</span>
                 </div>
-                <div className="text-[10px] text-neutral-500">Аудио + Говорение</div>
+                <div className="text-[10px] text-neutral-500">{t('Аудио + Говорение', 'Listening + Speaking')}</div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800">
@@ -338,7 +347,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
                   <span className="text-xs font-bold text-neutral-300">Production</span>
                   <span className="text-sm font-black text-white">{cert.productionScore}</span>
                 </div>
-                <div className="text-[10px] text-neutral-500">Письмо + Говорение</div>
+                <div className="text-[10px] text-neutral-500">{t('Письмо + Говорение', 'Writing + Speaking')}</div>
               </div>
             </div>
           </div>
@@ -349,7 +358,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#D2F544]" />
                 <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
-                  Снимок письменной работы кандидата (Writing Sample Snapshot)
+                  {t('Снимок письменной работы кандидата (Writing Sample Snapshot)', 'Candidate writing sample snapshot')}
                 </h3>
               </div>
               <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800 text-xs text-neutral-300 leading-relaxed font-serif italic">
@@ -363,7 +372,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1">
                 <Lock className="w-3 h-3 text-[#D2F544]" />
-                Идентификатор верификации:
+                {t('Идентификатор верификации:', 'Verification identifier:')}
               </span>
               <p className="font-mono text-xs text-neutral-300 select-all">
                 {cert.id}
@@ -373,7 +382,7 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
             {cert.sha256Hash && (
               <div className="space-y-1 sm:text-right">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                  Контрольный хеш записи:
+                  {t('Контрольный хеш записи:', 'Record checksum:')}
                 </span>
                 <p className="font-mono text-[10px] text-neutral-400 break-all select-all max-w-xs">
                   {cert.sha256Hash}
@@ -385,7 +394,10 @@ export default function CertificateVerificationPage({ params }: VerifyPageProps)
 
         {/* Footer Note */}
         <p className="text-center text-xs text-neutral-500 print:hidden">
-          Электронный отчёт платформы подготовки DET Academy. Не является официальным свидетельством Duolingo Inc.
+          {t(
+            'Электронный отчёт платформы подготовки DET Academy. Не является официальным свидетельством Duolingo Inc.',
+            'Electronic report from the DET Academy preparation platform. Not an official Duolingo Inc. certificate.'
+          )}
         </p>
       </div>
     </div>

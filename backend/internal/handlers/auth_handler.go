@@ -14,6 +14,12 @@ import (
 type AuthHandler struct {
 	authService  *service.AuthService
 	secureCookie bool
+	limits       *service.LimitGuard
+}
+
+// SetLimitGuard enables the IP/device quota for login and registration.
+func (h *AuthHandler) SetLimitGuard(guard *service.LimitGuard) {
+	h.limits = guard
 }
 
 func NewAuthHandler(authService *service.AuthService, secureCookie ...bool) *AuthHandler {
@@ -48,8 +54,11 @@ func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, r *http.Request, use
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeAuth) {
+		return
+	}
 	var req models.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10)).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
@@ -69,8 +78,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeAuth) {
+		return
+	}
 	var req models.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10)).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}

@@ -1,13 +1,58 @@
 import type { MetadataRoute } from 'next';
+import {
+  getAllCountries,
+  getAllInstitutionSlugs,
+} from '@/lib/seo/institutions';
+import { getAllWordSlugs } from '@/lib/seo/vocabulary';
+import { SITE_URL } from '@/lib/seo/site';
 
-const baseUrl = 'https://det-academy.ru';
+export const revalidate = 86_400;
 
+/**
+ * One sitemap file, no per-record static pages.
+ *
+ * Institution and dictionary detail routes are rendered on demand with ISR.
+ * The sitemap is a single generated XML response, so adding thousands of
+ * catalogue rows does not add thousands of build artifacts.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const publicRoutes = ['', '/theory', '/practice', '/practice/flashcards', '/practice/typing', '/vocabulary', '/institutions', '/test', '/diagnostic', '/verify'];
-  return publicRoutes.map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: route === '' ? 'daily' : 'weekly',
-    priority: route === '' ? 1 : 0.7,
+  const today = new Date('2026-10-28T00:00:00.000Z');
+  const registryDate = new Date('2026-10-21T00:00:00.000Z');
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/`, lastModified: today, changeFrequency: 'daily', priority: 1 },
+    { url: `${SITE_URL}/institutions`, lastModified: today, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${SITE_URL}/vocabulary`, lastModified: today, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${SITE_URL}/theory`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/practice`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/practice/flashcards`, lastModified: today, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/practice/typing`, lastModified: today, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/diagnostic`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/test`, lastModified: today, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/verify`, lastModified: today, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE_URL}/privacy`, lastModified: today, changeFrequency: 'yearly', priority: 0.3 },
+  ];
+
+  const countryRoutes: MetadataRoute.Sitemap = getAllCountries().map((country) => ({
+    url: `${SITE_URL}/institutions/country/${country.slug}`,
+    lastModified: registryDate,
+    changeFrequency: 'monthly',
+    priority: 0.7,
   }));
+
+  const institutionRoutes: MetadataRoute.Sitemap = getAllInstitutionSlugs().map((slug) => ({
+    url: `${SITE_URL}/institutions/${slug}`,
+    lastModified: registryDate,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }));
+
+  const wordRoutes: MetadataRoute.Sitemap = getAllWordSlugs().map((slug) => ({
+    url: `${SITE_URL}/vocabulary/${slug}`,
+    lastModified: today,
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  }));
+
+  return [...staticRoutes, ...countryRoutes, ...institutionRoutes, ...wordRoutes];
 }

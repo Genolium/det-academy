@@ -1,0 +1,200 @@
+- generic [active] [ref=e1]:
+  - link "Перейти к основному содержимому" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "DET Academy" [ref=e6]
+      - navigation [ref=e7]:
+        - link "Теория" [ref=e8] [cursor=pointer]:
+          - /url: /theory
+        - link "Тренажеры" [ref=e13] [cursor=pointer]:
+          - /url: /practice
+        - link "Словарь" [ref=e19] [cursor=pointer]:
+          - /url: /vocabulary
+        - link "Вузы с DET" [ref=e23] [cursor=pointer]:
+          - /url: /institutions
+      - generic [ref=e28]:
+        - button "ru" [ref=e29] [cursor=pointer]
+        - button "Войти" [ref=e34] [cursor=pointer]
+        - link "Пробный тест" [ref=e39] [cursor=pointer]:
+          - /url: /diagnostic
+  - main [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - generic [ref=e50]: "#"
+            - text: DET Academy 2026
+          - generic [ref=e51]: ПОДГОТОВКА К ЭКЗАМЕНУ 2026
+        - heading "СДАЙ DUOLINGO [НА 120+] С УМНЫМ ТРЕНАЖЕРОМ" [level=1] [ref=e52]:
+          - generic [ref=e53]:
+            - text: СДАЙ DUOLINGO
+            - generic [ref=e54]: "[НА 120+]"
+          - generic [ref=e55]: С УМНЫМ ТРЕНАЖЕРОМ
+        - paragraph [ref=e56]: "Интерактивная адаптивная платформа DET Academy: симулятор экзамена, тренажер скоропечатания DET, разбор стратегий и тренировочную оценку и диапазон."
+        - generic [ref=e57]:
+          - button [ref=e58] [cursor=pointer]
+          - link "Изучить теорию" [ref=e62] [cursor=pointer]:
+            - /url: /theory
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: "#"
+              - text: DET Academy Features
+            - heading "Инструменты подготовки" [level=2] [ref=e68]
+          - paragraph [ref=e69]: Диагностика, план на сегодня, практика 13 типов заданий и тренировочный отчёт — без обещания официального балла.
+        - generic [ref=e70]:
+          - link "# CAT ENGINE Пробный тест Сервер выдаёт задания и считает тренировочную оценку по шкале 10–160. Сложность меняется по этапам; это модель DET Academy, а не алгоритм Duolingo. 13 типов заданий Серверные таймеры" [ref=e72] [cursor=pointer]:
+            - /url: /diagnostic
+            - generic [ref=e74]:
+              - generic [ref=e75]: "#"
+              - text: CAT ENGINE
+            - generic [ref=e80]:
+              - heading "Пробный тест" [level=3] [ref=e81]
+              - paragraph [ref=e82]: Сервер выдаёт задания и считает тренировочную оценку по шкале 10–160. Сложность меняется по этапам; это модель DET Academy, а не алгоритм Duolingo.
+            - generic [ref=e83]:
+              - generic [ref=e84]: 13 типов заданий
+              - generic [ref=e88]: Серверные таймеры
+          - 'link "# DET_TYPING Слепая печать для эссе DET Тренажер скоропечатания DET Тренажер слепой печати со специализированным словарем академических эссе и диктантов. DET Vocabulary: 506 академических слов" [ref=e92] [cursor=pointer]':
+            - /url: /practice/typing
+            - generic [ref=e94]:
+              - generic [ref=e95]: "#"
+              - text: DET_TYPING
+            - generic [ref=e100]:
+              - generic [ref=e101]: Слепая печать для эссе DET
+              - heading "Тренажер скоропечатания DET" [level=3] [ref=e105]
+              - paragraph [ref=e106]: Тренажер слепой печати со специализированным словарем академических эссе и диктантов.
+            - generic [ref=e107]:
+              - generic [ref=e108]: "DET Vocabulary:"
+              - generic [ref=e109]: 506 академических слов
+          - 'link "# KNOWLEDGE BASE База знаний и стратегий 16 уроков: структура экзамена, шаблоны эссе OREO, типичные ловушки и формулы описания фото. ✓ OREO Formula ✓ 4-step Photo ✓ C-Test Traps" [ref=e111] [cursor=pointer]':
+            - /url: /theory
+            - generic [ref=e113]:
+              - generic [ref=e114]: "#"
+              - text: KNOWLEDGE BASE
+            - generic [ref=e117]:
+              - heading "База знаний и стратегий" [level=3] [ref=e118]
+              - paragraph [ref=e119]: "16 уроков: структура экзамена, шаблоны эссе OREO, типичные ловушки и формулы описания фото."
+            - generic [ref=e120]:
+              - generic [ref=e121]: ✓ OREO Formula
+              - generic [ref=e122]: ✓ 4-step Photo
+              - generic [ref=e123]: ✓ C-Test Traps
+          - 'link "# CREDENTIALS Тренировочный отчёт Отчёт DET Academy с QR-проверкой и сабскорами. Это не официальный сертификат Duolingo. Условие выдачи: 100% теории + Тест ≥ 105" [ref=e125] [cursor=pointer]':
+            - /url: /verify
+            - generic [ref=e127]:
+              - generic [ref=e128]: "#"
+              - text: CREDENTIALS
+            - generic [ref=e132]:
+              - heading "Тренировочный отчёт" [level=3] [ref=e133]
+              - paragraph [ref=e134]: Отчёт DET Academy с QR-проверкой и сабскорами. Это не официальный сертификат Duolingo.
+            - generic [ref=e135]:
+              - generic [ref=e136]: "Условие выдачи:"
+              - generic [ref=e142]: 100% теории + Тест ≥ 105
+      - generic [ref=e144]:
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - generic [ref=e147]: "#"
+            - text: DET vs Traditional Exams
+          - heading "Почему выбирают DET" [level=2] [ref=e148]
+          - paragraph [ref=e149]: Duolingo English Test сдаётся онлайн примерно за час. Официальный реестр вузов, принимающих DET, содержит 4 087 записей — проверяйте актуальные требования на сайте университета.
+          - link "Карта вузов с DET" [ref=e150] [cursor=pointer]:
+            - /url: /institutions
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e158]: Критерий
+            - generic [ref=e159]: Duolingo English Test
+            - generic [ref=e161]: IELTS / TOEFL
+          - generic [ref=e162]:
+            - generic [ref=e163]:
+              - generic [ref=e164]: Стоимость
+              - generic [ref=e165]: ~$59 USD
+              - generic [ref=e170]:
+                - generic [ref=e171]: •
+                - generic [ref=e173]: ~$250–320 USD
+            - generic [ref=e174]:
+              - generic [ref=e175]: Формат сдачи
+              - generic [ref=e176]: Онлайн из дома 24/7
+              - generic [ref=e181]:
+                - generic [ref=e182]: •
+                - generic [ref=e184]: Офлайн в тест-центре по записи
+            - generic [ref=e185]:
+              - generic [ref=e186]: Длительность
+              - generic [ref=e187]: Около 1 часа
+              - generic [ref=e192]:
+                - generic [ref=e193]: •
+                - generic [ref=e195]: 3–4 часа
+            - generic [ref=e196]:
+              - generic [ref=e197]: Срок результатов
+              - generic [ref=e198]: 48 часов
+              - generic [ref=e203]:
+                - generic [ref=e204]: •
+                - generic [ref=e206]: 3–14 дней
+            - generic [ref=e207]:
+              - generic [ref=e208]: Признание в мире
+              - generic [ref=e209]:
+                - generic [ref=e210]: •
+                - generic [ref=e212]: 4 087 вузов в официальном реестре DET
+              - generic [ref=e213]:
+                - generic [ref=e214]: •
+                - generic [ref=e216]: Шире признание, зависит от программы
+        - paragraph [ref=e217]: Цена, срок результатов и требования вузов меняются. Ориентир на дату проверки — уточняйте на englishtest.duolingo.com.
+      - generic [ref=e219]:
+        - generic [ref=e220]:
+          - generic [ref=e221]:
+            - generic [ref=e223]:
+              - generic [ref=e224]: "#"
+              - text: Mini Trainer
+            - 'heading "Мини-тренажер: Read and Select" [level=3] [ref=e225]'
+          - generic [ref=e226]: Определите реальное английское слово за 5 секунд.
+        - generic [ref=e227]:
+          - generic [ref=e232]:
+            - heading "Протестируйте формат заданий с реального экзамена" [level=4] [ref=e233]
+            - paragraph [ref=e234]: На экране появятся слова. Ваша задача — за 5 секунд определить, существует ли такое слово в английском языке или это псевдослово.
+          - generic [ref=e235]:
+            - generic [ref=e236]: 5.0 сек / слово
+            - generic [ref=e240]: 3 демонстрационных слова
+          - button "Начать тренировку" [ref=e244] [cursor=pointer]
+  - contentinfo [ref=e247]:
+    - generic [ref=e248]:
+      - generic [ref=e249]:
+        - generic [ref=e250]:
+          - generic [ref=e251]: DET ACADEMY
+          - paragraph [ref=e254]: "Независимая платформа подготовки к Duolingo English Test: диагностика, план и тренировочные тесты."
+          - generic [ref=e255]: Формат заданий ориентирован на публичную структуру DET 2026
+        - generic [ref=e259]:
+          - heading "Модули платформы" [level=2] [ref=e260]
+          - list [ref=e261]:
+            - listitem [ref=e262]:
+              - link "Теория и гайд DET" [ref=e263] [cursor=pointer]:
+                - /url: /theory
+            - listitem [ref=e267]:
+              - link "Тренажер скоропечатания DET" [ref=e268] [cursor=pointer]:
+                - /url: /practice/typing
+            - listitem [ref=e272]:
+              - link "Карта вузов с DET" [ref=e273] [cursor=pointer]:
+                - /url: /institutions
+            - listitem [ref=e277]:
+              - link "Симулятор теста" [ref=e278] [cursor=pointer]:
+                - /url: /test
+            - listitem [ref=e282]:
+              - link "Проверка сертификата" [ref=e283] [cursor=pointer]:
+                - /url: /verify
+        - generic [ref=e287]:
+          - heading "Экзамен DET" [level=2] [ref=e288]
+          - generic [ref=e289]:
+            - generic [ref=e290]:
+              - generic [ref=e291]: "Шкала баллов:"
+              - generic [ref=e292]: 10 – 160
+            - generic [ref=e293]:
+              - generic [ref=e294]: "Шаг оценки:"
+              - generic [ref=e295]: 5 баллов
+            - generic [ref=e296]:
+              - generic [ref=e297]: "Проходной вузов:"
+              - generic [ref=e298]: 115 – 130
+      - generic [ref=e299]:
+        - paragraph [ref=e300]: © 2026 DET Academy. Все права защищены.
+        - paragraph [ref=e301]: DET Academy является независимым образовательным сервисом и не аффилирована с Duolingo, Inc.
+  - button "Open Next.js Dev Tools" [ref=e307] [cursor=pointer]

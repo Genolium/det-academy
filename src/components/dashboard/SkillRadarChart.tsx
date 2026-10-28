@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, AlertTriangle, Sparkles, Target, Layers } from 'lucide-react';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export interface Subscores {
   literacy: number;
@@ -35,6 +36,8 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
   targetScore = 125,
   hasTakenTest = true,
 }) => {
+  const { locale } = useSettingsStore();
+  const ru = locale === 'ru';
   const [radarMode, setRadarMode] = useState<'subscores' | 'modalities'>('subscores');
 
   // Radar geometry
@@ -107,10 +110,10 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
   // Subscore Deficits
   const subscoreDeficits = [
-    { name: 'Literacy', label: 'Чтение + Письмо', current: effectiveSubscores.literacy, target: targetScore },
-    { name: 'Comprehension', label: 'Чтение + Аудирование', current: effectiveSubscores.comprehension, target: targetScore },
-    { name: 'Production', label: 'Письмо + Говорение', current: effectiveSubscores.production, target: targetScore },
-    { name: 'Conversation', label: 'Аудирование + Говорение', current: effectiveSubscores.conversation, target: targetScore },
+    { name: 'Literacy', label: ru ? 'Чтение + Письмо' : 'Reading + Writing', current: effectiveSubscores.literacy, target: targetScore },
+    { name: 'Comprehension', label: ru ? 'Чтение + Аудирование' : 'Reading + Listening', current: effectiveSubscores.comprehension, target: targetScore },
+    { name: 'Production', label: ru ? 'Письмо + Говорение' : 'Writing + Speaking', current: effectiveSubscores.production, target: targetScore },
+    { name: 'Conversation', label: ru ? 'Аудирование + Говорение' : 'Listening + Speaking', current: effectiveSubscores.conversation, target: targetScore },
   ].map((item) => ({
     ...item,
     diff: item.target - item.current,
@@ -119,10 +122,10 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
   // Modality Deficits
   const modalityDeficits = [
-    { name: 'Reading', label: 'Чтение (C-Test, Select)', current: effectiveModalities.reading, target: targetScore },
-    { name: 'Listening', label: 'Аудирование (Dictation, Dialog)', current: effectiveModalities.listening, target: targetScore },
-    { name: 'Writing', label: 'Письмо (Photo, Sample)', current: effectiveModalities.writing, target: targetScore },
-    { name: 'Speaking', label: 'Говорение (Photo, Interactive)', current: effectiveModalities.speaking, target: targetScore },
+    { name: 'Reading', label: ru ? 'Чтение (C-Test, Select)' : 'Reading (C-Test, Select)', current: effectiveModalities.reading, target: targetScore },
+    { name: 'Listening', label: ru ? 'Аудирование (Dictation, Dialog)' : 'Listening (Dictation, Dialogue)', current: effectiveModalities.listening, target: targetScore },
+    { name: 'Writing', label: ru ? 'Письмо (Photo, Sample)' : 'Writing (Photo, Sample)', current: effectiveModalities.writing, target: targetScore },
+    { name: 'Speaking', label: ru ? 'Говорение (Photo, Interactive)' : 'Speaking (Photo, Interactive)', current: effectiveModalities.speaking, target: targetScore },
   ].map((item) => ({
     ...item,
     diff: item.target - item.current,
@@ -154,7 +157,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              Радар готовности (Skill Spider Chart)
+              {ru ? 'Радар готовности (Skill Spider Chart)' : 'Readiness radar'}
             </span>
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl p-0.5 text-[11px] font-bold">
               <button
@@ -165,7 +168,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Официальные сабскоры (4)
+                {ru ? 'Официальные сабскоры (4)' : 'Official subscores (4)'}
               </button>
               <button
                 onClick={() => setRadarMode('modalities')}
@@ -175,17 +178,17 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                     : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Базовые навыки (R / L / W / S)
+                {ru ? 'Базовые навыки (R / L / W / S)' : 'Core skills (R / L / W / S)'}
               </button>
             </div>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            {radarMode === 'subscores' ? 'Сравнение сабскоров с целевым баллом' : 'Диагностика 4 фундаментальных навыков'}
+            {radarMode === 'subscores' ? (ru ? 'Сравнение сабскоров с целевым баллом' : 'Subscores against the target') : (ru ? 'Диагностика 4 фундаментальных навыков' : 'Four core skills diagnostic')}
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
             {radarMode === 'subscores'
-              ? 'Сопоставление ваших результатов с целевым ориентиром подготовки.'
-              : 'Анализ независимых навыков: выявите, какой блок тянет общий балл вниз.'}
+              ? (ru ? 'Сопоставление ваших результатов с целевым ориентиром подготовки.' : 'Your results against the preparation target.')
+              : (ru ? 'Анализ независимых навыков: выявите, какой блок тянет общий балл вниз.' : 'Independent skills: find the block that pulls the overall score down.')}
           </p>
         </div>
 
@@ -193,7 +196,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
         <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-2xl">
           <Target className="w-4 h-4 text-purple-400 shrink-0" />
           <div className="text-left">
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Ваша цель:</span>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">{ru ? 'Ваша цель' : 'Your target'}:</span>
             <span className="text-xs font-black text-white">{targetScore}+ DET</span>
           </div>
         </div>
@@ -313,15 +316,15 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                   <div className="w-8 h-8 rounded-xl bg-[#D2F544]/20 border border-[#D2F544]/40 flex items-center justify-center mx-auto mb-2 text-[#D2F544]">
                     <Sparkles className="w-4 h-4" />
                   </div>
-                  <p className="text-xs font-black text-white leading-tight">Тест еще не пройден</p>
+                  <p className="text-xs font-black text-white leading-tight">{ru ? 'Тест еще не пройден' : 'No test completed yet'}</p>
                   <p className="text-[10px] text-neutral-400 mt-1 leading-normal">
-                    Сдайте симулятор, чтобы составить ваш персональный радар
+                    {ru ? 'Сдайте симулятор, чтобы составить ваш персональный радар' : 'Take the simulator to build your personal radar'}
                   </p>
                   <Link
                     href="/test"
                     className="mt-3 inline-flex items-center justify-center gap-1 w-full py-1.5 px-3 bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] text-[11px] font-black rounded-xl transition-transform active:scale-95 shadow-sm"
                   >
-                    Пройти тест
+                    {ru ? 'Пройти тест' : 'Take the test'}
                   </Link>
                 </div>
               </div>
@@ -333,13 +336,13 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             <div className="flex items-center gap-2">
               <span className={`w-3.5 h-3.5 rounded-md ${hasTakenTest ? 'bg-[#D2F544] shadow-[0_0_8px_rgba(210,245,68,0.5)]' : 'bg-neutral-700'}`} />
               <span className={hasTakenTest ? 'text-white' : 'text-neutral-400'}>
-                {hasTakenTest ? `Ваш уровень (${overallScore})` : 'Ваш уровень: —'}
+                {hasTakenTest ? (ru ? `Ваш уровень (${overallScore})` : `Your level (${overallScore})`) : (ru ? 'Ваш уровень: —' : 'Your level: —')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-md bg-purple-500 border border-purple-400 border-dashed" />
               <span className="text-purple-300">
-                Целевой ориентир ({targetScore})
+                {ru ? 'Целевой ориентир' : 'Target'} ({targetScore})
               </span>
             </div>
           </div>
@@ -351,33 +354,33 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-neutral-400">
-                  {radarMode === 'subscores' ? 'Соответствие цели по сабскорам:' : 'Диагностика готовности:'}
+                  {radarMode === 'subscores' ? (ru ? 'Соответствие цели по сабскорам:' : 'Subscores against the target:') : (ru ? 'Диагностика готовности:' : 'Readiness diagnostic:')}
                 </span>
                 <h3 className="text-base font-black text-white mt-0.5">
                   {!hasTakenTest ? (
                     <span className="text-amber-400 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" /> Требуется прохождение теста
+                      <AlertTriangle className="w-4 h-4" /> {ru ? 'Требуется прохождение теста' : 'A completed test is required'}
                     </span>
                   ) : totalDeficit === 0 ? (
                     <span className="text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" /> Все 4 показателя в норме!
+                      <CheckCircle2 className="w-4 h-4" /> {ru ? 'Все 4 показателя в норме!' : 'All 4 indicators are on target!'}
                     </span>
                   ) : (
                     <span className="text-amber-400 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" /> Дефицит по {totalDeficit} из 4 показателей
+                      <AlertTriangle className="w-4 h-4" /> {ru ? `Дефицит по ${totalDeficit} из 4 показателей` : `Below target on ${totalDeficit} of 4 indicators`}
                     </span>
                   )}
                 </h3>
                 {weakestModality && (
                   <p className="text-[11px] text-amber-300/90 mt-1">
-                    Главное слабое звено: <strong>{weakestModality.name}</strong> ({weakestModality.current} баллов).
+                    {ru ? 'Главное слабое звено' : 'Weakest link'}: <strong>{weakestModality.name}</strong> ({weakestModality.current} {ru ? 'баллов' : 'points'}).
                   </p>
                 )}
               </div>
 
               <div className="text-right shrink-0">
                 <span className="text-[10px] uppercase font-bold text-neutral-500">
-                  Цель студента
+                  {ru ? 'Цель студента' : 'Student target'}
                 </span>
                 <div className="text-xl font-black text-purple-400">
                   {targetScore}+
@@ -405,23 +408,23 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
                     <span className="text-[10px] text-neutral-400">({d.label})</span>
                   </div>
                   <div className="text-[11px] text-neutral-400 mt-0.5">
-                    Текущий: <strong className="text-white">{hasTakenTest && d.current > 0 ? d.current : '—'}</strong> •
-                    Требуется: <strong className="text-purple-300">{d.target}</strong>
+                    {ru ? 'Текущий' : 'Current'}: <strong className="text-white">{hasTakenTest && d.current > 0 ? d.current : '—'}</strong> •
+                    {ru ? 'Требуется' : 'Target'}: <strong className="text-purple-300">{d.target}</strong>
                   </div>
                 </div>
 
                 <div>
                   {!hasTakenTest || d.current === 0 ? (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-xl">
-                      Нет данных
+                      {ru ? 'Нет данных' : 'No data'}
                     </span>
                   ) : d.passed ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-xl">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> В норме (+{d.current - d.target})
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {ru ? 'В норме' : 'On target'} (+{d.current - d.target})
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 rounded-xl">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Нужно +{d.diff} баллов
+                      <AlertTriangle className="w-3.5 h-3.5" /> {ru ? `Нужно +${d.diff} баллов` : `Need +${d.diff} points`}
                     </span>
                   )}
                 </div>

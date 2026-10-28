@@ -13,10 +13,16 @@ import (
 
 type StudyHandler struct {
 	studyService *service.StudyService
+	limits       *service.LimitGuard
 }
 
 func NewStudyHandler(studyService *service.StudyService) *StudyHandler {
 	return &StudyHandler{studyService: studyService}
+}
+
+// SetLimitGuard enables the IP/device quota for speaking submissions.
+func (h *StudyHandler) SetLimitGuard(guard *service.LimitGuard) {
+	h.limits = guard
 }
 
 // --- Goals & Study Plan ---
@@ -410,11 +416,24 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Use the type stored on the server so a client cannot label a speaking
+	// answer as a reading task to skip the IP/device speaking quota.
+	resolvedType := h.studyService.ResolveQuestionType(r.Context(), req.QuestionType, req.QuestionID)
+	if service.IsSpeakingQuestionType(resolvedType) {
+		if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
+			return
+		}
+	}
+
 	attempt, err := h.studyService.RecordPracticeAttempt(
 		r.Context(), userID, req.QuestionType, req.QuestionID, req.PromptContext,
 		req.UserResponse, req.TimeSpentSec,
 	)
 	if err != nil {
+		if errors.Is(err, service.ErrDailyLimitReached) {
+			RespondError(w, http.StatusTooManyRequests, "Дневной лимит разговорных заданий исчерпан. Возвращайтесь завтра.")
+			return
+		}
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

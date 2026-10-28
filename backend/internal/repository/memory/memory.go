@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -48,6 +49,8 @@ type MemoryStorage struct {
 	practiceAttempts    map[string][]models.PracticeAttempt            // userID -> attempts
 	typingAttempts      map[string][]models.TypingAttempt              // userID -> attempts
 	skillMastery        map[string]map[string]*models.UserSkillMastery // userID -> skill -> mastery
+	dailyLimits         map[string]int                                 // "scope|subject|YYYY-MM-DD" -> used
+	rateLimits          map[string]int                                 // "bucket|subject|unix" -> used
 	sessionLockMu       sync.Mutex
 	sessionLocks        map[string]*sync.Mutex
 }
@@ -83,6 +86,8 @@ func New() *MemoryStorage {
 		practiceAttempts:    make(map[string][]models.PracticeAttempt),
 		typingAttempts:      make(map[string][]models.TypingAttempt),
 		skillMastery:        make(map[string]map[string]*models.UserSkillMastery),
+		dailyLimits:         make(map[string]int),
+		rateLimits:          make(map[string]int),
 		sessionLocks:        make(map[string]*sync.Mutex),
 	}
 	s.seedDefaultData()
@@ -109,8 +114,9 @@ func (s *MemoryStorage) OAuthTransactions() repository.OAuthTransactionRepositor
 func (s *MemoryStorage) RefreshTokens() repository.RefreshTokenRepository {
 	return &refreshTokenMemoryRepo{s: s}
 }
-func (s *MemoryStorage) Ping(ctx context.Context) error { return nil }
-func (s *MemoryStorage) Close() error                   { return nil }
+func (s *MemoryStorage) Limits() repository.LimitRepository { return &limitMemoryRepo{s: s} }
+func (s *MemoryStorage) Ping(ctx context.Context) error     { return nil }
+func (s *MemoryStorage) Close() error                       { return nil }
 
 //go:embed vocabulary_seed.json
 var vocabularySeedJSON []byte
@@ -2634,28 +2640,57 @@ func (r *studyMemoryRepo) GetSkillMastery(ctx context.Context, userID string) (m
 
 type vocabularyMemoryRepo struct{ s *MemoryStorage }
 
-func (r *vocabularyMemoryRepo) List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error) {
+func (r *vocabularyMemoryRepo) List(ctx context.Context, search, level, source string, limit, offset int) ([]models.VocabularyEntry, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
 	normalized := strings.ToLower(strings.TrimSpace(search))
 	entries := []models.VocabularyEntry{}
 	for _, entry := range r.s.vocabulary {
-		if entry.Status != "published" {
-			continue
-		}
-		if level != "" && level != "ALL" && entry.Level != level {
-			continue
-		}
-		if normalized != "" &&
-			!strings.Contains(strings.ToLower(entry.Word), normalized) &&
-			!strings.Contains(strings.ToLower(entry.MeaningRu), normalized) &&
-			!strings.Contains(strings.ToLower(entry.DefinitionEn), normalized) {
+		if entry.Status != "published" || !vocabularyMatches(entry, normalized, level, source) {
 			continue
 		}
 		entries = append(entries, entry)
 	}
-	sort.Slice(entries, func(i, j int) bool { return entries[i].Word < entries[j].Word })
-	return entries, nil
+	sort.Slice(entries, func(i, j int) bool {
+		return strings.ToLower(entries[i].Word) < strings.ToLower(entries[j].Word)
+	})
+	if offset > len(entries) {
+		return []models.VocabularyEntry{}, nil
+	}
+	end := offset + limit
+	if limit <= 0 || end > len(entries) {
+		end = len(entries)
+	}
+	return entries[offset:end], nil
+}
+
+func vocabularyMatches(entry models.VocabularyEntry, normalized, level, source string) bool {
+	if level != "" && level != "ALL" && entry.Level != level {
+		return false
+	}
+	if prefix := vocabularySourcePrefix(source); prefix != "" && !strings.HasPrefix(entry.Source, prefix) {
+		return false
+	}
+	if normalized != "" &&
+		!strings.Contains(strings.ToLower(entry.Word), normalized) &&
+		!strings.Contains(strings.ToLower(entry.MeaningRu), normalized) &&
+		!strings.Contains(strings.ToLower(entry.DefinitionEn), normalized) {
+		return false
+	}
+	return true
+}
+
+func vocabularySourcePrefix(source string) string {
+	switch strings.ToLower(strings.TrimSpace(source)) {
+	case "awl":
+		return "Academic Word List"
+	case "course":
+		return "Course vocabulary"
+	case "b1":
+		return "DET B1 core"
+	default:
+		return ""
+	}
 }
 
 func (r *vocabularyMemoryRepo) ListAll(ctx context.Context) ([]models.VocabularyEntry, error) {
@@ -2682,12 +2717,13 @@ func (r *vocabularyMemoryRepo) UpdateStatus(ctx context.Context, id, status stri
 	return nil
 }
 
-func (r *vocabularyMemoryRepo) Count(ctx context.Context) (int, error) {
+func (r *vocabularyMemoryRepo) CountFiltered(ctx context.Context, search, level, source string) (int, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
+	normalized := strings.ToLower(strings.TrimSpace(search))
 	count := 0
 	for _, entry := range r.s.vocabulary {
-		if entry.Status == "published" {
+		if entry.Status == "published" && vocabularyMatches(entry, normalized, level, source) {
 			count++
 		}
 	}
@@ -2789,6 +2825,62 @@ func (r *refreshTokenMemoryRepo) RevokeAllForUser(ctx context.Context, userID st
 		if token.UserID == userID {
 			token.RevokedAt = &now
 			r.s.refreshTokens[hash] = token
+		}
+	}
+	return nil
+}
+
+// --- Daily limit counters ---
+
+type limitMemoryRepo struct{ s *MemoryStorage }
+
+func limitKey(scope, subject, day string) string {
+	return scope + "|" + subject + "|" + day
+}
+
+func (r *limitMemoryRepo) ConsumeDaily(ctx context.Context, scope, subject string, windowStart time.Time, limit int) (int, bool, error) {
+	if limit <= 0 || scope == "" || subject == "" {
+		return 0, true, nil
+	}
+	day := windowStart.UTC().Format("2006-01-02")
+	key := limitKey(scope, subject, day)
+
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	used := r.s.dailyLimits[key]
+	if used >= limit {
+		return used, false, nil
+	}
+	r.s.dailyLimits[key] = used + 1
+	return used + 1, true, nil
+}
+
+func (r *limitMemoryRepo) ConsumeWindow(ctx context.Context, bucket, subject string, windowStart time.Time, limit int) (int, bool, error) {
+	if limit <= 0 || bucket == "" || subject == "" {
+		return 0, true, nil
+	}
+	key := bucket + "|" + subject + "|" + strconv.FormatInt(windowStart.UTC().Unix(), 10)
+
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	used := r.s.rateLimits[key]
+	if used >= limit {
+		return used, false, nil
+	}
+	r.s.rateLimits[key] = used + 1
+	return used + 1, true, nil
+}
+
+func (r *limitMemoryRepo) PurgeDailyBefore(ctx context.Context, before time.Time) error {
+	cutoff := before.UTC().Format("2006-01-02")
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for key := range r.s.dailyLimits {
+		if len(key) < 10 {
+			continue
+		}
+		if day := key[len(key)-10:]; day < cutoff {
+			delete(r.s.dailyLimits, key)
 		}
 	}
 	return nil

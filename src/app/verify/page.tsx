@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, Search, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export default function VerifySearchPage() {
   const router = useRouter();
+  const { locale } = useSettingsStore();
+  const t = (ruText: string, enText: string) => (locale === 'ru' ? ruText : enText);
   const [certId, setCertId] = useState('');
   const [error, setError] = useState('');
 
@@ -14,7 +17,7 @@ export default function VerifySearchPage() {
     e.preventDefault();
     const trimmed = certId.trim();
     if (!trimmed) {
-      setError('Пожалуйста, введите номер сертификата');
+      setError(t('Пожалуйста, введите номер сертификата', 'Enter a certificate number'));
       return;
     }
     setError('');
@@ -29,7 +32,7 @@ export default function VerifySearchPage() {
           className="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          На главную
+          {t('На главную', 'Home')}
         </Link>
 
         <div className="text-center space-y-4">
@@ -37,10 +40,10 @@ export default function VerifySearchPage() {
             <ShieldCheck className="w-8 h-8" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
-            Проверка сертификата DET Academy
+            {t('Проверка сертификата DET Academy', 'DET Academy certificate verification')}
           </h1>
           <p className="text-sm text-neutral-400 max-w-md mx-auto">
-            Введите уникальный идентификатор отчёта (например, <code className="text-[#D2F544]">det-cert-...</code>) для проверки подлинности результатов тестирования в реестре.
+            {t('Введите уникальный идентификатор отчёта', 'Enter the unique report identifier')} ({t('например', 'for example')}, <code className="text-[#D2F544]">det-cert-...</code>) {t('для проверки подлинности результатов тестирования в реестре.', 'to verify the test results in the registry.')}
           </p>
         </div>
 
@@ -53,7 +56,7 @@ export default function VerifySearchPage() {
                 setCertId(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="Введите номер сертификата (det-cert-...)"
+              placeholder={t('Введите номер сертификата (det-cert-...)', 'Enter the certificate number (det-cert-...)')}
               className="w-full px-5 py-4 pl-12 rounded-2xl bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-[#D2F544] transition-colors font-mono text-sm"
             />
             <Search className="w-5 h-5 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -67,17 +70,23 @@ export default function VerifySearchPage() {
             type="submit"
             className="w-full py-4 rounded-2xl bg-[#D2F544] hover:bg-[#c2e534] text-[#0C2418] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md"
           >
-            Проверить подлинность
+            {t('Проверить подлинность', 'Verify authenticity')}
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <div className="border-t border-neutral-800/80 pt-6 text-center text-xs text-neutral-500 space-y-2">
           <p>
-            Сертификаты выдаются кандидатам, успешно завершившим тренировочный экзамен с сертифицированным результатом ≥105 баллов и прошедшим полный курс теории.
+            {t(
+              'Сертификаты выдаются кандидатам, успешно завершившим тренировочный экзамен с сертифицированным результатом ≥105 баллов и прошедшим полный курс теории.',
+              'Certificates are issued to candidates who complete the training exam with a verified result of 105 or more and finish the full theory course.'
+            )}
           </p>
           <p>
-            Платформа DET Academy является независимым тренировочным комплексом и не аффилирована с Duolingo Inc.
+            {t(
+              'Платформа DET Academy является независимым тренировочным комплексом и не аффилирована с Duolingo Inc.',
+              'DET Academy is an independent training platform and is not affiliated with Duolingo Inc.'
+            )}
           </p>
         </div>
       </div>

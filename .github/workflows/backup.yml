@@ -1,0 +1,43 @@
+name: Nightly database backup
+
+# Runs on the production host over SSH: the database is not exposed to the
+# internet, so the dump must be produced where Postgres lives. Credentials for
+# the S3-compatible bucket live in /root/det-academy/.env (AWS_ACCESS_KEY_ID,
+# AWS_SECRET_ACCESS_KEY, BACKUP_S3_URI).
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: production-backup
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::error::DEPLOY_HOST and DEPLOY_SSH_KEY secrets are required"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Dump and upload
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            'cd /root/det-academy && set -a && . ./.env && set +a && BACKUP_DIR=/var/backups/det ./scripts/backup_postgres.sh'

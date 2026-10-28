@@ -116,6 +116,23 @@ type InstitutionRepository interface {
 	Count(ctx context.Context) (int, error)
 }
 
+// LimitRepository stores the daily counters used to cap expensive actions per
+// client IP and per client device in addition to the per-user limits that are
+// derived from the activity tables.
+type LimitRepository interface {
+	// ConsumeDaily atomically increments the counter for (scope, subject,
+	// windowStart) and reports whether the request is within the limit. When
+	// the counter already reached limit it is not incremented and used is the
+	// stored value. A limit <= 0 means unlimited.
+	ConsumeDaily(ctx context.Context, scope, subject string, windowStart time.Time, limit int) (used int, allowed bool, err error)
+	// PurgeDailyBefore removes counters whose window started before the given
+	// day. It is called opportunistically so the table does not grow forever.
+	PurgeDailyBefore(ctx context.Context, before time.Time) error
+	// ConsumeWindow is the short-window sibling of ConsumeDaily, used by the
+	// HTTP rate limiter. The window is truncated by the caller.
+	ConsumeWindow(ctx context.Context, bucket, subject string, windowStart time.Time, limit int) (used int, allowed bool, err error)
+}
+
 type OAuthTransactionRepository interface {
 	Create(ctx context.Context, transaction *models.OAuthTransaction) error
 	Consume(ctx context.Context, stateHash, provider string) (*models.OAuthTransaction, error)
@@ -172,9 +189,9 @@ type StudyRepository interface {
 }
 
 type VocabularyRepository interface {
-	List(ctx context.Context, search, level string) ([]models.VocabularyEntry, error)
+	List(ctx context.Context, search, level, source string, limit, offset int) ([]models.VocabularyEntry, error)
 	ListAll(ctx context.Context) ([]models.VocabularyEntry, error)
-	Count(ctx context.Context) (int, error)
+	CountFiltered(ctx context.Context, search, level, source string) (int, error)
 	UpdateStatus(ctx context.Context, id, status string) error
 }
 
@@ -190,6 +207,7 @@ type Storage interface {
 	Vocabulary() VocabularyRepository
 	OAuthTransactions() OAuthTransactionRepository
 	RefreshTokens() RefreshTokenRepository
+	Limits() LimitRepository
 	Ping(ctx context.Context) error
 	Close() error
 }

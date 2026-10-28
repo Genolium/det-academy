@@ -159,11 +159,30 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 	result.AudioURL = evaluation.AudioURL
 	result.Transcript = transcript
 	result.TranscriptSource = transcriptSource
+	// Client-measured clarity feedback is display-only and must survive the
+	// transcription/evaluation cycle unchanged.
+	result.Pronunciation = evaluation.Pronunciation
 	result.Provider = "practice_feedback"
 	result.EvaluatorVersion = "2026.1"
 	result.FeedbackStatus = "completed"
 	result.RetryCount = job.Attempts
 	result.CreatedAt = evaluation.CreatedAt
+
+	if job.AudioPath != "" {
+		if metrics, metricsErr := ai.AnalyzeSpeech(ctx, job.AudioPath, transcript); metricsErr == nil {
+			result.SpeechRate = metrics.SpeechRate
+			result.PauseRatio = metrics.PauseRatio
+			result.PauseCount = metrics.PauseCount
+			result.FillerCount = metrics.FillerCount
+			result.PronunciationStability = metrics.PronunciationStability
+			result.Pauses = nil
+			for _, pause := range metrics.Pauses {
+				result.Pauses = append(result.Pauses, models.SpeechPause{Start: pause.Start, End: pause.End})
+			}
+		} else {
+			log.Printf("[EvaluationQueue] speech metrics unavailable: %v", metricsErr)
+		}
+	}
 
 	if evaluator, ok := q.provider.(ai.Evaluator); ok && result.Status != "EMPTY" {
 		neural, neuralErr := evaluator.Evaluate(ctx, ai.EnrichInput{

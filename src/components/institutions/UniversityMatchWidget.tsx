@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { localizeCountry } from '@/lib/countryNames';
 import {
   Building2,
   Sparkles,
@@ -66,6 +68,8 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
   currentPredictedScore = 0,
   className = '',
 }) => {
+  const { locale } = useSettingsStore();
+  const t = (ruText: string, enText: string) => (locale === 'ru' ? ruText : enText);
   const [simulatedScore, setSimulatedScore] = useState<number>(currentPredictedScore > 0 ? currentPredictedScore : 95);
   const [activeTier, setActiveTier] = useState<'ALL' | 'IVY' | 'TOP100'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -111,7 +115,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
   const calculateMatch = (minScore: number) => {
     if (!minScore) {
       return {
-        label: 'Порог неизвестен',
+        label: t('Порог неизвестен', 'Threshold unknown'),
         labelEn: 'Threshold unknown',
         color: 'text-neutral-300 bg-neutral-900 border-neutral-700',
         badgeColor: 'bg-neutral-500',
@@ -120,7 +124,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
     const diff = simulatedScore - minScore;
     if (diff >= 10) {
       return {
-        label: 'Выше ориентировочного порога',
+        label: t('Выше ориентировочного порога', 'Above the platform reference'),
         labelEn: 'Above reference threshold',
         color: 'text-emerald-400 bg-emerald-950/80 border-emerald-800/80',
         badgeColor: 'bg-emerald-500',
@@ -128,7 +132,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
     }
     if (diff >= 0) {
       return {
-        label: 'На уровне ориентировочного порога',
+        label: t('На уровне ориентировочного порога', 'At the platform reference'),
         labelEn: 'At reference threshold',
         color: 'text-[#D2F544] bg-[#D2F544]/10 border-[#D2F544]/30',
         badgeColor: 'bg-[#D2F544]',
@@ -136,14 +140,14 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
     }
     if (diff >= -10) {
       return {
-        label: `Ниже порога на ${Math.abs(diff)} баллов`,
+        label: t(`Ниже порога на ${Math.abs(diff)} баллов`, `${Math.abs(diff)} points below the reference`),
         labelEn: 'Below reference threshold',
         color: 'text-amber-400 bg-amber-950/60 border-amber-800/60',
         badgeColor: 'bg-amber-400',
       };
     }
     return {
-      label: `Значительный дефицит: ${Math.abs(diff)} баллов`,
+      label: t(`Значительный дефицит: ${Math.abs(diff)} баллов`, `Large gap: ${Math.abs(diff)} points`),
       labelEn: 'Well below reference threshold',
       color: 'text-red-400 bg-red-950/60 border-red-800/60',
       badgeColor: 'bg-red-500',
@@ -186,25 +190,25 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
             </span>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
-            Сравнение с ориентировочными порогами вузов
+            {t('Сравнение с ориентировочными порогами вузов', 'Compare with university reference thresholds')}
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Пороги собраны как ориентир. Это не вероятность поступления и не гарантия: проверяйте требования на официальном сайте вуза.
+            {t('Пороги собраны как ориентир. Это не вероятность поступления и не гарантия: проверяйте требования на официальном сайте вуза.', 'Thresholds are a reference, not an admission probability or a guarantee. Check the official university website.')}
           </p>
           <p className="text-[11px] text-amber-300/90 mt-2">
-            Источник: официальный реестр DET, проверено {REQUIREMENT_CHECKED_AT}. Пороги баллов — ориентир платформы, а не официальное требование вуза. Проверяйте приёмную страницу перед подачей документов.
+            {t('Источник: официальный реестр DET, проверено ' + REQUIREMENT_CHECKED_AT + '. Пороги баллов — ориентир платформы, а не официальное требование вуза. Проверяйте приёмную страницу перед подачей документов.', 'Source: the official DET registry, checked ' + REQUIREMENT_CHECKED_AT + '. Score thresholds are a platform reference, not an official university requirement. Check the admissions page before applying.')}
           </p>
         </div>
 
         {/* Total matched badge */}
         <div className="px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-800 text-right shrink-0">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Выше ориентира:</span>
+          <span className="text-[10px] font-bold text-neutral-400 uppercase block">{t('Выше ориентира', 'Above the reference')}:</span>
           <div className="text-lg font-black text-[#D2F544]">
-            {eligibleCount} из {comparable.length}
+            {eligibleCount} / {comparable.length}
           </div>
           {unknownCount > 0 && (
             <span className="text-[10px] text-neutral-500">
-              у {unknownCount} порог неизвестен
+              {t(`у ${unknownCount} порог неизвестен`, `${unknownCount} have no published threshold`)}
             </span>
           )}
         </div>
@@ -217,11 +221,11 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
             {simulatedScore}
           </div>
           <div>
-            <span className="text-xs font-bold text-white block">Симуляция баллов экзамена DET</span>
+            <span className="text-xs font-bold text-white block">{t('Симуляция баллов экзамена DET', 'DET score simulation')}</span>
             <span className="text-[11px] text-neutral-400">
               {currentPredictedScore > 0
-                ? 'Двигайте ползунок, чтобы увидеть, как меняется соответствие ориентировочным порогам'
-                : 'У вас пока нет подтверждённого mock-результата. Слайдер показывает сценарий, а не ваш балл.'}
+                ? t('Двигайте ползунок, чтобы увидеть, как меняется соответствие ориентировочным порогам', 'Move the slider to see how the match against reference thresholds changes')
+                : t('У вас пока нет подтверждённого mock-результата. Слайдер показывает сценарий, а не ваш балл.', 'You have no confirmed mock result yet. The slider shows a scenario, not your score.')}
             </span>
           </div>
         </div>
@@ -229,7 +233,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
         <div className="w-full md:w-64 flex items-center gap-3">
           <input
             type="range"
-            aria-label="Целевой балл"
+            aria-label={t('Целевой балл', 'Target score')}
             min={95}
             max={155}
             step={5}
@@ -254,7 +258,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                 : 'bg-neutral-900 text-neutral-400 hover:text-white'
             }`}
           >
-            Все топ-вузы
+            {t('Все топ-вузы', 'All top universities')}
           </button>
           <button
             onClick={() => setActiveTier('IVY')}
@@ -284,7 +288,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по названию или стране..."
+            placeholder={t('Поиск по названию или стране...', 'Search by name or country...')}
             className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500"
           />
         </div>
@@ -315,7 +319,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                         </span>
                       )}
                       <span className="text-[10px] text-neutral-400 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {uni.country}{uni.state ? `, ${uni.state}` : ''}
+                        <MapPin className="w-3 h-3" /> {localizeCountry(uni.country, locale)}{uni.state ? `, ${uni.state}` : ''}
                       </span>
                     </div>
 
@@ -325,9 +329,9 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-[9px] uppercase font-bold text-neutral-500 block">Порог DET</span>
+                    <span className="text-[9px] uppercase font-bold text-neutral-500 block">{t('Порог DET', 'DET threshold')}</span>
                     <span className="text-base font-black text-white">
-                      {uni.minScore > 0 ? `${uni.minScore}+` : 'неизвестно'}
+                      {uni.minScore > 0 ? `${uni.minScore}+` : t('неизвестно', 'unknown')}
                     </span>
                   </div>
                 </div>
@@ -335,13 +339,13 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                 {uni.minScore > 0 ? (
                   <p className="text-[11px] text-neutral-400 mt-1 line-clamp-1">
                     {uni.requirementVerified
-                      ? 'Требование подтверждено вузом'
-                      : 'Ориентировочный порог платформы, не официальное требование вуза'}
-                    {uni.requirementCheckedAt ? ` · проверено ${uni.requirementCheckedAt}` : ''}
+                      ? t('Требование подтверждено вузом', 'Requirement confirmed by the university')
+                      : t('Ориентировочный порог платформы, не официальное требование вуза', 'Platform reference threshold, not an official university requirement')}
+                    {uni.requirementCheckedAt ? t(` · проверено ${uni.requirementCheckedAt}`, ` · checked ${uni.requirementCheckedAt}`) : ''}
                   </p>
                 ) : (
                   <p className="text-[11px] text-neutral-500 mt-1 line-clamp-1">
-                    Балл DET не опубликован в проверенном источнике — сравнение недоступно.
+                    {t('Балл DET не опубликован в проверенном источнике — сравнение недоступно.', 'The DET score is not published in the verified source, so comparison is unavailable.')}
                   </p>
                 )}
               </div>
@@ -363,7 +367,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                       className="text-[11px] font-bold text-neutral-500 hover:text-neutral-300 flex items-center gap-1 transition-colors"
                     >
                       <ShieldCheck className="w-3 h-3" />
-                      <span>Источник</span>
+                      <span>{t('Источник', 'Source')}</span>
                     </a>
                   )}
                   {uni.websiteUrl && (
@@ -373,7 +377,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
                       rel="noopener noreferrer"
                       className="text-[11px] font-bold text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
                     >
-                      <span>Приемная комиссия</span>
+                      <span>{t('Приемная комиссия', 'Admissions')}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
@@ -391,7 +395,7 @@ export const UniversityMatchWidget: React.FC<UniversityMatchWidgetProps> = ({
           className="text-xs font-bold text-neutral-400 hover:text-white inline-flex items-center gap-1.5 hover:underline"
         >
           <Building2 className="w-4 h-4 text-[#D2F544]" />
-          <span>Смотреть полный каталог 4,087 университетов, принимающих Duolingo English Test →</span>
+          <span>{t('Смотреть полный каталог 4,087 университетов, принимающих Duolingo English Test →', 'Browse all 4,087 universities accepting Duolingo English Test →')}</span>
         </Link>
       </div>
     </div>

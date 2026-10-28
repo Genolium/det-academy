@@ -70,7 +70,7 @@ interface ProgressState {
   getLeague: () => LeagueInfo;
 }
 
-export const TOTAL_LESSONS = 16;
+export const TOTAL_LESSONS = 17;
 
 const getScopedKey = (key: string, userId?: string | null): string => {
   if (!userId) return `det_guest_${key}`;

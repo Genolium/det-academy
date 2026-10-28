@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
+import { sound } from '@/lib/sound';
+import { SpeechTimeline } from '@/lib/speechTimeline';
+import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciation';
 import { Button } from '@/components/ui/Button';
 import { Mic, Clock, ArrowRight, AlertCircle, Volume2 } from 'lucide-react';
 
@@ -11,8 +14,11 @@ interface SpeechRecognitionEvent {
   results: {
     length: number;
     [index: number]: {
+      isFinal: boolean;
+      length: number;
       [index: number]: {
         transcript: string;
+        confidence?: number;
       };
     };
   };
@@ -62,10 +68,13 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
 
   const isCompletedRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const timelineRef = useRef<SpeechTimeline | null>(null);
 
   const handleFinish = async () => {
     if (isCompletedRef.current) return;
     isCompletedRef.current = true;
+    const endedAtMs = performance.now();
+    const durationSec = Math.max(1, 90 - timeLeft);
 
     if (recognitionRef.current) {
       try {
@@ -91,10 +100,15 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
       if (spokenText) {
         formData.append('transcript', spokenText);
       }
-      formData.append('durationSec', Math.max(1, 90 - timeLeft).toString());
+      formData.append('durationSec', durationSec.toString());
 
       setIsSubmitting(true);
       try {
+        await appendPronunciationReport(formData, recordedBlob, timelineRef.current, {
+          endedAtMs,
+          durationSec,
+          playbackText: promptText,
+        });
         await api.uploadSpeakingAudio(backendSessionId, formData);
       } catch {
         setIsSubmitting(false);
@@ -123,6 +137,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
     if (!started && audioRecorder.error) {
       setMicError(audioRecorder.error);
     }
+    timelineRef.current = new SpeechTimeline(performance.now());
 
     const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
     const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
@@ -134,6 +149,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
         rec.continuous = true;
         rec.interimResults = true;
         rec.onresult = (evt: SpeechRecognitionEvent) => {
+          timelineRef.current?.ingest(toAsrSegments(evt.results), performance.now());
           let fullText = '';
           for (let i = 0; i < evt.results.length; i++) {
             fullText += evt.results[i][0].transcript + ' ';
@@ -207,10 +223,21 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
           />
         </div>
 
-        {/* Prompt */}
-        <p className="text-sm sm:text-base text-neutral-300 leading-relaxed font-medium">
-          {promptText}
-        </p>
+        {/* Prompt + model pronunciation */}
+        <div className="flex items-start justify-between gap-4">
+          <p className="text-sm sm:text-base text-neutral-300 leading-relaxed font-medium">
+            {promptText}
+          </p>
+          <button
+            type="button"
+            onClick={() => sound.speakEnglish(promptText, undefined, 1)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1.5 text-[11px] font-bold text-neutral-300 transition-colors hover:border-[#D2F544] hover:text-[#D2F544]"
+            aria-label="Прослушать эталонное произношение задания"
+          >
+            <Volume2 className="w-3.5 h-3.5" />
+            Эталон
+          </button>
+        </div>
 
         {/* Status / Live Feedback */}
         {phase === 'prep' ? (

@@ -18,6 +18,8 @@ services:
       - ./backend/db/06-level-bank.sql:/docker-entrypoint-initdb.d/06-level-bank.sql:ro
       - ./backend/db/07-theory-content.sql:/docker-entrypoint-initdb.d/07-theory-content.sql:ro
       - ./backend/db/08-productive-bank.sql:/docker-entrypoint-initdb.d/08-productive-bank.sql:ro
+      - ./backend/db/09-interactive-bank.sql:/docker-entrypoint-initdb.d/09-interactive-bank.sql:ro
+      - ./backend/db/10-dictionary.sql:/docker-entrypoint-initdb.d/10-dictionary.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-det_academy}"]
       interval: 5s
@@ -76,8 +78,18 @@ services:
       AI_TTS_SPEED: "${AI_TTS_SPEED:-0.9}"
       # Paid syntheses only: cache hits are unlimited. The whole lesson bank is
       # pre-generated on deploy, so a learner normally never hits these limits.
-      TTS_NEW_PER_IP_PER_DAY: "${TTS_NEW_PER_IP_PER_DAY:-20}"
-      TTS_NEW_GLOBAL_PER_DAY: "${TTS_NEW_GLOBAL_PER_DAY:-500}"
+      TTS_NEW_PER_IP_PER_DAY: "${TTS_NEW_PER_IP_PER_DAY:-200}"
+      TTS_NEW_GLOBAL_PER_DAY: "${TTS_NEW_GLOBAL_PER_DAY:-2000}"
+      # Per-user allowance plus the independent IP/device quotas. Counters are
+      # persisted in daily_limit_counters; 0 disables one dimension.
+      DAILY_MOCK_LIMIT: "${DAILY_MOCK_LIMIT:-3}"
+      DAILY_SPEAKING_LIMIT: "${DAILY_SPEAKING_LIMIT:-20}"
+      DAILY_MOCK_LIMIT_PER_IP: "${DAILY_MOCK_LIMIT_PER_IP:-10}"
+      DAILY_MOCK_LIMIT_PER_DEVICE: "${DAILY_MOCK_LIMIT_PER_DEVICE:-5}"
+      DAILY_SPEAKING_LIMIT_PER_IP: "${DAILY_SPEAKING_LIMIT_PER_IP:-60}"
+      DAILY_SPEAKING_LIMIT_PER_DEVICE: "${DAILY_SPEAKING_LIMIT_PER_DEVICE:-40}"
+      DAILY_AUTH_LIMIT_PER_IP: "${DAILY_AUTH_LIMIT_PER_IP:-20}"
+      DAILY_AUTH_LIMIT_PER_DEVICE: "${DAILY_AUTH_LIMIT_PER_DEVICE:-10}"
       REQUIRE_NEURAL_EVALUATION: "${REQUIRE_NEURAL_EVALUATION:-false}"
       ALLOW_CLIENT_TRANSCRIPT: "${ALLOW_CLIENT_TRANSCRIPT:-true}"
       METRICS_TOKEN: "${METRICS_TOKEN:-}"

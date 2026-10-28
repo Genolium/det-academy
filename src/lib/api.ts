@@ -1,4 +1,5 @@
 import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth-session';
+import { getDeviceId } from '@/lib/device-id';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
@@ -189,6 +190,31 @@ export interface SessionReviewResponse {
   items: ReviewItem[];
 }
 
+export interface PronunciationWordReport {
+  word: string;
+  start: number;
+  end: number;
+  score: number;
+  issue?: 'quiet' | 'unclear' | 'muffled' | 'unexpected' | 'low-confidence';
+  confidence?: number;
+  referenceWord?: string;
+}
+
+/** Browser-computed clarity feedback. Display-only, never a grading input. */
+export interface PronunciationReport {
+  version: number;
+  method: 'clarity-proxy';
+  overallScore: number;
+  words: PronunciationWordReport[];
+  timingSource: 'asr-segment-arrivals' | 'uniform-estimate';
+  durationSec: number;
+  measuredWords: number;
+  referenceText?: string;
+  referencePlaybackText?: string;
+  referenceMatchRate?: number;
+  notes?: string[];
+}
+
 export interface EvaluationResult {
   id: string;
   responseId?: string;
@@ -206,6 +232,13 @@ export interface EvaluationResult {
   cefrLevel: 'Pre-A1' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   speakingDuration?: number;
   wpm?: number;
+  speechRate?: number;
+  pauseRatio?: number;
+  pauseCount?: number;
+  fillerCount?: number;
+  pronunciationStability?: number;
+  pauses?: Array<{ start: number; end: number }>;
+  pronunciation?: PronunciationReport;
   recommendations: string[];
   audioUrl?: string;
   transcript?: string;
@@ -297,6 +330,22 @@ export interface StudyPlanResponse {
   readinessBasis: string;
   statusMessage: string;
   tasksToday: DailyTask[];
+  /** Confidence interval for the current level; absent without a completed mock. */
+  estimatedRange?: {
+    low: number;
+    high: number;
+    confidence: 'low' | 'medium' | 'high';
+    basis: string;
+  };
+  /** One concrete next task, not a generic recommendation. */
+  nextBestAction?: {
+    title: string;
+    description: string;
+    href: string;
+    type: string;
+    minutes: number;
+    reason: string;
+  };
 }
 
 export interface ContextVariant {
@@ -516,6 +565,10 @@ class ApiClient {
     const token = getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    const deviceId = getDeviceId();
+    if (deviceId) {
+      headers['X-Device-Id'] = deviceId;
     }
     return headers;
   }
@@ -1084,11 +1137,14 @@ class ApiClient {
   // --- Universities & Institutions ---
 
   async getVocabulary(
-    params?: { search?: string; level?: string }
+    params?: { search?: string; level?: string; source?: string; limit?: number; offset?: number }
   ): Promise<{ entries: VocabularyEntry[]; total: number }> {
     const query = new URLSearchParams();
     if (params?.search) query.set('search', params.search);
     if (params?.level && params.level !== 'ALL') query.set('level', params.level);
+    if (params?.source && params.source !== 'all') query.set('source', params.source);
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.offset) query.set('offset', String(params.offset));
     const res = await fetch(`${API_BASE_URL}/api/v1/vocabulary?${query.toString()}`, {
       headers: this.getHeaders(),
       credentials: 'include',

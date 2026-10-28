@@ -153,7 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center gap-3 mb-6">
           <div className="w-11 h-11 rounded-2xl bg-[#0E1012] border border-neutral-800 flex items-center justify-center p-1.5 shadow-sm shrink-0">
             <Image
-              src="/logo.svg"
+              src="/det-owl-v2.svg"
               alt="DET Academy"
               width={32}
               height={32}

@@ -61,8 +61,8 @@ func NewTTSHandler(provider ai.TTSProvider, dir string) *TTSHandler {
 	return &TTSHandler{
 		Provider:        provider,
 		Dir:             dir,
-		NewPerIPPerDay:  envInt("TTS_NEW_PER_IP_PER_DAY", 20),
-		NewGlobalPerDay: envInt("TTS_NEW_GLOBAL_PER_DAY", 500),
+		NewPerIPPerDay:  envInt("TTS_NEW_PER_IP_PER_DAY", 200),
+		NewGlobalPerDay: envInt("TTS_NEW_GLOBAL_PER_DAY", 2000),
 		flights:         map[string]*ttsFlight{},
 		quotaByIP:       map[string]int{},
 	}
@@ -214,20 +214,28 @@ func writeTTSAudio(w http.ResponseWriter, audio []byte, cacheState string) {
 // clientIP resolves the address of the caller behind the reverse proxy. The
 // trusted nginx appends the real address to X-Forwarded-For, so the last entry
 // is used: the first one can be supplied by the client and would let a script
-// rotate its quota.
+// rotate its quota. The value is canonicalised so different textual forms of
+// the same IPv6 address share one counter.
 func clientIP(r *http.Request) string {
 	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
 		parts := strings.Split(forwarded, ",")
 		for index := len(parts) - 1; index >= 0; index-- {
 			if candidate := strings.TrimSpace(parts[index]); candidate != "" {
-				return candidate
+				return canonicalIP(candidate)
 			}
 		}
 	}
 	if host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr)); err == nil {
-		return host
+		return canonicalIP(host)
 	}
-	return strings.TrimSpace(r.RemoteAddr)
+	return canonicalIP(strings.TrimSpace(r.RemoteAddr))
+}
+
+func canonicalIP(value string) string {
+	if parsed := net.ParseIP(value); parsed != nil {
+		return parsed.String()
+	}
+	return value
 }
 
 func envInt(name string, fallback int) int {

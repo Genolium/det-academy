@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
+    "test:seo": "playwright test -c playwright.seo.config.ts",
+    "seo:audit": "node scripts/seo_audit.mjs",
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit",
     "test:backend": "cd backend && go test ./...",

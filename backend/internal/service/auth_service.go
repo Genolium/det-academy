@@ -342,8 +342,8 @@ func (s *AuthService) exchangeYandexOAuth(ctx context.Context, code string) (str
 						accessToken = tokenResp.AccessToken
 					}
 				} else {
-					body, _ := io.ReadAll(resp.Body)
-					log.Printf("[YandexOAuth] Token exchange returned status %d: %s", resp.StatusCode, string(body))
+					_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1024))
+					log.Printf("[YandexOAuth] token exchange returned status %d", resp.StatusCode)
 				}
 			}
 		}
@@ -484,7 +484,7 @@ func (s *AuthService) exchangeVKID(ctx context.Context, code, deviceID, codeVeri
 					tokenIDToken = tokenResp.IDToken
 				}
 			} else {
-				log.Printf("[VKID] Token exchange returned status %d: %s", resp.StatusCode, string(bodyBytes))
+				log.Printf("[VKID] token exchange returned status %d", resp.StatusCode)
 			}
 		}
 	}

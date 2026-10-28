@@ -594,34 +594,82 @@ type EvidenceSpan struct {
 }
 
 type EvaluationResult struct {
-	ID               string         `json:"id"`
-	ResponseID       string         `json:"responseId,omitempty"`
-	SessionID        string         `json:"sessionId"`
-	QuestionID       string         `json:"questionId"`
-	QuestionType     string         `json:"questionType"`
-	Status           string         `json:"status"` // "COMPLETED", "EMPTY", "INSUFFICIENT", "FAILED"
-	Score            float64        `json:"score"`  // 0.0 - 1.0 calibrated ratio
-	WordCount        int            `json:"wordCount"`
-	UniqueWords      int            `json:"uniqueWords"`
-	LexicalDiversity float64        `json:"lexicalDiversity"` // TTR
-	AcademicWords    []string       `json:"academicWords"`
-	Connectors       []string       `json:"connectors"`
-	RelevanceScore   float64        `json:"relevanceScore"`
-	CEFRLevel        string         `json:"cefrLevel"` // "A1", "A2", "B1", "B2", "C1", "C2"
-	SpeakingDuration float64        `json:"speakingDuration,omitempty"`
-	WPM              float64        `json:"wpm,omitempty"`
-	Recommendations  []string       `json:"recommendations"`
-	AudioURL         string         `json:"audioUrl,omitempty"`
-	Transcript       string         `json:"transcript,omitempty"`
-	TranscriptSource string         `json:"transcriptSource,omitempty"`
-	Provider         string         `json:"provider,omitempty"`
-	EvaluatorVersion string         `json:"evaluatorVersion,omitempty"`
-	FeedbackStatus   string         `json:"feedbackStatus,omitempty"`
-	Feedback         string         `json:"feedback,omitempty"`
-	EvidenceSpans    []EvidenceSpan `json:"evidenceSpans,omitempty"`
-	RetryCount       int            `json:"retryCount,omitempty"`
-	LastError        string         `json:"lastError,omitempty"`
-	CreatedAt        time.Time      `json:"createdAt"`
+	ID                     string        `json:"id"`
+	ResponseID             string        `json:"responseId,omitempty"`
+	SessionID              string        `json:"sessionId"`
+	QuestionID             string        `json:"questionId"`
+	QuestionType           string        `json:"questionType"`
+	Status                 string        `json:"status"` // "COMPLETED", "EMPTY", "INSUFFICIENT", "FAILED"
+	Score                  float64       `json:"score"`  // 0.0 - 1.0 calibrated ratio
+	WordCount              int           `json:"wordCount"`
+	UniqueWords            int           `json:"uniqueWords"`
+	LexicalDiversity       float64       `json:"lexicalDiversity"` // TTR
+	AcademicWords          []string      `json:"academicWords"`
+	Connectors             []string      `json:"connectors"`
+	RelevanceScore         float64       `json:"relevanceScore"`
+	CEFRLevel              string        `json:"cefrLevel"` // "A1", "A2", "B1", "B2", "C1", "C2"
+	SpeakingDuration       float64       `json:"speakingDuration,omitempty"`
+	WPM                    float64       `json:"wpm,omitempty"`
+	SpeechRate             float64       `json:"speechRate,omitempty"`
+	PauseRatio             float64       `json:"pauseRatio,omitempty"`
+	PauseCount             int           `json:"pauseCount,omitempty"`
+	FillerCount            int           `json:"fillerCount,omitempty"`
+	PronunciationStability float64       `json:"pronunciationStability,omitempty"`
+	Pauses                 []SpeechPause `json:"pauses,omitempty"`
+	// Pronunciation is word-level clarity feedback computed in the browser.
+	// It is display-only: it never contributes to Score. See PronunciationReport.
+	Pronunciation    *PronunciationReport `json:"pronunciation,omitempty"`
+	Recommendations  []string             `json:"recommendations"`
+	AudioURL         string               `json:"audioUrl,omitempty"`
+	Transcript       string               `json:"transcript,omitempty"`
+	TranscriptSource string               `json:"transcriptSource,omitempty"`
+	Provider         string               `json:"provider,omitempty"`
+	EvaluatorVersion string               `json:"evaluatorVersion,omitempty"`
+	FeedbackStatus   string               `json:"feedbackStatus,omitempty"`
+	Feedback         string               `json:"feedback,omitempty"`
+	EvidenceSpans    []EvidenceSpan       `json:"evidenceSpans,omitempty"`
+	RetryCount       int                  `json:"retryCount,omitempty"`
+	LastError        string               `json:"lastError,omitempty"`
+	CreatedAt        time.Time            `json:"createdAt"`
+}
+
+type SpeechPause struct {
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+}
+
+// PronunciationWord is one measured word of a speaking answer.
+//
+// Score is a clarity index (0..1) derived from measured voicing, loudness and
+// articulation, relative to the same speaker's median word. It is NOT phoneme
+// accuracy: the project has no forced aligner or phoneme acoustic model.
+type PronunciationWord struct {
+	Word          string  `json:"word"`
+	Start         float64 `json:"start"`
+	End           float64 `json:"end"`
+	Score         float64 `json:"score"`
+	Issue         string  `json:"issue,omitempty"`
+	Confidence    float64 `json:"confidence,omitempty"`
+	ReferenceWord string  `json:"referenceWord,omitempty"`
+}
+
+// PronunciationReport is the client-computed word-level clarity panel.
+// Method is always "clarity-proxy"; anything claiming phoneme accuracy is
+// rejected while parsing.
+type PronunciationReport struct {
+	Version       int                 `json:"version"`
+	Method        string              `json:"method"`
+	OverallScore  float64             `json:"overallScore"`
+	Words         []PronunciationWord `json:"words"`
+	TimingSource  string              `json:"timingSource"`
+	DurationSec   float64             `json:"durationSec"`
+	MeasuredWords int                 `json:"measuredWords"`
+	ReferenceText string              `json:"referenceText,omitempty"`
+	// ReferencePlaybackText is the task prompt offered for reference playback.
+	// It is never used for alignment.
+	ReferencePlaybackText string   `json:"referencePlaybackText,omitempty"`
+	ReferenceMatchRate    float64  `json:"referenceMatchRate,omitempty"`
+	Notes                 []string `json:"notes,omitempty"`
 }
 
 // AIUsageEvent is one billable provider call.
@@ -886,6 +934,26 @@ type StudyPlanResponse struct {
 	ReadinessBasis     string      `json:"readinessBasis"`
 	StatusMessage      string      `json:"statusMessage"`
 	TasksToday         []DailyTask `json:"tasksToday"`
+	// EstimatedRange is an honest confidence interval for the current level.
+	EstimatedRange *ScoreRange `json:"estimatedRange,omitempty"`
+	// NextBestAction is one concrete task, not a generic recommendation.
+	NextBestAction *NextBestAction `json:"nextBestAction,omitempty"`
+}
+
+type ScoreRange struct {
+	Low        int    `json:"low"`
+	High       int    `json:"high"`
+	Confidence string `json:"confidence"` // low | medium | high
+	Basis      string `json:"basis"`
+}
+
+type NextBestAction struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Href        string `json:"href"`
+	Type        string `json:"type"`
+	Minutes     int    `json:"minutes"`
+	Reason      string `json:"reason"`
 }
 
 // ContextVariant represents an alternative sentence or context for error practice

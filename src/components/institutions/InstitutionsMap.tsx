@@ -8,6 +8,7 @@ import { PillBadge } from '@/components/ui/PillBadge';
 import { Search, MapPin, Globe, ExternalLink, Filter, GraduationCap, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { localizeCountry } from '@/lib/countryNames';
 import { translations } from '@/lib/translations';
 
 function escapeHtml(value: unknown): string {
@@ -29,9 +30,12 @@ interface CatalogStats {
   categories: Record<string, number>;
 }
 
-function formatLocation(inst: { city?: string; state?: string; country?: string }): string {
+function formatLocation(
+  inst: { city?: string; state?: string; country?: string },
+  locale: 'ru' | 'en'
+): string {
   const parts = [inst.city, inst.state].filter(Boolean);
-  return parts.length ? parts.join(', ') : inst.country || '';
+  return parts.length ? parts.join(', ') : localizeCountry(inst.country, locale);
 }
 
 function safeExternalUrl(value?: string): string {
@@ -111,7 +115,7 @@ export const InstitutionsMap: React.FC = () => {
         if (loaded === 0) {
           setLoadError(
             locale === 'ru'
-              ? 'Каталог вузов временно недоступен. Данные не подменяются локальной копией.'
+              ? (locale === 'ru' ? 'Каталог вузов временно недоступен. Данные не подменяются локальной копией.' : 'The university catalogue is temporarily unavailable. Data is not replaced with a local copy.')
               : 'The institution catalogue is temporarily unavailable. No local fallback is shown.'
           );
         } else {
@@ -149,7 +153,7 @@ export const InstitutionsMap: React.FC = () => {
           }
         } catch {}
       } catch (err) {
-        setLoadError(err instanceof Error ? err.message : 'Не удалось загрузить каталог вузов');
+        setLoadError(err instanceof Error ? err.message : (locale === 'ru' ? 'Не удалось загрузить каталог вузов' : 'Could not load the university catalogue'));
       } finally {
         setLoading(false);
       }
@@ -296,17 +300,17 @@ export const InstitutionsMap: React.FC = () => {
     const popupContent = `
       <div style="font-family: inherit; padding: 4px; max-width: 240px;">
         <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #16a34a; margin-bottom: 2px;">
-          ${escapeHtml(inst.category)} • ${escapeHtml(inst.country)}
+          ${escapeHtml(inst.category)} • ${escapeHtml(localizeCountry(inst.country, locale))}
         </div>
         <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.2;">
           ${escapeHtml(inst.name)}
         </div>
         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
-          📍 ${escapeHtml(formatLocation(inst))}
+          📍 ${escapeHtml(formatLocation(inst, locale))}
         </div>
         <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 8px; font-size: 11px; margin-bottom: 8px;">
-          ${inst.minScore > 0 ? `<strong>Минимальный балл DET (ориентир):</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>` : '<strong>Минимальный балл DET:</strong> <span style="color: #475569;">не подтверждён</span>'}
-          ${inst.subscoreReqs ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(inst.subscoreReqs)}</div>` : ''}
+          ${inst.minScore > 0 ? `<strong>${locale === 'ru' ? 'Минимальный балл DET (ориентир)' : 'DET score (platform reference)'}:</strong> <span style="color: #047857; font-weight: 800;">${inst.minScore}+</span>` : `<strong>${locale === 'ru' ? 'Минимальный балл DET' : 'DET score'}:</strong> <span style="color: #475569;">${locale === 'ru' ? 'не подтверждён' : 'not confirmed'}</span>`}
+          ${inst.subscoreReqs && locale === 'ru' ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(inst.subscoreReqs)}</div>` : ''}
         </div>
         <a href="${safeExternalUrl(inst.websiteUrl)}" target="_blank" rel="noopener noreferrer" style="
           display: inline-block;
@@ -318,7 +322,7 @@ export const InstitutionsMap: React.FC = () => {
           border-radius: 9999px;
           text-decoration: none;
         ">
-          Сайт приемной комиссии ↗
+          ${locale === 'ru' ? 'Сайт приёмной комиссии' : 'Admissions website'} ↗
         </a>
       </div>
     `;
@@ -402,7 +406,7 @@ export const InstitutionsMap: React.FC = () => {
                 transform: translate(-50%, -50%);
               ">
                 <span style="font-size: ${count >= 100 ? '12px' : '11px'}; font-weight: 900; line-height: 1;">${count}</span>
-                <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; opacity: 0.85; line-height: 1; margin-top: 1px;">вузов</span>
+                <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; opacity: 0.85; line-height: 1; margin-top: 1px;">${locale === 'ru' ? 'вузов' : 'institutions'}</span>
               </div>
             `,
             iconSize: [blobSize, blobSize],
@@ -528,14 +532,14 @@ export const InstitutionsMap: React.FC = () => {
           {/* Country filter */}
           <div className="md:col-span-4">
             <select
-              aria-label="Страна"
+              aria-label={locale === 'ru' ? 'Страна' : 'Country'}
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
               className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-3 py-3 text-xs sm:text-sm font-medium text-neutral-800 outline-none cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c} value={c}>
-                  {c === 'All' ? t.allCountries : c}
+                  {c === 'All' ? t.allCountries : localizeCountry(c, locale)}
                 </option>
               ))}
             </select>
@@ -609,7 +613,7 @@ export const InstitutionsMap: React.FC = () => {
                   {selectedInstitution.name}
                 </p>
                 <p className="text-xs text-neutral-500">
-                  📍 {formatLocation(selectedInstitution)} • {t.minScoreLabel}{' '}
+                  📍 {formatLocation(selectedInstitution, locale)} • {t.minScoreLabel}{' '}
                   <strong className="text-emerald-700">
                     {selectedInstitution.minScore > 0 ? `${selectedInstitution.minScore}+` : (locale === 'ru' ? 'не подтверждён' : 'not confirmed')}
                   </strong>
@@ -713,14 +717,14 @@ export const InstitutionsMap: React.FC = () => {
                       {inst.name}
                     </p>
 
-                    {inst.subscoreReqs && (
+                    {inst.subscoreReqs && locale === 'ru' && (
                       <p className={`text-[11px] mb-2 leading-relaxed ${isSelected ? 'text-neutral-300' : 'text-neutral-600'}`}>
                         {inst.subscoreReqs}
                       </p>
                     )}
 
                     <div className={`text-xs flex items-center justify-between ${isSelected ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                      <span>📍 {formatLocation(inst)}</span>
+                      <span>📍 {formatLocation(inst, locale)}</span>
                       {inst.acceptanceRate && (
                         <span>{t.acceptanceLabel} {inst.acceptanceRate}</span>
                       )}
@@ -730,7 +734,7 @@ export const InstitutionsMap: React.FC = () => {
               })}
               {filteredInstitutions.length > 100 && (
                 <div className="p-3 text-center bg-neutral-50 rounded-xl border border-neutral-200/80 text-[11px] font-semibold text-neutral-500">
-                  Показаны первые 100 из {filteredInstitutions.length.toLocaleString('ru-RU')} вузов. Уточните поиск или фильтры для точной выборки.
+                  {locale === 'ru' ? `Показаны первые 100 из ${filteredInstitutions.length.toLocaleString('ru-RU')} вузов. Уточните поиск или фильтры для точной выборки.` : `Showing the first 100 of ${filteredInstitutions.length.toLocaleString('en-US')} institutions. Narrow the search or filters for a precise list.`}
                 </div>
               )}
             </div>

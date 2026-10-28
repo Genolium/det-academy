@@ -115,6 +115,10 @@ export const TestController: React.FC = () => {
   const { addTestResult } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].testSession;
+  const tr = useCallback(
+    (ruText: string, enText: string) => (locale === 'ru' ? ruText : enText),
+    [locale]
+  );
   const isInitializingRef = useRef(false);
   const advanceInFlightRef = useRef(false);
   const [isFinalStageComplete, setIsFinalStageComplete] = useState(false);
@@ -129,7 +133,7 @@ export const TestController: React.FC = () => {
         return;
       }
       if (!sessionId) {
-        setAttemptStatus('failed', 'Серверная попытка не найдена. Баллы не начислены.');
+        setAttemptStatus('failed', tr('Серверная попытка не найдена. Баллы не начислены.', 'The server attempt was not found. No score was awarded.'));
         return;
       }
 
@@ -141,13 +145,16 @@ export const TestController: React.FC = () => {
         if (remaining > 0) {
           setAttemptStatus(
             'pending_sync',
-            'Часть ответов ещё не сохранена на сервере. Результат не будет выставлен до полной синхронизации.'
+            tr(
+              'Часть ответов ещё не сохранена на сервере. Результат не будет выставлен до полной синхронизации.',
+              'Some answers are not saved on the server yet. The result will not be issued until everything is synced.'
+            )
           );
           return;
         }
         const resp = await api.completeTestSession(sessionId);
         if (!resp?.scores) {
-          throw new Error('Сервер не вернул подтверждённый результат. Баллы не начислены.');
+          throw new Error(tr('Сервер не вернул подтверждённый результат. Баллы не начислены.', 'The server did not return a confirmed result. No score was awarded.'));
         }
 
         applyServerCompletion({
@@ -187,7 +194,7 @@ export const TestController: React.FC = () => {
       } catch (err) {
         const message = errorMessage(
           err,
-          'Сервер не подтвердил завершение попытки. Результат не начислен.'
+          tr('Сервер не подтвердил завершение попытки. Результат не начислен.', 'The server did not confirm completion. No result was awarded.')
         );
         if (isPermanentClientError(err)) {
           setAttemptStatus('failed', message);
@@ -196,7 +203,7 @@ export const TestController: React.FC = () => {
         }
       }
     },
-    [addTestResult, applyServerCompletion, candidateName, setAttemptStatus]
+    [addTestResult, applyServerCompletion, candidateName, setAttemptStatus, tr]
   );
 
   const startServerSession = useCallback(async () => {
@@ -205,7 +212,7 @@ export const TestController: React.FC = () => {
     try {
       const resp = await api.startTestSession({ candidateName, difficultyLevel });
       if (!resp?.session?.id) {
-        throw new Error('Сервер не создал попытку теста.');
+        throw new Error(tr('Сервер не создал попытку теста.', 'The server did not create a test attempt.'));
       }
       writeStoredAttempt({
         sessionId: resp.session.id,
@@ -226,11 +233,14 @@ export const TestController: React.FC = () => {
     } catch (err) {
       const message = errorMessage(
         err,
-        'Не удалось начать попытку на сервере. Тест не начнётся без подтверждённой сессии.'
+        tr(
+          'Не удалось начать попытку на сервере. Тест не начнётся без подтверждённой сессии.',
+          'Could not start the attempt on the server. The test will not begin without a confirmed session.'
+        )
       );
       setAttemptStatus('failed', message);
     }
-  }, [candidateName, difficultyLevel, hydrateServerAttempt, setAttemptStatus]);
+  }, [candidateName, difficultyLevel, hydrateServerAttempt, setAttemptStatus, tr]);
 
   const resumeAttempt = useCallback(async () => {
     const stored = readStoredAttempt();
@@ -272,11 +282,14 @@ export const TestController: React.FC = () => {
       }
       const message = errorMessage(
         err,
-        'Не удалось получить состояние попытки с сервера. Баллы не начислены.'
+        tr(
+          'Не удалось получить состояние попытки с сервера. Баллы не начислены.',
+          'Could not load the attempt state from the server. No score was awarded.'
+        )
       );
       setAttemptStatus('failed', message);
     }
-  }, [finalizeAttempt, hydrateServerAttempt, setAttemptStatus, startServerSession]);
+  }, [finalizeAttempt, hydrateServerAttempt, setAttemptStatus, startServerSession, tr]);
 
   useEffect(() => {
     if (isInitializingRef.current) return;
@@ -292,7 +305,7 @@ export const TestController: React.FC = () => {
     if (!sessionId) {
       setAttemptStatus(
         'failed',
-        'Серверная попытка не найдена. Завершить тест и получить балл невозможно.'
+        tr('Серверная попытка не найдена. Завершить тест и получить балл невозможно.', 'The server attempt was not found, so the test cannot be completed or scored.')
       );
       return;
     }
@@ -310,7 +323,10 @@ export const TestController: React.FC = () => {
       const remaining = await flushResponseOutbox(sessionId);
       if (remaining > 0) {
         setStageSyncError(
-          'Часть ответов не сохранена на сервере. Этап не будет завершён до синхронизации.'
+          tr(
+            'Часть ответов не сохранена на сервере. Этап не будет завершён до синхронизации.',
+            'Some answers are not saved on the server yet. The stage will not complete until everything is synced.'
+          )
         );
         return;
       }
@@ -353,7 +369,10 @@ export const TestController: React.FC = () => {
       }
     } catch (err) {
       setStageSyncError(
-        errorMessage(err, 'Не удалось сохранить этап на сервере. Повторите синхронизацию.')
+        errorMessage(
+          err,
+          tr('Не удалось сохранить этап на сервере. Повторите синхронизацию.', 'Could not save the stage on the server. Retry the sync.')
+        )
       );
     } finally {
       advanceInFlightRef.current = false;
@@ -394,8 +413,11 @@ export const TestController: React.FC = () => {
     return (
       <StatusScreen
         icon={<Loader2 className="w-8 h-8 animate-spin text-[#D2F544]" />}
-        title="Подключение к серверу теста"
-        message="Проверяем состояние попытки. Тест не начнётся, пока сервер не подтвердит сессию."
+        title={tr('Подключение к серверу теста', 'Connecting to the test server')}
+        message={tr(
+          'Проверяем состояние попытки. Тест не начнётся, пока сервер не подтвердит сессию.',
+          'Checking the attempt state. The test will not start until the server confirms the session.'
+        )}
       />
     );
   }
@@ -404,19 +426,22 @@ export const TestController: React.FC = () => {
     return (
       <StatusScreen
         icon={<WifiOff className="w-8 h-8 text-red-400" />}
-        title="Попытка не подтверждена сервером"
+        title={tr('Попытка не подтверждена сервером', 'Attempt not confirmed by the server')}
         message={
           attemptError ||
-          'Сервер недоступен. Баллы, сертификат и завершённая попытка не создаются на клиенте.'
+          tr(
+            'Сервер недоступен. Баллы, сертификат и завершённая попытка не создаются на клиенте.',
+            'The server is unavailable. Scores, certificates and completed attempts are never created on the client.'
+          )
         }
         tone="danger"
         actions={
           <>
             <Button variant="primary" onClick={() => void resumeAttempt()} icon={<RefreshCw className="w-4 h-4" />}>
-              Повторить подключение
+              {tr('Повторить подключение', 'Retry connection')}
             </Button>
             <Link href="/dashboard">
-              <Button variant="outline">Вернуться в кабинет</Button>
+              <Button variant="outline">{tr('Вернуться в кабинет', 'Back to dashboard')}</Button>
             </Link>
           </>
         }
@@ -442,8 +467,8 @@ export const TestController: React.FC = () => {
       return (
         <StatusScreen
           icon={<Loader2 className="w-8 h-8 animate-spin text-[#D2F544]" />}
-          title="Сервер проверяет и фиксирует результат"
-          message="Баллы будут показаны только после подтверждения сервером."
+          title={tr('Сервер проверяет и фиксирует результат', 'The server is grading and recording the result')}
+          message={tr('Баллы будут показаны только после подтверждения сервером.', 'Scores appear only after the server confirms them.')}
         />
       );
     }
@@ -451,19 +476,22 @@ export const TestController: React.FC = () => {
     return (
       <StatusScreen
         icon={<AlertTriangle className="w-8 h-8 text-amber-400" />}
-        title="Результат ожидает подтверждения"
+        title={tr('Результат ожидает подтверждения', 'Result awaiting confirmation')}
         message={
           attemptError ||
-          'Ответы сохранены, но сервер не подтвердил завершение. Баллы и сертификат не выданы. Повторите синхронизацию.'
+          tr(
+            'Ответы сохранены, но сервер не подтвердил завершение. Баллы и сертификат не выданы. Повторите синхронизацию.',
+            'Answers are saved, but the server has not confirmed completion. No score or certificate was issued. Retry the sync.'
+          )
         }
         tone="warning"
         actions={
           <>
             <Button variant="primary" onClick={retryLastAction} icon={<RefreshCw className="w-4 h-4" />}>
-              Повторить синхронизацию
+              {tr('Повторить синхронизацию', 'Retry sync')}
             </Button>
             <Link href="/dashboard">
-              <Button variant="outline">Вернуться в кабинет</Button>
+              <Button variant="outline">{tr('Вернуться в кабинет', 'Back to dashboard')}</Button>
             </Link>
           </>
         }
@@ -475,8 +503,11 @@ export const TestController: React.FC = () => {
     return (
       <StatusScreen
         icon={<ShieldAlert className="w-8 h-8 text-amber-400" />}
-        title="Попытка недоступна"
-        message="Сервер не подтвердил активную попытку. Обновите страницу или начните тест заново."
+        title={tr('Попытка недоступна', 'Attempt unavailable')}
+        message={tr(
+          'Сервер не подтвердил активную попытку. Обновите страницу или начните тест заново.',
+          'The server did not confirm an active attempt. Refresh the page or start the test again.'
+        )}
         tone="warning"
       />
     );
@@ -506,7 +537,7 @@ export const TestController: React.FC = () => {
                   ? 'border-red-500/50 bg-red-500/10 text-red-300 animate-pulse'
                   : 'border-neutral-700 bg-neutral-900 text-[#D2F544]'
               }`}
-              title="Серверный дедлайн этапа"
+              title={tr('Серверный дедлайн этапа', 'Server stage deadline')}
             >
               <Clock className="w-3.5 h-3.5" />
               {Math.floor(secondsLeft / 60)}:
@@ -524,7 +555,7 @@ export const TestController: React.FC = () => {
               onClick={retryLastAction}
               className="inline-flex items-center gap-1.5 font-bold text-amber-300 hover:text-amber-100"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> Повторить
+              <RefreshCw className="w-3.5 h-3.5" /> {tr('Повторить', 'Retry')}
             </button>
           </div>
         </div>

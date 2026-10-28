@@ -15,12 +15,18 @@ func NewVocabularyService(repo repository.VocabularyRepository) *VocabularyServi
 	return &VocabularyService{repo: repo}
 }
 
-func (s *VocabularyService) List(ctx context.Context, search, level string) ([]models.VocabularyEntry, int, error) {
-	entries, err := s.repo.List(ctx, search, level)
+func (s *VocabularyService) List(ctx context.Context, search, level, source string, limit, offset int) ([]models.VocabularyEntry, int, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 60
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	entries, err := s.repo.List(ctx, search, level, source, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	count, err := s.repo.Count(ctx)
+	count, err := s.repo.CountFiltered(ctx, search, level, source)
 	if err != nil {
 		count = len(entries)
 	}

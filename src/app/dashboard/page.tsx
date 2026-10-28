@@ -16,6 +16,7 @@ import { GoalOnboarding } from '@/components/dashboard/GoalOnboarding';
 import { XpLeagueCard } from '@/components/dashboard/XpLeagueCard';
 import { DailyLimitsCard } from '@/components/dashboard/DailyLimitsCard';
 import { PlacementCard } from '@/components/dashboard/PlacementCard';
+import { OnboardingPrompt } from '@/components/dashboard/OnboardingPrompt';
 import {
   GraduationCap,
   Sparkles,
@@ -115,7 +116,7 @@ function DashboardContent() {
   const readinessBasis =
     studyPlan?.readinessBasis ||
     (locale === 'ru'
-      ? 'Недостаточно данных: нужен минимум 2 завершённых mock-теста.'
+      ? (locale === 'ru' ? 'Недостаточно данных: нужен минимум 2 завершённых mock-теста.' : 'Not enough data: at least two completed mock tests are required.')
       : 'Not enough data: at least two completed mock tests are required.');
   const latestTest = testResults.length > 0 ? testResults[0] : null;
 
@@ -227,10 +228,10 @@ function DashboardContent() {
             {/* Target Date */}
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Calendar className="w-3.5 h-3.5 text-blue-400 mr-1.5 shrink-0" />
-              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">Дата:</span>
+              <span className="text-[10px] text-neutral-400 mr-1 hidden sm:inline">{locale === 'ru' ? 'Дата' : 'Date'}:</span>
               <input
                 type="date"
-                aria-label="Дата экзамена"
+                aria-label={locale === 'ru' ? 'Дата экзамена' : 'Exam date'}
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
@@ -241,7 +242,7 @@ function DashboardContent() {
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Flame className="w-3.5 h-3.5 text-amber-400 mr-1.5 shrink-0" />
               <select
-                aria-label="Время занятий в день"
+                aria-label={locale === 'ru' ? 'Время занятий в день' : 'Study minutes per day'}
                 value={dailyMinutes}
                 onChange={(e) => setDailyMinutes(Number(e.target.value))}
                 className="bg-transparent text-[11px] sm:text-xs font-bold text-white focus:outline-none cursor-pointer"
@@ -257,6 +258,7 @@ function DashboardContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <OnboardingPrompt />
         {!goalsConfigured && <GoalOnboarding />}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <PlacementCard />
@@ -299,6 +301,27 @@ function DashboardContent() {
               <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl leading-relaxed">
                 {readinessBasis}
               </p>
+
+              {studyPlan?.estimatedRange && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+                  <span className="text-neutral-500">{d.scoreRangeLabel}</span>
+                  <span className="font-black text-white tabular-nums">
+                    {studyPlan.estimatedRange.low}–{studyPlan.estimatedRange.high}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                      studyPlan.estimatedRange.confidence === 'high'
+                        ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300'
+                        : studyPlan.estimatedRange.confidence === 'medium'
+                          ? 'border-amber-800 bg-amber-950/30 text-amber-300'
+                          : 'border-neutral-700 bg-neutral-900 text-neutral-400'
+                    }`}
+                  >
+                    {d.confidence[studyPlan.estimatedRange.confidence]}
+                  </span>
+                  <span className="text-neutral-500">{studyPlan.estimatedRange.basis}</span>
+                </div>
+              )}
             </div>
 
             {/* Visual Overall Progress Bar */}
@@ -315,12 +338,12 @@ function DashboardContent() {
                 <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-2xl p-3 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral-400 text-[11px] font-semibold">
                     <span>{d.theoryLabel}</span>
-                    <span className="text-white font-bold">{completedLessons.length}/16</span>
+                    <span className="text-white font-bold">{completedLessons.length}/{TOTAL_LESSONS}</span>
                   </div>
                   <div className="w-full bg-neutral-800 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div
                       className="bg-[#D2F544] h-full rounded-full"
-                      style={{ width: `${Math.round((completedLessons.length / 16) * 100)}%` }}
+                      style={{ width: `${Math.round((completedLessons.length / TOTAL_LESSONS) * 100)}%` }}
                     />
                   </div>
                 </div>
@@ -354,6 +377,22 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+
+            {studyPlan?.nextBestAction && (
+              <Link
+                href={studyPlan.nextBestAction.href}
+                className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-[#D2F544]/35 bg-[#D2F544]/10 px-4 py-3 transition-colors hover:border-[#D2F544]/70 hover:bg-[#D2F544]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D2F544]"
+              >
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#D2F544]">
+                    {d.nextStep} · {studyPlan.nextBestAction.minutes} {d.minutesShort}
+                  </span>
+                  <p className="text-sm font-bold text-white truncate">{studyPlan.nextBestAction.title}</p>
+                  <p className="text-[11px] text-neutral-400 truncate">{studyPlan.nextBestAction.description}</p>
+                </div>
+                <ArrowRight className="h-5 w-5 shrink-0 text-[#D2F544]" />
+              </Link>
+            )}
 
             {/* Dynamic Daily Plan Tasks */}
             {studyPlan?.tasksToday && studyPlan.tasksToday.length > 0 && (
@@ -552,13 +591,13 @@ function DashboardContent() {
                     {d.nextStep}
                   </span>
                   <span className="text-neutral-500 text-xs">•</span>
-                  <span className="text-xs text-neutral-400">{nextLesson.categoryLabelRu}</span>
+                  <span className="text-xs text-neutral-400">{locale === 'ru' ? nextLesson.categoryLabelRu : nextLesson.categoryLabelEn}</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {nextLesson.titleRu}
+                  {locale === 'ru' ? nextLesson.titleRu : nextLesson.titleEn}
                 </h3>
                 <p className="text-xs text-neutral-400 mt-1 max-w-2xl line-clamp-1">
-                  {nextLesson.mentorIntro || 'Освойте структуру задания, типичные ловушки прокторов и победную стратегию.'}
+                  {nextLesson.mentorIntro || (locale === 'ru' ? 'Освойте структуру задания, типичные ловушки прокторов и победную стратегию.' : 'Learn the task structure, the common traps and the winning strategy.')}
                 </p>
               </div>
             </div>
@@ -614,7 +653,7 @@ function DashboardContent() {
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    Сабскоры (4)
+                    {locale === 'ru' ? 'Сабскоры (4)' : 'Subscores (4)'}
                   </button>
                   <button
                     onClick={() => setSubscoresViewMode('modalities')}
@@ -624,7 +663,7 @@ function DashboardContent() {
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    Модальности (4)
+                    {locale === 'ru' ? 'Модальности (4)' : 'Modalities (4)'}
                   </button>
                 </div>
               </div>
@@ -648,7 +687,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Literacy</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Письмо</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Чтение + Письмо' : 'Reading + Writing'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest ? latestTest.literacy : '—'}
@@ -678,7 +717,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Comprehension</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение + Аудио</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Чтение + Аудио' : 'Reading + Listening'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest ? latestTest.comprehension : '—'}
@@ -708,7 +747,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Conversation</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Аудио + Речь</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Аудио + Речь' : 'Listening + Speaking'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest ? latestTest.conversation : '—'}
@@ -738,7 +777,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Production</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Письмо + Речь</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Письмо + Речь' : 'Writing + Speaking'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest ? latestTest.production : '—'}
@@ -759,7 +798,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 <p className="text-[11px] text-neutral-500">
-                  Самый требовательный блок: академический вокабуляр C1.
+                  {locale === 'ru' ? 'Самый требовательный блок: академический вокабуляр C1.' : 'The demanding block: academic C1 vocabulary.'}
                 </p>
               </div>
             </div>
@@ -770,7 +809,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Reading</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Чтение</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Чтение' : 'Reading'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest && latestTest.reading && latestTest.reading > 0 ? latestTest.reading : '—'}
@@ -800,7 +839,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Listening</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Аудирование</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Аудирование' : 'Listening'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest && latestTest.listening && latestTest.listening > 0 ? latestTest.listening : '—'}
@@ -821,7 +860,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 <p className="text-[11px] text-neutral-500">
-                  Listen & Type, Interactive Listening (диалог и резюме).
+                  {locale === 'ru' ? 'Listen & Type, Interactive Listening (диалог и резюме).' : 'Listen and Type, Interactive Listening (dialogue and summary).'}
                 </p>
               </div>
 
@@ -830,7 +869,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Writing</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Письмо</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Письмо' : 'Writing'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest && latestTest.writing && latestTest.writing > 0 ? latestTest.writing : '—'}
@@ -860,7 +899,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white">Speaking</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">Устная речь</span>
+                    <span className="text-[10px] text-neutral-400 font-semibold">{locale === 'ru' ? 'Устная речь' : 'Speaking'}</span>
                   </div>
                   <div className="text-2xl font-black text-white">
                     {latestTest && latestTest.speaking && latestTest.speaking > 0 ? latestTest.speaking : '—'}
@@ -900,7 +939,7 @@ function DashboardContent() {
                   {d.vocabTrainer}
                 </span>
                 <span className="text-neutral-500 text-xs">•</span>
-                <span className="text-xs text-neutral-400">Алгоритм SuperMemo SM-2</span>
+                <span className="text-xs text-neutral-400">{locale === 'ru' ? 'Алгоритм SuperMemo SM-2' : 'SuperMemo SM-2'}</span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white">
                 {d.srsTitle}
@@ -987,7 +1026,7 @@ function DashboardContent() {
                           #{lesson.number}
                         </span>
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-neutral-900 border border-neutral-800 text-neutral-400">
-                          {lesson.categoryLabelRu}
+                          {locale === 'ru' ? lesson.categoryLabelRu : lesson.categoryLabelEn}
                         </span>
                         <span className="text-[10px] text-neutral-500 hidden sm:inline">
                           ~15 {d.minutesShort}
@@ -998,11 +1037,11 @@ function DashboardContent() {
                         href={`/theory/${lesson.slug}`}
                         className="block text-sm font-bold text-white hover:text-[#D2F544] transition-colors mt-0.5 truncate"
                       >
-                        {lesson.titleRu}
+                        {locale === 'ru' ? lesson.titleRu : lesson.titleEn}
                       </Link>
 
                       <p className="text-[11px] text-neutral-500 truncate mt-0.5">
-                        {lesson.format}
+                        {locale === 'ru' ? lesson.format : lesson.formatEn || lesson.format}
                       </p>
                     </div>
                   </div>

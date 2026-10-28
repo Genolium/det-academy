@@ -46,6 +46,55 @@ down. Migrations that need attention are visible in the container log.
 - optional: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`
   (see `docs/external-integrations.md`)
 
+## Daily quotas and client identity
+
+Expensive actions are capped on three independent dimensions: the account, the
+client IP and the client device. The per-user allowance keeps using the
+activity tables (`test_sessions`, `practice_attempts`). The IP and device
+allowances use `daily_limit_counters`, so they survive a restart and cannot be
+reset by creating another account or clearing cookies.
+
+| Variable | Default | Applies to |
+|---|---:|---|
+| `DAILY_MOCK_LIMIT` | 3 | full mocks per user |
+| `DAILY_SPEAKING_LIMIT` | 20 | speaking answers per user |
+| `DAILY_MOCK_LIMIT_PER_IP` | 10 | full mocks per client IP |
+| `DAILY_MOCK_LIMIT_PER_DEVICE` | 5 | full mocks per device |
+| `DAILY_SPEAKING_LIMIT_PER_IP` | 60 | speaking answers/audio uploads per IP |
+| `DAILY_SPEAKING_LIMIT_PER_DEVICE` | 40 | speaking answers/audio uploads per device |
+| `DAILY_AUTH_LIMIT_PER_IP` | 20 | login/register attempts per IP |
+| `DAILY_AUTH_LIMIT_PER_DEVICE` | 10 | login/register attempts per device |
+
+`0` disables one dimension. The window is the UTC day. A request that exceeds a
+dimension receives `429` with `Retry-After` and a JSON body:
+
+```json
+{"error":"daily limit reached for this IP address; try again after 00:00 UTC",
+ "code":"daily_limit_reached","scope":"mock","limit":"ip","limitValue":10,"retryAfterSec":43200}
+```
+
+`scope` is `mock`, `speaking` or `auth`. Cache-friendly `GET` routes never
+consume a quota. The counters are pruned opportunistically (windows older than
+seven days, at most once every six hours). If the counter table cannot be read
+the endpoint fails closed with `503` instead of silently removing the cap.
+
+Counters live in PostgreSQL and contain the client IP and a keyed device hash
+only — no name or email. Rows are retained for at most seven days. The
+in-memory store used only with `ALLOW_MEMORY_STORAGE=true` keeps them in
+process memory, so they reset on restart; production refuses that fallback. A shared campus NAT can reach
+`DAILY_AUTH_LIMIT_PER_IP=20` quickly — raise it for such a deployment instead of
+disabling the limit.
+
+### Frontend contract: `X-Device-Id`
+
+The browser must generate a random UUID once, keep it in `localStorage` (for
+example under `det_device_id_v1`) and send it on API requests as
+`X-Device-Id`. The server accepts `[A-Za-z0-9._:-]` up to 128 characters,
+replaces the value with an HMAC-SHA-256 keyed by `JWT_SECRET`, and never logs or
+stores the raw identifier. A missing or malformed header is ignored, so the IP
+allowance still applies; rotating the header does not bypass the IP cap.
+`X-Device-Id` is included in the CORS allowed headers.
+
 ## Migrations
 
 Apply every file in `backend/db/migrations/` in order before starting a new
@@ -138,3 +187,113 @@ it: the row is kept (so finished attempts keep their integrity) and
 `is_active = false` removes it from every new attempt. The public question
 endpoint only serves active items, which is covered by
 `TestPublicQuestionEndpointExcludesInactive`.
+
+## Interactive content and mock variety
+
+`backend/db/09-interactive-bank.sql` is generated, never edited by hand:
+
+```bash
+node scripts/generate_interactive_bank.mjs          # write the seed
+node scripts/generate_interactive_bank.mjs --check  # CI gate: drift and validation
+```
+
+It produces 380 tasks: 100 `INTERACTIVE_READING`, 100 `C_TEST`, 60
+`INTERACTIVE_LISTENING`, 60 `READ_THEN_SPEAK`, 60 `INTERACTIVE_SPEAKING`, all
+derived from original passages and dialogues. The validator rejects duplicate
+options, an answer missing from the option list, a highlight that is not an
+exact substring, a C-Test prefix/suffix mismatch, or a dialogue turn without
+audio text. The same command runs in CI.
+
+Mock variety is enforced by `exclude-recent-v1`: a stage skips every question
+that the student saw in the last eight sessions when the fresh pool is large
+enough. `TestStageSelectionExcludesRecentlyExposed` covers the policy.
+
+## Readiness, score range and next action
+
+`GET /api/v1/user/plan` now also returns:
+
+- `estimatedRange`: `low`, `high`, `confidence` (`low|medium|high`) and a
+  human-readable `basis`. One completed mock produces a wide ±10 band with low
+  confidence; consistent attempts narrow it, volatile ones widen it. Without a
+  completed mock the field is absent rather than invented.
+- `nextBestAction`: one concrete task with `href`, `type` and `minutes` (always
+  10). Unmastered Error Notebook entries choose the type; without errors the
+  weakest measured skill does. The dashboard button opens
+  `/practice?drill=<slug>` and the practice hub starts that drill directly.
+
+## Speaking delivery metrics
+
+For every speaking answer with an audio file the evaluation queue runs
+`ai.AnalyzeSpeech` (ffmpeg) and stores:
+
+- `speechRate` — words per minute;
+- `pauseRatio`, `pauseCount`, `pauses[]` — silences ≥0.3 s below −35 dB;
+- `fillerCount` — um / uh / erm / hmm / "you know" / "i mean";
+- `pronunciationStability` — **delivery stability** measured as the consistency
+  of voiced RMS energy. This is not phoneme-level pronunciation scoring; that
+  would require a reference pronunciation model. The UI labels it
+  «Стабильность подачи» so the number is not over-claimed.
+
+The result card renders a speech/pause timeline and the four metrics; the
+speaking studio offers a model recording of the prompt («Эталон»).
+
+## Deploy, alerts and backups
+
+Production deploys from a tag, with a health gate:
+
+- `.github/workflows/deploy.yml` — on `v*`: SSH deploy, rebuild backend and
+  frontend, then poll `https://det-academy.ru/api/v1/ready` for up to 150 s.
+  Requires `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`.
+- `.github/workflows/uptime.yml` — every 15 minutes; a failure sends a Telegram
+  message when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are configured.
+- `.github/workflows/backup.yml` — nightly at 02:00 UTC: SSH to the host, run
+  `scripts/backup_postgres.sh`, upload to `BACKUP_S3_URI` (Yandex Object
+  Storage). The server `.env` needs `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` and `BACKUP_S3_URI`.
+
+Dry-run the backup without network access:
+
+```bash
+DATABASE_URL=... BACKUP_S3_URI=s3://bucket/prefix DRY_RUN=true \
+  bash scripts/backup_postgres.sh
+```
+
+## OAuth providers
+
+The backend already implements state, PKCE, redirect validation and
+provider-specific token exchange; contract tests cover the flow. Real sign-in
+stays disabled until the provider applications exist and their client IDs and
+secrets are set in `.env` (`GOOGLE_CLIENT_ID/SECRET`, `VK_CLIENT_ID/SECRET`,
+`YANDEX_CLIENT_ID/SECRET`) and the redirect URI is registered with each
+provider.
+
+## Onboarding, intro lesson and the dictionary
+
+- `/welcome` is a three-step onboarding: what the exam measures, the goal form,
+  and a 12-item Read & Select level check (about two minutes). The estimate is
+  stored in `localStorage` (`det_onboarding_placement`) and shown by
+  `PlacementCard` while the server diagnostic is still missing. It is labelled
+  as a vocabulary estimate, never as an official DET score.
+- The dashboard shows a one-time `OnboardingPrompt` until the wizard is
+  completed or postponed (`det_onboarding_done_v1`). This is how existing
+  accounts get the same explanation as new ones.
+- The course starts with `/theory/start-here`, a non-graded lesson that explains
+  the exam, the typing requirement and maps each exam problem to a concrete
+  trainer. It counts as lesson 0 of 17; `TOTAL_LESSONS`, the backend readiness
+  denominator and the dashboard progress all use 17.
+- `/vocabulary` is a dictionary, not a word cloud: alphabetical cards with IPA,
+  part of speech, CEFR level, Russian meaning, English definition, example,
+  collocations and pronunciation. Filters: level and source (AWL, course
+  vocabulary, B1 core). Data comes from `backend/db/04-vocabulary-seed.sql` and
+  the generated `backend/db/10-dictionary.sql` (1,446 entries).
+- The dictionary generator is deterministic after the one-time fetch:
+
+```bash
+node scripts/generate_dictionary.mjs --fetch   # model call, writes JSON
+node scripts/generate_dictionary.mjs           # JSON -> SQL
+node scripts/generate_dictionary.mjs --check   # CI
+```
+
+  The fetched JSON (`scripts/content/dictionary.generated.json`) is committed,
+  so CI never calls the model. `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` and
+  `AI_FOLDER_ID` are required only for `--fetch`.

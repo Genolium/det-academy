@@ -89,9 +89,11 @@ test('every admission requirement carries provenance and unknown stays unknown',
   expect(sample.length).toBeGreaterThan(0);
 
   for (const institution of sample) {
-    expect(institution.requirementSource).toBe('https://englishtest.duolingo.com/institutions');
-    expect(institution.requirementCheckedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // The DET registry confirms participation, not score thresholds. An
+    // unverified threshold must not inherit the registry URL or a checked date.
     expect(institution.requirementVerified).toBe(false);
+    expect(institution.requirementSource ?? '').toBe('');
+    expect(institution.requirementCheckedAt ?? '').toBe('');
     expect(Number.isFinite(institution.minScore)).toBe(true);
   }
 

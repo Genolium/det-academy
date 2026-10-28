@@ -154,6 +154,43 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         recommendations: ['Продолжайте текущий план'],
       });
     }
+    if (/\/test\/sessions\/[^/]+\/evaluations$/.test(path)) {
+      return json(route, 200, {
+        evaluations: [
+          {
+            id: 'eval-speech-1',
+            sessionId: TEST_ATTEMPT_ID,
+            questionId: 'q-ss-01',
+            questionType: 'SPEAKING_SAMPLE',
+            status: 'COMPLETED',
+            score: 0.72,
+            wordCount: 92,
+            uniqueWords: 61,
+            lexicalDiversity: 0.66,
+            academicWords: ['significant', 'framework'],
+            connectors: ['however', 'therefore'],
+            relevanceScore: 0.8,
+            cefrLevel: 'B2',
+            speakingDuration: 75,
+            wpm: 74,
+            speechRate: 74,
+            pauseRatio: 0.18,
+            pauseCount: 4,
+            fillerCount: 2,
+            pronunciationStability: 0.86,
+            pauses: [
+              { start: 10, end: 12 },
+              { start: 28, end: 29.5 },
+              { start: 44, end: 45 },
+              { start: 61, end: 62.5 },
+            ],
+            recommendations: [],
+            feedback: 'Хорошая структура ответа.',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      });
+    }
     if (path.endsWith('/user/plan')) {
       return json(route, 200, {
         configured: true,
@@ -169,6 +206,20 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         readinessBasis: 'Not enough data: at least two completed mock tests are required.',
         statusMessage: '',
         tasksToday: [],
+        estimatedRange: {
+          low: 110,
+          high: 130,
+          confidence: 'high',
+          basis: '3 мока, последний 120, разброс ±10 баллов.',
+        },
+        nextBestAction: {
+          title: 'Отработать Read and Select',
+          description: '2 неусвоенных ошибки этого типа: 10 минут точечной практики.',
+          href: '/practice?drill=read-and-select',
+          type: 'READ_SELECT',
+          minutes: 10,
+          reason: 'В тетради ошибок 2 неусвоенных задания типа READ_SELECT.',
+        },
       });
     }
     if (path.endsWith('/banners') || path.includes('/banners?')) {
@@ -249,26 +300,51 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       return json(route, 200, { leaderboard: [], total: 0 });
     }
     if (path.endsWith('/vocabulary')) {
-      return json(route, 200, {
-        entries: [
-          {
-            id: 'voc-1',
-            word: 'Substantiate',
-            ipa: '/səbˈstæn.ʃi.eɪt/',
-            pos: 'verb',
-            level: 'C1',
-            meaningRu: 'Обосновывать',
-            definitionEn: 'To provide evidence to support a claim.',
-            example: 'The candidate failed to substantiate her claim.',
-            collocations: ['substantiate claims'],
-            source: 'Academic Word List (platform dataset)',
-            status: 'published',
-            version: '2026.1',
-            reviewedAt: new Date().toISOString(),
-          },
-        ],
-        total: 1,
-      });
+      const url = new URL(route.request().url());
+      const level = url.searchParams.get('level') || 'ALL';
+      const source = url.searchParams.get('source') || 'all';
+      const search = (url.searchParams.get('search') || '').toLowerCase();
+      const all = [
+        {
+          id: 'voc-1',
+          word: 'Substantiate',
+          ipa: '/səbˈstæn.ʃi.eɪt/',
+          pos: 'verb',
+          level: 'C1',
+          meaningRu: 'Обосновывать',
+          definitionEn: 'To provide evidence to support a claim.',
+          example: 'The candidate failed to substantiate her claim.',
+          collocations: ['substantiate claims'],
+          source: 'Academic Word List (platform dataset)',
+          status: 'published',
+          version: '2026.1',
+          reviewedAt: new Date().toISOString(),
+        },
+        {
+          id: 'voc-b1-1',
+          word: 'Benefit',
+          ipa: '/ˈben.ɪ.fɪt/',
+          pos: 'noun',
+          level: 'B1',
+          meaningRu: 'Польза, выгода',
+          definitionEn: 'An advantage or profit gained from something.',
+          example: 'Regular practice brings a clear benefit.',
+          collocations: ['clear benefit', 'mutual benefit'],
+          source: 'DET B1 core (platform dataset)',
+          status: 'published',
+          version: '2026.2',
+          reviewedAt: new Date().toISOString(),
+        },
+      ];
+      const entries = all
+        .filter((entry) => level === 'ALL' || entry.level === level)
+        .filter((entry) =>
+          source === 'all' ||
+          (source === 'awl' && entry.source.startsWith('Academic Word List')) ||
+          (source === 'b1' && entry.source.startsWith('DET B1 core'))
+        )
+        .filter((entry) => !search || `${entry.word} ${entry.meaningRu} ${entry.definitionEn}`.toLowerCase().includes(search));
+      return json(route, 200, { entries, total: entries.length });
     }
     if (path.endsWith('/institutions')) {
       return json(route, 200, { institutions: [], total: 0 });

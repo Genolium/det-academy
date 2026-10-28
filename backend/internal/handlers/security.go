@@ -2,13 +2,17 @@ package handlers
 
 import (
 	"bufio"
+	"context"
 	"crypto/subtle"
+	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/service"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -37,8 +41,15 @@ func (l *rateLimiter) allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
+	// Opportunistically drop expired buckets so a long-running process does
+	// not retain one entry per address forever.
+	for bucketKey, bucket := range l.buckets {
+		if now.Sub(bucket.windowStart) > l.window {
+			delete(l.buckets, bucketKey)
+		}
+	}
 	bucket, ok := l.buckets[key]
-	if !ok || now.Sub(bucket.windowStart) > l.window {
+	if !ok {
 		l.buckets[key] = &rateBucket{windowStart: now, count: 1}
 		return true
 	}
@@ -49,19 +60,132 @@ func (l *rateLimiter) allow(key string) bool {
 	return true
 }
 
+var (
+	rateLimitStoreMu sync.RWMutex
+	rateLimitStore   repository.LimitRepository
+)
+
+// ConfigureRateLimitStore enables the PostgreSQL-backed limiter. Without it
+// (unit tests, memory-only runs) the middleware falls back to the per-process
+// map, which is only a development convenience.
+func ConfigureRateLimitStore(repo repository.LimitRepository) {
+	rateLimitStoreMu.Lock()
+	defer rateLimitStoreMu.Unlock()
+	rateLimitStore = repo
+}
+
 // RateLimitMiddleware is a small in-process limiter for auth/expensive routes.
 // Production should additionally use nginx limit_req or a distributed limiter.
 func RateLimitMiddleware(limit int, window time.Duration) func(http.Handler) http.Handler {
 	limiter := newRateLimiter(limit, window)
+	scope := fmt.Sprintf("http:%s", window.String())
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !limiter.allow(clientIP(r)) {
+			key := clientIP(r)
+			rateLimitStoreMu.RLock()
+			store := rateLimitStore
+			rateLimitStoreMu.RUnlock()
+
+			if store != nil {
+				bucket := scope + ":" + r.URL.Path
+				start := time.Now().UTC().Truncate(window)
+				if _, allowed, err := store.ConsumeWindow(r.Context(), bucket, key, start, limit); err == nil {
+					if !allowed {
+						RespondError(w, http.StatusTooManyRequests, "too many requests")
+						return
+					}
+					next.ServeHTTP(w, r)
+					return
+				}
+				// Database hiccup: fall through to the local limiter instead of
+				// turning an outage into a total denial of service.
+			}
+
+			if !limiter.allow(key) {
 				RespondError(w, http.StatusTooManyRequests, "too many requests")
 				return
 			}
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+const (
+	ClientIPContextKey   contextKey = "client_ip"
+	DeviceHashContextKey contextKey = "device_hash"
+)
+
+// ClientIdentityMiddleware resolves the caller address and an optional device
+// identifier once per request. The X-Device-Id value is untrusted: it is
+// validated, then immediately replaced by a keyed hash. The raw identifier is
+// never written to the context, a log or the database.
+func ClientIdentityMiddleware(guard *service.LimitGuard) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), ClientIPContextKey, clientIP(r))
+			if raw := strings.TrimSpace(r.Header.Get("X-Device-Id")); service.ValidDeviceID(raw) {
+				if hash := guard.HashDeviceID(raw); hash != "" {
+					ctx = context.WithValue(ctx, DeviceHashContextKey, hash)
+				}
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RequestIP returns the address resolved by ClientIdentityMiddleware. It falls
+// back to the header parsing for routes mounted without the middleware (tests).
+func RequestIP(r *http.Request) string {
+	if value, ok := r.Context().Value(ClientIPContextKey).(string); ok && value != "" {
+		return value
+	}
+	return clientIP(r)
+}
+
+// RequestDeviceHash returns the hashed device identifier, or "" when the
+// header was absent or invalid.
+func RequestDeviceHash(r *http.Request) string {
+	if value, ok := r.Context().Value(DeviceHashContextKey).(string); ok {
+		return value
+	}
+	return ""
+}
+
+// CheckDailyLimit enforces the IP/device quota for a scope and writes the
+// response when the request must stop. A nil guard means "not configured".
+func CheckDailyLimit(w http.ResponseWriter, r *http.Request, guard *service.LimitGuard, scope string) bool {
+	if guard == nil {
+		return true
+	}
+	err := guard.Allow(r.Context(), scope, RequestIP(r), RequestDeviceHash(r))
+	if err == nil {
+		return true
+	}
+
+	var exceeded *service.LimitExceededError
+	if !errors.As(err, &exceeded) {
+		RespondError(w, http.StatusServiceUnavailable, "daily limit check is temporarily unavailable")
+		return false
+	}
+
+	retryAfter := service.SecondsUntilDailyReset()
+	if retryAfter < 1 {
+		retryAfter = 1
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
+	message := "daily limit reached for this IP address; try again after 00:00 UTC"
+	if exceeded.Kind == "device" {
+		message = "daily limit reached for this device; try again after 00:00 UTC"
+	}
+	RespondJSON(w, http.StatusTooManyRequests, map[string]interface{}{
+		"error":         message,
+		"code":          "daily_limit_reached",
+		"scope":         exceeded.Scope,
+		"limit":         exceeded.Kind,
+		"limitValue":    exceeded.Limit,
+		"retryAfterSec": retryAfter,
+	})
+	return false
 }
 
 // OriginGuardMiddleware rejects browser state-changing requests coming from
@@ -143,12 +267,13 @@ func MetricsMiddleware(next http.Handler) http.Handler {
 }
 
 // metricsAuthorized accepts a bearer token (or ?token=) when METRICS_TOKEN is
-// configured. Without the variable the endpoint keeps its historical public
-// behaviour so existing monitoring is not broken by the upgrade.
+// configured. In production the endpoint is closed when the token is missing:
+// metrics reveal traffic volume and queue state, so they must not be public by
+// default. Local development keeps the open endpoint for convenience.
 func metricsAuthorized(r *http.Request) bool {
 	expected := strings.TrimSpace(os.Getenv("METRICS_TOKEN"))
 	if expected == "" {
-		return true
+		return strings.ToLower(strings.TrimSpace(os.Getenv("ENV"))) != "production"
 	}
 	provided := ""
 	if header := r.Header.Get("Authorization"); strings.HasPrefix(header, "Bearer ") {

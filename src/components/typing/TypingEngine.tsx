@@ -257,7 +257,7 @@ export const TypingEngine: React.FC = () => {
           <select
             value={vocabPack}
             onChange={(e) => setVocabPack(e.target.value as VocabPack)}
-            aria-label="Словарный набор"
+            aria-label={locale === 'ru' ? 'Словарный набор' : 'Vocabulary pack'}
             className="bg-neutral-900 border border-neutral-800 text-xs text-white rounded-xl px-3 py-1.5 font-bold focus:outline-none"
           >
             <option value="det">{t.detPack}</option>
@@ -380,7 +380,7 @@ export const TypingEngine: React.FC = () => {
           <input
             ref={inputRef}
             type="text"
-            aria-label="Поле ввода текста"
+            aria-label={locale === 'ru' ? 'Поле ввода текста' : 'Text input field'}
             value={currentInput}
             onChange={handleInputChange}
             className="opacity-0 absolute inset-0 cursor-default pointer-events-none"

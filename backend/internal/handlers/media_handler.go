@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ import (
 type MediaHandler struct {
 	catService *service.CATService
 	store      blob.Store
+	limits     *service.LimitGuard
 }
 
 func NewMediaHandler(catService *service.CATService, uploadDir string) *MediaHandler {
@@ -32,6 +34,11 @@ func NewMediaHandler(catService *service.CATService, uploadDir string) *MediaHan
 
 // UploadAudio handles audio file uploads from MediaRecorder for Speaking tasks.
 // POST /api/v1/test/sessions/{id}/audio
+// SetLimitGuard enables the IP/device quota for speaking audio uploads.
+func (h *MediaHandler) SetLimitGuard(guard *service.LimitGuard) {
+	h.limits = guard
+}
+
 func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(UserIDKey).(string)
 	if !ok || userID == "" {
@@ -48,6 +55,11 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	// fill the disk using someone else's or a non-existent session.
 	if err := h.catService.VerifySessionOwner(r.Context(), sessionID, userID); err != nil {
 		RespondError(w, http.StatusForbidden, "Session does not belong to user")
+		return
+	}
+	// Count the upload before touching the filesystem: every audio response is
+	// a speaking evaluation, the most expensive path in the product.
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
 		return
 	}
 
@@ -72,6 +84,15 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 		if d, err := strconv.ParseFloat(durStr, 64); err == nil {
 			durationSec = d
 		}
+	}
+
+	// Word-level clarity feedback computed in the browser. It is display-only
+	// and must never influence the score; an invalid payload is ignored rather
+	// than losing the learner's recording.
+	pronunciation, pronunciationErr := service.ParsePronunciationReport(r.FormValue("pronunciation"), durationSec)
+	if pronunciationErr != nil {
+		log.Printf("[MediaHandler] ignoring invalid pronunciation report: %v", pronunciationErr)
+		pronunciation = nil
 	}
 
 	// Determine file extension and MIME type
@@ -118,7 +139,7 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save media asset and evaluate speaking if questionId provided
-	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset)
+	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset, pronunciation)
 	if err != nil {
 		_ = h.store.Delete(targetPath)
 		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {

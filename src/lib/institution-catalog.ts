@@ -120,10 +120,11 @@ export function buildInstitutionMapCatalog(): CatalogInstitution[] {
       verified: true,
       coordinateSource: coordinate.sourceUrl,
       // The official registry confirms that the university accepts the DET,
-      // but it does not publish score thresholds. The numbers below are the
-      // platform's reference values, so they are explicitly not verified.
-      requirementSource: DET_REGISTRY_URL,
-      requirementCheckedAt: REQUIREMENT_CHECKED_AT,
+      // but it does not publish score thresholds. A threshold with no source
+      // of its own must not inherit the registry URL, otherwise the UI looks
+      // like an official requirement was checked.
+      requirementSource: undefined,
+      requirementCheckedAt: undefined,
       requirementVerified: false,
     };
     byKey.set(catalogKey(entry.name, entry.country), entry);

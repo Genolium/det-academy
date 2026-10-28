@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -485,5 +487,63 @@ func TestEvaluationQueuePassesTaskPromptToNeural(t *testing.T) {
 	}
 	if provider.input.RuleScore <= 0 || provider.input.RuleStatus == "" {
 		t.Fatalf("rule baseline was not passed: %+v", provider.input)
+	}
+}
+
+func TestEvaluationQueueStoresSpeechMetrics(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg is not installed")
+	}
+	dir := t.TempDir()
+	audioPath := filepath.Join(dir, "answer.wav")
+	command := exec.Command("ffmpeg",
+		"-hide_banner", "-loglevel", "error", "-y",
+		"-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono:d=1",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=2:sample_rate=16000",
+		"-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono:d=1",
+		"-filter_complex", "[0][1][2]concat=n=3:v=0:a=1",
+		audioPath,
+	)
+	if combined, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("fixture: %v (%s)", err, combined)
+	}
+
+	store := memory.New()
+	ctx := context.Background()
+	session := &models.TestSession{ID: uuid.NewString(), UserID: uuid.NewString(), Status: "IN_PROGRESS", StageName: "SPEAKING_SAMPLE", CurrentStage: 13, DifficultyLevel: "B1"}
+	_ = store.Sessions().Create(ctx, session)
+	evaluation := &models.EvaluationResult{
+		ID: uuid.NewString(), SessionID: session.ID, QuestionID: "q-ss-01",
+		QuestionType: "SPEAKING_SAMPLE", Status: "PENDING", FeedbackStatus: "queued",
+		SpeakingDuration: 4, CreatedAt: time.Now().UTC(),
+	}
+	_ = store.Sessions().SaveEvaluation(ctx, evaluation)
+	_ = store.Sessions().CreateEvaluationJob(ctx, &models.EvaluationJob{
+		ID: uuid.NewString(), SessionID: session.ID, QuestionID: "q-ss-01",
+		EvaluationID: evaluation.ID, Mode: "speaking", AudioPath: audioPath, AudioMIME: "audio/wav",
+		Status: "queued", MaxAttempts: 3, NextAttemptAt: time.Now().Add(-time.Second),
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	})
+
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), fakeTranscriber{text: "one two three four five six seven eight"}, nil)
+	claimed, _ := store.Sessions().ClaimEvaluationJob(ctx)
+	queue.processJob(ctx, claimed)
+
+	evaluations, _ := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if len(evaluations) != 1 {
+		t.Fatalf("evaluations = %d", len(evaluations))
+	}
+	result := evaluations[0]
+	if result.PauseRatio < 0.35 || result.PauseRatio > 0.65 {
+		t.Fatalf("pause ratio = %.2f", result.PauseRatio)
+	}
+	if result.SpeechRate < 100 || result.SpeechRate > 140 {
+		t.Fatalf("speech rate = %.1f", result.SpeechRate)
+	}
+	if result.PauseCount < 2 || len(result.Pauses) < 2 {
+		t.Fatalf("pauses = %d / %d", result.PauseCount, len(result.Pauses))
+	}
+	if result.PronunciationStability <= 0 {
+		t.Fatalf("stability = %.2f", result.PronunciationStability)
 	}
 }

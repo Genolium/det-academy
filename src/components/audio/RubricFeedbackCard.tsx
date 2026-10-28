@@ -3,6 +3,7 @@
 import React from 'react';
 import { EvaluationResult } from '@/lib/api';
 import { AudioPlayer } from './AudioPlayer';
+import { PronunciationFeedback } from './PronunciationFeedback';
 import { Award, BookOpen, Clock, Lightbulb, MessageSquare, Sparkles } from 'lucide-react';
 
 interface RubricFeedbackCardProps {
@@ -10,6 +11,42 @@ interface RubricFeedbackCardProps {
   className?: string;
   showAudio?: boolean;
 }
+
+
+const PauseTimeline: React.FC<{
+  duration: number;
+  pauses: Array<{ start: number; end: number }>;
+}> = ({ duration, pauses }) => {
+  if (duration <= 0) return null;
+  const segments: Array<{ left: number; width: number; pause: boolean }> = [];
+  let cursor = 0;
+  for (const pause of pauses) {
+    const start = Math.max(0, Math.min(duration, pause.start));
+    const end = Math.max(start, Math.min(duration, pause.end));
+    if (start > cursor) segments.push({ left: cursor / duration, width: (start - cursor) / duration, pause: false });
+    segments.push({ left: start / duration, width: (end - start) / duration, pause: true });
+    cursor = end;
+  }
+  if (cursor < duration) segments.push({ left: cursor / duration, width: (duration - cursor) / duration, pause: false });
+
+  return (
+    <div className="my-4 rounded-xl border border-neutral-800 bg-neutral-950/60 p-3">
+      <div className="mb-2 flex items-center justify-between text-[11px] text-neutral-400">
+        <span>Речь и паузы</span>
+        <span>{pauses.length} пауз · {Math.round((pauses.reduce((sum, pause) => sum + (pause.end - pause.start), 0) / duration) * 100)}% тишины</span>
+      </div>
+      <div className="relative h-6 w-full overflow-hidden rounded-full bg-emerald-500/25" role="img" aria-label={`Речь с ${pauses.length} паузами`}>
+        {segments.map((segment, index) => (
+          <span
+            key={index}
+            className={segment.pause ? 'absolute inset-y-0 bg-neutral-700' : 'absolute inset-y-0 bg-emerald-500/70'}
+            style={{ left: `${segment.left * 100}%`, width: `${segment.width * 100}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const RubricFeedbackCard: React.FC<RubricFeedbackCardProps> = ({
   evaluation,
@@ -67,6 +104,50 @@ export const RubricFeedbackCard: React.FC<RubricFeedbackCardProps> = ({
       {showAudio && evaluation.audioUrl && (
         <div className="my-4">
           <AudioPlayer src={evaluation.audioUrl} title="Запись вашей устной речи" />
+        </div>
+      )}
+
+      {evaluation.speakingDuration && evaluation.speakingDuration > 0 && (
+        <>
+          <PauseTimeline duration={evaluation.speakingDuration} pauses={evaluation.pauses || []} />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
+              <span className="text-[11px] text-neutral-400 block mb-1">Темп</span>
+              <span className="text-sm font-bold font-mono text-white">
+                {Math.round(evaluation.speechRate || evaluation.wpm || 0)} сл/мин
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
+              <span className="text-[11px] text-neutral-400 block mb-1">Доля пауз</span>
+              <span className="text-sm font-bold font-mono text-white">
+                {Math.round((evaluation.pauseRatio || 0) * 100)}%
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
+              <span className="text-[11px] text-neutral-400 block mb-1">Слова-заполнители</span>
+              <span className="text-sm font-bold font-mono text-white">{evaluation.fillerCount || 0}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-neutral-950/60 border border-neutral-800/80">
+              <span className="text-[11px] text-neutral-400 block mb-1">Стабильность подачи</span>
+              <span className="text-sm font-bold font-mono text-emerald-400">
+                {Math.round((evaluation.pronunciationStability || 0) * 100)}%
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Word-level clarity proxy (measured in the browser at record time) */}
+      {evaluation.pronunciation && evaluation.pronunciation.words?.length > 0 && (
+        <div className="my-4">
+          <PronunciationFeedback
+            report={{
+              ...evaluation.pronunciation,
+              version: 1,
+              notes: evaluation.pronunciation.notes ?? [],
+            }}
+            referenceText={evaluation.pronunciation.referenceText}
+          />
         </div>
       )}
 

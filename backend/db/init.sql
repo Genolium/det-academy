@@ -482,6 +482,30 @@ CREATE TABLE IF NOT EXISTS user_skill_mastery (
     PRIMARY KEY (user_id, skill)
 );
 
+-- Daily counters for the IP/device quotas. The per-user allowance is still
+-- derived from test_sessions and practice_attempts; these rows only exist so
+-- that clearing cookies or creating another account cannot reset the expensive
+-- quota, and so the counters survive a backend restart.
+CREATE TABLE IF NOT EXISTS daily_limit_counters (
+    scope TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    window_start DATE NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0 CHECK (used >= 0),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (scope, subject, window_start)
+);
+CREATE INDEX IF NOT EXISTS idx_daily_limit_counters_window_start ON daily_limit_counters (window_start);
+
+CREATE TABLE IF NOT EXISTS rate_limit_counters (
+    bucket TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    window_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0 CHECK (used >= 0),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (bucket, subject, window_start)
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_counters_window_start ON rate_limit_counters (window_start);
+
 -- Seed Initial Questions Bank for 13 Modern DET Question Types
 INSERT INTO questions (id, type, difficulty_band, content_payload, correct_answers, time_limit_sec, is_active)
 VALUES

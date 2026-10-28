@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
+import { SpeechTimeline } from '@/lib/speechTimeline';
+import { appendPronunciationReportFromWords, toAsrSegments } from '@/lib/speechPronunciation';
+import type { WordTiming } from '@/lib/pronunciationAnalysis';
 import { Button } from '@/components/ui/Button';
 import { Mic, Clock, ArrowRight, AlertCircle, MessageSquare, Volume2, Sparkles } from 'lucide-react';
 
@@ -11,8 +14,11 @@ interface SpeechRecognitionEvent {
   results: {
     length: number;
     [index: number]: {
+      isFinal: boolean;
+      length: number;
       [index: number]: {
         transcript: string;
+        confidence?: number;
       };
     };
   };
@@ -81,6 +87,29 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const recorderRef = useRef(audioRecorder);
   const recordingStartedAtRef = useRef<number | null>(null);
+  const recordingStartedPerfRef = useRef<number | null>(null);
+  const turnTimelineRef = useRef<{ startedAtMs: number; timeline: SpeechTimeline } | null>(null);
+  const wordTimingsRef = useRef<WordTiming[]>([]);
+
+  /** Closes the current turn's recogniser timeline and appends its words. */
+  const finishTurnTimeline = (endedAtMs: number) => {
+    const current = turnTimelineRef.current;
+    const recordingStartedPerf = recordingStartedPerfRef.current;
+    turnTimelineRef.current = null;
+    if (!current) return;
+    const offsetSec =
+      recordingStartedPerf !== null
+        ? Math.max(0, (current.startedAtMs - recordingStartedPerf) / 1000)
+        : 0;
+    const words = current.timeline.finish(endedAtMs);
+    wordTimingsRef.current.push(
+      ...words.map((word) => ({
+        ...word,
+        start: Math.round((word.start + offsetSec) * 1000) / 1000,
+        end: Math.round((word.end + offsetSec) * 1000) / 1000,
+      }))
+    );
+  };
 
   useEffect(() => {
     recorderRef.current = audioRecorder;
@@ -94,6 +123,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       if (!active) return;
       if (started) {
         recordingStartedAtRef.current = Date.now();
+        recordingStartedPerfRef.current = performance.now();
       } else {
         setMicError(recorderRef.current.error || 'Не удалось начать запись. Проверьте микрофон.');
       }
@@ -123,6 +153,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const startRecognition = () => {
     const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
     const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
+    const startedAtMs = performance.now();
+    turnTimelineRef.current = { startedAtMs, timeline: new SpeechTimeline(startedAtMs) };
 
     if (SpeechRecognition) {
       try {
@@ -131,6 +163,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
         rec.continuous = true;
         rec.interimResults = true;
         rec.onresult = (evt: SpeechRecognitionEvent) => {
+          turnTimelineRef.current?.timeline.ingest(toAsrSegments(evt.results), performance.now());
           let fullText = '';
           for (let i = 0; i < evt.results.length; i++) {
             fullText += evt.results[i][0].transcript + ' ';
@@ -148,6 +181,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
 
   const handleNextTurn = async () => {
     if (isAdvancingRef.current) return;
+    finishTurnTimeline(performance.now());
     const current = transcriptRef.current;
     const updated = [...turnTranscripts, current];
     setTurnTranscripts(updated);
@@ -188,6 +222,12 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
         formData.append('durationSec', durationSec.toString());
 
         try {
+          await appendPronunciationReportFromWords(
+            formData,
+            recordedBlob,
+            wordTimingsRef.current,
+            { endedAtMs: performance.now(), durationSec }
+          );
           await api.uploadSpeakingAudio(backendSessionId, formData);
         } catch {
           setIsSubmitting(false);

@@ -91,7 +91,7 @@ if [ "$SEED" = true ]; then
   log "Applying the content and vocabulary seeds"
   db_user="$(docker compose exec -T postgres printenv POSTGRES_USER | tr -d '\r')"
   db_name="$(docker compose exec -T postgres printenv POSTGRES_DB | tr -d '\r')"
-  for seed in 03-content-seed.sql 04-vocabulary-seed.sql 05-productive-question-bank.sql 06-level-bank.sql 07-theory-content.sql 08-productive-bank.sql; do
+  for seed in 03-content-seed.sql 04-vocabulary-seed.sql 05-productive-question-bank.sql 06-level-bank.sql 07-theory-content.sql 08-productive-bank.sql 09-interactive-bank.sql 10-dictionary.sql; do
     docker compose exec -T postgres psql -U "$db_user" -d "$db_name" \
       -v ON_ERROR_STOP=1 -f "/docker-entrypoint-initdb.d/$seed"
   done

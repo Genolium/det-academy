@@ -31,7 +31,7 @@ function DiagnosticLauncher() {
       writeStoredAttempt(response.session.id);
       router.push('/test/session');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось начать диагностику');
+      setError(err instanceof Error ? err.message : (locale === 'ru' ? 'Не удалось начать диагностику' : 'Could not start the diagnostic'));
       setLoading(false);
     }
   };

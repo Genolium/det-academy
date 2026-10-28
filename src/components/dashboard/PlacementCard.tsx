@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { readQuickPlacement, type QuickPlacementResult } from '@/data/quickPlacement';
 
 interface Placement {
   available: boolean;
@@ -17,6 +18,7 @@ interface Placement {
 export const PlacementCard: React.FC = () => {
   const { locale } = useSettingsStore();
   const [placement, setPlacement] = useState<Placement | null>(null);
+  const [quick, setQuick] = useState<QuickPlacementResult | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -31,8 +33,14 @@ export const PlacementCard: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setQuick(readQuickPlacement());
+  }, []);
+
   if (!placement) return null;
   const ru = locale === 'ru';
+  const level = placement.available ? placement.level : quick?.level;
+  const isQuick = !placement.available && Boolean(quick);
 
   return (
     <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-xl">
@@ -43,18 +51,25 @@ export const PlacementCard: React.FC = () => {
         </h3>
       </div>
 
-      {placement.available ? (
+      {level ? (
         <>
           <div className="flex items-end justify-between gap-3">
-            <div className="text-2xl font-black text-[#D2F544]">{placement.level}</div>
+            <div className="text-2xl font-black text-[#D2F544]">{level}</div>
             <span className="text-[11px] text-neutral-500">
-              {ru ? 'по диагностике' : 'from the diagnostic'} · {placement.completedAt}
+              {isQuick
+                ? ru ? 'быстрая оценка по лексике' : 'quick vocabulary estimate'
+                : ru ? 'по диагностике' : 'from the diagnostic'}
+              {isQuick ? ` · ${quick?.completedAt}` : ` · ${placement.completedAt}`}
             </span>
           </div>
           <p className="text-[11px] text-neutral-400 mt-2 leading-relaxed">
-            {ru
-              ? `Ориентировочный уровень ${placement.level} по короткой адаптивной диагностике. Это не официальный балл DET.`
-              : `Estimated ${placement.level} from the short adaptive diagnostic. Not an official DET score.`}
+            {isQuick
+              ? ru
+                ? `Ориентир ${level} по проверке лексики. Это не официальный балл DET; точный уровень покажет диагностика.`
+                : `A ${level} vocabulary estimate. Not an official DET score; the diagnostic shows the precise level.`
+              : ru
+                ? `Ориентировочный уровень ${level} по короткой адаптивной диагностике. Это не официальный балл DET.`
+                : `Estimated ${level} from the short adaptive diagnostic. Not an official DET score.`}
           </p>
           <Link
             href="/test"

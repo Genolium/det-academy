@@ -13,10 +13,16 @@ import (
 
 type TestHandler struct {
 	catService *service.CATService
+	limits     *service.LimitGuard
 }
 
 func NewTestHandler(catService *service.CATService) *TestHandler {
 	return &TestHandler{catService: catService}
+}
+
+// SetLimitGuard enables the IP/device quota for full mock attempts.
+func (h *TestHandler) SetLimitGuard(guard *service.LimitGuard) {
+	h.limits = guard
 }
 
 func (h *TestHandler) StartSession(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +33,14 @@ func (h *TestHandler) StartSession(w http.ResponseWriter, r *http.Request) {
 	if userID == "" {
 		RespondError(w, http.StatusUnauthorized, "Регистрация или вход обязательны для прохождения симулятора теста")
 		return
+	}
+
+	// Diagnostics are short and unlimited (see CATService.StartSession); every
+	// other mode is a full mock and consumes the IP/device allowance.
+	if strings.TrimSpace(req.Mode) != "diagnostic" {
+		if !CheckDailyLimit(w, r, h.limits, service.LimitScopeMock) {
+			return
+		}
 	}
 
 	session, questions, err := h.catService.StartSession(r.Context(), userID, req.CandidateName, req.DifficultyLevel, req.Mode)
