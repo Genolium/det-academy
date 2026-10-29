@@ -347,7 +347,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         onDrillCompleted?.();
       }
     } catch {
-      if (clientPassed) {
+      if (!hasServerAssignment && clientPassed) {
         setDrillCompleted(true);
         onDrillCompleted?.();
       }
@@ -403,7 +403,10 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
             onDrillCompleted?.();
           }
         } catch {
-          if (clientPassed) {
+          // A failed server submission must not be presented as verified
+          // mastery. Local practice remains available only without an
+          // assignment (guest/offline mode).
+          if (!hasServerAssignment && clientPassed) {
             setDrillCompleted(true);
             onDrillCompleted?.();
           }
@@ -462,7 +465,10 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
             onDrillCompleted?.();
           }
         } catch {
-          if (clientPassed) {
+          // A failed server submission must not be presented as verified
+          // mastery. Local practice remains available only without an
+          // assignment (guest/offline mode).
+          if (!hasServerAssignment && clientPassed) {
             setDrillCompleted(true);
             onDrillCompleted?.();
           }
@@ -509,7 +515,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         onDrillCompleted?.();
       }
     } catch {
-      if (isOk) {
+      if (!hasServerAssignment && isOk) {
         setDrillCompleted(true);
         onDrillCompleted?.();
       }
@@ -573,7 +579,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         onDrillCompleted?.();
       }
     } catch {
-      if (clientPassed) {
+      if (!hasServerAssignment && clientPassed) {
         setDrillCompleted(true);
         onDrillCompleted?.();
       }

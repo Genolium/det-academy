@@ -24,10 +24,11 @@ import (
 const deviceTestSecret = "device-limit-test-secret"
 
 type deviceLimitsFixture struct {
-	router      *chi.Mux
-	store       *memory.MemoryStorage
-	authService *service.AuthService
-	catService  *service.CATService
+	router       *chi.Mux
+	store        *memory.MemoryStorage
+	authService  *service.AuthService
+	catService   *service.CATService
+	studyService *service.StudyService
 }
 
 // newLimitsRouter wires only the routes that consume a daily quota. The shared
@@ -61,7 +62,10 @@ func newLimitsRouter(t *testing.T) *deviceLimitsFixture {
 	r.Post("/api/v1/user/practice/attempts", withTestAuth(authService, studyHandler.RecordPracticeAttempt))
 	r.Post("/api/v1/test/sessions/{id}/audio", withTestAuth(authService, mediaHandler.UploadAudio))
 
-	return &deviceLimitsFixture{router: r, store: store, authService: authService, catService: catService}
+	return &deviceLimitsFixture{
+		router: r, store: store, authService: authService,
+		catService: catService, studyService: studyService,
+	}
 }
 
 func withTestAuth(authService *service.AuthService, next http.HandlerFunc) http.HandlerFunc {
@@ -266,19 +270,31 @@ func TestSpeakingPracticeDailyLimitIsEnforcedOnSubmission(t *testing.T) {
 
 	const ip = "203.0.113.15"
 	token := registerWithIdentity(t, fixture.router, ip, "speaking-device")
-	payload := map[string]any{
-		"questionType":  "SPEAK_PHOTO",
-		"questionId":    "q-sp-01",
-		"promptContext": "practice",
-		"userResponse":  map[string]any{"text": "This is a spoken answer."},
-		"timeSpentSec":  30,
+	claims, err := fixture.authService.ValidateToken(token)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if w := doJSONRequest(t, fixture.router, http.MethodPost, "/api/v1/user/practice/attempts", token, ip, "speaking-device", payload); w.Code != http.StatusOK {
+	payloadFor := func(assignmentID string) map[string]any {
+		return map[string]any{
+			"assignmentId": assignmentID,
+			"userResponse": map[string]any{"text": "This is a spoken answer."},
+			"timeSpentSec": 30,
+		}
+	}
+	first, err := fixture.studyService.CreatePracticeAssignment(context.Background(), claims.UserID, "SPEAK_PHOTO")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := doJSONRequest(t, fixture.router, http.MethodPost, "/api/v1/user/practice/attempts", token, ip, "speaking-device", payloadFor(first.AssignmentID)); w.Code != http.StatusOK {
 		t.Fatalf("first speaking attempt: %d %s", w.Code, w.Body.String())
+	}
+	second, err := fixture.studyService.CreatePracticeAssignment(context.Background(), claims.UserID, "SPEAK_PHOTO")
+	if err != nil {
+		t.Fatal(err)
 	}
 	requireLimitResponse(
 		t,
-		doJSONRequest(t, fixture.router, http.MethodPost, "/api/v1/user/practice/attempts", token, ip, "speaking-device", payload),
+		doJSONRequest(t, fixture.router, http.MethodPost, "/api/v1/user/practice/attempts", token, ip, "speaking-device", payloadFor(second.AssignmentID)),
 		service.LimitScopeSpeaking,
 	)
 }

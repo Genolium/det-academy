@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"det-academy-backend/internal/models"
+	"errors"
 	"time"
 )
 
@@ -174,7 +175,8 @@ type StudyRepository interface {
 	RecordLearningEvent(ctx context.Context, event *models.LearningEvent) (bool, error)
 	ListLearningEvents(ctx context.Context, userID string, limit int) ([]models.LearningEvent, error)
 	CreatePracticeAssignment(ctx context.Context, assignment *models.PracticeAssignment) error
-	GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error)
+	GetPracticeAssignment(ctx context.Context, userID, assignmentID string) (*models.PracticeAssignment, error)
+	SubmitPracticeAssignment(ctx context.Context, userID, assignmentID string, attempt *models.PracticeAttempt) error
 	RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error
 	GetPracticeAttempts(ctx context.Context, userID, questionType string, limit int) ([]models.PracticeAttempt, error)
 	// CountPracticeAttemptsSince counts practice answers of the given types
@@ -224,3 +226,7 @@ type Storage interface {
 	Ping(ctx context.Context) error
 	Close() error
 }
+
+// ErrPracticeAssignmentUnavailable is returned when an assignment does not
+// exist, belongs to another user, or was already submitted.
+var ErrPracticeAssignmentUnavailable = errors.New("practice assignment is unavailable")

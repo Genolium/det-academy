@@ -3,16 +3,16 @@
  * Deterministic phoneme tests. Run through `npm run test:phonemes`, which
  * compiles the TypeScript modules first (the app itself has no unit runner).
  */
-const assert = require('node:assert/strict');
-const {
+import assert from 'node:assert/strict';
+import {
   comparePhonemes,
   compareWordPronunciation,
   formatPhonemes,
   phonemeDistance,
   phonemizeWord,
   tokenizeIPA,
-} = require('../.tmp-phonemes/phonemes.js');
-const { buildPronunciationReport } = require('../.tmp-phonemes/pronunciationAnalysis.js');
+} from '../.tmp-phonemes/phonemes.js';
+import { buildPronunciationReport } from '../.tmp-phonemes/pronunciationAnalysis.js';
 
 const checks = [];
 const check = (name, fn) => {

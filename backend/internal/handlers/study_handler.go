@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"det-academy-backend/internal/models"
+	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/service"
 	"encoding/json"
 	"errors"
@@ -407,44 +408,38 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 	}
 
 	var req struct {
-		AssignmentID  string          `json:"assignmentId"`
-		QuestionType  string          `json:"questionType"`
-		QuestionID    string          `json:"questionId"`
-		PromptContext string          `json:"promptContext"`
-		UserResponse  json.RawMessage `json:"userResponse"`
-		TimeSpentSec  int             `json:"timeSpentSec"`
+		AssignmentID string          `json:"assignmentId"`
+		UserResponse json.RawMessage `json:"userResponse"`
+		TimeSpentSec int             `json:"timeSpentSec"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, "invalid request payload")
 		return
 	}
-	if req.QuestionID == "" && req.AssignmentID != "" {
-		if asgn, err := h.studyService.GetPracticeAssignment(r.Context(), req.AssignmentID); err == nil && asgn != nil {
-			req.QuestionID = asgn.QuestionID
-			if req.QuestionType == "" {
-				req.QuestionType = asgn.QuestionType
-			}
-		}
-	}
-	if req.QuestionType == "" {
-		RespondError(w, http.StatusBadRequest, "questionType is required")
+	if req.AssignmentID == "" {
+		RespondError(w, http.StatusBadRequest, "assignmentId is required for server-graded practice")
 		return
 	}
 
-	// Use the type stored on the server so a client cannot label a speaking
-	// answer as a reading task to skip the IP/device speaking quota.
-	resolvedType := h.studyService.ResolveQuestionType(r.Context(), req.QuestionType, req.QuestionID)
-	if service.IsSpeakingQuestionType(resolvedType) {
+	asgn, err := h.studyService.GetPracticeAssignment(r.Context(), userID, req.AssignmentID)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, "practice assignment not found or already submitted")
+		return
+	}
+	if service.IsSpeakingQuestionType(asgn.QuestionType) {
 		if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
 			return
 		}
 	}
 
 	attempt, err := h.studyService.RecordPracticeAttempt(
-		r.Context(), userID, req.QuestionType, req.QuestionID, req.PromptContext,
-		req.UserResponse, req.TimeSpentSec,
+		r.Context(), userID, req.AssignmentID, req.UserResponse, req.TimeSpentSec,
 	)
 	if err != nil {
+		if errors.Is(err, repository.ErrPracticeAssignmentUnavailable) {
+			RespondError(w, http.StatusConflict, "practice assignment was already submitted")
+			return
+		}
 		if errors.Is(err, service.ErrDailyLimitReached) {
 			RespondError(w, http.StatusTooManyRequests, "Дневной лимит разговорных заданий исчерпан. Возвращайтесь завтра.")
 			return

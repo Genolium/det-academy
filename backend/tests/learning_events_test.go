@@ -38,8 +38,16 @@ func TestPracticeAttemptRecordsMasteryAndAwardsXP(t *testing.T) {
 	store, study, _, _, userID := learningEventsFixture(t)
 	ctx := context.Background()
 
-	rawResp, _ := json.Marshal(map[string]interface{}{"isReal": true})
-	attempt, err := study.RecordPracticeAttempt(ctx, userID, "READ_SELECT", "q-rs-01", "word: ambiguous", rawResp, 4)
+	asgn, err := study.CreatePracticeAssignment(ctx, userID, "READ_SELECT")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var answer struct {
+		IsReal bool `json:"isReal"`
+	}
+	_ = json.Unmarshal(asgn.CorrectAnswers, &answer)
+	rawResp, _ := json.Marshal(map[string]interface{}{"isReal": answer.IsReal})
+	attempt, err := study.RecordPracticeAttempt(ctx, userID, asgn.AssignmentID, rawResp, 4)
 	if err != nil {
 		t.Fatalf("record practice attempt: %v", err)
 	}
@@ -76,8 +84,16 @@ func TestPracticeAttemptRecordsMasteryAndAwardsXP(t *testing.T) {
 		t.Fatalf("expected a practice_submitted learning event, got %+v", events)
 	}
 
-	liar, _ := json.Marshal(map[string]interface{}{"isReal": false, "isCorrect": true, "score": 1})
-	cheated, err := study.RecordPracticeAttempt(ctx, userID, "READ_SELECT", "q-rs-01", "word: ambiguous", liar, 2)
+	asgn2, err := study.CreatePracticeAssignment(ctx, userID, "READ_SELECT")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var answer2 struct {
+		IsReal bool `json:"isReal"`
+	}
+	_ = json.Unmarshal(asgn2.CorrectAnswers, &answer2)
+	liar, _ := json.Marshal(map[string]interface{}{"isReal": !answer2.IsReal, "isCorrect": true, "score": 1})
+	cheated, err := study.RecordPracticeAttempt(ctx, userID, asgn2.AssignmentID, liar, 2)
 	if err != nil {
 		t.Fatalf("record lying attempt: %v", err)
 	}

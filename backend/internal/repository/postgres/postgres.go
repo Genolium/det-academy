@@ -1805,26 +1805,73 @@ func (r *StudyRepo) CreatePracticeAssignment(ctx context.Context, assignment *mo
 	if len(payload) == 0 {
 		payload = []byte(`{}`)
 	}
+	answers := assignment.CorrectAnswers
+	if len(answers) == 0 {
+		answers = []byte(`{}`)
+	}
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO practice_assignments (id, user_id, question_id, question_type, difficulty_band, content_payload, time_limit_sec, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-	`, assignment.AssignmentID, assignment.AssignmentID, assignment.QuestionID, assignment.QuestionType, assignment.DifficultyBand, payload, assignment.TimeLimitSec)
+		INSERT INTO practice_assignments (id, user_id, question_id, question_type, difficulty_band, content_payload, correct_answers, time_limit_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+	`, assignment.AssignmentID, assignment.UserID, assignment.QuestionID, assignment.QuestionType, assignment.DifficultyBand, payload, answers, assignment.TimeLimitSec)
 	return err
 }
 
-func (r *StudyRepo) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+func (r *StudyRepo) GetPracticeAssignment(ctx context.Context, userID, assignmentID string) (*models.PracticeAssignment, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, question_id, question_type, difficulty_band, content_payload, time_limit_sec, created_at
+		SELECT id, user_id, question_id, question_type, difficulty_band, content_payload, correct_answers, time_limit_sec, created_at, consumed_at, COALESCE(attempt_id, '')
 		FROM practice_assignments
-		WHERE id = $1
-	`, assignmentID)
+		WHERE id = $1 AND user_id = $2 AND consumed_at IS NULL
+	`, assignmentID, userID)
 
 	var a models.PracticeAssignment
-	err := row.Scan(&a.AssignmentID, &a.QuestionID, &a.QuestionType, &a.DifficultyBand, &a.ContentPayload, &a.TimeLimitSec, &a.CreatedAt)
+	err := row.Scan(&a.AssignmentID, &a.UserID, &a.QuestionID, &a.QuestionType, &a.DifficultyBand, &a.ContentPayload, &a.CorrectAnswers, &a.TimeLimitSec, &a.CreatedAt, &a.ConsumedAt, &a.AttemptID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repository.ErrPracticeAssignmentUnavailable
+		}
 		return nil, err
 	}
 	return &a, nil
+}
+
+func (r *StudyRepo) SubmitPracticeAssignment(ctx context.Context, userID, assignmentID string, attempt *models.PracticeAttempt) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var consumedAt *time.Time
+	err = tx.QueryRowContext(ctx, `
+		SELECT consumed_at FROM practice_assignments
+		WHERE id = $1 AND user_id = $2
+		FOR UPDATE
+	`, assignmentID, userID).Scan(&consumedAt)
+	if errors.Is(err, sql.ErrNoRows) || consumedAt != nil {
+		return repository.ErrPracticeAssignmentUnavailable
+	}
+	if err != nil {
+		return err
+	}
+
+	userResp := attempt.UserResponse
+	if len(userResp) == 0 {
+		userResp = []byte(`{}`)
+	}
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO practice_attempts (id, user_id, assignment_id, question_type, question_id, prompt_context, user_response, is_correct, score, time_spent_sec, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+	`, attempt.ID, attempt.UserID, assignmentID, attempt.QuestionType, attempt.QuestionID, attempt.PromptContext, userResp, attempt.IsCorrect, attempt.Score, attempt.TimeSpentSec)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE practice_assignments SET consumed_at = NOW(), attempt_id = $3
+		WHERE id = $1 AND user_id = $2 AND consumed_at IS NULL
+	`, assignmentID, userID, attempt.ID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *StudyRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {

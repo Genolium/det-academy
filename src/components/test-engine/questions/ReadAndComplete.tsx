@@ -49,10 +49,12 @@ export const ReadAndComplete: React.FC<ReadAndCompleteProps> = ({ onComplete }) 
       prefix: token.prefix || '',
       missingLength: Math.max(1, Number(token.missingLength || 1)),
     }));
-    let blankIndex = -1;
-    const segments: CTestSegment[] = (payload.segments || []).map((segment) => {
+    const sourceSegments = payload.segments || [];
+    const segments: CTestSegment[] = sourceSegments.map((segment, segmentIndex) => {
       if (typeof segment.text === 'string') return { text: segment.text };
-      blankIndex += 1;
+      const blankIndex = sourceSegments
+        .slice(0, segmentIndex)
+        .filter((previous) => typeof previous.text !== 'string').length;
       return {
         prefix: segment.prefix || '',
         missingLength: Math.max(1, Number(segment.missingLength || 1)),

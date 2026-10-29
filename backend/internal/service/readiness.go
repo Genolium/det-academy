@@ -32,7 +32,7 @@ func estimateScoreRange(sessions []models.TestSession) *models.ScoreRange {
 			Low:        clampScore(latest - 10),
 			High:       clampScore(latest + 10),
 			Confidence: "low",
-			Basis:      fmt.Sprintf("Один завершённый мок: ориентир %d ± 10 баллов. После второго теста диапазон сузится.", int(latest)),
+			Basis:      fmt.Sprintf("Один завершённый мок: тренировочный ориентир %d ± 10 баллов, не официальный прогноз. После второго теста диапазон сузится.", int(latest)),
 		}
 	}
 
@@ -70,7 +70,7 @@ func estimateScoreRange(sessions []models.TestSession) *models.ScoreRange {
 		High:       clampScore(latest + float64(margin)),
 		Confidence: confidence,
 		Basis: fmt.Sprintf(
-			"%d мока, последний %d, разброс ±%d баллов (σ %.1f). Диапазон 90%%.",
+			"%d мока, последний %d, разброс ±%d баллов (σ %.1f). Это тренировочный ориентир, а не официальный 90%%-прогноз.",
 			len(scores), int(latest), margin, stddev,
 		),
 	}
@@ -98,8 +98,14 @@ func projectTrajectory(sessions []models.TestSession, targetScore, daysRemaining
 		score float64
 	}
 	points := make([]point, 0, 5)
-	for index := 0; index < len(sessions) && index < 5; index++ {
-		session := sessions[len(sessions)-1-index]
+	// GetUserSessions returns newest first. Take the newest five, then walk
+	// backwards so the regression receives them oldest -> newest.
+	limit := 5
+	if len(sessions) < limit {
+		limit = len(sessions)
+	}
+	for index := limit - 1; index >= 0; index-- {
+		session := sessions[index]
 		if session.CompletedAt == nil {
 			continue
 		}

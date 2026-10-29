@@ -52,35 +52,10 @@ export default function MultiplayerArenaPage() {
   const t = (ruText: string, enText: string) => (ru ? ruText : enText);
   const { pvpElo, setPvpElo, streakDays, recordDailyActivity, candidateName } = useProgressStore();
   const currentCandidateName = user?.name || candidateName || 'Candidate';
-
-  if (!ARENA_ENABLED) {
-    return (
-      <div className="min-h-screen py-20 ambient-glow flex items-center justify-center px-4">
-        <div className="max-w-lg w-full bg-[#0E1012] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 text-center shadow-2xl">
-          <Swords className="w-10 h-10 text-[#D2F544] mx-auto mb-4" />
-          <h1 className="text-xl font-black tracking-tight">{t('Арена временно на паузе', 'The arena is paused')}</h1>
-          <p className="text-sm text-neutral-400 mt-3 leading-relaxed">
-            {t(
-              'Мы дорабатываем честный рейтинг и защиту от накрутки. Тренажёры, теория и пробный тест работают как обычно.',
-              'We are finishing the fair rating and anti-cheat protection. Drills, theory and the mock test work as usual.'
-            )}
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/practice" className="inline-flex items-center gap-2 bg-[#D2F544] text-[#0E1012] font-black text-sm px-5 py-2.5 rounded-full">
-              {t('К тренажёрам', 'Go to drills')} <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/dashboard" className="text-sm font-bold text-neutral-300 hover:text-white">
-              {t('В кабинет', 'Go to dashboard')}
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [dbLeaderboard, setDbLeaderboard] = useState<ArenaLeaderboardEntry[]>([]);
+
+
   const [state, setState] = useState<ArenaState>('LOBBY');
   const [userElo, setUserElo] = useState<number>(pvpElo || 1200);
   const [countdown, setCountdown] = useState<number>(3);
@@ -421,6 +396,9 @@ export default function MultiplayerArenaPage() {
       </div>
     );
   }
+
+
+
 
   return (
     <div className="min-h-screen bg-[#070809] text-white py-10 px-4 sm:px-6 lg:px-8">

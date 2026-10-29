@@ -14,7 +14,7 @@ test.describe('dashboard insights', () => {
     await page.goto('/dashboard');
     // The arena is disabled, so the weekly league card must not appear.
     await expect(page.getByText(/Лига недели|Weekly league/)).toHaveCount(0);
-    await expect(page.getByText(/Прогноз:/)).toBeVisible();
+    await expect(page.getByText(/Тренировочный ориентир:/)).toBeVisible();
     await expect(page.getByText('110–130')).toBeVisible();
     await expect(page.getByText(/высокая уверенность/)).toBeVisible();
     await expect(page.getByText(/разброс ±10/)).toBeVisible();

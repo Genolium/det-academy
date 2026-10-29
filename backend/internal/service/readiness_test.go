@@ -131,3 +131,26 @@ func TestProjectTrajectoryExtrapolatesRecentTrend(t *testing.T) {
 }
 
 func timePtr(value time.Time) *time.Time { return &value }
+
+func TestProjectTrajectoryUsesNewestFiveSessions(t *testing.T) {
+	now := time.Now().UTC()
+	sessions := []models.TestSession{
+		{OverallScore: intPtr(140), CompletedAt: timePtr(now.Add(-1 * 24 * time.Hour))},
+		{OverallScore: intPtr(135), CompletedAt: timePtr(now.Add(-5 * 24 * time.Hour))},
+		{OverallScore: intPtr(130), CompletedAt: timePtr(now.Add(-9 * 24 * time.Hour))},
+		{OverallScore: intPtr(125), CompletedAt: timePtr(now.Add(-13 * 24 * time.Hour))},
+		{OverallScore: intPtr(120), CompletedAt: timePtr(now.Add(-17 * 24 * time.Hour))},
+		{OverallScore: intPtr(80), CompletedAt: timePtr(now.Add(-90 * 24 * time.Hour))},
+		{OverallScore: intPtr(70), CompletedAt: timePtr(now.Add(-120 * 24 * time.Hour))},
+	}
+	result := projectTrajectory(sessions, 140, 10)
+	if result == nil {
+		t.Fatal("missing projection")
+	}
+	if result.SlopePerDay <= 0 {
+		t.Fatalf("projection used old sessions: %+v", result)
+	}
+	if result.Low < 120 {
+		t.Fatalf("projection looks like old low scores: %+v", result)
+	}
+}

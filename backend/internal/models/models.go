@@ -801,6 +801,7 @@ type LearningEvent struct {
 // PracticeAttempt records one exercise submission in the Practice Hub.
 type PracticeAttempt struct {
 	ID            string          `json:"id"`
+	AssignmentID  string          `json:"assignmentId,omitempty"`
 	UserID        string          `json:"userId"`
 	QuestionType  string          `json:"questionType"`
 	QuestionID    string          `json:"questionId,omitempty"`
@@ -815,12 +816,18 @@ type PracticeAttempt struct {
 // PracticeAssignment is a server-issued drill assignment without private answers.
 type PracticeAssignment struct {
 	AssignmentID   string          `json:"assignmentId"`
+	UserID         string          `json:"-"`
 	QuestionID     string          `json:"questionId"`
 	QuestionType   string          `json:"questionType"`
 	DifficultyBand string          `json:"difficultyBand"`
 	ContentPayload json.RawMessage `json:"contentPayload"`
+	// CorrectAnswers is the immutable answer snapshot used for grading. It is
+	// never serialized to the client.
+	CorrectAnswers json.RawMessage `json:"-"`
 	TimeLimitSec   int             `json:"timeLimitSec"`
 	CreatedAt      time.Time       `json:"createdAt"`
+	ConsumedAt     *time.Time      `json:"-"`
+	AttemptID      string          `json:"-"`
 }
 
 // PracticeGradingResponse is the confirmed server evaluation of a practice assignment.

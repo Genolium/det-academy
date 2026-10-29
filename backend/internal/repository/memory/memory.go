@@ -2510,15 +2510,33 @@ func (r *studyMemoryRepo) CreatePracticeAssignment(ctx context.Context, assignme
 	return nil
 }
 
-func (r *studyMemoryRepo) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+func (r *studyMemoryRepo) GetPracticeAssignment(ctx context.Context, userID, assignmentID string) (*models.PracticeAssignment, error) {
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
 	asgn, ok := r.s.practiceAssignments[assignmentID]
-	if !ok {
-		return nil, errors.New("practice assignment not found")
+	if !ok || asgn.UserID != userID || asgn.ConsumedAt != nil {
+		return nil, repository.ErrPracticeAssignmentUnavailable
 	}
 	cp := *asgn
 	return &cp, nil
+}
+
+func (r *studyMemoryRepo) SubmitPracticeAssignment(ctx context.Context, userID, assignmentID string, attempt *models.PracticeAttempt) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	asgn, ok := r.s.practiceAssignments[assignmentID]
+	if !ok || asgn.UserID != userID || asgn.ConsumedAt != nil {
+		return repository.ErrPracticeAssignmentUnavailable
+	}
+	attempt.AssignmentID = assignmentID
+	if attempt.CreatedAt.IsZero() {
+		attempt.CreatedAt = time.Now().UTC()
+	}
+	r.s.practiceAttempts[attempt.UserID] = append(r.s.practiceAttempts[attempt.UserID], *attempt)
+	now := time.Now().UTC()
+	asgn.ConsumedAt = &now
+	asgn.AttemptID = attempt.ID
+	return nil
 }
 
 func (r *studyMemoryRepo) RecordPracticeAttempt(ctx context.Context, attempt *models.PracticeAttempt) error {

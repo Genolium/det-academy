@@ -4,6 +4,7 @@ import (
 	"context"
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -216,7 +217,7 @@ func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
 	}
 
 	// Verify assignment can be retrieved
-	retrievedAsgn, err := study.GetPracticeAssignment(ctx, asgn.AssignmentID)
+	retrievedAsgn, err := study.GetPracticeAssignment(ctx, "user-pr-1", asgn.AssignmentID)
 	if err != nil {
 		t.Fatalf("failed to get practice assignment: %v", err)
 	}
@@ -224,10 +225,18 @@ func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
 		t.Errorf("expected question ID %s, got %s", asgn.QuestionID, retrievedAsgn.QuestionID)
 	}
 
-	// 2. Submit Correct Attempt
-	// q-rs-01 has answer {"isReal": true}
-	correctResp := []byte(`{"isReal": true}`)
-	attCorrect, err := study.RecordPracticeAttempt(ctx, "user-pr-1", "READ_SELECT", asgn.QuestionID, asgn.AssignmentID, correctResp, 12)
+	// 2. Submit Correct Attempt using the assignment snapshot.
+	var answer struct {
+		IsReal bool `json:"isReal"`
+	}
+	if err := json.Unmarshal(asgn.CorrectAnswers, &answer); err != nil {
+		t.Fatalf("assignment snapshot: %v", err)
+	}
+	correctResp := []byte(`{"isReal": false}`)
+	if answer.IsReal {
+		correctResp = []byte(`{"isReal": true}`)
+	}
+	attCorrect, err := study.RecordPracticeAttempt(ctx, "user-pr-1", asgn.AssignmentID, correctResp, 12)
 	if err != nil {
 		t.Fatalf("failed to record correct attempt: %v", err)
 	}
@@ -247,9 +256,22 @@ func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
 		t.Errorf("expected 15 XP for verified correct practice, got %d", xp.Total)
 	}
 
-	// 3. Submit Incorrect Attempt with assignment ID in promptContext
+	// 3. A consumed assignment cannot be replayed; issue a fresh one.
+	asgn2, err := study.CreatePracticeAssignment(ctx, "user-pr-1", "READ_SELECT")
+	if err != nil {
+		t.Fatalf("failed to create second practice assignment: %v", err)
+	}
+	var answer2 struct {
+		IsReal bool `json:"isReal"`
+	}
+	if err := json.Unmarshal(asgn2.CorrectAnswers, &answer2); err != nil {
+		t.Fatalf("second assignment snapshot: %v", err)
+	}
 	wrongResp := []byte(`{"isReal": false}`)
-	attWrong, err := study.RecordPracticeAttempt(ctx, "user-pr-1", "READ_SELECT", asgn.QuestionID, asgn.AssignmentID, wrongResp, 10)
+	if !answer2.IsReal {
+		wrongResp = []byte(`{"isReal": true}`)
+	}
+	attWrong, err := study.RecordPracticeAttempt(ctx, "user-pr-1", asgn2.AssignmentID, wrongResp, 10)
 	if err != nil {
 		t.Fatalf("failed to record wrong attempt: %v", err)
 	}
@@ -264,6 +286,29 @@ func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
 	}
 	if len(errList) == 0 {
 		t.Errorf("expected error to be auto-saved into error notebook on failed practice")
+	}
+}
+
+func TestPracticeAssignmentOwnershipAndSingleUse(t *testing.T) {
+	store := memory.New()
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	study := NewStudyService(store, theory, cat)
+	ctx := context.Background()
+
+	asgn, err := study.CreatePracticeAssignment(ctx, "owner-a", "READ_SELECT")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := study.GetPracticeAssignment(ctx, "owner-b", asgn.AssignmentID); err == nil {
+		t.Fatal("another user must not read the assignment")
+	}
+	answer := []byte(`{"isReal": true}`)
+	if _, err := study.RecordPracticeAttempt(ctx, "owner-a", asgn.AssignmentID, answer, 5); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := study.RecordPracticeAttempt(ctx, "owner-a", asgn.AssignmentID, answer, 5); err == nil {
+		t.Fatal("a consumed assignment must not be replayed")
 	}
 }
 

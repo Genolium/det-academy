@@ -25,7 +25,7 @@
     "test:contracts": "bash scripts/external_contract_test.sh",
     "validate:schema": "bash scripts/validate_schema.sh",
     "check:bundle": "bash scripts/check_bundle.sh",
-    "test:phonemes": "rm -rf .tmp-phonemes && tsc src/lib/phonemes.ts src/lib/pronunciationAnalysis.ts --outDir .tmp-phonemes --module commonjs --target es2020 --moduleResolution node --skipLibCheck --esModuleInterop && node scripts/test_phonemes.cjs",
+    "test:phonemes": "rm -rf .tmp-phonemes && tsc src/lib/phonemes.ts src/lib/pronunciationAnalysis.ts --outDir .tmp-phonemes --module commonjs --target es2020 --moduleResolution node --skipLibCheck --esModuleInterop && node scripts/test_phonemes.mjs",
     "seo:indexnow": "node scripts/indexnow_ping.mjs --dry-run",
     "test:load": "node scripts/load_test.mjs --profile=mock,speaking"
   },

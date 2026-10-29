@@ -1491,128 +1491,120 @@ func (s *StudyService) CreatePracticeAssignment(ctx context.Context, userID, que
 	sanitizedPayload := sanitizeContentPayload(selected.Type, selected.ContentPayload)
 	asgn := &models.PracticeAssignment{
 		AssignmentID:   "asgn-" + uuid.NewString()[:12],
+		UserID:         userID,
 		QuestionID:     selected.ID,
 		QuestionType:   selected.Type,
 		DifficultyBand: selected.DifficultyBand,
 		ContentPayload: sanitizedPayload,
+		CorrectAnswers: selected.CorrectAnswers,
 		TimeLimitSec:   selected.TimeLimitSec,
 		CreatedAt:      time.Now().UTC(),
 	}
 
-	_ = s.storage.Study().CreatePracticeAssignment(ctx, asgn)
+	if err := s.storage.Study().CreatePracticeAssignment(ctx, asgn); err != nil {
+		return nil, fmt.Errorf("failed to create practice assignment: %w", err)
+	}
 	return asgn, nil
 }
 
 // GetPracticeAssignment returns a previously issued practice assignment.
-func (s *StudyService) GetPracticeAssignment(ctx context.Context, assignmentID string) (*models.PracticeAssignment, error) {
+func (s *StudyService) GetPracticeAssignment(ctx context.Context, userID, assignmentID string) (*models.PracticeAssignment, error) {
 	if assignmentID == "" {
 		return nil, errors.New("assignmentId is required")
 	}
-	return s.storage.Study().GetPracticeAssignment(ctx, assignmentID)
+	if userID == "" {
+		return nil, errors.New("authorization required")
+	}
+	return s.storage.Study().GetPracticeAssignment(ctx, userID, assignmentID)
 }
 
 // RecordPracticeAttempt grades a drill on the server when a question ID is
 // supplied. Client-reported isCorrect/score are ignored.
-func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, questionType, questionID, promptContext string, userResponse json.RawMessage, timeSpentSec int) (*models.PracticeAttempt, error) {
-	if (questionID == "" || questionType == "") && strings.HasPrefix(promptContext, "asgn-") {
-		if asgn, err := s.GetPracticeAssignment(ctx, promptContext); err == nil && asgn != nil {
-			if questionID == "" {
-				questionID = asgn.QuestionID
-			}
-			if questionType == "" {
-				questionType = asgn.QuestionType
-			}
-		}
+func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, assignmentID string, userResponse json.RawMessage, timeSpentSec int) (*models.PracticeAttempt, error) {
+	if assignmentID == "" {
+		return nil, errors.New("assignmentId is required for server-graded practice")
 	}
-	if questionType == "" {
-		return nil, errors.New("questionType is required")
+	asgn, err := s.GetPracticeAssignment(ctx, userID, assignmentID)
+	if err != nil {
+		return nil, err
 	}
-
-	isCorrect := false
-	score := 0.0
-	serverGraded := false
-	var correctAnswers json.RawMessage
-
-	if questionID != "" && s.catService != nil {
-		if q, err := s.catService.QuestionByID(ctx, questionID); err == nil && q != nil {
-			correctAnswers = q.CorrectAnswers
-			if closedCorrect, closedScore, handled := GradeClosedItem(q, userResponse); handled {
-				isCorrect = closedCorrect
-				score = closedScore
-				serverGraded = true
-			} else if isOpenEndedQuestionType(q.Type) {
-				userText, transcript, _, durationSec := extractUserText(userResponse)
-				var eval models.EvaluationResult
-				if transcript != "" || durationSec > 0 {
-					eval = NewEvaluator().EvaluateSpeaking("", questionID, q.Type, transcript, durationSec, extractContextKeywords(q.ContentPayload))
-				} else {
-					eval = NewEvaluator().EvaluateWriting("", questionID, q.Type, userText, extractContextKeywords(q.ContentPayload))
-				}
-				score = eval.Score
-				isCorrect = eval.Score >= 0.6
-				serverGraded = true
-			}
-			if q.Type != "" {
-				questionType = q.Type
-			}
-		}
-	}
-
-	// The assignment gate is not enough on its own: an attempt can be submitted
-	// with a known question ID without going through CreatePracticeAssignment.
-	// Enforce the user allowance again here, after the server-resolved type.
-	if isSpeakingType(questionType) {
+	if isSpeakingType(asgn.QuestionType) {
 		if err := checkSpeakingDailyLimit(ctx, s.storage.Study(), userID); err != nil {
 			return nil, err
 		}
 	}
 
-	attemptID := uuid.NewString()
+	// Grade only against the immutable snapshot captured when the assignment
+	// was issued. A later edit to the question bank cannot change the answer.
+	snapshot := &models.Question{
+		ID:             asgn.QuestionID,
+		Type:           asgn.QuestionType,
+		ContentPayload: asgn.ContentPayload,
+		CorrectAnswers: asgn.CorrectAnswers,
+	}
+	isCorrect := false
+	score := 0.0
+	serverGraded := false
+	if closedCorrect, closedScore, handled := GradeClosedItem(snapshot, userResponse); handled {
+		isCorrect, score, serverGraded = closedCorrect, closedScore, true
+	} else if isOpenEndedQuestionType(snapshot.Type) {
+		userText, transcript, _, durationSec := extractUserText(userResponse)
+		var evaluation models.EvaluationResult
+		if transcript != "" || durationSec > 0 {
+			evaluation = NewEvaluator().EvaluateSpeaking("", asgn.QuestionID, snapshot.Type, transcript, durationSec, extractContextKeywords(snapshot.ContentPayload))
+		} else {
+			evaluation = NewEvaluator().EvaluateWriting("", asgn.QuestionID, snapshot.Type, userText, extractContextKeywords(snapshot.ContentPayload))
+		}
+		score = evaluation.Score
+		isCorrect = evaluation.Score >= 0.6
+		serverGraded = true
+	}
+
+	promptText := questionPromptText(asgn.QuestionType, asgn.ContentPayload, asgn.QuestionID)
 	attempt := &models.PracticeAttempt{
-		ID:            attemptID,
+		ID:            uuid.NewString(),
 		UserID:        userID,
-		QuestionType:  questionType,
-		QuestionID:    questionID,
-		PromptContext: promptContext,
+		AssignmentID:  assignmentID,
+		QuestionType:  asgn.QuestionType,
+		QuestionID:    asgn.QuestionID,
+		PromptContext: promptText,
 		UserResponse:  userResponse,
 		IsCorrect:     isCorrect,
 		Score:         score,
 		TimeSpentSec:  timeSpentSec,
 		CreatedAt:     time.Now().UTC(),
 	}
-
-	if err := s.storage.Study().RecordPracticeAttempt(ctx, attempt); err != nil {
-		return nil, fmt.Errorf("failed to record practice attempt: %w", err)
+	if err := s.storage.Study().SubmitPracticeAssignment(ctx, userID, assignmentID, attempt); err != nil {
+		return nil, err
 	}
 
 	today := time.Now().UTC().Format("2006-01-02")
 	_ = s.storage.Study().RecordActivity(ctx, userID, today, "practice")
 	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-drill", today, "practice_attempt")
 	if serverGraded {
-		skill := MapQuestionTypeToSkill(questionType)
+		skill := MapQuestionTypeToSkill(asgn.QuestionType)
 		_ = s.storage.Study().UpdateSkillMastery(ctx, userID, skill, score)
 		if isCorrect {
-			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 15)
+			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attempt.ID, 15)
 		} else {
-			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attemptID, 5)
-
-			explanation := "Practice drill error"
-			correctStr := "Check correct solution"
-			if len(correctAnswers) > 0 {
-				correctStr = string(correctAnswers)
+			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attempt.ID, 5)
+			correctText := "Check correct solution"
+			if len(asgn.CorrectAnswers) > 0 {
+				correctText = string(asgn.CorrectAnswers)
 			}
 			_, _ = s.SaveError(ctx, userID, models.SaveErrorRequest{
-				QuestionType:  questionType,
-				Prompt:        promptContext,
+				QuestionType:  asgn.QuestionType,
+				Prompt:        promptText,
 				UserAnswer:    string(userResponse),
-				CorrectAnswer: correctStr,
-				Explanation:   explanation,
+				CorrectAnswer: correctText,
+				Explanation:   "Practice drill error",
 			})
 		}
 	}
-	emitLearningEvent(ctx, s.storage.Study(), userID, "practice_submitted", "practice:"+attemptID, map[string]any{
-		"questionType": questionType,
-		"questionId":   questionID,
+	emitLearningEvent(ctx, s.storage.Study(), userID, "practice_submitted", "practice:"+attempt.ID, map[string]any{
+		"questionType": asgn.QuestionType,
+		"questionId":   asgn.QuestionID,
+		"assignmentId": assignmentID,
 		"score":        score,
 		"isCorrect":    isCorrect,
 		"serverGraded": serverGraded,
