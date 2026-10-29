@@ -10,6 +10,7 @@ import { BentoCard } from '@/components/ui/BentoCard';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
 import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
+import { CalibrationConsentCard } from '@/components/test/CalibrationConsentCard';
 import { PlayCircle, ShieldCheck } from 'lucide-react';
 
 export default function TestLobbyPage() {
@@ -80,6 +81,8 @@ export default function TestLobbyPage() {
               {t.subtitle}
             </p>
           </div>
+
+          <CalibrationConsentCard />
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
             {/* Form Card (5 cols) */}

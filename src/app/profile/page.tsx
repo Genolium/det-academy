@@ -34,6 +34,7 @@ import { UniversityMatchWidget } from '@/components/institutions/UniversityMatch
 import { loadGoogleIdentity } from '@/lib/google-identity';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { profileCopy } from '@/lib/profileCopy';
+import { snoozeCalibrationConsentPrompt } from '@/lib/calibrationConsent';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
 function ProfileContent() {
@@ -112,6 +113,11 @@ function ProfileContent() {
       const saved = await api.updateResearchConsent(next);
       setResearchConsent(saved.consent);
       setResearchConsentVersion(saved.version);
+      if (!saved.consent) {
+        // A deliberate revocation should not immediately bring the pre-test
+        // consent card back.
+        snoozeCalibrationConsentPrompt(180);
+      }
       setSuccessMsg(
         saved.consent
           ? ru

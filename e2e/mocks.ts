@@ -137,6 +137,9 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path.endsWith('/test/sessions/me')) {
       return json(route, 200, { sessions: [] });
     }
+    if (path.endsWith('/user/research-consent')) {
+      return json(route, 200, { consent: false, version: '2026-10-29' });
+    }
     if (path.endsWith('/user/report/weekly')) {
       return json(route, 200, {
         weekStart: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
