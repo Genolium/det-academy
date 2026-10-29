@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+
 	"det-academy-backend/internal/models"
+	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/repository/memory"
 	"encoding/json"
 	"testing"
@@ -195,6 +197,17 @@ func TestGradingUsesQuestionSnapshotNotLiveKey(t *testing.T) {
 	}
 }
 
+type capturingSessionRepo struct {
+	repository.TestSessionRepository
+	captured *models.TestSession
+}
+
+func (r *capturingSessionRepo) Create(ctx context.Context, session *models.TestSession) error {
+	snapshot := *session
+	r.captured = &snapshot
+	return r.TestSessionRepository.Create(ctx, session)
+}
+
 func TestStartSessionSetsCreatedAt(t *testing.T) {
 	store := memory.New()
 	ctx := context.Background()
@@ -203,12 +216,16 @@ func TestStartSessionSetsCreatedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 	theory := NewTheoryService(store.Theory())
-	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	sessionRepo := &capturingSessionRepo{TestSessionRepository: store.Sessions()}
+	cat := NewCATService(sessionRepo, store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
 	session, _, err := cat.StartSession(ctx, userID, "Created At", "B1", "diagnostic")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if session.CreatedAt.IsZero() {
 		t.Fatal("createdAt must be set when starting a session")
+	}
+	if sessionRepo.captured == nil || sessionRepo.captured.CreatedAt.IsZero() {
+		t.Fatal("createdAt must be set before the repository insert")
 	}
 }
