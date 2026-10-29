@@ -19,7 +19,7 @@ test('advertising is paused on the public site', async ({ page }) => {
   await expect(page.getByText(/Выиграй грант/i)).toHaveCount(0);
 });
 
-test('the arena is paused and hidden from the navigation', async ({ page }) => {
+test('the arena is completely hidden while disabled', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('det_auth_token', 'token-user-a');
     localStorage.setItem('det_cookie_consent', 'true');
@@ -28,8 +28,8 @@ test('the arena is paused and hidden from the navigation', async ({ page }) => {
 
   await page.goto('/dashboard');
   await expect(page.getByRole('link', { name: /^Арена$/ })).toHaveCount(0);
+  await expect(page.getByText(/Silver|Gold|Bronze|Лига|League/i)).toHaveCount(0);
 
-  await page.goto('/arena');
-  await expect(page.getByRole('heading', { name: /Арена временно на паузе/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /К тренажёрам/i })).toBeVisible();
+  const response = await page.goto('/arena');
+  expect(response?.status()).toBe(404);
 });

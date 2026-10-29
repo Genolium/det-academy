@@ -199,9 +199,11 @@ export const Navbar: React.FC = () => {
                   <span>{streakDays}</span>
                 </div>
 
-                <div className="hidden lg:inline-block">
-                  <LeagueBadge elo={pvpElo} size="sm" />
-                </div>
+                {ARENA_ENABLED && (
+                  <div className="hidden lg:inline-block">
+                    <LeagueBadge elo={pvpElo} size="sm" />
+                  </div>
+                )}
               </>
             )}
 
