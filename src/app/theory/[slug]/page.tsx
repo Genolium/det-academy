@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { translations } from '@/lib/translations';
 import { InteractiveLessonDrill } from '@/components/practice/InteractiveLessonDrill';
+import { InteractiveTheoryExample } from '@/components/theory/InteractiveTheoryExample';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -32,6 +33,53 @@ import { sound } from '@/lib/sound';
 interface LessonPageProps {
   params: Promise<{ slug: string }>;
 }
+
+const PRACTICE_LINKS: Record<string, string> = {
+  'start-here': '/diagnostic',
+  'rules-and-technicalities': '/test',
+  'subscores-and-cat-engine': '/dashboard',
+  'read-and-select': '/practice?drill=read-and-select',
+  'listen-and-select': '/practice',
+  'fill-in-the-blanks': '/practice?drill=fill-in-the-blanks',
+  'read-and-complete': '/practice?drill=read-and-complete',
+  'listen-and-type': '/practice?drill=listen-and-type',
+  'read-aloud': '/practice/pronunciation',
+  'interactive-reading': '/practice?drill=read-and-complete',
+  'interactive-listening': '/practice?drill=listen-and-type',
+  'write-about-photo': '/practice?drill=write-about-the-photo',
+  'interactive-writing': '/practice?drill=writing-inspector',
+  'writing-sample': '/practice?drill=writing-inspector',
+  'speak-about-photo': '/practice?drill=speak-about-photo',
+  'read-listen-speak': '/practice?drill=speak-about-photo',
+  'speaking-sample': '/practice?drill=speaking-sample',
+};
+
+const THEORY_SOURCES: Record<string, string> = {
+  'start-here': 'THEORY.MD · DET Preparation Tips & Timetable.pdf',
+  'rules-and-technicalities': 'THEORY.MD · Full Test 3 Duolingo English Test.pdf',
+  'subscores-and-cat-engine': 'Subscores explained.pdf · Copy of Production Score.pdf',
+  'read-and-select': '20 Vocabulary Tests.pdf · HEDWIG-VOCABULARY.pdf',
+  'listen-and-select': 'Test Your Vocabulary Through Listening.pdf',
+  'fill-in-the-blanks': '5 C test (easy) x 84.pdf · 5 C test (hard) x 92.pdf',
+  'read-and-complete': '5 C test (easy) x 84.pdf · 5 C test (hard) x 92.pdf',
+  'listen-and-type': 'Difficult Dictation 20 Tests.pdf · Dictation Tips.pdf',
+  'read-aloud': 'Read-aloud Tips and Examples.pdf',
+  'interactive-reading': 'Full Test 3 Duolingo English Test.pdf · Full test 4.pdf',
+  'interactive-listening': '6 interview listen (speaking).pdf · Full test 5.pdf',
+  'write-about-photo': 'Copy of Writing - Descrive a picture.pdf · 2 writing image.pdf',
+  'interactive-writing': '3 Writing Interview.pdf · Copy of Writing- Tips _ Argument .pdf',
+  'writing-sample': '5 writing tips.pdf · Copy of Writing  - Recount.pdf',
+  'speak-about-photo': '7 speaking describe image.pdf · Duolingo-short description of image_.pdf',
+  'read-listen-speak': '9 speaking interview read.pdf · 8 speaking free response.pdf',
+  'speaking-sample': 'Speaking - 90 seconds about a topic.pdf · speaking and writing template.pdf',
+};
+
+const INTERACTIVE_EXAMPLE_SLUGS = new Set([
+  'read-and-select',
+  'listen-and-select',
+  'fill-in-the-blanks',
+  'listen-and-type',
+]);
 
 export default function LessonDetailsPage({ params }: LessonPageProps) {
   const resolvedParams = use(params);
@@ -138,6 +186,23 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
             <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
               {format}
             </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[11px] text-neutral-500">
+                <span className="font-bold uppercase tracking-wider text-neutral-400">
+                  {locale === 'ru' ? 'Материалы курса' : 'Course source'}:
+                </span>{' '}
+                theory/{THEORY_SOURCES[lesson.slug] || 'THEORY.MD'}
+              </p>
+              {PRACTICE_LINKS[lesson.slug] ? (
+                <Link
+                  href={PRACTICE_LINKS[lesson.slug]}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D2F544] px-4 py-2.5 text-xs font-black text-[#0C2418] hover:bg-[#C4F22C]"
+                >
+                  {locale === 'ru' ? 'Практиковать этот тип' : 'Practice this task'}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : null}
+            </div>
           </div>
 
           {/* Content Modules */}
@@ -278,46 +343,52 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                     <div className="text-xs font-mono uppercase text-[#D2F544] font-bold mb-2">
                       {lesson.category === 'rules' ? t.exampleScenarioTitle : t.exampleTitle} #{idx + 1}
                     </div>
-                    {ex.question && (
-                      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 mb-4 font-mono text-sm text-neutral-200 leading-relaxed whitespace-pre-line">
-                        {ex.question}
-                      </div>
-                    )}
-                    {ex.audioPrompt && (
-                      <button
-                        type="button"
-                        onClick={() => void sound.speakEnglish(ex.audioPrompt || '')}
-                        className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/10 px-4 py-2 text-xs font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
-                      >
-                        <Volume2 className="h-3.5 w-3.5" />
-                        Прослушать реальный пример
-                      </button>
-                    )}
-                    {ex.sampleText && (
-                      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4 text-xs font-mono text-neutral-300">
-                        {ex.sampleText}
-                      </div>
-                    )}
-                    <div className="border-t border-neutral-800 pt-4 space-y-3">
-                      <div>
-                        <span className="text-xs font-bold uppercase text-emerald-400 block mb-1">
-                          {t.modelAnswerLabel}:
-                        </span>
-                        <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-line bg-black/40 p-4 rounded-xl border border-neutral-800/80">
-                          {ex.modelAnswer}
-                        </p>
-                      </div>
-                      {ex.comment && (
-                        <div>
-                          <span className="text-xs font-bold uppercase text-neutral-400 block mb-1">
-                            {t.expertCommentLabel}:
-                          </span>
-                          <p className="text-xs text-neutral-400 leading-relaxed whitespace-pre-line">
-                            {ex.comment}
-                          </p>
+                    {INTERACTIVE_EXAMPLE_SLUGS.has(lesson.slug) ? (
+                      <InteractiveTheoryExample lessonSlug={lesson.slug} example={ex} />
+                    ) : (
+                      <>
+                        {ex.question && (
+                          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 mb-4 font-mono text-sm text-neutral-200 leading-relaxed whitespace-pre-line">
+                            {ex.question}
+                          </div>
+                        )}
+                        {ex.audioPrompt && (
+                          <button
+                            type="button"
+                            onClick={() => void sound.speakEnglish(ex.audioPrompt || '')}
+                            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/10 px-4 py-2 text-xs font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
+                          >
+                            <Volume2 className="h-3.5 w-3.5" />
+                            Прослушать реальный пример
+                          </button>
+                        )}
+                        {ex.sampleText && (
+                          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4 text-xs font-mono text-neutral-300">
+                            {ex.sampleText}
+                          </div>
+                        )}
+                        <div className="border-t border-neutral-800 pt-4 space-y-3">
+                          <div>
+                            <span className="text-xs font-bold uppercase text-emerald-400 block mb-1">
+                              {t.modelAnswerLabel}:
+                            </span>
+                            <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-line bg-black/40 p-4 rounded-xl border border-neutral-800/80">
+                              {ex.modelAnswer}
+                            </p>
+                          </div>
+                          {ex.comment && (
+                            <div>
+                              <span className="text-xs font-bold uppercase text-neutral-400 block mb-1">
+                                {t.expertCommentLabel}:
+                              </span>
+                              <p className="text-xs text-neutral-400 leading-relaxed whitespace-pre-line">
+                                {ex.comment}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </BentoCard>
                 ))}
               </div>
