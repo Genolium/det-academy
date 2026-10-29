@@ -80,6 +80,9 @@ if [ "${DET_DEPLOY_REEXEC:-0}" != "1" ] && git diff --name-only 'HEAD@{1}' HEAD 
   exec "$0" "$@"
 fi
 
+log "Running production preflight"
+./scripts/production_preflight.sh
+
 if [ "$BACKUP" = true ]; then
   log "Backing up PostgreSQL"
   # The effective connection string is taken from the running container, so the
