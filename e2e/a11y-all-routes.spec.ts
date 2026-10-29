@@ -17,7 +17,6 @@ const routes = [
   '/vocabulary',
   '/verify',
   '/verify/unknown',
-  '/arena',
   '/admin',
 ];
 

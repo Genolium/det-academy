@@ -25,7 +25,6 @@ const UI_ROUTES = [
   '/dashboard',
   '/welcome',
   '/profile',
-  '/arena',
   '/verify',
   '/diagnostic',
   '/test',
