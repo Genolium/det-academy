@@ -301,12 +301,14 @@ export const lessonsData: LessonGuide[] = [
     ],
     "examples": [
       {
-        "question": "Аудиозаписи: [stance, terrify, agalition, correction, depact, specimen, denial]",
+        "question": "Прослушайте слова и отметьте только реальные английские слова.",
+        "audioPrompt": "stance, terrify, agalition, correction, depact, specimen, denial",
         "modelAnswer": "Реальные английские слова: stance (позиция), terrify (ужасать), correction (исправление), specimen (образец), denial (отрицание). Псевдослова: agalition, depact.",
         "comment": "Слово agalition маскируется под абстрактное существительное на -tion, но корня agal- в английском языке нет. Запись depact имитирует структуру глагола с приставкой de-, но также является вымышленной."
       },
       {
-        "question": "Аудиозаписи: [lecture, pertain, sidedown, maximize, floop, potent, satics]",
+        "question": "Прослушайте слова и отметьте только реальные английские слова.",
+        "audioPrompt": "lecture, pertain, sidedown, maximize, floop, potent, satics",
         "modelAnswer": "Реальные английские слова: lecture (лекция), pertain (относиться), maximize (максимизировать), potent (сильнодействующий). Псевдослова: sidedown, floop, satics.",
         "comment": "Слова pertain и potent входят в академический корпус C1. Выдуманные элементы floop и satics отсеиваются отсутствием в словаре."
       }
@@ -455,12 +457,14 @@ export const lessonsData: LessonGuide[] = [
     ],
     "examples": [
       {
-        "question": "Звучит аудиозапись нейтрального темпа (американский акцент, 13 слов).",
+        "question": "Прослушайте предложение и запишите его в точности, включая пунктуацию.",
+        "audioPrompt": "Educational methods include teaching, storytelling, discussions, and research.",
         "modelAnswer": "Educational methods include teaching, storytelling, discussions, and research.",
         "comment": "Предложение начинается с заглавной E, содержит перечисление однородных членов с запятыми и заканчивается точкой. Пропуск окончания -ing в storytelling или teaching приведет к снижению оценки."
       },
       {
-        "question": "Звучит аудиозапись со сложной грамматической конструкцией условного предложения 3-го типа (12 слов).",
+        "question": "Прослушайте предложение с третьим условным и запишите его в точности.",
+        "audioPrompt": "I would have bought you a present if I had known it was your birthday.",
         "modelAnswer": "I would have bought you a present if I had known it was your birthday.",
         "comment": "Слитное произношение 'would have' требует сохранения полной формы 'would have'. Наличие заглавной I и точки обязательно."
       }

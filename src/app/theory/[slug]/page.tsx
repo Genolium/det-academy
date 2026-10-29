@@ -25,7 +25,9 @@ import {
   ArrowRight,
   Sparkles,
   UserCheck,
+  Volume2,
 } from 'lucide-react';
+import { sound } from '@/lib/sound';
 
 interface LessonPageProps {
   params: Promise<{ slug: string }>;
@@ -280,6 +282,16 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 mb-4 font-mono text-sm text-neutral-200 leading-relaxed whitespace-pre-line">
                         {ex.question}
                       </div>
+                    )}
+                    {ex.audioPrompt && (
+                      <button
+                        type="button"
+                        onClick={() => void sound.speakEnglish(ex.audioPrompt || '')}
+                        className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/10 px-4 py-2 text-xs font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
+                      >
+                        <Volume2 className="h-3.5 w-3.5" />
+                        Прослушать реальный пример
+                      </button>
                     )}
                     {ex.sampleText && (
                       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 mb-4 text-xs font-mono text-neutral-300">
