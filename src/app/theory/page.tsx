@@ -16,6 +16,7 @@ export default function TheoryCatalogPage() {
   const { completedLessons } = useProgressStore();
   const { locale } = useSettingsStore();
   const [lessons, setLessons] = useState<LessonGuide[]>(lessonsData);
+  const [catalogSource, setCatalogSource] = useState<'cms' | 'fallback'>('fallback');
   const t = translations[locale].theory;
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function TheoryCatalogPage() {
           mapped.unshift(intro);
         }
         setLessons(mapped);
+        setCatalogSource('cms');
       }
     }).catch(() => {});
     return () => {
@@ -61,6 +63,14 @@ export default function TheoryCatalogPage() {
   return (
     <div className="min-h-screen py-12 ambient-glow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {catalogSource === 'fallback' ? (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-testid="theory-source-status">
+              {locale === 'ru'
+                ? 'Показана локальная копия курса: CMS временно недоступен. Это не означает, что материал обновлён.'
+                : 'Showing the local course copy: the CMS is temporarily unavailable. This does not mean the material is fresh.'}
+            </div>
+          ) : null}
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
