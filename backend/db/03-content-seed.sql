@@ -217,7 +217,7 @@ VALUES (
 Попытка 1: фиксация смыслового скелета предложения.
 Попытка 2: восстановление артиклей и служебных слов.
 Попытка 3: проверка грамматических окончаний и пунктуации.',
-  '[{"audioPrompt":"The administrative department will publish the schedule tomorrow morning.","modelAnswer":"The administrative department will publish the schedule tomorrow morning.","comment":"Заглавная буква T, слово department написано без опечаток, в конце стоит точка."}]'::jsonb,
+  '[{"question":"Прослушайте предложение и запишите его в точности, включая пунктуацию.","audioPrompt":"The administrative department will publish the schedule tomorrow morning.","modelAnswer":"The administrative department will publish the schedule tomorrow morning.","comment":"Заглавная буква T, слово department написано без опечаток, в конце стоит точка."}]'::jsonb,
   '["Использование всех трех прослушиваний подряд в начале задания.","Пропуск точки или вопросительного знака в конце строки.","Запись чисел цифрами вместо слов."]'::jsonb
 ) ON CONFLICT (slug) DO UPDATE SET 
   title_ru = EXCLUDED.title_ru,
