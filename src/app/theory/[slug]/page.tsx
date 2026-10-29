@@ -367,6 +367,17 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
                             {ex.sampleText}
                           </div>
                         )}
+                        {lesson.slug === 'read-aloud' && ex.question ? (
+                          <Link
+                            href={`/practice/pronunciation?sentence=${encodeURIComponent(
+                              (ex.question.match(/'([^']+)'/) || [])[1] || ex.question
+                            )}`}
+                            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/10 px-4 py-2 text-xs font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
+                          >
+                            <Volume2 className="h-3.5 w-3.5" />
+                            {locale === 'ru' ? 'Прочитать этот текст вслух' : 'Read this text aloud'}
+                          </Link>
+                        ) : null}
                         <div className="border-t border-neutral-800 pt-4 space-y-3">
                           <div>
                             <span className="text-xs font-bold uppercase text-emerald-400 block mb-1">

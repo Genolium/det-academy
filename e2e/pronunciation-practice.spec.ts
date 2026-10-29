@@ -10,3 +10,10 @@ test('read-aloud practice exposes a reference sentence and recording controls', 
   await expect(page.getByRole('button', { name: /Стоп и разбор/ })).toBeDisabled();
   await expect(page.getByRole('button', { name: /Прослушать эталон/ })).toBeVisible();
 });
+
+
+test('read-aloud practice accepts a sentence from a theory lesson', async ({ page }) => {
+  const sentence = 'Developments in technology and transportation infrastructure have made international tourism considerably more affordable.';
+  await page.goto(`/practice/pronunciation?sentence=${encodeURIComponent(sentence)}`);
+  await expect(page.getByTestId('read-aloud-sentence')).toHaveText(sentence);
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mic, Square, Volume2, Sparkles } from 'lucide-react';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
@@ -52,11 +52,17 @@ export default function PronunciationPracticePage() {
   const timelineRef = useRef<SpeechTimeline | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [customSentence, setCustomSentence] = useState<string | null>(null);
   const [report, setReport] = useState<PronunciationReport | null>(null);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const sentence = SENTENCES[sentenceIndex];
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('sentence');
+    if (value && value.trim()) setCustomSentence(value.trim());
+  }, []);
+
+  const sentence = customSentence || SENTENCES[sentenceIndex];
 
   const start = async () => {
     setError(null);
