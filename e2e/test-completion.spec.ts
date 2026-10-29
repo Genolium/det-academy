@@ -30,7 +30,7 @@ test.describe('trusted test completion', () => {
 
     await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
     await page.clock.fastForward(61_000);
-    await page.getByRole('button', { name: /Далее/ }).click();
+    await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
     // The server rejected finalization: the UI must expose an unconfirmed state
     // instead of showing a score/certificate.
@@ -74,7 +74,7 @@ test.describe('trusted test completion', () => {
     await expect(page.getByRole('heading', { name: 'Speaking Sample' })).toBeVisible();
     await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
     await page.clock.fastForward(61_000);
-    await page.getByRole('button', { name: /Далее/ }).click();
+    await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
     await expect(page.getByText('Недостаточно данных')).toBeVisible();
     await expect(page.getByText(/Завершено 25% проверки/)).toBeVisible();

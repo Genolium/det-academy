@@ -18,7 +18,7 @@ test('speaking result explains four rubric criteria and the next action', async 
   await page.goto('/test/session');
   await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
   await page.clock.fastForward(61_000);
-  await page.getByRole('button', { name: /Далее/ }).click();
+  await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
   const rubric = page.getByTestId('speaking-rubric');
   await expect(rubric).toBeVisible();

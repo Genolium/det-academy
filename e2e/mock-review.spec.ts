@@ -40,7 +40,7 @@ test('mock review shows skills, item timing and a weekly plan', async ({ page })
   await page.goto('/test/session');
   await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
   await page.clock.fastForward(61_000);
-  await page.getByRole('button', { name: /Далее/ }).click();
+  await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
   await expect(page.getByTestId('review-next-action')).toContainText('аудирование');
   await expect(page.getByTestId('review-skills')).toContainText('reading');

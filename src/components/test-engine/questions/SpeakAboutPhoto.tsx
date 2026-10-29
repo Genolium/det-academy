@@ -44,6 +44,11 @@ interface SpeakAboutPhotoProps {
   isStandaloneDrill?: boolean;
 }
 
+const PREP_SECONDS = 20;
+const SPEAK_SECONDS = 90;
+const TOTAL_SECONDS = PREP_SECONDS + SPEAK_SECONDS;
+const MIN_SPEAK_SECONDS = 30;
+
 export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) => {
   const { recordSpeakingResult, serverQuestions, backendSessionId } = useTestStore();
   const audioRecorder = useAudioRecorder();
@@ -55,7 +60,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
   const imageSource = payload.imageUrl || '/images/practice/engineering-workshop.jpg';
 
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
-  const [timeLeft, setTimeLeft] = useState(20); // 20s prep, then 90s speech
+  // One countdown for the whole task: preparation and speaking share the same
+  // deadline instead of restarting the clock when recording begins.
+  const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
+  const [speakSeconds, setSpeakSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -69,12 +77,16 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
   const isCompletedRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timelineRef = useRef<SpeechTimeline | null>(null);
+  const phaseRef = useRef<'prep' | 'speaking'>('prep');
+  const speakStartedAtRef = useRef<number | null>(null);
 
   const handleFinish = async () => {
     if (isCompletedRef.current) return;
     isCompletedRef.current = true;
     const endedAtMs = performance.now();
-    const durationSec = Math.max(1, 90 - timeLeft);
+    const durationSec = speakStartedAtRef.current
+      ? Math.max(1, Math.round((endedAtMs - speakStartedAtRef.current) / 1000))
+      : Math.max(1, TOTAL_SECONDS - timeLeft);
 
     if (recognitionRef.current) {
       try {
@@ -130,8 +142,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
 
   // Start audio capture when transitioning to speaking phase
   const startRecording = useCallback(async () => {
+    if (phaseRef.current === 'speaking') return;
+    phaseRef.current = 'speaking';
     setPhase('speaking');
-    setTimeLeft(90);
+    speakStartedAtRef.current = performance.now();
 
     const started = await audioRecorder.startRecording();
     if (!started && audioRecorder.error) {
@@ -165,27 +179,39 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
     }
   }, [audioRecorder]);
 
-  // Timer handling
+  // The task timer depends only on mount. Depending on startRecording made the
+  // deadline reset whenever the recorder published a new volume or duration
+  // value, so the countdown froze near its initial value.
+  const startRecordingRef = useRef(startRecording);
   useEffect(() => {
-    const duration = phase === 'prep' ? 20 : 90;
-    const deadline = Date.now() + duration * 1000;
-    setTimeLeft(duration);
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
+
+  useEffect(() => {
+    const deadline = Date.now() + TOTAL_SECONDS * 1000;
 
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
+
+      if (speakStartedAtRef.current !== null) {
+        setSpeakSeconds(
+          Math.max(0, Math.round((performance.now() - speakStartedAtRef.current) / 1000))
+        );
+      }
+
+      if (remaining <= SPEAK_SECONDS && phaseRef.current === 'prep') {
+        void startRecordingRef.current();
+      }
+
       if (remaining <= 0) {
         clearInterval(timer);
-        if (phase === 'prep') {
-          startRecording();
-        } else {
-          handleFinishRef.current();
-        }
+        handleFinishRef.current();
       }
     }, 250);
 
     return () => clearInterval(timer);
-  }, [phase, startRecording]);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -202,7 +228,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
 
         <div className="flex items-center gap-2 bg-[#16191D] border border-neutral-800 px-4 py-2 rounded-xl text-neutral-300 font-mono text-sm">
           <Clock className={`w-4 h-4 ${timeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-[#D2F544]'}`} />
-          <span>
+          <span data-testid="task-countdown">
             {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
           </span>
         </div>
@@ -244,7 +270,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
           <div className="bg-[#0E1012] border border-neutral-800 rounded-xl p-4 text-center">
             <p className="text-xs text-neutral-400">
               Подготовьте ваш ответ. Запись начнётся автоматически через{' '}
-              <span className="text-[#D2F544] font-bold font-mono">{timeLeft}s</span>.
+              <span className="text-[#D2F544] font-bold font-mono">
+                {Math.max(0, timeLeft - SPEAK_SECONDS)}s
+              </span>
+              .
             </p>
           </div>
         ) : (
@@ -298,9 +327,15 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
         )}
 
         {/* Footer controls */}
-        <div className="flex items-center justify-between pt-2 border-t border-neutral-800/80">
-          <span className="text-[11px] text-neutral-500">
-            {phase === 'prep' ? '20 секунд на подготовку' : 'Говорите не менее 30–90 секунд'}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-neutral-800/80">
+          <span className="text-[11px] text-neutral-500" data-testid="speak-timer-hint">
+            {phase === 'prep'
+              ? `Подготовка · общий таймер ${Math.floor(timeLeft / 60)}:${(timeLeft % 60)
+                  .toString()
+                  .padStart(2, '0')}`
+              : speakSeconds < MIN_SPEAK_SECONDS
+                ? `Проверка станет доступна через ${MIN_SPEAK_SECONDS - speakSeconds} с`
+                : 'Ответ можно отправить на проверку'}
           </span>
           {phase === 'prep' ? (
             <Button variant="primary" onClick={startRecording} className="gap-2">
@@ -311,10 +346,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
             <Button
               variant="primary"
               onClick={handleFinish}
-              disabled={timeLeft > 60 || isSubmitting} // Require at least 30 seconds of speaking before manual finish
+              disabled={speakSeconds < MIN_SPEAK_SECONDS || isSubmitting}
               className="gap-2"
             >
-              {isSubmitting ? 'Сохранение...' : 'Далее (Next)'}
+              {isSubmitting ? 'Сохранение...' : 'Проверить ответ'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}

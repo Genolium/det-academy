@@ -109,6 +109,14 @@ export const Footer: React.FC = () => {
 
         <div className="border-t border-neutral-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400 gap-4">
           <p>© {new Date().getFullYear()} DET Academy. {t.rights}</p>
+          <a
+            href="https://t.me/ilyan_vas"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-neutral-300 underline decoration-neutral-600 underline-offset-2 hover:text-[#D2F544] transition-colors"
+          >
+            {locale === 'ru' ? 'Обратная связь: t.me/ilyan_vas' : 'Feedback: t.me/ilyan_vas'}
+          </a>
           <p className="text-[11px] max-w-xl text-center sm:text-right">{t.disclaimer}</p>
         </div>
       </div>

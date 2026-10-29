@@ -109,7 +109,7 @@ test('speaking result renders per-word clarity highlights and model playback', a
   await page.goto('/test/session');
   await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
   await page.clock.fastForward(61_000);
-  await page.getByRole('button', { name: /Далее/ }).click();
+  await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
   const panel = page.getByTestId('pronunciation-feedback');
   await expect(panel).toBeVisible();
