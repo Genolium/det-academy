@@ -8,6 +8,8 @@ import { sound } from '@/lib/sound';
 import { SpeechTimeline } from '@/lib/speechTimeline';
 import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciation';
 import { Button } from '@/components/ui/Button';
+import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
+import { splitTaskPrompt } from '@/lib/taskPrompt';
 import { Mic, Clock, ArrowRight, AlertCircle, Volume2 } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -57,6 +59,8 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
   const serverQ = serverQuestions.find((q) => q.type === 'SPEAK_PHOTO');
   const payload = (serverQ?.contentPayload || {}) as { imageUrl?: string; prompt?: string };
   const promptText = payload.prompt || 'Speak for at least 90 seconds about the scene shown below. Describe the setting, what the subjects are doing, and what might happen next.';
+  // Read only the task, not the coaching hints hidden behind the button.
+  const spokenTask = splitTaskPrompt(promptText).task;
   const imageSource = payload.imageUrl || '/images/practice/engineering-workshop.jpg';
 
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
@@ -119,7 +123,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
         await appendPronunciationReport(formData, recordedBlob, timelineRef.current, {
           endedAtMs,
           durationSec,
-          playbackText: promptText,
+          playbackText: spokenTask,
         });
         await api.uploadSpeakingAudio(backendSessionId, formData);
       } catch {
@@ -251,12 +255,10 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete }) 
 
         {/* Prompt + model pronunciation */}
         <div className="flex items-start justify-between gap-4">
-          <p className="text-sm sm:text-base text-neutral-300 leading-relaxed font-medium">
-            {promptText}
-          </p>
+          <TaskPrompt prompt={promptText} className="flex-1" />
           <button
             type="button"
-            onClick={() => sound.speakEnglish(promptText, undefined, 1)}
+            onClick={() => sound.speakEnglish(spokenTask, undefined, 1)}
             className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1.5 text-[11px] font-bold text-neutral-300 transition-colors hover:border-[#D2F544] hover:text-[#D2F544]"
             aria-label="Прослушать эталонное произношение задания"
           >

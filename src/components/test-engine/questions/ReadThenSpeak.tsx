@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { SpeechTimeline } from '@/lib/speechTimeline';
 import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciation';
 import { Button } from '@/components/ui/Button';
+import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
 import { Mic, Clock, ArrowRight, AlertCircle, BookOpen, Volume2 } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -52,7 +53,7 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
   const audioRecorder = useAudioRecorder();
 
   const serverQ = serverQuestions.find((q) => q.type === 'READ_THEN_SPEAK');
-  const payload = (serverQ?.contentPayload || {}) as { prompt?: string };
+  const payload = (serverQ?.contentPayload || {}) as { prompt?: string; hints?: string[] };
   const promptText =
     payload.prompt ||
     'Describe a significant accomplishment that required substantial effort and dedication. Explain what you achieved, the obstacles you had to overcome, and why this accomplishment was important to you. Speak for 90 seconds.';
@@ -232,9 +233,7 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
             <BookOpen className="w-3.5 h-3.5" />
             Prompt to speak about
           </div>
-          <p className="text-base sm:text-lg text-white font-medium leading-relaxed">
-            {promptText}
-          </p>
+          <TaskPrompt prompt={promptText} hints={payload.hints} />
         </div>
 
         {/* Live Audio Feedback */}

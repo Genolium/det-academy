@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { SpeechTimeline } from '@/lib/speechTimeline';
 import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciation';
 import { Button } from '@/components/ui/Button';
+import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
 import { Mic, Clock, ArrowRight, AlertCircle, Sparkles, Volume2 } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -236,9 +237,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
             <Sparkles className="w-3.5 h-3.5" />
             Speaking Sample Prompt
           </div>
-          <p className="text-base sm:text-lg text-white font-medium leading-relaxed">
-            {promptText}
-          </p>
+          <TaskPrompt prompt={promptText} />
         </div>
 
         {/* Live Audio Feedback */}

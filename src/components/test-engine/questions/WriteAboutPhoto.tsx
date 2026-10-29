@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
 import { submitOrQueueResponse } from '@/lib/response-outbox';
 import { Button } from '@/components/ui/Button';
+import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
 import { ArrowRight, Clock } from 'lucide-react';
 
 interface WriteAboutPhotoProps {
@@ -155,6 +156,10 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
                 {t.wordsCounter}: <strong className="text-white font-mono">{wordCount}</strong> ({t.recommendedRange})
               </span>
             </div>
+
+            {currentPhoto.prompt && (
+              <TaskPrompt prompt={currentPhoto.prompt} className="mb-3" />
+            )}
 
             <textarea
               rows={6}
