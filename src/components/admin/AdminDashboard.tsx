@@ -37,6 +37,13 @@ import {
 
 type Tab = 'overview' | 'analytics' | 'users' | 'sessions' | 'banners' | 'questions' | 'institutions' | 'ai';
 
+function formatAdminTimestamp(value?: string): string {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime()) || parsed.getUTCFullYear() < 2000) return '—';
+  return parsed.toLocaleString('ru-RU');
+}
+
 export const AdminDashboard: React.FC = () => {
   const { user, login, logout, isLoading } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -911,7 +918,7 @@ export const AdminDashboard: React.FC = () => {
                         {sess.literacyScore ?? '—'} / {sess.comprehensionScore ?? '—'} / {sess.productionScore ?? '—'} / {sess.conversationScore ?? '—'}
                       </td>
                       <td className="py-3 px-2 text-neutral-400">
-                        {new Date(sess.createdAt).toLocaleString('ru-RU')}
+                        {formatAdminTimestamp(sess.createdAt)}
                       </td>
                     </tr>
                   ))}

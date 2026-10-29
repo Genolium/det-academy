@@ -156,8 +156,8 @@ AI_FOLDER_ID=<folder>
 AI_MODEL=gpt://<folder>/deepseek-v4-flash/latest      # fallback
 AI_MODEL_FAST=gpt://<folder>/deepseek-v4-flash/latest # enrichment
 AI_MODEL_EVAL=gpt://<folder>/deepseek-v4-flash/latest # rubric evaluation
-AI_PRICE_INPUT_PER_1M=...                             # Yandex tariff
-AI_PRICE_OUTPUT_PER_1M=...
+AI_PRICE_INPUT_PER_1M=300                             # DeepSeek V4 Flash, RUB/1M
+AI_PRICE_OUTPUT_PER_1M=500
 AI_PRICE_CURRENCY=RUB
 ```
 

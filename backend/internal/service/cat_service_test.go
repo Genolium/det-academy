@@ -194,3 +194,21 @@ func TestGradingUsesQuestionSnapshotNotLiveKey(t *testing.T) {
 		t.Fatalf("snapshot key should still score 1, got correct=%v score=%v", correct, score)
 	}
 }
+
+func TestStartSessionSetsCreatedAt(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	userID := "created-at-user"
+	if err := store.Users().Create(ctx, &models.User{ID: userID, Email: "created-at@example.com", Name: "Created At"}); err != nil {
+		t.Fatal(err)
+	}
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	session, _, err := cat.StartSession(ctx, userID, "Created At", "B1", "diagnostic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if session.CreatedAt.IsZero() {
+		t.Fatal("createdAt must be set when starting a session")
+	}
+}

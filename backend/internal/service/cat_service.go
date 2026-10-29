@@ -200,6 +200,7 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 		BlueprintVersion: "2026.1",
 		ScoringVersion:   "irt-2pl-v2",
 		DeadlineAt:       &deadline,
+		CreatedAt:        time.Now().UTC(),
 	}
 
 	if err := s.sessionRepo.Create(ctx, session); err != nil {

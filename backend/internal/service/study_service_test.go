@@ -266,3 +266,27 @@ func TestPracticeAssignmentAndServerAuthoritativeGrading(t *testing.T) {
 		t.Errorf("expected error to be auto-saved into error notebook on failed practice")
 	}
 }
+
+func TestGetAIUsageComputesConfiguredCost(t *testing.T) {
+	t.Setenv("AI_PRICE_INPUT_PER_1M", "300")
+	t.Setenv("AI_PRICE_OUTPUT_PER_1M", "500")
+	t.Setenv("AI_PRICE_CURRENCY", "RUB")
+	store := memory.New()
+	ctx := context.Background()
+	if err := store.Study().RecordAIUsage(ctx, &models.AIUsageEvent{
+		ID: "ai-cost-1", Kind: "evaluate", Model: "deepseek-v4-flash",
+		PromptTokens: 1_000_000, CompletionTokens: 1_000_000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := NewStudyService(store, nil, nil).GetAIUsage(ctx, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Cost != 800 {
+		t.Fatalf("cost = %v, want 800 RUB", summary.Cost)
+	}
+	if len(summary.Rows) != 1 || summary.Rows[0].Cost != 800 {
+		t.Fatalf("rows = %+v", summary.Rows)
+	}
+}
