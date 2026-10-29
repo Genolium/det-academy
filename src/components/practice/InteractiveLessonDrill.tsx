@@ -16,6 +16,7 @@ import {
 } from '@/data/questionBank';
 import { sound } from '@/lib/sound';
 import { BentoCard } from '@/components/ui/BentoCard';
+import { ServerAssignmentDrill } from '@/components/practice/ServerAssignmentDrill';
 import { Button } from '@/components/ui/Button';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { api, PracticeAssignment } from '@/lib/api';
@@ -796,6 +797,13 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       setSpeakingTranscript('Речь не распознана или сказано менее 5 слов. Попробуйте записать ответ ещё раз.');
     }
   };
+
+  if (
+    assignment &&
+    ['READ_SELECT', 'FILL_BLANKS', 'C_TEST', 'LISTEN_TYPE'].includes(assignment.questionType)
+  ) {
+    return <ServerAssignmentDrill assignment={assignment} onCompleted={onDrillCompleted} />;
+  }
 
   return (
     <div className="mt-12 pt-8 border-t border-neutral-200">
