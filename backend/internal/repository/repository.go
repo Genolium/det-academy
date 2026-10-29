@@ -41,6 +41,7 @@ type TheoryRepository interface {
 	GetUserProgress(ctx context.Context, userID string) ([]string, error)
 	ToggleProgress(ctx context.Context, userID, lessonSlug string) (bool, error)
 	SetProgress(ctx context.Context, userID, lessonSlug string, completed bool) error
+	ListCatalog(ctx context.Context) ([]models.TheoryCatalogLesson, error)
 }
 
 type QuestionRepository interface {

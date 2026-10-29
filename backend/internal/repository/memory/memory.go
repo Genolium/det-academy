@@ -2922,3 +2922,7 @@ func (r *userMemoryRepo) SetEmailDigestEnabled(_ context.Context, userID string,
 	r.s.emailPreferences[userID] = enabled
 	return nil
 }
+
+func (r *theoryMemoryRepo) ListCatalog(context.Context) ([]models.TheoryCatalogLesson, error) {
+	return []models.TheoryCatalogLesson{}, nil
+}

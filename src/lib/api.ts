@@ -41,6 +41,35 @@ export interface LinkedProvidersResponse {
   email: string;
 }
 
+export interface TheoryCatalogLesson {
+  id: string;
+  number: number;
+  slug: string;
+  title_ru: string;
+  title_en: string;
+  category: string;
+  category_label_ru: string;
+  category_label_en: string;
+  format: string;
+  scoring: string;
+  time_limit: string;
+  rules: string[];
+  strategy_steps: string[];
+  formula?: string;
+  examples: Array<{ question?: string; sampleText?: string; audioPrompt?: string; modelAnswer: string; comment: string }>;
+  pitfalls: string[];
+  publish_status: string;
+  version: string;
+  updated_at: string;
+}
+
+export interface TheoryCatalogResponse {
+  version: string;
+  updated_at: string;
+  status: string;
+  lessons: TheoryCatalogLesson[];
+}
+
 export interface TheoryProgressResponse {
   completedLessons: string[];
   totalLessons: number;
@@ -926,6 +955,15 @@ class ApiClient {
   }
 
   // --- Theory ---
+
+  async getTheoryCatalog(): Promise<TheoryCatalogResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/theory/catalog`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new ApiError('Failed to load theory catalog', res.status);
+    return res.json();
+  }
 
   async getTheoryProgress(): Promise<TheoryProgressResponse> {
     const res = await fetch(`${API_BASE_URL}/api/v1/theory/progress`, {

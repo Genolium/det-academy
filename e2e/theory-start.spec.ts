@@ -12,6 +12,7 @@ test('the course opens with the platform and exam introduction', async ({ page }
   const firstCard = page.locator('a[aria-label^="С чего начать"]');
   await expect(firstCard).toBeVisible();
   await expect(page.locator('h2').first()).toContainText('С чего начать');
+  await expect(page.getByTestId('theory-source-status')).toBeVisible();
 
   await page.goto('/theory/start-here');
   await expect(page.getByRole('heading', { name: /С чего начать/ })).toBeVisible();

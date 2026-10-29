@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { lessonsData, LessonGuide } from '@/data/theoryContent';
-import { directusCms } from '@/lib/directus';
+import { api } from '@/lib/api';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { BentoCard } from '@/components/ui/BentoCard';
@@ -88,7 +88,8 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
 
   useEffect(() => {
     let isMounted = true;
-    directusCms.getTheoryLessonBySlug(resolvedParams.slug).then((dLesson) => {
+    api.getTheoryCatalog().then((catalog) => {
+      const dLesson = catalog?.lessons?.find((item) => item.slug === resolvedParams.slug);
       if (isMounted && dLesson) {
         setLesson({
           slug: dLesson.slug,

@@ -51,6 +51,8 @@ interface ProgressState {
   lastActiveDate: string;
   pvpElo: number;
   userId: string | null;
+  /** Where the currently displayed progress values come from. */
+  progressStatus: 'cache' | 'pending' | 'offline';
   setCandidateName: (name: string) => void;
   setTargetScore: (score: number) => Promise<void>;
   setTargetDate: (date: string) => Promise<void>;
@@ -99,6 +101,7 @@ const getInitialState = (userId?: string | null) => {
       lastActiveDate: '',
       pvpElo: 1200,
       userId: userId || null,
+      progressStatus: 'cache' as const,
     };
   }
 
@@ -148,6 +151,7 @@ const getInitialState = (userId?: string | null) => {
     lastActiveDate,
     pvpElo,
     userId: userId || null,
+    progressStatus: 'cache' as const,
   };
 };
 
@@ -286,6 +290,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   syncWithBackend: async (explicitUserId) => {
+    set({ progressStatus: 'pending' });
     const activeUserId = explicitUserId !== undefined ? explicitUserId : get().userId;
 
     if (explicitUserId !== undefined && explicitUserId !== get().userId) {
@@ -449,6 +454,11 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         }
       } catch {}
     }
+
+    set({
+      progressStatus:
+        typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
+    });
   },
 
   toggleLessonCompleted: async (slug: string) => {
@@ -467,13 +477,14 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       );
     }
 
+    set({ progressStatus: 'pending' });
     try {
       const resp = await api.toggleTheoryLesson(slug);
       if (resp && resp.completedLessons) {
-        set({ completedLessons: resp.completedLessons });
+        set({ completedLessons: resp.completedLessons, progressStatus: 'cache' });
       }
     } catch {
-      // Keep optimistic local state
+      set({ progressStatus: 'offline' });
     }
   },
 

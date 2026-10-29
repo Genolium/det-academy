@@ -97,6 +97,7 @@ function DashboardContent() {
     getBestMockScore,
     getReadinessPercentage,
     candidateName,
+    progressStatus,
   } = useProgressStore();
 
   const { loadForUser: loadErrorsForUser } = useErrorNotebookStore();
@@ -209,6 +210,28 @@ function DashboardContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+            <span
+              data-testid="progress-status"
+              title={
+                locale === 'ru'
+                  ? 'Теория, цели и стрик синхронизируются с сервером; моки и typing пока хранятся локально.'
+                  : 'Theory, goals and streak sync with the server; mocks and typing are still cached locally.'
+              }
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                progressStatus === 'offline'
+                  ? 'border-rose-800 bg-rose-950/50 text-rose-300'
+                  : progressStatus === 'pending'
+                    ? 'border-amber-800 bg-amber-950/40 text-amber-300'
+                    : 'border-neutral-700 bg-neutral-900 text-neutral-400'
+              }`}
+            >
+              {progressStatus === 'offline'
+                ? locale === 'ru' ? 'Офлайн-кэш' : 'Offline cache'
+                : progressStatus === 'pending'
+                  ? locale === 'ru' ? 'Синхронизация…' : 'Syncing…'
+                  : locale === 'ru' ? 'Локальный кэш' : 'Local cache'}
+            </span>
+
             {/* Target Score */}
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />

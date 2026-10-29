@@ -133,3 +133,25 @@ func (s *TheoryService) IsTheoryCompleted(ctx context.Context, userID string) bo
 	}
 	return len(ValidCompletedLessons(completed)) >= TotalTheoryLessons
 }
+
+// GetCatalog returns the single versioned theory catalogue. The frontend uses
+// this instead of merging a CMS response with a static array.
+func (s *TheoryService) GetCatalog(ctx context.Context) (*models.TheoryCatalogResponse, error) {
+	lessons, err := s.theoryRepo.ListCatalog(ctx)
+	if err != nil {
+		return nil, err
+	}
+	version := "2026.2"
+	updatedAt := time.Time{}
+	for _, lesson := range lessons {
+		if lesson.Version != "" {
+			version = lesson.Version
+		}
+		if lesson.UpdatedAt.After(updatedAt) {
+			updatedAt = lesson.UpdatedAt
+		}
+	}
+	return &models.TheoryCatalogResponse{
+		Version: version, UpdatedAt: updatedAt, Status: "published", Lessons: lessons,
+	}, nil
+}

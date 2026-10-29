@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { lessonsData, LessonGuide } from '@/data/theoryContent';
-import { directusCms } from '@/lib/directus';
+import { api } from '@/lib/api';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { BentoCard } from '@/components/ui/BentoCard';
@@ -16,12 +16,15 @@ export default function TheoryCatalogPage() {
   const { completedLessons } = useProgressStore();
   const { locale } = useSettingsStore();
   const [lessons, setLessons] = useState<LessonGuide[]>(lessonsData);
-  const [catalogSource, setCatalogSource] = useState<'cms' | 'fallback'>('fallback');
+  const [catalogSource, setCatalogSource] = useState<'backend' | 'fallback'>('fallback');
+  const [catalogVersion, setCatalogVersion] = useState<string>('');
   const t = translations[locale].theory;
 
   useEffect(() => {
     let isMounted = true;
-    directusCms.getTheoryLessons().then((dLessons) => {
+    api.getTheoryCatalog().then((catalog) => {
+      const dLessons = catalog?.lessons;
+      if (catalog?.version) setCatalogVersion(catalog.version);
       if (isMounted && dLessons && dLessons.length > 0) {
         const mapped: LessonGuide[] = dLessons.map((d) => ({
           slug: d.slug,
@@ -45,7 +48,7 @@ export default function TheoryCatalogPage() {
           mapped.unshift(intro);
         }
         setLessons(mapped);
-        setCatalogSource('cms');
+        setCatalogSource('backend');
       }
     }).catch(() => {});
     return () => {
@@ -66,10 +69,14 @@ export default function TheoryCatalogPage() {
           {catalogSource === 'fallback' ? (
             <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-testid="theory-source-status">
               {locale === 'ru'
-                ? 'Показана локальная копия курса: CMS временно недоступен. Это не означает, что материал обновлён.'
-                : 'Showing the local course copy: the CMS is temporarily unavailable. This does not mean the material is fresh.'}
+                ? 'Показана локальная копия курса: серверный каталог временно недоступен. Это не означает, что материал обновлён.'
+                : 'Showing the local course copy: the server catalogue is temporarily unavailable. This does not mean the material is fresh.'}
             </div>
-          ) : null}
+          ) : (
+            <p className="mb-4 text-[11px] text-neutral-500" data-testid="theory-catalog-version">
+              {locale === 'ru' ? 'Версия каталога' : 'Catalogue version'}: {catalogVersion || '—'}
+            </p>
+          )}
 
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">

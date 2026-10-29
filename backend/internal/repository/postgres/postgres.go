@@ -2349,3 +2349,33 @@ func (r *UserRepo) SetEmailDigestEnabled(ctx context.Context, userID string, ena
 	`, userID, enabled)
 	return err
 }
+
+func (r *TheoryRepo) ListCatalog(ctx context.Context) ([]models.TheoryCatalogLesson, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, number, slug, title_ru, title_en, category, category_label_ru,
+		       category_label_en, format, scoring, time_limit, rules, strategy_steps,
+		       COALESCE(formula, ''), examples, pitfalls, publish_status, version, updated_at
+		FROM theory_lessons
+		WHERE publish_status = 'published'
+		ORDER BY number
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	lessons := []models.TheoryCatalogLesson{}
+	for rows.Next() {
+		var lesson models.TheoryCatalogLesson
+		if err := rows.Scan(
+			&lesson.ID, &lesson.Number, &lesson.Slug, &lesson.TitleRu, &lesson.TitleEn,
+			&lesson.Category, &lesson.CategoryLabelRu, &lesson.CategoryLabelEn,
+			&lesson.Format, &lesson.Scoring, &lesson.TimeLimit, &lesson.Rules,
+			&lesson.StrategySteps, &lesson.Formula, &lesson.Examples, &lesson.Pitfalls,
+			&lesson.PublishStatus, &lesson.Version, &lesson.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		lessons = append(lessons, lesson)
+	}
+	return lessons, rows.Err()
+}

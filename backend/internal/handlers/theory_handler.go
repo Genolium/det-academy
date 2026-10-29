@@ -64,6 +64,15 @@ func (h *TheoryHandler) ToggleCompletion(w http.ResponseWriter, r *http.Request)
 	RespondJSON(w, http.StatusOK, progress)
 }
 
+func (h *TheoryHandler) GetCatalog(w http.ResponseWriter, r *http.Request) {
+	catalog, err := h.theoryService.GetCatalog(r.Context())
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, "failed to load theory catalog")
+		return
+	}
+	RespondJSON(w, http.StatusOK, catalog)
+}
+
 func (h *TheoryHandler) GetLessons(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"total":   service.TotalTheoryLessons,

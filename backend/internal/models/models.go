@@ -21,6 +21,35 @@ type User struct {
 	UpdatedAt                  time.Time  `json:"updatedAt"`
 }
 
+type TheoryCatalogLesson struct {
+	ID              string          `json:"id"`
+	Number          int             `json:"number"`
+	Slug            string          `json:"slug"`
+	TitleRu         string          `json:"title_ru"`
+	TitleEn         string          `json:"title_en"`
+	Category        string          `json:"category"`
+	CategoryLabelRu string          `json:"category_label_ru"`
+	CategoryLabelEn string          `json:"category_label_en"`
+	Format          string          `json:"format"`
+	Scoring         string          `json:"scoring"`
+	TimeLimit       string          `json:"time_limit"`
+	Rules           json.RawMessage `json:"rules"`
+	StrategySteps   json.RawMessage `json:"strategy_steps"`
+	Formula         string          `json:"formula"`
+	Examples        json.RawMessage `json:"examples"`
+	Pitfalls        json.RawMessage `json:"pitfalls"`
+	PublishStatus   string          `json:"publish_status"`
+	Version         string          `json:"version"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type TheoryCatalogResponse struct {
+	Version   string                `json:"version"`
+	UpdatedAt time.Time             `json:"updated_at"`
+	Status    string                `json:"status"`
+	Lessons   []TheoryCatalogLesson `json:"lessons"`
+}
+
 type TheoryProgress struct {
 	ID          string    `json:"id"`
 	UserID      string    `json:"userId"`

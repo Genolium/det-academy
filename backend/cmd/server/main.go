@@ -377,6 +377,7 @@ func main() {
 
 		// Theory routes (Strictly authenticated progress)
 		r.Route("/theory", func(r chi.Router) {
+			r.Get("/catalog", theoryHandler.GetCatalog)
 			r.Get("/lessons", theoryHandler.GetLessons)
 			r.With(handlers.AuthMiddleware(authService)).Get("/progress", theoryHandler.GetProgress)
 			r.With(handlers.AuthMiddleware(authService)).Post("/toggle", theoryHandler.ToggleCompletion)
