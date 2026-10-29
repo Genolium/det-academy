@@ -10,6 +10,13 @@ test('speak about photo keeps one live task countdown and allows an early check'
   });
   await mockApi(page);
 
+  const failedImages: string[] = [];
+  page.on('response', (response) => {
+    if (response.status() >= 400 && response.url().includes('engineering-workshop')) {
+      failedImages.push(response.url());
+    }
+  });
+
   await page.goto('/practice?drill=speak-about-photo');
 
   const countdown = page.getByTestId('task-countdown');
@@ -27,4 +34,5 @@ test('speak about photo keeps one live task countdown and allows an early check'
   await expect(check).toBeEnabled();
   await expect(page.getByTestId('speak-timer-hint')).toContainText('Ответ можно отправить');
   await expect(countdown).toHaveText('1:16');
+  expect(failedImages).toEqual([]);
 });
