@@ -82,7 +82,7 @@ export const WritingSample: React.FC<WritingSampleProps> = ({ onComplete }) => {
         </span>
         <div className="flex items-center gap-1.5 text-[#D2F544] font-bold text-sm bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
           <Clock className="w-4 h-4" />
-          <span>
+          <span data-testid="task-countdown">
             {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
           </span>
         </div>

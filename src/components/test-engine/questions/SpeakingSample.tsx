@@ -43,6 +43,11 @@ interface SpeakingSampleProps {
   isStandaloneDrill?: boolean;
 }
 
+const PREP_SECONDS = 30;
+const SPEAK_SECONDS = 180;
+const TOTAL_SECONDS = PREP_SECONDS + SPEAK_SECONDS;
+const MIN_SPEAK_SECONDS = 60;
+
 export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) => {
   const { recordSpeakingResult, serverQuestions, backendSessionId } = useTestStore();
   const audioRecorder = useAudioRecorder();
@@ -54,7 +59,9 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     'Some people believe that artificial intelligence will transform higher education, while others believe traditional classrooms remain essential. What is your opinion? Explain your reasons with specific examples. Speak for 1 to 3 minutes.';
 
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
-  const [timeLeft, setTimeLeft] = useState(30); // 30s prep, then 180s (3 min)
+  // One countdown covers preparation and speaking: 3:30 in total.
+  const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
+  const [speakSeconds, setSpeakSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -68,12 +75,16 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
   const isCompletedRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const timelineRef = useRef<SpeechTimeline | null>(null);
+  const phaseRef = useRef<'prep' | 'speaking'>('prep');
+  const speakStartedAtRef = useRef<number | null>(null);
 
   const handleFinish = async () => {
     if (isCompletedRef.current) return;
     isCompletedRef.current = true;
     const endedAtMs = performance.now();
-    const durationSec = Math.max(1, 180 - timeLeft);
+    const durationSec = speakStartedAtRef.current
+      ? Math.max(1, Math.round((endedAtMs - speakStartedAtRef.current) / 1000))
+      : Math.max(1, TOTAL_SECONDS - timeLeft);
 
     if (recognitionRef.current) {
       try {
@@ -127,8 +138,10 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
   });
 
   const startRecording = useCallback(async () => {
+    if (phaseRef.current === 'speaking') return;
+    phaseRef.current = 'speaking';
     setPhase('speaking');
-    setTimeLeft(180);
+    speakStartedAtRef.current = performance.now();
 
     const started = await audioRecorder.startRecording();
     if (!started && audioRecorder.error) {
@@ -168,26 +181,33 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
     startRecordingRef.current = startRecording;
   }, [startRecording]);
 
+  // One task deadline for 30 s prep + 180 s speaking. It must not depend on
+  // startRecording: the recorder object changes with every volume update.
   useEffect(() => {
-    const duration = phase === 'prep' ? 30 : 180;
-    const deadline = Date.now() + duration * 1000;
-    setTimeLeft(duration);
+    const deadline = Date.now() + TOTAL_SECONDS * 1000;
 
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
+
+      if (speakStartedAtRef.current !== null) {
+        setSpeakSeconds(
+          Math.max(0, Math.round((performance.now() - speakStartedAtRef.current) / 1000))
+        );
+      }
+
+      if (remaining <= SPEAK_SECONDS && phaseRef.current === 'prep') {
+        void startRecordingRef.current();
+      }
+
       if (remaining <= 0) {
         clearInterval(timer);
-        if (phase === 'prep') {
-          startRecordingRef.current();
-        } else {
-          handleFinishRef.current();
-        }
+        handleFinishRef.current();
       }
     }, 250);
 
     return () => clearInterval(timer);
-  }, [phase]);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -203,7 +223,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
 
         <div className="flex items-center gap-2 bg-[#16191D] border border-neutral-800 px-4 py-2 rounded-xl text-neutral-300 font-mono text-sm">
           <Clock className={`w-4 h-4 ${timeLeft <= 30 ? 'text-rose-500 animate-pulse' : 'text-[#D2F544]'}`} />
-          <span>
+          <span data-testid="task-countdown">
             {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
           </span>
         </div>
@@ -226,7 +246,10 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
           <div className="bg-[#0E1012]/60 border border-neutral-800 rounded-xl p-4 text-center">
             <p className="text-xs text-neutral-400">
               Подготовьте развёрнутый ответ. Запись микрофона включится через{' '}
-              <span className="text-[#D2F544] font-bold font-mono">{timeLeft}s</span>.
+              <span className="text-[#D2F544] font-bold font-mono">
+                {Math.max(0, timeLeft - SPEAK_SECONDS)}s
+              </span>
+              .
             </p>
           </div>
         ) : (
@@ -278,9 +301,15 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-neutral-800/80">
-          <span className="text-[11px] text-neutral-500">
-            {phase === 'prep' ? '30 секунд на подготовку' : 'Говорите не менее 1–3 минут'}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-neutral-800/80">
+          <span className="text-[11px] text-neutral-500" data-testid="speak-timer-hint">
+            {phase === 'prep'
+              ? `Подготовка · общий таймер ${Math.floor(timeLeft / 60)}:${(timeLeft % 60)
+                  .toString()
+                  .padStart(2, '0')}`
+              : speakSeconds < MIN_SPEAK_SECONDS
+                ? `Проверка станет доступна через ${MIN_SPEAK_SECONDS - speakSeconds} с`
+                : 'Ответ можно отправить на проверку'}
           </span>
           {phase === 'prep' ? (
             <Button variant="primary" onClick={startRecording} className="gap-2">
@@ -291,10 +320,10 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete }) =>
             <Button
               variant="primary"
               onClick={handleFinish}
-              disabled={timeLeft > 120 || isSubmitting} // Require at least 60s of speech before manual submit
+              disabled={speakSeconds < MIN_SPEAK_SECONDS || isSubmitting}
               className="gap-2"
             >
-              {isSubmitting ? 'Сохранение...' : 'Далее (Next)'}
+              {isSubmitting ? 'Сохранение...' : 'Проверить ответ'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}
