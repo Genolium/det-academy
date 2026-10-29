@@ -94,7 +94,11 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
   return (
     <div className="rounded-2xl border border-neutral-800 bg-black/30 p-4">
       {isDictation ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
+          {example.question ? (
+            <p className="mb-3 text-xs text-neutral-300">{example.question}</p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => void sound.speakEnglish(expected)}
@@ -106,6 +110,7 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
           <span className="text-[11px] text-neutral-500">
             {ru ? 'Введите услышанное с пунктуацией' : 'Type what you hear, including punctuation'}
           </span>
+          </div>
         </div>
       ) : isListenSelect ? (
         <div className="flex flex-wrap items-center gap-2">
