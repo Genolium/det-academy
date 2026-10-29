@@ -2379,3 +2379,36 @@ func (r *TheoryRepo) ListCatalog(ctx context.Context) ([]models.TheoryCatalogLes
 	}
 	return lessons, rows.Err()
 }
+
+func (r *UserRepo) GetCalibrationConsent(ctx context.Context, userID string) (*models.CalibrationConsent, error) {
+	var consent models.CalibrationConsent
+	err := r.db.QueryRowContext(ctx, `
+		SELECT user_id, consent_version, granted_at, revoked_at
+		FROM calibration_consents WHERE user_id = $1
+	`, userID).Scan(&consent.UserID, &consent.ConsentVersion, &consent.GrantedAt, &consent.RevokedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return &models.CalibrationConsent{UserID: userID}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &consent, nil
+}
+
+func (r *UserRepo) SetCalibrationConsent(ctx context.Context, userID string, enabled bool, version string) error {
+	if enabled {
+		_, err := r.db.ExecContext(ctx, `
+			INSERT INTO calibration_consents (user_id, consent_version, granted_at, revoked_at)
+			VALUES ($1, $2, NOW(), NULL)
+			ON CONFLICT (user_id) DO UPDATE SET consent_version = EXCLUDED.consent_version,
+				granted_at = NOW(), revoked_at = NULL
+		`, userID, version)
+		return err
+	}
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO calibration_consents (user_id, consent_version, granted_at, revoked_at)
+		VALUES ($1, $2, NOW(), NOW())
+		ON CONFLICT (user_id) DO UPDATE SET revoked_at = NOW(), consent_version = EXCLUDED.consent_version
+	`, userID, version)
+	return err
+}

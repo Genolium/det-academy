@@ -35,6 +35,7 @@ type MemoryStorage struct {
 	socialAccounts      map[string][]models.SocialAccount             // userID -> []SocialAccount
 	goals               map[string]*models.UserGoal                   // userID -> *UserGoal
 	emailPreferences    map[string]bool                               // userID -> digest enabled
+	calibrationConsents map[string]models.CalibrationConsent          // userID -> consent
 	errors              map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
 	srsStats            map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards            map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
@@ -73,6 +74,7 @@ func New() *MemoryStorage {
 		socialAccounts:      make(map[string][]models.SocialAccount),
 		goals:               make(map[string]*models.UserGoal),
 		emailPreferences:    make(map[string]bool),
+		calibrationConsents: make(map[string]models.CalibrationConsent),
 		errors:              make(map[string]map[string]*models.UserErrorItem),
 		srsStats:            make(map[string]*models.SRSStats),
 		srsCards:            make(map[string]map[string]*models.SRSCardProgress),
@@ -2925,4 +2927,32 @@ func (r *userMemoryRepo) SetEmailDigestEnabled(_ context.Context, userID string,
 
 func (r *theoryMemoryRepo) ListCatalog(context.Context) ([]models.TheoryCatalogLesson, error) {
 	return []models.TheoryCatalogLesson{}, nil
+}
+
+func (r *userMemoryRepo) GetCalibrationConsent(_ context.Context, userID string) (*models.CalibrationConsent, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	consent, ok := r.s.calibrationConsents[userID]
+	if !ok {
+		return &models.CalibrationConsent{UserID: userID, ConsentVersion: ""}, nil
+	}
+	cp := consent
+	return &cp, nil
+}
+
+func (r *userMemoryRepo) SetCalibrationConsent(_ context.Context, userID string, enabled bool, version string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	now := time.Now().UTC()
+	consent := r.s.calibrationConsents[userID]
+	consent.UserID = userID
+	consent.ConsentVersion = version
+	if enabled {
+		consent.GrantedAt = now
+		consent.RevokedAt = nil
+	} else {
+		consent.RevokedAt = &now
+	}
+	r.s.calibrationConsents[userID] = consent
+	return nil
 }

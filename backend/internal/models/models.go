@@ -21,6 +21,13 @@ type User struct {
 	UpdatedAt                  time.Time  `json:"updatedAt"`
 }
 
+type CalibrationConsent struct {
+	UserID         string     `json:"userId"`
+	ConsentVersion string     `json:"consentVersion"`
+	GrantedAt      time.Time  `json:"grantedAt"`
+	RevokedAt      *time.Time `json:"revokedAt,omitempty"`
+}
+
 type TheoryCatalogLesson struct {
 	ID              string          `json:"id"`
 	Number          int             `json:"number"`

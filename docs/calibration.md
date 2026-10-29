@@ -13,17 +13,30 @@ blocked until all of the following are true:
 
 ## Workflow
 
-1. Export real responses from the production/test database:
+1. Collect explicit, revocable consent from learners in **Profile → De-identified
+   responses for calibration** (`PATCH /api/v1/user/research-consent`).
+   Consent is versioned (`2026-10-29`), stored in `calibration_consents`, and can
+   be revoked at any time. The default is **no consent**.
+
+2. Export only consented responses from the production/test database:
 
    ```bash
-   DATABASE_URL="postgres://..." python3 scripts/calibration_export.py \
-     --limit 200 --output calibration_annotation_pack.jsonl
+   DATABASE_URL="postgres://..." CALIBRATION_ID_SALT="..." \
+     python3 scripts/calibration_export.py \
+     --limit 200 \
+     --output calibration_annotation_pack.jsonl \
+     --audio-dir calibration_audio \
+     --audio-source /path/to/stored/audio
    ```
 
-   The exporter only selects speaking/writing response types and includes the
+   The exporter joins `calibration_consents` on `revoked_at IS NULL` and the
+   current consent version, never selects `user_id`, email or name, hashes
+   `item_id`/`question_id` with the salt, and copies audio under hashed names.
+   Keep the salt to reproduce ids; a different salt produces different hashes.
+   The exporter selects speaking/writing response types only and includes the
    rule-based model score normalized to the 0–5 rubric.
 
-2. Two experts label every item independently. Add one JSONL row per rater:
+3. Two experts label every item independently. Add one JSONL row per rater:
 
    ```json
    {"item_id":"...","rater_id":"expert-a","score":4}
@@ -33,7 +46,7 @@ blocked until all of the following are true:
    If the raters disagree, add an `adjudicated` score row or record the
    adjudication decision in the study notes.
 
-3. Build the dataset:
+4. Build the dataset:
 
    ```bash
    python3 scripts/calibration_import.py calibration_annotation_pack.jsonl \
@@ -43,13 +56,13 @@ blocked until all of the following are true:
    The importer rejects scores outside 0–5, duplicate rater rows, conflicting
    model scores and (by default) items with fewer than two raters.
 
-4. Report agreement:
+5. Report agreement:
 
    ```bash
    python3 scripts/calibration_report.py calibration_dataset.json
    ```
 
-5. Enforce the production gate:
+6. Enforce the production gate:
 
    ```bash
    python3 scripts/calibration_validate.py calibration_dataset.json --production

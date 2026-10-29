@@ -59,6 +59,9 @@ function ProfileContent() {
   const [isSavingName, setIsSavingName] = useState(false);
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [isSavingDigest, setIsSavingDigest] = useState(false);
+  const [researchConsent, setResearchConsent] = useState(false);
+  const [researchConsentVersion, setResearchConsentVersion] = useState('');
+  const [isSavingConsent, setIsSavingConsent] = useState(false);
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +91,46 @@ function ProfileContent() {
       .then((preferences) => setDigestEnabled(preferences.digestEnabled))
       .catch(() => {});
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api
+      .getResearchConsent()
+      .then((state) => {
+        setResearchConsent(state.consent);
+        setResearchConsentVersion(state.version);
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
+
+  const toggleResearchConsent = async () => {
+    if (isSavingConsent) return;
+    setIsSavingConsent(true);
+    setErrorMsg(null);
+    try {
+      const next = !researchConsent;
+      const saved = await api.updateResearchConsent(next);
+      setResearchConsent(saved.consent);
+      setResearchConsentVersion(saved.version);
+      setSuccessMsg(
+        saved.consent
+          ? ru
+            ? 'Согласие на использование обезличенных ответов сохранено. Его можно отозвать в любой момент.'
+            : 'Consent to use de-identified responses saved. You can revoke it at any time.'
+          : ru
+            ? 'Согласие отозвано. Новые ответы больше не попадут в калибровочный экспорт.'
+            : 'Consent revoked. New responses will no longer enter the calibration export.'
+      );
+    } catch {
+      setErrorMsg(
+        ru
+          ? 'Не удалось сохранить согласие. Попробуйте ещё раз.'
+          : 'Could not save consent. Please try again.'
+      );
+    } finally {
+      setIsSavingConsent(false);
+    }
+  };
 
   const toggleDigest = async () => {
     if (isSavingDigest) return;
@@ -583,6 +626,64 @@ function ProfileContent() {
                 : ru
                   ? 'Включить'
                   : 'Turn on'}
+          </button>
+        </div>
+      </div>
+
+      {/* 2.2 Research consent (opt-in) */}
+      <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 text-white" data-testid="research-consent-card">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#D2F544]/15 border border-[#D2F544]/30 flex items-center justify-center text-[#D2F544] shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white">
+                {ru ? 'Обезличенные ответы для калибровки' : 'De-identified responses for calibration'}
+              </h2>
+              <p className="text-xs text-neutral-400 mt-0.5 max-w-xl">
+                {ru
+                  ? 'По желанию: разрешить использовать тексты и аудио ваших ответов Speaking/Writing для проверки точности тренажёра. Ответы обезличиваются, идентификаторы заменяются, оценивают два независимых эксперта. Это не влияет на доступ к платформе.'
+                  : 'Optional: allow your Speaking/Writing texts and audio to be used to check how accurate the practice evaluator is. Responses are de-identified, identifiers replaced, and two independent experts rate them. This does not affect access to the platform.'}
+              </p>
+              <p className="text-[11px] text-neutral-500 mt-1" data-testid="research-consent-status">
+                {researchConsent
+                  ? ru
+                    ? `Согласие активно · версия ${researchConsentVersion}`
+                    : `Consent active · version ${researchConsentVersion}`
+                  : ru
+                    ? 'Согласие не дано'
+                    : 'No consent given'}
+                {' · '}
+                <Link href="/privacy" className="underline hover:text-neutral-300">
+                  {ru ? 'Политика данных' : 'Data policy'}
+                </Link>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            data-testid="research-consent-toggle"
+            onClick={() => void toggleResearchConsent()}
+            disabled={isSavingConsent}
+            aria-pressed={researchConsent}
+            className={`self-start sm:self-auto rounded-full px-4 py-2.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+              researchConsent
+                ? 'bg-neutral-900 border border-neutral-700 text-neutral-200 hover:border-neutral-500'
+                : 'bg-[#D2F544] text-[#0C2418] hover:bg-[#c4f22c]'
+            }`}
+          >
+            {isSavingConsent
+              ? ru
+                ? 'Сохраняем…'
+                : 'Saving…'
+              : researchConsent
+                ? ru
+                  ? 'Отозвать согласие'
+                  : 'Revoke consent'
+                : ru
+                  ? 'Дать согласие'
+                  : 'Give consent'}
           </button>
         </div>
       </div>

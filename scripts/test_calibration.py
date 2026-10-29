@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -109,6 +110,107 @@ class CalibrationWorkflowTest(unittest.TestCase):
             result = run("scripts/calibration_import.py", str(pack))
             self.assertEqual(result.returncode, 1)
             self.assertIn("fewer than two raters", result.stderr)
+
+
+class CalibrationExportTest(unittest.TestCase):
+    """The exporter must never emit rows without an active consent."""
+
+    def test_export_uses_consent_join_and_anonymizes_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            query_file = root / "query.sql"
+            rows_file = root / "rows.jsonl"
+            audio_source = root / "audio-source"
+            audio_source.mkdir()
+            (audio_source / "raw-recording.webm").write_bytes(b"audio-bytes")
+
+            rows_file.write_text(
+                json.dumps(
+                    {
+                        "item_id": "11111111-1111-1111-1111-111111111111",
+                        "question_id": "WRITING_SAMPLE_1",
+                        "question_type": "WRITING_SAMPLE",
+                        "prompt": "Write about a photo",
+                        "response": "Learner text",
+                        "model_score": 4,
+                        "model_raw_score": 0.8,
+                        "cefr": "B2",
+                        "provider": "deepseek",
+                        "evaluator_version": "v1",
+                        "audio_url": "/uploads/audio/raw-recording.webm",
+                        # Fake extras that must never survive the export.
+                        "user_id": "user-secret",
+                        "email": "learner@example.com",
+                        "name": "Learner Name",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            psql = fake_bin / "psql"
+            psql.write_text(
+                "#!/bin/sh\n"
+                f'printf "%s" "$4" > "{query_file}"\n'
+                f'cat "{rows_file}"\n',
+                encoding="utf-8",
+            )
+            psql.chmod(0o755)
+
+            output = root / "pack.jsonl"
+            audio_out = root / "audio-out"
+            env = {
+                **os.environ,
+                "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+                "DATABASE_URL": "postgres://fake",
+            }
+            result = subprocess.run(
+                [
+                    PYTHON,
+                    "scripts/calibration_export.py",
+                    "--output",
+                    str(output),
+                    "--salt",
+                    "test-salt",
+                    "--audio-dir",
+                    str(audio_out),
+                    "--audio-source",
+                    str(audio_source),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+            query = query_file.read_text(encoding="utf-8")
+            self.assertIn("JOIN calibration_consents", query)
+            self.assertIn("cc.revoked_at IS NULL", query)
+            self.assertIn("cc.consent_version = '2026-10-29'", query)
+            self.assertNotIn("user_id", query.split("FROM")[0])
+            self.assertNotIn("email", query.split("FROM")[0])
+
+            payload = [
+                json.loads(line)
+                for line in output.read_text(encoding="utf-8").splitlines()
+                if line and not line.startswith("#")
+            ]
+            self.assertEqual(len(payload), 1)
+            item = payload[0]
+            self.assertNotIn("user_id", item)
+            self.assertNotIn("email", item)
+            self.assertNotIn("name", item)
+            self.assertNotEqual(item["item_id"], "11111111-1111-1111-1111-111111111111")
+            self.assertTrue(item["item_id"].startswith("item_"))
+            self.assertTrue(item["question_id"].startswith("question_"))
+            self.assertEqual(item["audio_file"], f"{item['item_id']}.webm")
+            self.assertTrue((audio_out / item["audio_file"]).is_file())
+            summary = json.loads(result.stdout)
+            self.assertEqual(summary["items"], 1)
+            self.assertEqual(summary["audio_copied"], 1)
 
 
 if __name__ == "__main__":

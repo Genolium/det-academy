@@ -21,6 +21,8 @@ type UserRepository interface {
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
 	GetEmailDigestEnabled(ctx context.Context, userID string) (bool, error)
 	SetEmailDigestEnabled(ctx context.Context, userID string, enabled bool) error
+	GetCalibrationConsent(ctx context.Context, userID string) (*models.CalibrationConsent, error)
+	SetCalibrationConsent(ctx context.Context, userID string, enabled bool, version string) error
 
 	// Social accounts / linked providers
 	GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error)

@@ -677,6 +677,12 @@ export class ApiError extends Error {
   }
 }
 
+export interface ResearchConsentResponse {
+  /** True only when the user opted in and has not revoked the current version. */
+  consent: boolean;
+  version: string;
+}
+
 export interface AdaptivePractice {
   focusType: string;
   focusSlug: string;
@@ -1604,6 +1610,26 @@ class ApiClient {
       body: JSON.stringify({ digestEnabled }),
     });
     if (!res.ok) throw new ApiError('Failed to save email preferences', res.status);
+    return res.json();
+  }
+
+  async getResearchConsent(): Promise<ResearchConsentResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/research-consent`, {
+      headers: this.getHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new ApiError('Failed to load research consent', res.status);
+    return res.json();
+  }
+
+  async updateResearchConsent(consent: boolean): Promise<ResearchConsentResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/user/research-consent`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ consent }),
+    });
+    if (!res.ok) throw new ApiError('Failed to save research consent', res.status);
     return res.json();
   }
 

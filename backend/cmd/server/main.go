@@ -229,6 +229,7 @@ func main() {
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 	studyHandler := handlers.NewStudyHandler(studyService)
 	emailHandler := handlers.NewEmailHandler(store.Users())
+	consentHandler := handlers.NewConsentHandler(store.Users())
 	vocabularyHandler := handlers.NewVocabularyHandler(vocabularyService)
 
 	mediaUploadDir := os.Getenv("MEDIA_UPLOAD_DIR")
@@ -340,6 +341,8 @@ func main() {
 		// User Study Plan, Error Notebook, SRS, and Skill Analytics
 		r.Route("/user", func(r chi.Router) {
 			r.Use(handlers.AuthMiddleware(authService))
+			r.Get("/research-consent", consentHandler.Get)
+			r.Patch("/research-consent", consentHandler.Update)
 			r.Get("/email-preferences", emailHandler.GetPreferences)
 			r.Patch("/email-preferences", emailHandler.UpdatePreferences)
 			r.Get("/goals", studyHandler.GetGoals)

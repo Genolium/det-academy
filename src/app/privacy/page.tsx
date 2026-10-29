@@ -33,6 +33,11 @@ export default function PrivacyPage() {
             ? 'Аудио и тексты ответов используются для обратной связи по заданию. Они не отправляются в продуктовую рекламную аналитику.'
             : 'Audio and written answers are used for task feedback. They are not sent to advertising analytics.'}
         </p>
+        <p data-testid="privacy-research-consent">
+          {ru
+            ? 'Отдельно, по явному согласию в профиле, обезличенные ответы Speaking/Writing могут использоваться для калибровки тренажёра: два независимых эксперта выставляют оценки, идентификаторы и контакты удаляются. Согласие добровольно, не влияет на доступ и может быть отозвано в любой момент; после отзыва новые ответы в экспорт не попадают.'
+            : 'Separately, with explicit consent in your profile, de-identified Speaking/Writing responses may be used to calibrate the practice evaluator: two independent experts rate them, and identifiers and contact details are removed. Consent is voluntary, does not affect access, and can be revoked at any time; after revocation new responses are excluded from the export.'}
+        </p>
       </div>
     </div>
   );
