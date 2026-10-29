@@ -82,6 +82,22 @@ test('read then speak uses structured hints behind the button', async ({ page })
   await expect(page.getByTestId('task-hints')).toContainText('How to keep them safe');
 });
 
+test('default speaking sample keeps the question visible and hides answer coaching', async ({ page }) => {
+  await page.clock.install();
+  await mockApi(page);
+
+  await page.goto('/practice?drill=speaking-sample');
+
+  const prompt = page.getByTestId('task-prompt');
+  await expect(prompt).toContainText('What is your opinion?');
+  await expect(prompt).not.toContainText('Explain your reasons');
+
+  await page.getByRole('button', { name: /Подсказка/ }).click();
+  await expect(page.getByTestId('task-hints')).toContainText(
+    'Explain your reasons with specific examples'
+  );
+});
+
 test('write about photo hides the context hint and keeps the task', async ({ page }) => {
   await page.clock.install();
   await seedAttempt(page);

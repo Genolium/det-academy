@@ -9,6 +9,7 @@ const HINT_MARKERS = [
   'key ideas:',
   'context:',
   'give reasons',
+  'explain your reasons',
   'support your position',
   'explain why',
   'use specific examples',
