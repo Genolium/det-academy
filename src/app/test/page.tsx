@@ -20,6 +20,13 @@ export default function TestLobbyPage() {
   const { locale } = useSettingsStore();
   const t = translations[locale].testLobby;
   const [candidateName, setCandidateName] = useState('');
+  const [hasActiveAttempt, setHasActiveAttempt] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setHasActiveAttempt(Boolean(localStorage.getItem('det_active_test_attempt_v2')));
+    }
+  }, []);
 
   useEffect(() => {
     if (user?.name) {
@@ -29,6 +36,17 @@ export default function TestLobbyPage() {
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      hasActiveAttempt &&
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        locale === 'ru'
+          ? 'У вас есть незавершённая попытка. Начать новую? Старая останется в истории и потратит попытку.'
+          : 'You have an unfinished attempt. Start a new one? The old attempt will stay in history and use a try.'
+      )
+    ) {
+      return;
+    }
     // The test engine resumes a stored attempt by default. Starting a new
     // exam must clear that pointer first, otherwise a new click silently
     // continues an abandoned diagnostic or mock.
@@ -36,6 +54,7 @@ export default function TestLobbyPage() {
       localStorage.removeItem('det_active_test_attempt_v2');
       localStorage.removeItem('det_active_test_session_id');
     }
+    setHasActiveAttempt(false);
     startNewSession(candidateName.trim() || user?.name || 'Candidate');
     router.push('/test/session');
   };
@@ -95,6 +114,24 @@ export default function TestLobbyPage() {
                   {t.sessionTitle}
                 </h2>
               </div>
+
+              {hasActiveAttempt && (
+                <div className="rounded-2xl border border-[#D2F544]/40 bg-[#D2F544]/10 p-4 space-y-2">
+                  <p className="text-xs text-neutral-200">
+                    {locale === 'ru'
+                      ? 'У вас есть незавершённая попытка. Продолжите с того же этапа.'
+                      : 'You have an unfinished attempt. Continue from the same stage.'}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => router.push('/test/session')}
+                  >
+                    {locale === 'ru' ? 'Продолжить попытку' : 'Continue attempt'}
+                  </Button>
+                </div>
+              )}
 
               <form onSubmit={handleStart} className="space-y-4">
                 <div>

@@ -24,6 +24,7 @@ test('starting a new test clears the previous attempt instead of resuming it', a
   });
 
   await page.goto('/test');
+  page.on('dialog', (dialog) => void dialog.accept());
   await page.getByRole('button', { name: /Начать/ }).click();
 
   await expect.poll(() => mock.getStartSessionBodies().length).toBe(1);

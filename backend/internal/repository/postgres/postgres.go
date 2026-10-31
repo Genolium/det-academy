@@ -2285,6 +2285,19 @@ func (r *LimitRepo) ConsumeDaily(ctx context.Context, scope, subject string, win
 	return used, true, nil
 }
 
+func (r *LimitRepo) RefundDaily(ctx context.Context, scope, subject string, windowStart time.Time) error {
+	if scope == "" || subject == "" {
+		return nil
+	}
+	day := windowStart.UTC().Format("2006-01-02")
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE daily_limit_counters
+		SET used = GREATEST(0, used - 1), updated_at = NOW()
+		WHERE scope = $1 AND subject = $2 AND window_start = $3::date
+	`, scope, subject, day)
+	return err
+}
+
 func (r *LimitRepo) ConsumeWindow(ctx context.Context, bucket, subject string, windowStart time.Time, limit int) (int, bool, error) {
 	if limit <= 0 || bucket == "" || subject == "" {
 		return 0, true, nil

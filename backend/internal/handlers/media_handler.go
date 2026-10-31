@@ -59,8 +59,19 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	}
 	// Count the upload before touching the filesystem: every audio response is
 	// a speaking evaluation, the most expensive path in the product.
-	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
-		return
+	limitConsumed := false
+	if h.limits != nil {
+		if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
+			return
+		}
+		limitConsumed = true
+		defer func() {
+			if limitConsumed {
+				// The request failed validation before producing a response;
+				// failed retries must not burn the learner's daily allowance.
+				h.limits.Refund(r.Context(), service.LimitScopeSpeaking, RequestIP(r), RequestDeviceHash(r))
+			}
+		}()
 	}
 
 	// 25MB limit on audio upload
@@ -161,6 +172,7 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limitConsumed = false
 	RespondJSON(w, http.StatusCreated, map[string]interface{}{
 		"asset":      asset,
 		"url":        audioURL,

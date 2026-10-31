@@ -59,6 +59,8 @@ func newLimitsRouter(t *testing.T) *deviceLimitsFixture {
 	r.Use(handlers.ClientIdentityMiddleware(limitGuard))
 	r.Post("/api/v1/auth/register", authHandler.Register)
 	r.Post("/api/v1/test/sessions", withTestAuth(authService, testHandler.StartSession))
+	r.Get("/api/v1/test/sessions/{id}", withTestAuth(authService, testHandler.GetSession))
+	r.Post("/api/v1/test/sessions/{id}/stage-complete", withTestAuth(authService, testHandler.CompleteStage))
 	r.Post("/api/v1/user/practice/attempts", withTestAuth(authService, studyHandler.RecordPracticeAttempt))
 	r.Post("/api/v1/test/sessions/{id}/audio", withTestAuth(authService, mediaHandler.UploadAudio))
 
@@ -326,6 +328,17 @@ func TestSpeakingAudioUploadConsumesIPLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start diagnostic session: %v", err)
 	}
+	for _, stage := range service.StageSequence {
+		if stage == "SPEAK_PHOTO" {
+			break
+		}
+		completeCurrentStage(t, fixture.router, token, session.ID, stage)
+	}
+	ids := getCurrentQuestionIDs(t, fixture.router, token, session.ID)
+	if len(ids) == 0 {
+		t.Fatal("expected a speaking question")
+	}
+	questionID := ids[0]
 
 	upload := func() *httptest.ResponseRecorder {
 		var body bytes.Buffer
@@ -335,7 +348,7 @@ func TestSpeakingAudioUploadConsumesIPLimit(t *testing.T) {
 			t.Fatalf("create multipart file: %v", err)
 		}
 		_, _ = part.Write([]byte("fake audio bytes"))
-		_ = writer.WriteField("questionId", "q-sp-01")
+		_ = writer.WriteField("questionId", questionID)
 		_ = writer.Close()
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/test/sessions/"+session.ID+"/audio", &body)

@@ -66,6 +66,40 @@ func TestLimitGuardPerDeviceAcrossIPs(t *testing.T) {
 	}
 }
 
+func TestLimitGuardRefundReturnsSlot(t *testing.T) {
+	t.Setenv("DAILY_SPEAKING_LIMIT_PER_IP", "1")
+	t.Setenv("DAILY_SPEAKING_LIMIT_PER_DEVICE", "0")
+	guard, _ := newTestLimitGuard(t)
+	ctx := context.Background()
+	ip := "203.0.113.50"
+	device := HashDeviceID("test-secret", "refund-device")
+
+	if err := guard.Allow(ctx, LimitScopeSpeaking, ip, device); err != nil {
+		t.Fatalf("first allow: %v", err)
+	}
+	guard.Refund(ctx, LimitScopeSpeaking, ip, device)
+	if err := guard.Allow(ctx, LimitScopeSpeaking, ip, device); err != nil {
+		t.Fatalf("allow after refund must succeed: %v", err)
+	}
+}
+
+func TestLimitGuardDeviceDenialRefundsIP(t *testing.T) {
+	t.Setenv("DAILY_SPEAKING_LIMIT_PER_IP", "2")
+	t.Setenv("DAILY_SPEAKING_LIMIT_PER_DEVICE", "1")
+	guard, _ := newTestLimitGuard(t)
+	ctx := context.Background()
+	device := HashDeviceID("test-secret", "shared-device")
+
+	if err := guard.Allow(ctx, LimitScopeSpeaking, "198.51.100.10", device); err != nil {
+		t.Fatalf("first allow: %v", err)
+	}
+	// Same device from a new IP: device cap rejects it, IP slot must be returned.
+	requireLimitError(t, guard.Allow(ctx, LimitScopeSpeaking, "198.51.100.11", device), "device")
+	if err := guard.Allow(ctx, LimitScopeSpeaking, "198.51.100.11", HashDeviceID("test-secret", "another-device")); err != nil {
+		t.Fatalf("IP slot was not refunded after device denial: %v", err)
+	}
+}
+
 func TestLimitGuardWindowRolloverResets(t *testing.T) {
 	t.Setenv("DAILY_AUTH_LIMIT_PER_IP", "1")
 	t.Setenv("DAILY_AUTH_LIMIT_PER_DEVICE", "100")

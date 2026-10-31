@@ -11,6 +11,7 @@ export interface AudioRecorderState {
   error: string | null;
   startRecording: () => Promise<boolean>;
   stopRecording: () => Promise<Blob | null>;
+  restoreAudio: (blob: Blob) => void;
   cancelRecording: () => void;
   resetAudio: () => void;
 }
@@ -224,6 +225,19 @@ export function useAudioRecorder(): AudioRecorderState {
     });
   }, [audioBlob]);
 
+  const restoreAudio = useCallback((blob: Blob) => {
+    audioBlobRef.current = blob;
+    setAudioBlob(blob);
+    setAudioUrl((current) => {
+      if (current) {
+        try {
+          URL.revokeObjectURL(current);
+        } catch {}
+      }
+      return URL.createObjectURL(blob);
+    });
+  }, []);
+
   const cancelRecording = useCallback(() => {
     setIsRecording(false);
     setIsPaused(false);
@@ -280,6 +294,7 @@ export function useAudioRecorder(): AudioRecorderState {
       error,
       startRecording,
       stopRecording,
+      restoreAudio,
       cancelRecording,
       resetAudio,
     }),
@@ -294,6 +309,7 @@ export function useAudioRecorder(): AudioRecorderState {
       error,
       startRecording,
       stopRecording,
+      restoreAudio,
       cancelRecording,
       resetAudio,
     ]

@@ -251,13 +251,33 @@ func (g *LimitGuard) Allow(ctx context.Context, scope, ip, deviceHash string) er
 	if perDevice > 0 && deviceHash != "" {
 		used, allowed, err := g.repo.ConsumeDaily(ctx, scope+":device", deviceHash, window, perDevice)
 		if err != nil {
+			_ = g.repo.RefundDaily(ctx, scope+":ip", ip, window)
 			return fmt.Errorf("daily limit store: %w", err)
 		}
 		if !allowed {
+			// The request never runs, so the already-consumed IP slot must be
+			// returned instead of burning the shared quota.
+			_ = g.repo.RefundDaily(ctx, scope+":ip", ip, window)
 			return &LimitExceededError{Scope: scope, Kind: "device", Limit: perDevice, Used: used}
 		}
 	}
 	return nil
+}
+
+// Refund returns the slots consumed by Allow when the request was rejected
+// before producing a result. It is safe to call after a failed validation.
+func (g *LimitGuard) Refund(ctx context.Context, scope, ip, deviceHash string) {
+	if g == nil || g.repo == nil {
+		return
+	}
+	perIP, perDevice := limitSettings(scope)
+	window := g.now().UTC()
+	if perIP > 0 && ip != "" {
+		_ = g.repo.RefundDaily(ctx, scope+":ip", ip, window)
+	}
+	if perDevice > 0 && deviceHash != "" {
+		_ = g.repo.RefundDaily(ctx, scope+":device", deviceHash, window)
+	}
 }
 
 // SecondsUntilDailyReset is used for the Retry-After header.

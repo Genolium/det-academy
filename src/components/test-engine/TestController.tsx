@@ -125,6 +125,7 @@ export const TestController: React.FC = () => {
   const [stageSyncError, setStageSyncError] = useState<string | null>(null);
   const [lastStageAction, setLastStageAction] = useState<'advance' | 'finalize' | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [resumeUnavailable, setResumeUnavailable] = useState(false);
 
   const finalizeAttempt = useCallback(
     async (sessionId: string) => {
@@ -276,8 +277,14 @@ export const TestController: React.FC = () => {
       void flushResponseOutbox(session.id);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
-        writeStoredAttempt(null);
-        await startServerSession();
+        setResumeUnavailable(true);
+        setAttemptStatus(
+          'failed',
+          tr(
+            'Прежняя попытка больше недоступна. Начните новую или вернитесь в кабинет.',
+            'The previous attempt is no longer available. Start a new one or return to the dashboard.'
+          )
+        );
         return;
       }
       const message = errorMessage(
@@ -472,14 +479,34 @@ export const TestController: React.FC = () => {
         }
         tone="danger"
         actions={
-          <>
-            <Button variant="primary" onClick={() => void resumeAttempt()} icon={<RefreshCw className="w-4 h-4" />}>
-              {tr('Повторить подключение', 'Retry connection')}
-            </Button>
-            <Link href="/dashboard">
-              <Button variant="outline">{tr('Вернуться в кабинет', 'Back to dashboard')}</Button>
-            </Link>
-          </>
+          resumeUnavailable ? (
+            <>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  writeStoredAttempt(null);
+                  setResumeUnavailable(false);
+                  setStageSyncError(null);
+                  startNewSession(candidateName);
+                  void startServerSession();
+                }}
+              >
+                {tr('Начать новую попытку', 'Start a new attempt')}
+              </Button>
+              <Link href="/dashboard">
+                <Button variant="outline">{tr('В кабинет', 'Dashboard')}</Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Button variant="primary" onClick={() => void resumeAttempt()} icon={<RefreshCw className="w-4 h-4" />}>
+                {tr('Повторить подключение', 'Retry connection')}
+              </Button>
+              <Link href="/dashboard">
+                <Button variant="outline">{tr('Вернуться в кабинет', 'Back to dashboard')}</Button>
+              </Link>
+            </>
+          )
         }
       />
     );
@@ -545,6 +572,30 @@ export const TestController: React.FC = () => {
           'The server did not confirm an active attempt. Refresh the page or start the test again.'
         )}
         tone="warning"
+        actions={
+          resumeUnavailable ? (
+            <>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  writeStoredAttempt(null);
+                  setResumeUnavailable(false);
+                  setStageSyncError(null);
+                  startNewSession(candidateName);
+                  void startServerSession();
+                }}
+              >
+                {tr('Начать новую попытку', 'Start a new attempt')}
+              </Button>
+              <Link
+                href="/dashboard"
+                className="rounded-xl border border-neutral-700 px-4 py-2 text-xs font-bold text-neutral-300 hover:border-neutral-500"
+              >
+                {tr('В кабинет', 'Dashboard')}
+              </Link>
+            </>
+          ) : undefined
+        }
       />
     );
   }

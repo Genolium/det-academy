@@ -131,6 +131,9 @@ type LimitRepository interface {
 	// the counter already reached limit it is not incremented and used is the
 	// stored value. A limit <= 0 means unlimited.
 	ConsumeDaily(ctx context.Context, scope, subject string, windowStart time.Time, limit int) (used int, allowed bool, err error)
+	// RefundDaily returns one consumed slot after a request was rejected before
+	// it produced a result. It never goes below zero.
+	RefundDaily(ctx context.Context, scope, subject string, windowStart time.Time) error
 	// PurgeDailyBefore removes counters whose window started before the given
 	// day. It is called opportunistically so the table does not grow forever.
 	PurgeDailyBefore(ctx context.Context, before time.Time) error

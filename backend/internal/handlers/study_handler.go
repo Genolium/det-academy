@@ -426,10 +426,17 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 		RespondError(w, http.StatusNotFound, "practice assignment not found or already submitted")
 		return
 	}
+	limitConsumed := false
 	if service.IsSpeakingQuestionType(asgn.QuestionType) {
 		if !CheckDailyLimit(w, r, h.limits, service.LimitScopeSpeaking) {
 			return
 		}
+		limitConsumed = true
+		defer func() {
+			if limitConsumed {
+				h.limits.Refund(r.Context(), service.LimitScopeSpeaking, RequestIP(r), RequestDeviceHash(r))
+			}
+		}()
 	}
 
 	attempt, err := h.studyService.RecordPracticeAttempt(
@@ -447,6 +454,7 @@ func (h *StudyHandler) RecordPracticeAttempt(w http.ResponseWriter, r *http.Requ
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	limitConsumed = false
 	RespondJSON(w, http.StatusOK, attempt)
 }
 

@@ -2877,6 +2877,20 @@ func (r *limitMemoryRepo) ConsumeDaily(ctx context.Context, scope, subject strin
 	return used + 1, true, nil
 }
 
+func (r *limitMemoryRepo) RefundDaily(ctx context.Context, scope, subject string, windowStart time.Time) error {
+	if scope == "" || subject == "" {
+		return nil
+	}
+	day := windowStart.UTC().Format("2006-01-02")
+	key := limitKey(scope, subject, day)
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	if used := r.s.dailyLimits[key]; used > 0 {
+		r.s.dailyLimits[key] = used - 1
+	}
+	return nil
+}
+
 func (r *limitMemoryRepo) ConsumeWindow(ctx context.Context, bucket, subject string, windowStart time.Time, limit int) (int, bool, error) {
 	if limit <= 0 || bucket == "" || subject == "" {
 		return 0, true, nil
