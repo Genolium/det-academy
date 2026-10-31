@@ -81,19 +81,23 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
   }, [handleChoice]);
 
   useEffect(() => {
-    const limit = currentItem?.timeLimitSec || 5;
+    if (!currentItem) return;
+    const limit = currentItem.timeLimitSec || 5;
+    const deadline = Date.now() + limit * 1000;
+    setTimeLeft(limit);
+    isHandlingAnswer.current = false;
+
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 0.1) {
-          handleChoice(false); // timeout is a skipped answer, not a free pass
-          return limit;
-        }
-        return Math.max(0, parseFloat((prev - 0.1).toFixed(1)));
-      });
-    }, 100);
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        handleChoice(false); // timeout is a skipped answer, not a free pass
+      }
+    }, 250);
 
     return () => clearInterval(interval);
-  }, [currentItem?.timeLimitSec, handleChoice]);
+  }, [currentItem?.id, currentItem?.timeLimitSec, handleChoice]);
 
   if (pool.length === 0) {
     return (

@@ -82,9 +82,12 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string, oauthR
 	if appleJWKSURL == "" {
 		appleJWKSURL = "https://appleid.apple.com/auth/keys"
 	}
-	env := os.Getenv("ENV")
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("ENV")))
 	if env == "" {
-		env = os.Getenv("NODE_ENV")
+		env = strings.ToLower(strings.TrimSpace(os.Getenv("NODE_ENV")))
+	}
+	if env == "prod" {
+		env = "production"
 	}
 	mailSender := email.NewFromEnv()
 	requireEmailVerification := os.Getenv("REQUIRE_EMAIL_VERIFICATION") == "true"
@@ -1470,6 +1473,15 @@ func (s *AuthService) IssueRefreshToken(ctx context.Context, userID string) (str
 	return raw, nil
 }
 
+// RevokeRefreshToken invalidates a refresh token even when the caller has no
+// valid access token (for example an expired tab calling logout).
+func (s *AuthService) RevokeRefreshToken(ctx context.Context, rawToken string) error {
+	if s.refreshRepo == nil || strings.TrimSpace(rawToken) == "" {
+		return nil
+	}
+	return s.refreshRepo.Revoke(ctx, hashState(strings.TrimSpace(rawToken)))
+}
+
 func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*models.User, string, string, error) {
 	if s.refreshRepo == nil || strings.TrimSpace(rawToken) == "" {
 		return nil, "", "", errors.New("refresh token is invalid")
@@ -1493,6 +1505,9 @@ func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*mod
 	user, err := s.userRepo.GetByID(ctx, stored.UserID)
 	if err != nil {
 		return nil, "", "", errors.New("user not found")
+	}
+	if s.requireEmailVerification && !user.EmailVerified {
+		return nil, "", "", ErrEmailNotVerified
 	}
 	access, err := s.GenerateToken(user)
 	if err != nil {

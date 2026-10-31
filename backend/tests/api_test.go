@@ -212,6 +212,27 @@ func TestHealthCheck(t *testing.T) {
 	}
 }
 
+func isSpeakingStageForTest(stage string) bool {
+	switch stage {
+	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+		return true
+	default:
+		return false
+	}
+}
+
+func submitStageAnswer(t *testing.T, r http.Handler, token, sessionID, stage, questionID, payload string) {
+	t.Helper()
+	if isSpeakingStageForTest(stage) {
+		status, body := uploadIntegrityAudio(t, r, token, sessionID, questionID)
+		if status != http.StatusCreated {
+			t.Fatalf("failed to upload speaking answer for %s: %d %s", questionID, status, body)
+		}
+		return
+	}
+	submitTestAnswer(t, r, token, sessionID, questionID, payload)
+}
+
 func submitTestAnswer(t *testing.T, r http.Handler, token, sessionID, questionID string, payload string) {
 	t.Helper()
 	body, _ := json.Marshal(models.SubmitResponseRequest{
@@ -527,7 +548,7 @@ func TestTestSessionLifecycle(t *testing.T) {
 			t.Fatalf("no assigned questions for stage %s", stage)
 		}
 		_, payload := stageAnswer(stage)
-		submitTestAnswer(t, r, token, sessionID, ids[0], payload)
+		submitStageAnswer(t, r, token, sessionID, stage, ids[0], payload)
 		completeCurrentStage(t, r, token, sessionID, stage)
 	}
 
@@ -1943,7 +1964,7 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 			t.Fatalf("no assigned questions for stage %s", stage)
 		}
 		_, answerPayload := stageAnswer(stage)
-		submitTestAnswer(t, r, token, sessionID, ids[0], answerPayload)
+		submitStageAnswer(t, r, token, sessionID, stage, ids[0], answerPayload)
 		completeCurrentStage(t, r, token, sessionID, stage)
 		_ = stageNum
 	}

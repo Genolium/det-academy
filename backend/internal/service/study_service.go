@@ -168,7 +168,7 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 
 	// Theory progress against the actual published lesson slugs.
 	allLessonSlugs := []string{
-		"start-here", "rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
+		"rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
 		"listen-and-select", "fill-in-the-blanks", "read-and-complete",
 		"listen-and-type", "read-aloud", "interactive-reading",
 		"interactive-listening", "write-about-photo", "interactive-writing",

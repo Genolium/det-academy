@@ -979,12 +979,7 @@ class ApiClient {
       credentials: 'include',
     });
     if (!res.ok) {
-      return {
-        completedLessons: [],
-        totalLessons: 12,
-        progressPercent: 0,
-        isAllCompleted: false,
-      };
+      throw new ApiError('Failed to load theory progress', res.status);
     }
     return res.json();
   }

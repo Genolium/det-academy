@@ -70,11 +70,18 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
     sound.speakEnglish(currentItem.audioSentence, () => setIsPlayingAudio(false));
   }, [currentItem, isPlayingAudio, playCount]);
 
+  const playAudioRef = useRef(playAudio);
   useEffect(() => {
-    if (!currentItem) return;
-    const autoPlay = setTimeout(() => playAudio(), 1000);
+    playAudioRef.current = playAudio;
+  }, [playAudio]);
+
+  const autoPlayedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentItem || autoPlayedRef.current === currentItem.id) return;
+    autoPlayedRef.current = currentItem.id;
+    const autoPlay = setTimeout(() => playAudioRef.current(), 1000);
     return () => clearTimeout(autoPlay);
-  }, [currentItem, playAudio]);
+  }, [currentItem?.id]);
 
   const handleSubmit = useCallback(() => {
     if (isSubmittedRef.current || !currentItem) return;

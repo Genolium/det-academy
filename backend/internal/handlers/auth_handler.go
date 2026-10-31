@@ -208,6 +208,11 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if userID := GetUserIDFromContext(r.Context()); userID != "" {
 		_ = h.authService.RevokeUserTokens(r.Context(), userID)
 	}
+	if cookie, err := r.Cookie("det_refresh"); err == nil && cookie.Value != "" {
+		// Revoke the refresh token even when the access token has already
+		// expired: the browser cookie alone must not leave a live session.
+		_ = h.authService.RevokeRefreshToken(r.Context(), cookie.Value)
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "det_token",
 		Value:    "",
@@ -215,6 +220,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookie,
 	})
 	http.SetCookie(w, &http.Cookie{
 		Name:     "det_refresh",

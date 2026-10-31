@@ -23,12 +23,15 @@ var ErrQuestionAlreadyAnswered = errors.New("question has already been answered"
 var ErrStageAlreadyCompleted = errors.New("stage has already been completed")
 
 var (
-	ErrStageDeadlineExceeded = errors.New("stage deadline exceeded: audio was not accepted")
-	ErrItemDeadlineExceeded  = errors.New("item deadline exceeded: audio was not accepted")
-	ErrQuestionNotIssued     = errors.New("question was not issued for this attempt")
-	ErrWrongStage            = errors.New("question belongs to another stage")
-	ErrSessionCompleted      = errors.New("session is already completed and cannot be modified")
-	ErrAudioNotSpeaking      = errors.New("audio responses are only accepted for speaking questions")
+	ErrStageDeadlineExceeded  = errors.New("stage deadline exceeded: audio was not accepted")
+	ErrItemDeadlineExceeded   = errors.New("item deadline exceeded: audio was not accepted")
+	ErrQuestionNotIssued      = errors.New("question was not issued for this attempt")
+	ErrWrongStage             = errors.New("question belongs to another stage")
+	ErrSessionCompleted       = errors.New("session is already completed and cannot be modified")
+	ErrAudioNotSpeaking       = errors.New("audio responses are only accepted for speaking questions")
+	ErrSpeakingRequiresAudio  = errors.New("speaking answers must be uploaded as audio")
+	ErrAnswerDeadlineExceeded = errors.New("stage deadline exceeded: answer was not accepted")
+	ErrAnswerItemDeadline     = errors.New("item deadline exceeded: answer was not accepted")
 )
 
 // Audio is recorded before it is uploaded. A slow mobile connection can spend
@@ -712,7 +715,7 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 		return false, 0, errors.New("access denied: session does not belong to user")
 	}
 	if session.Status == "COMPLETED" || session.StageName == "COMPLETED" {
-		return false, 0, errors.New("session is already completed and cannot be modified")
+		return false, 0, ErrSessionCompleted
 	}
 	// The server owns time. A short grace period absorbs network latency, but
 	// a background tab or a changed client clock cannot extend the stage.
@@ -720,21 +723,28 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 		s.recordEvent(ctx, session, "ANSWER_REJECTED_DEADLINE", req.QuestionID, map[string]interface{}{
 			"deadlineAt": session.DeadlineAt,
 		})
-		return false, 0, errors.New("stage deadline exceeded: answer was not accepted")
+		return false, 0, ErrAnswerDeadlineExceeded
 	}
 
 	assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, req.QuestionID)
 	if err != nil {
-		return false, 0, errors.New("question was not issued for this attempt")
+		return false, 0, ErrQuestionNotIssued
 	}
 	if assignment.StageName != session.StageName {
-		return false, 0, errors.New("question belongs to another stage")
+		return false, 0, ErrWrongStage
 	}
 	if time.Now().After(assignment.DeadlineAt.Add(10 * time.Second)) {
 		s.recordEvent(ctx, session, "ANSWER_REJECTED_DEADLINE", req.QuestionID, map[string]interface{}{
 			"itemDeadlineAt": assignment.DeadlineAt,
 		})
-		return false, 0, errors.New("item deadline exceeded: answer was not accepted")
+		return false, 0, ErrAnswerItemDeadline
+	}
+
+	// Speaking answers must go through the audio endpoint so the score is
+	// derived from server-stored audio, not a client-supplied transcript.
+	question, qErr := s.questionRepo.GetByID(ctx, req.QuestionID)
+	if qErr == nil && question != nil && isSpeakingQuestionType(question.Type) {
+		return false, 0, ErrSpeakingRequiresAudio
 	}
 
 	// First write wins. The client may retry a response after a lost network

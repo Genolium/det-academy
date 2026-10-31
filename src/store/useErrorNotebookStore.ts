@@ -281,6 +281,7 @@ export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => ({
 
     try {
       const resp = await api.getUserErrors();
+      if (get().activeUserId !== targetUserId) return;
       if (resp && Array.isArray(resp.errors)) {
         const serverItems = resp.errors.map(mapServerItem);
         // Keep still-unsaved local items next to the server truth.

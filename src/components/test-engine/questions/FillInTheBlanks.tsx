@@ -99,16 +99,19 @@ export const FillInTheBlanks: React.FC<FillInTheBlanksProps> = ({ onComplete }) 
 
   useEffect(() => {
     if (!currentItem) return;
+    const limit = currentItem.timeLimitSec || 20;
+    const deadline = Date.now() + limit * 1000;
+    setTimeLeft(limit);
+    isSubmittingRef.current = false;
+
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        handleSubmit();
+      }
+    }, 250);
     return () => clearInterval(timer);
   }, [currentItem, handleSubmit]);
 

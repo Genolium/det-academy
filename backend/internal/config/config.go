@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -14,12 +15,22 @@ type Config struct {
 }
 
 func Load() *Config {
-	env := os.Getenv("ENV")
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("ENV")))
 	if env == "" {
-		env = os.Getenv("NODE_ENV")
+		env = strings.ToLower(strings.TrimSpace(os.Getenv("NODE_ENV")))
 	}
 	if env == "" {
 		env = "development"
+	}
+	switch env {
+	case "production", "prod":
+		env = "production"
+	case "development", "dev", "local":
+		env = "development"
+	case "test":
+		env = "test"
+	default:
+		log.Fatalf("[Config FATAL] unknown ENV %q; use development, test or production", env)
 	}
 
 	port := os.Getenv("PORT")

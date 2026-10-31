@@ -160,15 +160,22 @@ func (h *TestHandler) RecordResponse(w http.ResponseWriter, r *http.Request) {
 
 	_, _, err := h.catService.RecordQuestionResponse(r.Context(), sessionID, userID, req)
 	if err != nil {
-		if strings.Contains(err.Error(), "access denied") {
+		switch {
+		case errors.Is(err, service.ErrSpeakingRequiresAudio):
+			RespondErrorCode(w, http.StatusConflict, "speaking_requires_audio", err.Error())
+		case errors.Is(err, service.ErrQuestionAlreadyAnswered):
+			RespondErrorCode(w, http.StatusConflict, "already_answered", err.Error())
+		case errors.Is(err, service.ErrAnswerDeadlineExceeded), errors.Is(err, service.ErrAnswerItemDeadline):
+			RespondErrorCode(w, http.StatusGone, "deadline_exceeded", err.Error())
+		case errors.Is(err, service.ErrQuestionNotIssued), errors.Is(err, service.ErrWrongStage):
+			RespondErrorCode(w, http.StatusConflict, "question_not_available", err.Error())
+		case errors.Is(err, service.ErrSessionCompleted):
+			RespondErrorCode(w, http.StatusConflict, "session_completed", err.Error())
+		case strings.Contains(err.Error(), "access denied"):
 			RespondError(w, http.StatusForbidden, err.Error())
-			return
+		default:
+			RespondErrorCode(w, http.StatusInternalServerError, "response_save_failed", "Failed to save the answer")
 		}
-		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {
-			RespondError(w, http.StatusConflict, err.Error())
-			return
-		}
-		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

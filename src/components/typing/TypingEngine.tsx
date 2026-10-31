@@ -132,19 +132,20 @@ export const TypingEngine: React.FC = () => {
   ) || 0;
 
   const accuracy = totalKeystrokes > 0 ? Math.round((correctKeystrokes / totalKeystrokes) * 100) : 100;
+  const finishStatsRef = useRef<{ wpm: number; accuracy: number; durationSec: number } | null>(null);
 
   useEffect(() => {
-    if (isFinished && finalWpm > 0) {
-      setBestTypingWpm(finalWpm);
-      void api.recordTypingAttempt({
-        wpm: finalWpm,
-        accuracy,
-        mode,
-        durationSec: mode === 'time' ? timeLimit : Math.round(getElapsedMinutes() * 60),
-      }).catch(() => {
-        // Fallback gracefully for guests/offline mode
-      });
-    }
+    if (!isFinished || finalWpm <= 0 || finishStatsRef.current) return;
+    const stats = {
+      wpm: finalWpm,
+      accuracy,
+      durationSec: mode === 'time' ? timeLimit : Math.round(getElapsedMinutes() * 60),
+    };
+    finishStatsRef.current = stats;
+    setBestTypingWpm(stats.wpm);
+    void api.recordTypingAttempt({ ...stats, mode }).catch(() => {
+      // Fallback gracefully for guests/offline mode
+    });
   }, [isFinished, finalWpm, accuracy, mode, timeLimit, setBestTypingWpm]);
 
   // Handle typing input

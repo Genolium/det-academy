@@ -299,7 +299,7 @@ export const TestController: React.FC = () => {
 
   const currentStageIndex = STAGES_SEQUENCE.indexOf(currentStage);
 
-  const handleStageAdvance = async (force = false) => {
+  const handleStageAdvance = useCallback(async (force = false) => {
     if (advanceInFlightRef.current) return;
     const sessionId = useTestStore.getState().backendSessionId;
     if (!sessionId) {
@@ -386,7 +386,7 @@ export const TestController: React.FC = () => {
     } finally {
       advanceInFlightRef.current = false;
     }
-  };
+  }, [currentStage, currentStageIndex, finalizeAttempt, resumeAttempt, tr]);
 
   const handleSkipStage = () => {
     if (advanceInFlightRef.current) return;

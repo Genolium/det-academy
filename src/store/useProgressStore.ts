@@ -72,7 +72,7 @@ interface ProgressState {
   getLeague: () => LeagueInfo;
 }
 
-export const TOTAL_LESSONS = 17;
+export const TOTAL_LESSONS = 16;
 
 const getScopedKey = (key: string, userId?: string | null): string => {
   if (!userId) return `det_guest_${key}`;
@@ -369,7 +369,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     // 2. Sync theory progress from backend (if logged in)
     try {
       const resp = await api.getTheoryProgress();
-      if (resp && resp.completedLessons) {
+      if (get().userId === activeUserId && resp && resp.completedLessons) {
         set({ completedLessons: resp.completedLessons });
         if (typeof window !== 'undefined') {
           localStorage.setItem(
@@ -394,7 +394,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     // 3. Sync real test sessions from backend for authenticated user
     try {
       const testResp = await api.getMyTestSessions();
-      if (testResp && Array.isArray(testResp.sessions)) {
+      if (get().userId === activeUserId && testResp && Array.isArray(testResp.sessions)) {
         const completedSessions = testResp.sessions.filter(
           (s: BackendTestSession) => s.status === 'COMPLETED' && s.overallScore && s.overallScore > 0
         );
@@ -489,16 +489,16 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   setBestTypingWpm: (wpm) => {
-    set((state) => {
-      const newBest = Math.max(state.bestTypingWpm, wpm);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          getScopedKey('best_wpm', state.userId),
-          newBest.toString()
-        );
-      }
-      return { bestTypingWpm: newBest };
-    });
+    const state = get();
+    const newBest = Math.max(state.bestTypingWpm, wpm);
+    if (newBest === state.bestTypingWpm) return;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        getScopedKey('best_wpm', state.userId),
+        newBest.toString()
+      );
+    }
+    set({ bestTypingWpm: newBest });
     get().recordDailyActivity();
   },
 
