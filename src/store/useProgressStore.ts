@@ -402,13 +402,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         if (completedSessions.length > 0) {
           const mappedResults: TestResult[] = completedSessions.map((s: BackendTestSession) => ({
             id: s.id,
-            date: s.completedAt
-              ? new Date(s.completedAt).toLocaleDateString('ru-RU', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })
-              : 'Недавно',
+            date: s.completedAt || new Date().toISOString(),
             overallScore: s.overallScore || 0,
             reading: s.readingScore || 0,
             listening: s.listeningScore || 0,

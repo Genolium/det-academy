@@ -1022,6 +1022,11 @@ func (s *AuthService) OAuthLogin(ctx context.Context, req models.OAuthLoginReque
 		if !trustedEmail {
 			return nil, "", errors.New("email from this provider is not verified; sign in to your existing account to link it")
 		}
+		if !existingUser.EmailVerified {
+			// Do not attach a provider identity to an unverified password
+			// account: an attacker could pre-register the victim's email.
+			return nil, "", errors.New("verify your email before linking a social provider")
+		}
 		upgradeUserIfPlaceholder(existingUser)
 
 		// Ensure social account link is stored

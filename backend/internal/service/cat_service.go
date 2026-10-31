@@ -749,11 +749,13 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 
 	// First write wins. The client may retry a response after a lost network
 	// acknowledgement, but it must never be able to replace the graded answer.
-	if existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID); existingErr == nil {
-		for _, existing := range existingResponses {
-			if existing.QuestionID == req.QuestionID {
-				return false, 0, ErrQuestionAlreadyAnswered
-			}
+	existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID)
+	if existingErr != nil {
+		return false, 0, fmt.Errorf("check existing response: %w", existingErr)
+	}
+	for _, existing := range existingResponses {
+		if existing.QuestionID == req.QuestionID {
+			return false, 0, ErrQuestionAlreadyAnswered
 		}
 	}
 
@@ -1236,11 +1238,13 @@ func (s *CATService) recordAudioResponseLocked(
 	}
 	// First write wins. Check this before deadlines: a retry after a lost
 	// response must be idempotent even if the stage has already advanced.
-	if existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID); existingErr == nil {
-		for _, existing := range existingResponses {
-			if existing.QuestionID == questionID {
-				return nil, ErrQuestionAlreadyAnswered
-			}
+	existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID)
+	if existingErr != nil {
+		return nil, fmt.Errorf("check existing response: %w", existingErr)
+	}
+	for _, existing := range existingResponses {
+		if existing.QuestionID == questionID {
+			return nil, ErrQuestionAlreadyAnswered
 		}
 	}
 	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(audioUploadGrace)) {

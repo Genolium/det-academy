@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/seo/site';
+import { JsonLd } from '@/components/seo/JsonLd';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ''
@@ -107,13 +108,7 @@ export default async function VerifyLayout({ children, params }: VerifyLayoutPro
 
   return (
     <>
-      {jsonLd ? (
-        <script
-          type="application/ld+json"
-          // JSON.stringify escapes the values; no user HTML is injected.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      ) : null}
+      {jsonLd ? <JsonLd data={jsonLd as Record<string, unknown>} /> : null}
       {children}
     </>
   );
