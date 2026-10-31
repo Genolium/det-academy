@@ -634,6 +634,7 @@ export const TestController: React.FC = () => {
           <button
             type="button"
             onClick={handleSkipStage}
+            aria-label={tr('Пропустить этап', 'Skip stage')}
             className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1 text-xs font-bold text-neutral-400 transition-colors hover:border-neutral-500 hover:text-neutral-200"
           >
             <SkipForward className="w-3.5 h-3.5" />
@@ -644,7 +645,7 @@ export const TestController: React.FC = () => {
 
       {stageSyncError && (
         <div className="max-w-4xl mx-auto w-full px-4 mt-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200" role="status" aria-live="polite">
             <span>{stageSyncError}</span>
             <button
               onClick={retryLastAction}

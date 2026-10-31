@@ -653,10 +653,10 @@ func (s *StudyService) RecallError(ctx context.Context, userID, errorID, answer 
 		return nil, errors.New("error item not found")
 	}
 
-	cleanAnswer := strings.ToLower(strings.TrimSpace(answer))
-	cleanCorrect := strings.ToLower(strings.TrimSpace(item.CorrectAnswer))
+	cleanAnswer := normalizeRecallAnswer(answer)
+	cleanCorrect := normalizeRecallAnswer(item.CorrectAnswer)
 
-	isCorrect := (cleanAnswer == cleanCorrect)
+	isCorrect := cleanAnswer != "" && cleanAnswer == cleanCorrect
 	now := time.Now()
 	item.LastReviewedAt = &now
 	item.AttemptsCount++
@@ -1588,14 +1588,14 @@ func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, assign
 			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attempt.ID, 15)
 		} else {
 			_, _ = s.AwardXP(ctx, userID, "practice", "practice:"+attempt.ID, 5)
-			correctText := "Check correct solution"
-			if len(asgn.CorrectAnswers) > 0 {
-				correctText = string(asgn.CorrectAnswers)
+			correctText := humanizeAnswer(asgn.QuestionType, asgn.CorrectAnswers)
+			if correctText == "" {
+				correctText = "Check correct solution"
 			}
 			_, _ = s.SaveError(ctx, userID, models.SaveErrorRequest{
 				QuestionType:  asgn.QuestionType,
 				Prompt:        promptText,
-				UserAnswer:    string(userResponse),
+				UserAnswer:    humanizeAnswer(asgn.QuestionType, userResponse),
 				CorrectAnswer: correctText,
 				Explanation:   "Practice drill error",
 			})
@@ -1611,6 +1611,53 @@ func (s *StudyService) RecordPracticeAttempt(ctx context.Context, userID, assign
 	})
 
 	return attempt, nil
+}
+
+// humanizeAnswer turns the server's structured answer key into something a
+// learner can type and compare in the error notebook.
+func humanizeAnswer(questionType string, raw json.RawMessage) string {
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" || trimmed == "{}" {
+		return ""
+	}
+	var generic map[string]interface{}
+	if err := json.Unmarshal(raw, &generic); err == nil {
+		if questionType == "READ_SELECT" {
+			if value, ok := generic["isReal"].(bool); ok {
+				if value {
+					return "yes"
+				}
+				return "no"
+			}
+		}
+		for _, key := range []string{"sentence", "expectedSentence", "text", "word", "answer"} {
+			if value, ok := generic[key].(string); ok && strings.TrimSpace(value) != "" {
+				return strings.TrimSpace(value)
+			}
+		}
+		if answers, ok := generic["answers"].([]interface{}); ok && len(answers) > 0 {
+			parts := make([]string, 0, len(answers))
+			for _, item := range answers {
+				if text, ok := item.(string); ok && strings.TrimSpace(text) != "" {
+					parts = append(parts, strings.TrimSpace(text))
+				}
+			}
+			if len(parts) > 0 {
+				return strings.Join(parts, ", ")
+			}
+		}
+	}
+	var plain string
+	if err := json.Unmarshal(raw, &plain); err == nil {
+		return strings.TrimSpace(plain)
+	}
+	return strings.Trim(trimmed, "\\\"")
+}
+
+func normalizeRecallAnswer(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	normalized = strings.NewReplacer(".", "", ",", "", "!", "", "?", "", ";", "", ":", "", "\"", "", "'", "").Replace(normalized)
+	return strings.Join(strings.Fields(normalized), " ")
 }
 
 // RecordTypingAttempt saves a student typing trainer test and updates best WPM.

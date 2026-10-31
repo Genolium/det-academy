@@ -630,7 +630,8 @@ func (r *SessionRepo) GetAllAssignedQuestions(ctx context.Context, sessionID str
 
 func (r *SessionRepo) GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error) {
 	query := `
-		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at
+		SELECT session_id, question_id, stage_name, position, issued_at, deadline_at,
+		       COALESCE(question_snapshot, '{}'::jsonb)
 		FROM session_questions
 		WHERE session_id = $1 AND question_id = $2
 	`
@@ -638,6 +639,7 @@ func (r *SessionRepo) GetAssignedQuestion(ctx context.Context, sessionID, questi
 	if err := r.db.QueryRowContext(ctx, query, sessionID, questionID).Scan(
 		&assignment.SessionID, &assignment.QuestionID, &assignment.StageName,
 		&assignment.Position, &assignment.IssuedAt, &assignment.DeadlineAt,
+		&assignment.QuestionSnapshot,
 	); err != nil {
 		return nil, err
 	}

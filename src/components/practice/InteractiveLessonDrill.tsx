@@ -824,7 +824,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
 
         {drillCompleted && (
           <PillBadge variant="mint">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-[#0C2418]" /> Практика сдана!
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-[#0C2418]" />{' '}
+            {serverGradedBadge ? 'Практика сдана!' : 'Локальная тренировка завершена'}
           </PillBadge>
         )}
       </div>
@@ -1678,8 +1679,8 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                   <p className="text-red-700 font-bold">⚠️ Обнаружен бессмысленный набор символов.</p>
                 ) : (
                   <div>
-                    <span className="font-bold text-emerald-800 block mb-1">✓ Описание проверено:</span>
-                    <p className="text-neutral-700">Объем: {photoWriteAnalysis.wordCount} слов. Использован академический стиль.</p>
+                    <span className="font-bold text-emerald-800 block mb-1">✓ Локальная проверка текста:</span>
+                    <p className="text-neutral-700">Объем: {photoWriteAnalysis.wordCount} слов. Это не оценка DET и не сохраняется на сервере.</p>
                   </div>
                 )}
               </div>
@@ -1687,7 +1688,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
 
             {photoShowModel && (
               <div className="mt-4 p-4 bg-[#E3F8ED] border border-[#0C2418]/20 rounded-2xl text-xs text-[#0C2418]">
-                <span className="font-bold block mb-1">Эталонное описание (130+ баллов):</span>
+                <span className="font-bold block mb-1">Пример ответа (не официальная оценка):</span>
                 <p>
                   &ldquo;This photograph portrays a professional engaged in detailed analytical work inside a modern facility. In the foreground, specialized instruments and equipment are systematically arranged, reflecting a high level of operational precision.&rdquo;
                 </p>

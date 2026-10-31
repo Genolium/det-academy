@@ -54,7 +54,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
   const { recordSpeakingResult, serverQuestions, backendSessionId } = useTestStore();
   const audioRecorder = useAudioRecorder();
 
-  const serverQ = serverQuestions.find((q) => q.type === 'SPEAKING_SAMPLE');
+  const serverQ = isStandaloneDrill ? undefined : serverQuestions.find((q) => q.type === 'SPEAKING_SAMPLE');
   const payload = (serverQ?.contentPayload || {}) as { prompt?: string };
   const promptText =
     payload.prompt ||
@@ -130,7 +130,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
         setIsSubmitting(false);
         isCompletedRef.current = false;
         if (isAudioAlreadyStored(err)) {
-          recordSpeakingResult(spokenText || 'Записан Speaking Sample');
+          if (!isStandaloneDrill) recordSpeakingResult(spokenText || 'Записан Speaking Sample');
           onComplete();
           return;
         }
@@ -141,15 +141,17 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
 
     }
 
-    recordSpeakingResult(spokenText || (recordedBlob ? 'Записан Speaking Sample' : ''));
+    if (!isStandaloneDrill) recordSpeakingResult(spokenText || (recordedBlob ? 'Записан Speaking Sample' : ''));
     onComplete();
   };
 
   const handleContinueWithoutAudio = () => {
     if (isSubmitting) return;
-    recordSpeakingResult(
-      transcriptRef.current || 'Speaking Sample не сохранён: аудио не загружено'
-    );
+    if (!isStandaloneDrill) {
+      recordSpeakingResult(
+        transcriptRef.current || 'Speaking Sample не сохранён: аудио не загружено'
+      );
+    }
     onComplete();
   };
 

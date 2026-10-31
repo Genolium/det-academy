@@ -58,7 +58,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
   const audioRecorder = useAudioRecorder();
 
   // Find question payload if available from server
-  const serverQ = serverQuestions.find((q) => q.type === 'SPEAK_PHOTO');
+  const serverQ = isStandaloneDrill ? undefined : serverQuestions.find((q) => q.type === 'SPEAK_PHOTO');
   const payload = (serverQ?.contentPayload || {}) as { imageUrl?: string; prompt?: string };
   const promptText = payload.prompt || 'Speak for at least 90 seconds about the scene shown below. Describe the setting, what the subjects are doing, and what might happen next.';
   // Read only the task, not the coaching hints hidden behind the button.
@@ -160,7 +160,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
           if (!isStandaloneDrill && backendSessionId && serverQ) {
             await deleteAudioDraft(backendSessionId, serverQ.id);
           }
-          recordSpeakingResult(spokenText || 'Записан устный ответ (аудио)');
+          if (!isStandaloneDrill) recordSpeakingResult(spokenText || 'Записан устный ответ (аудио)');
           onComplete();
           return;
         }
@@ -173,7 +173,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
     if (!isStandaloneDrill && backendSessionId && serverQ) {
       await deleteAudioDraft(backendSessionId, serverQ.id);
     }
-    recordSpeakingResult(spokenText || (recordedBlob ? 'Записан устный ответ (аудио)' : ''));
+    if (!isStandaloneDrill) recordSpeakingResult(spokenText || (recordedBlob ? 'Записан устный ответ (аудио)' : ''));
     onComplete();
   };
 
@@ -182,9 +182,11 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
     if (!isStandaloneDrill && backendSessionId && serverQ) {
       void deleteAudioDraft(backendSessionId, serverQ.id);
     }
-    recordSpeakingResult(
-      transcriptRef.current || 'Устный ответ не сохранён: аудио не загружено'
-    );
+    if (!isStandaloneDrill) {
+      recordSpeakingResult(
+        transcriptRef.current || 'Устный ответ не сохранён: аудио не загружено'
+      );
+    }
     onComplete();
   };
 

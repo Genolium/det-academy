@@ -10,7 +10,6 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { translations } from '@/lib/translations';
 import { InteractiveLessonDrill } from '@/components/practice/InteractiveLessonDrill';
 import { InteractiveTheoryExample } from '@/components/theory/InteractiveTheoryExample';
@@ -140,12 +139,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
   const nextLesson = currentIndex < lessonsData.length - 1 ? lessonsData[currentIndex + 1] : null;
 
   return (
-    <AuthRequiredGuard
-      title={t.guardTitle}
-      subtitle={t.guardSubtitle}
-      badge="DET Lesson Guide"
-    >
-      <div className="min-h-screen py-10 ambient-glow">
+    <div className="min-h-screen py-10 ambient-glow">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           {/* Back navigation */}
           <div className="flex items-center justify-between mb-8">
@@ -481,7 +475,6 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
             </div>
           </div>
         </div>
-      </div>
-    </AuthRequiredGuard>
+    </div>
   );
 }
