@@ -718,6 +718,8 @@ export interface PracticeAttemptResult {
 }
 
 class ApiClient {
+  private refreshPromise: Promise<AuthResponse> | null = null;
+
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -733,15 +735,42 @@ class ApiClient {
     return headers;
   }
 
+  /**
+   * One transport for authenticated requests. A 401 triggers exactly one
+   * single-flight refresh; parallel callers share it instead of revoking the
+   * whole refresh-token family.
+   */
+  private async authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+    const send = () => {
+      const headers: Record<string, string> = {
+        ...this.getHeaders(),
+        ...((init.headers as Record<string, string> | undefined) || {}),
+      };
+      if (init.body instanceof FormData) {
+        delete headers['Content-Type'];
+      }
+      return fetch(url, { ...init, headers, credentials: 'include' });
+    };
+
+    let res = await send();
+    if (res.status === 401) {
+      try {
+        await this.refreshSession();
+      } catch {
+        return res;
+      }
+      res = await send();
+    }
+    return res;
+  }
+
   // --- Auth ---
 
   async register(params: { email: string; password: string; name: string; locale?: string }): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/register`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Registration failed');
@@ -755,12 +784,10 @@ class ApiClient {
   }
 
   async login(params: { email: string; password: string }): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Login failed');
@@ -778,12 +805,10 @@ class ApiClient {
     action?: 'login' | 'link';
     redirectUri: string;
   }): Promise<{ url: string; state: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth/start`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/oauth/start`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new ApiError(data.error || 'Не удалось начать OAuth-авторизацию', res.status);
@@ -803,12 +828,10 @@ class ApiClient {
     nonce?: string;
     state?: string;
   }): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/oauth`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'OAuth authentication failed');
@@ -822,12 +845,10 @@ class ApiClient {
   }
 
   async updateProfile(params: { name?: string; avatarUrl?: string }): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/profile`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Не удалось обновить профиль');
@@ -836,10 +857,7 @@ class ApiClient {
   }
 
   async getMe(): Promise<User> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/me`);
     if (!res.ok) {
       throw new ApiError('Not authenticated', res.status);
     }
@@ -847,29 +865,35 @@ class ApiClient {
   }
 
   async refreshSession(): Promise<AuthResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      throw new ApiError('Session refresh failed', res.status);
+    if (this.refreshPromise) return this.refreshPromise;
+    this.refreshPromise = (async () => {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        throw new ApiError('Session refresh failed', res.status);
+      }
+      const data: AuthResponse = await res.json();
+      if (!data?.token || !data?.user) {
+        throw new ApiError('Invalid authentication response', 500);
+      }
+      setAuthToken(data.token);
+      return data;
+    })();
+    try {
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
     }
-    const data: AuthResponse = await res.json();
-    if (!data?.token || !data?.user) {
-      throw new ApiError('Invalid authentication response', 500);
-    }
-    setAuthToken(data.token);
-    return data;
   }
 
   async verifyEmail(token: string): Promise<{ status: string; user: User }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ token }),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new ApiError(data.error || 'Ссылка подтверждения недействительна', res.status);
@@ -899,10 +923,7 @@ class ApiClient {
   }
 
   async getLinkedProviders(): Promise<LinkedProvidersResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/providers`);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Не удалось загрузить привязанные сервисы');
@@ -922,12 +943,10 @@ class ApiClient {
     nonce?: string;
     state?: string;
   }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/providers/link`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Не удалось привязать аккаунт');
@@ -949,12 +968,10 @@ class ApiClient {
   }
 
   async setPassword(params: { oldPassword?: string; newPassword: string }): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/password`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/password`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'Не удалось обновить пароль');
@@ -965,19 +982,13 @@ class ApiClient {
   // --- Theory ---
 
   async getTheoryCatalog(): Promise<TheoryCatalogResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/theory/catalog`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/theory/catalog`);
     if (!res.ok) throw new ApiError('Failed to load theory catalog', res.status);
     return res.json();
   }
 
   async getTheoryProgress(): Promise<TheoryProgressResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/theory/progress`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/theory/progress`);
     if (!res.ok) {
       throw new ApiError('Failed to load theory progress', res.status);
     }
@@ -985,10 +996,8 @@ class ApiClient {
   }
 
   async toggleTheoryLesson(lessonSlug: string): Promise<TheoryProgressResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/theory/toggle`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/theory/toggle`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ lessonSlug }),
     });
     if (!res.ok) {
@@ -999,10 +1008,7 @@ class ApiClient {
   }
 
   async getMyTestSessions(): Promise<{ sessions: BackendTestSession[] }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/me`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/me`);
     if (!res.ok) {
       return { sessions: [] };
     }
@@ -1013,10 +1019,8 @@ class ApiClient {
     session: BackendTestSession;
     questions: BackendQuestion[];
   }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(params),
     });
     if (!res.ok) {
@@ -1035,32 +1039,18 @@ class ApiClient {
     rawScore: number;
     timeSpentSec: number;
   }): Promise<{ status: string }> {
-    const send = () =>
-      fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
     let res: Response;
     try {
-      res = await send();
-      if (res.status === 401) {
-        // A long mock can outlive the access token. Refresh once and retry the
-        // same queued answer instead of treating it as a permanent rejection.
-        let refreshed = false;
-        try {
-          await this.refreshSession();
-          refreshed = true;
-        } catch {}
-        if (refreshed) res = await send();
-      }
+      res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/respond`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
     } catch {
       throw new ApiError('Не удалось сохранить ответ на сервере', 0);
     }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new ApiError(data.error || 'Не удалось сохранить ответ на сервере', res.status);
+      throw new ApiError(data.error || 'Не удалось сохранить ответ на сервере', res.status, data.code);
     }
     const data = await res.json().catch(() => ({ status: 'recorded' }));
     return data as { status: string };
@@ -1072,10 +1062,8 @@ class ApiClient {
     totalQuestions: number;
     correctQuestions: number;
   }): Promise<{ session: BackendTestSession; nextQuestions?: BackendQuestion[] }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/stage-complete`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/stage-complete`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
@@ -1086,10 +1074,7 @@ class ApiClient {
   }
 
   async getTestSession(sessionId: string): Promise<SessionDetailsResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}`);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new ApiError(data.error || 'Failed to retrieve test session', res.status);
@@ -1107,10 +1092,8 @@ class ApiClient {
     writingScore?: number;
     speakingScore?: number;
   }): Promise<SessionCompleteResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/complete`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/complete`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(scores || {}),
     });
     if (!res.ok) {
@@ -1131,30 +1114,12 @@ class ApiClient {
     url: string;
     evaluation: EvaluationResult;
   }> {
-    const headers = this.getHeaders();
-    // Do not set Content-Type header manually for FormData so browser sets correct boundary
-    delete headers['Content-Type'];
-
-    const send = () =>
-      fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/audio`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: formData,
-      });
     let res: Response;
     try {
-      res = await send();
-      if (res.status === 401) {
-        // A long mock can outlive the access token. Refresh once instead of
-        // treating a valid recording as a permanent upload failure.
-        let refreshed = false;
-        try {
-          await this.refreshSession();
-          refreshed = true;
-        } catch {}
-        if (refreshed) res = await send();
-      }
+      res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/audio`, {
+        method: 'POST',
+        body: formData,
+      });
     } catch {
       throw new ApiError('Не удалось сохранить аудио на сервере', 0, 'network');
     }
@@ -1170,10 +1135,7 @@ class ApiClient {
   }
 
   async getSessionReview(sessionId: string): Promise<SessionReviewResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/review`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/review`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить разбор попытки', res.status);
     }
@@ -1181,10 +1143,7 @@ class ApiClient {
   }
 
   async getSessionEvaluations(sessionId: string): Promise<{ evaluations: EvaluationResult[] }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/evaluations`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/evaluations`);
     if (!res.ok) {
       return { evaluations: [] };
     }
@@ -1197,10 +1156,7 @@ class ApiClient {
 
 
   async getAdminAIUsage(days = 7): Promise<AIUsageSummary> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/admin/ai-usage?days=${days}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/admin/ai-usage?days=${days}`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить AI-расходы', res.status);
     }
@@ -1208,10 +1164,7 @@ class ApiClient {
   }
 
   async getPlacement(): Promise<PlacementResult> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/placement`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/placement`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить уровень', res.status);
     }
@@ -1219,10 +1172,7 @@ class ApiClient {
   }
 
   async getDailyLimits(): Promise<DailyLimits> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/limits`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/limits`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить дневные лимиты', res.status);
     }
@@ -1230,10 +1180,7 @@ class ApiClient {
   }
 
   async getXPProfile(): Promise<XPProfile> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/xp`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/xp`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить XP', res.status);
     }
@@ -1241,10 +1188,7 @@ class ApiClient {
   }
 
   async getCoachReport(sessionId: string): Promise<CoachReport> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/coach/${sessionId}`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить коучинг', res.status);
     }
@@ -1280,10 +1224,7 @@ class ApiClient {
   async getCertificate(id: string): Promise<BackendCertificate> {
     let res: Response;
     try {
-      res = await fetch(`${API_BASE_URL}/api/v1/certificates/${encodeURIComponent(id)}`, {
-        headers: this.getHeaders(),
-        credentials: 'include',
-      });
+      res = await this.authFetch(`${API_BASE_URL}/api/v1/certificates/${encodeURIComponent(id)}`);
     } catch {
       throw new ApiError('Не удалось связаться с реестром сертификатов', 0);
     }
@@ -1301,10 +1242,7 @@ class ApiClient {
   // --- Banners ---
 
   async getActiveBanners(placement: 'HEADER' | 'FOOTER'): Promise<AdBannerData[]> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/banners?placement=${placement}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/banners?placement=${placement}`);
     if (!res.ok) {
       return [];
     }
@@ -1330,10 +1268,7 @@ class ApiClient {
     if (params?.source && params.source !== 'all') query.set('source', params.source);
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.offset) query.set('offset', String(params.offset));
-    const res = await fetch(`${API_BASE_URL}/api/v1/vocabulary?${query.toString()}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/vocabulary?${query.toString()}`);
     if (!res.ok) {
       throw new ApiError('Не удалось загрузить словарь', res.status);
     }
@@ -1489,10 +1424,7 @@ class ApiClient {
   }
 
   async getAdminVocabulary(): Promise<{ entries: VocabularyEntry[]; total: number }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/admin/vocabulary`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/admin/vocabulary`);
     if (!res.ok) {
       throw new ApiError('Failed to load vocabulary admin list', res.status);
     }
@@ -1500,12 +1432,10 @@ class ApiClient {
   }
 
   async updateVocabularyStatus(id: string, status: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/admin/vocabulary/${encodeURIComponent(id)}/status`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/admin/vocabulary/${encodeURIComponent(id)}/status`, {
       method: 'PUT',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ status }),
-    });
+      });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new ApiError(data.error || 'Failed to update vocabulary status', res.status);
@@ -1612,50 +1542,37 @@ class ApiClient {
   }
 
   async getEmailPreferences(): Promise<{ digestEnabled: boolean }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/email-preferences`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/email-preferences`);
     if (!res.ok) throw new ApiError('Failed to load email preferences', res.status);
     return res.json();
   }
 
   async updateEmailPreferences(digestEnabled: boolean): Promise<{ digestEnabled: boolean }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/email-preferences`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/email-preferences`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ digestEnabled }),
-    });
+      });
     if (!res.ok) throw new ApiError('Failed to save email preferences', res.status);
     return res.json();
   }
 
   async getResearchConsent(): Promise<ResearchConsentResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/research-consent`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/research-consent`);
     if (!res.ok) throw new ApiError('Failed to load research consent', res.status);
     return res.json();
   }
 
   async updateResearchConsent(consent: boolean): Promise<ResearchConsentResponse> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/research-consent`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/research-consent`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ consent }),
-    });
+      });
     if (!res.ok) throw new ApiError('Failed to save research consent', res.status);
     return res.json();
   }
 
   async getAdaptivePractice(): Promise<AdaptivePractice> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/adaptive`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/practice/adaptive`);
     if (!res.ok) throw new ApiError('Failed to build adaptive practice', res.status);
     return res.json();
   }
@@ -1682,12 +1599,10 @@ class ApiClient {
     score?: number;
     timeSpentSec?: number;
   }): Promise<PracticeAttemptResult> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/practice/attempts`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/practice/attempts`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(data),
-    });
+      });
     if (!res.ok) {
       throw new ApiError('Failed to record practice attempt', res.status);
     }
@@ -1700,12 +1615,10 @@ class ApiClient {
     mode?: string;
     durationSec?: number;
   }): Promise<{ id: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/typing/attempts`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/typing/attempts`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify(data),
-    });
+      });
     if (!res.ok) {
       throw new ApiError('Failed to record typing attempt', res.status);
     }
@@ -1713,10 +1626,7 @@ class ApiClient {
   }
 
   async getTypingHistory(): Promise<{ bestWpm: number; attempts: Array<{ id: string; wpm: number; accuracy: number; createdAt: string }> }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/typing/history`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/typing/history`);
     if (!res.ok) {
       throw new ApiError('Failed to get typing history', res.status);
     }
@@ -1724,10 +1634,7 @@ class ApiClient {
   }
 
   async getSkillMastery(): Promise<Record<string, { skill: string; masteryScore: number; attemptsCount: number }>> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/mastery`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/mastery`);
     if (!res.ok) {
       throw new ApiError('Failed to get skill mastery', res.status);
     }
@@ -1757,10 +1664,7 @@ class ApiClient {
   }
 
   async getUserWeeklyReport(): Promise<WeeklyReport> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/report/weekly`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/report/weekly`);
     if (!res.ok) {
       throw new ApiError('Failed to get weekly report', res.status);
     }
@@ -1822,10 +1726,7 @@ class ApiClient {
   }
 
   async getUserStreak(utcOffsetMinutes = 0): Promise<{ streakDays: number; lastActiveDate: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/streak?utc_offset_minutes=${utcOffsetMinutes}`, {
-      headers: this.getHeaders(),
-      credentials: 'include',
-    });
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/streak?utc_offset_minutes=${utcOffsetMinutes}`);
     if (!res.ok) {
       throw new ApiError('Failed to get user streak', res.status);
     }
@@ -1836,12 +1737,10 @@ class ApiClient {
     source: string,
     utcOffsetMinutes = 0
   ): Promise<{ streakDays: number; lastActiveDate: string }> {
-    const res = await fetch(`${API_BASE_URL}/api/v1/user/activity`, {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/user/activity`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      credentials: 'include',
       body: JSON.stringify({ source, utcOffsetMinutes }),
-    });
+      });
     if (!res.ok) {
       throw new ApiError('Failed to record user activity', res.status);
     }

@@ -1,4 +1,4 @@
-const VERSION = 'v2';
+const VERSION = 'v3';
 const STATIC_CACHE = `det-static-${VERSION}`;
 const PAGE_CACHE = `det-pages-${VERSION}`;
 const API_CACHE_PREFIX = `det-api-${VERSION}-`;
@@ -9,9 +9,6 @@ const CACHEABLE_API = [
   '/api/v1/vocabulary',
   '/api/v1/institutions',
   '/api/v1/banners',
-  '/api/v1/theory/progress',
-  '/api/v1/test/sessions/me',
-  '/api/v1/user/',
   '/api/v1/arena/leaderboard',
 ];
 

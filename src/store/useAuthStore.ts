@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { api, ApiError, User } from '@/lib/api';
 import { hasAuthSession } from '@/lib/auth-session';
 import { cacheUser, clearOfflineData, getCachedUser } from '@/lib/offline-cache';
+import { clearAllResponseOutbox } from '@/lib/response-outbox';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { useTestStore } from '@/store/useTestStore';
@@ -125,6 +126,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       useProgressStore.getState().resetProgressState();
       useErrorNotebookStore.getState().resetForUser();
+      clearAllResponseOutbox();
       clearOfflineData({ clearPages: true });
       useTestStore.getState().startNewSession();
       if (typeof window !== 'undefined') {

@@ -1,6 +1,14 @@
 import { api, ApiError } from '@/lib/api';
+import { getAuthCacheUserId } from '@/lib/auth-session';
 
 const STORAGE_KEY = 'det_response_outbox_v1';
+const LEGACY_STORAGE_KEY = STORAGE_KEY;
+const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function scopedStorageKey(): string {
+  const userId = getAuthCacheUserId();
+  return `${STORAGE_KEY}:${userId || 'guest'}`;
+}
 
 export interface QueuedResponse {
   sessionId: string;
@@ -21,10 +29,22 @@ const keyFor = (sessionId: string, questionId: string) => `${sessionId}:${questi
 function readOutbox(): Outbox {
   if (typeof window === 'undefined') return {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = scopedStorageKey();
+    let raw = localStorage.getItem(key);
+    if (!raw) {
+      // One-time migration from the pre-user-scoped queue.
+      raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+    const now = Date.now();
+    const fresh: Outbox = {};
+    for (const [itemKey, item] of Object.entries(parsed as Outbox)) {
+      if (item && now - item.queuedAt <= TTL_MS) fresh[itemKey] = item;
+    }
+    return fresh;
   } catch {
     return {};
   }
@@ -33,7 +53,7 @@ function readOutbox(): Outbox {
 function writeOutbox(outbox: Outbox): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(outbox));
+    localStorage.setItem(scopedStorageKey(), JSON.stringify(outbox));
   } catch {}
 }
 
@@ -84,6 +104,9 @@ function isPermanentRejection(err: unknown): boolean {
   if (!(err instanceof ApiError)) return false;
   if (err.status >= 500 || err.status === 0) return false;
   if (err.status === 401 || err.status === 408 || err.status === 429) return false;
+  // A bare 400 may still be a transient proxy/server response. Only drop it
+  // when the server supplied a machine-readable rejection code.
+  if (err.status === 400 && !err.code) return false;
   return err.status >= 400 && err.status < 500;
 }
 
@@ -122,4 +145,12 @@ export function clearResponseOutbox(sessionId: string): void {
     }
   }
   writeOutbox(outbox);
+}
+
+/** Remove the current user's queued answers, e.g. on logout. */
+export function clearAllResponseOutbox(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(scopedStorageKey());
+  } catch {}
 }
