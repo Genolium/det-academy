@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Button } from '@/components/ui/Button';
@@ -21,11 +22,26 @@ import {
   TrendingUp,
   RotateCcw,
 } from 'lucide-react';
-import { InteractiveLessonDrill } from '@/components/practice/InteractiveLessonDrill';
-import { SpeakAboutPhoto } from '@/components/test-engine/questions/SpeakAboutPhoto';
-import { SpeakingSample } from '@/components/test-engine/questions/SpeakingSample';
-import { WritingInspector } from '@/components/practice/WritingInspector';
-import { ErrorBankModal } from '@/components/practice/ErrorBankModal';
+const InteractiveLessonDrill = dynamic(
+  () => import('@/components/practice/InteractiveLessonDrill').then((mod) => mod.InteractiveLessonDrill),
+  { ssr: false }
+);
+const SpeakAboutPhoto = dynamic(
+  () => import('@/components/test-engine/questions/SpeakAboutPhoto').then((mod) => mod.SpeakAboutPhoto),
+  { ssr: false }
+);
+const SpeakingSample = dynamic(
+  () => import('@/components/test-engine/questions/SpeakingSample').then((mod) => mod.SpeakingSample),
+  { ssr: false }
+);
+const WritingInspector = dynamic(
+  () => import('@/components/practice/WritingInspector').then((mod) => mod.WritingInspector),
+  { ssr: false }
+);
+const ErrorBankModal = dynamic(
+  () => import('@/components/practice/ErrorBankModal').then((mod) => mod.ErrorBankModal),
+  { ssr: false }
+);
 import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 
 import { useAuthStore } from '@/store/useAuthStore';

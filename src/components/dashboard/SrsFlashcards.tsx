@@ -1,13 +1,24 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import vocabData from '@/data/academicVocabulary.json';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { getAuthCacheUserId, hasAuthSession } from '@/lib/auth-session';
 import { api, SRSStateResponse, SRSCardProgress } from '@/lib/api';
 import { flushSRSOutbox, submitOrQueueSRSReview } from '@/lib/srs-outbox';
 import { Sparkles, RotateCw, Volume2, CheckCircle2, Flame, Award, ArrowRight, BookOpen, Layers } from 'lucide-react';
+
+type VocabWord = {
+  id: string;
+  word: string;
+  ipa?: string;
+  pos?: string;
+  level?: string;
+  meaningRu?: string;
+  definitionEn?: string;
+  example?: string;
+  collocations: string[];
+};
 
 interface FlashcardProgress {
   id: string;
@@ -25,9 +36,18 @@ interface SrsStorage {
 }
 
 export const SrsFlashcards: React.FC = () => {
+  const [vocabData, setVocabData] = useState<VocabWord[]>([]);
   const { locale } = useSettingsStore();
   const ru = locale === 'ru';
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    let active = true;
+    void import('@/data/academicVocabulary.json').then((mod) => {
+      if (active) setVocabData(mod.default as VocabWord[]);
+    });
+    return () => { active = false; };
+  }, []);
   const [queueMode, setQueueMode] = useState<'due' | 'new' | 'all'>('due');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -123,8 +143,8 @@ export const SrsFlashcards: React.FC = () => {
 
   // Partition cards into queues
   const { dueCards, newCards, allCards } = useMemo(() => {
-    const due: typeof vocabData = [];
-    const fresh: typeof vocabData = [];
+    const due: VocabWord[] = [];
+    const fresh: VocabWord[] = [];
 
     vocabData.forEach((w) => {
       const card = storage.cards[w.id];
@@ -162,7 +182,7 @@ export const SrsFlashcards: React.FC = () => {
 
   // Freeze the queue for the duration of a session so grading a card does not
   // remove it from the list and shift the next card into the skipped index.
-  const [sessionQueue, setSessionQueue] = useState<typeof vocabData>([]);
+  const [sessionQueue, setSessionQueue] = useState<VocabWord[]>([]);
   const sessionModeRef = useRef(queueMode);
 
   useEffect(() => {
@@ -460,7 +480,7 @@ export const SrsFlashcards: React.FC = () => {
                     key={index}
                     disabled={recallChecked}
                     onClick={() => {
-                      setRecallChoice(option);
+                      setRecallChoice(option ?? '');
                       setRecallChecked(true);
                     }}
                     className={`w-full text-left rounded-xl border px-3 py-2 text-xs transition-colors ${

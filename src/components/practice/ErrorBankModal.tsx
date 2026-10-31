@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   useErrorNotebookStore,
   ErrorItem,
@@ -8,6 +8,7 @@ import {
   errorTypeLabel,
 } from '@/store/useErrorNotebookStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { sound } from '@/lib/sound';
 import { Button } from '@/components/ui/Button';
 import {
@@ -58,6 +59,9 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
     }
   }, [isOpen, user?.id, loadForUser]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen, onClose, dialogRef);
+
   if (!isOpen) return null;
 
   const filteredErrors = errors.filter((err) => {
@@ -96,7 +100,7 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-[#0E1012] border border-neutral-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-white">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="error-bank-title" className="bg-[#0E1012] border border-neutral-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-white">
         <div className="p-6 border-b border-neutral-800 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black">
@@ -112,7 +116,7 @@ export const ErrorBankModal: React.FC<ErrorBankModalProps> = ({ isOpen, onClose 
                   Синхронизировано с вашим аккаунтом
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-white">
+              <h2 id="error-bank-title" className="text-lg sm:text-xl font-black text-white">
                 Банк личных ошибок и пересдачи
               </h2>
             </div>

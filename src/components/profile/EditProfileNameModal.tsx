@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore } from '@/store/useProgressStore';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import { X, User, CheckCircle2, AlertCircle, Loader2, Award, Sparkles } from 'lucide-react';
 
 interface EditProfileNameModalProps {
@@ -31,6 +32,9 @@ export const EditProfileNameModal: React.FC<EditProfileNameModalProps> = ({
       setSuccess(false);
     }
   }, [isOpen, user?.name, candidateName]);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen, onClose, dialogRef);
 
   if (!isOpen) return null;
 
@@ -73,9 +77,10 @@ export const EditProfileNameModal: React.FC<EditProfileNameModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div role="dialog" aria-modal="true" aria-labelledby="rename-profile-title" className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="rename-profile-title" className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white">
         <button
           onClick={onClose}
+          aria-label="Закрыть редактирование профиля"
           className="absolute top-5 right-5 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />

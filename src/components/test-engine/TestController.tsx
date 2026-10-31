@@ -602,19 +602,19 @@ export const TestController: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0E1012] text-white flex flex-col justify-between py-6">
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 flex items-center justify-between pb-4 border-b border-neutral-800">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-neutral-800">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#D2F544] text-[#0C2418] font-black flex items-center justify-center text-sm">
             D
           </div>
-          <span className="font-bold text-sm tracking-wide">DET CAT SIMULATION · 13 TASKS</span>
+          <span className="font-bold text-xs sm:text-sm tracking-wide truncate">DET CAT SIMULATION · 13 TASKS</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <PillBadge variant="mint" prefixHash className="text-[10px]">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <PillBadge variant="mint" prefixHash className="hidden sm:inline-flex text-[10px]">
             Difficulty Band: {difficultyLevel}
           </PillBadge>
-          <div className="text-xs font-mono text-neutral-400">
+          <div className="hidden sm:block text-xs font-mono text-neutral-400">
             {t.stepLabel} {Math.max(1, currentStageIndex + 1)} / {STAGES_SEQUENCE.length}
           </div>
           {secondsLeft !== null && (

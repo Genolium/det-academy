@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore, TOTAL_LESSONS } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import { lessonsData, LessonGuide } from '@/data/theoryContent';
+import type { LessonGuide } from '@/data/theoryContent';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { SrsFlashcards } from '@/components/dashboard/SrsFlashcards';
 import { ErrorNotebookWidget } from '@/components/dashboard/ErrorNotebookWidget';
@@ -75,6 +75,15 @@ const CATEGORY_NAMES: Record<'ru' | 'en', Record<string, string>> = {
 };
 
 function DashboardContent() {
+  const [lessons, setLessons] = useState<LessonGuide[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void import('@/data/theoryContent').then((mod) => {
+      if (active) setLessons(mod.lessonsData);
+    });
+    return () => { active = false; };
+  }, []);
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const locale = useSettingsStore((state) => state.locale);
@@ -138,14 +147,14 @@ function DashboardContent() {
 
   // Find next recommended lesson to study
   const nextLesson = useMemo(() => {
-    return lessonsData.find((l) => !completedLessons.includes(l.slug)) || null;
-  }, [completedLessons]);
+    return lessons.find((l) => !completedLessons.includes(l.slug)) || null;
+  }, [completedLessons, lessons]);
 
   // Filter lessons
   const filteredLessons = useMemo(() => {
-    if (selectedCategory === 'all') return lessonsData;
-    return lessonsData.filter((l) => l.category === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === 'all') return lessons;
+    return lessons.filter((l) => l.category === selectedCategory);
+  }, [selectedCategory, lessons]);
 
   const hasTakenTest = testResults.length > 0;
   const currentSubscores = useMemo(() => {

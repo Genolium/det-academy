@@ -669,6 +669,21 @@ export const InstitutionsMap: React.FC = () => {
               role="listbox"
               aria-label={t.sidebarTitle}
               tabIndex={0}
+              onKeyDown={(event) => {
+                if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+                const items = Array.from(
+                  event.currentTarget.querySelectorAll<HTMLElement>('[role="option"]')
+                );
+                if (items.length === 0) return;
+                event.preventDefault();
+                const current = items.indexOf(document.activeElement as HTMLElement);
+                let next = current;
+                if (event.key === 'ArrowDown') next = current < 0 ? 0 : Math.min(items.length - 1, current + 1);
+                if (event.key === 'ArrowUp') next = current < 0 ? 0 : Math.max(0, current - 1);
+                if (event.key === 'Home') next = 0;
+                if (event.key === 'End') next = items.length - 1;
+                items[next]?.focus();
+              }}
               className="space-y-3 max-h-[460px] overflow-y-auto pr-1 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E1012]/30"
             >
               {filteredInstitutions.slice(0, 100).map((inst) => {
@@ -677,7 +692,7 @@ export const InstitutionsMap: React.FC = () => {
                   <div
                     key={inst.id}
                     role="option"
-                    tabIndex={0}
+                    tabIndex={isSelected ? 0 : -1}
                     aria-selected={isSelected}
                     onClick={() => handleFocusInstitution(inst)}
                     onKeyDown={(event) => {
