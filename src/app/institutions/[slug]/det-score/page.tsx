@@ -27,8 +27,8 @@ export async function generateMetadata({ params }: ScorePageProps): Promise<Meta
     return { title: 'DET score reference not found', robots: { index: false, follow: false } };
   }
   const canonical = absoluteUrl(`/institutions/${institution.slug}/det-score`);
-  const title = `DET score for ${institution.name}: ${institution.minScore}+`;
-  const description = `DET Academy reference: ${institution.name} in ${institution.country} lists a ${institution.minScore} DET score for its programs. See subscores, score bands and how to verify the requirement.`;
+  const title = `DET score estimate for ${institution.name}: ${institution.minScore}+`;
+  const description = `DET Academy platform estimate: ${institution.name} in ${institution.country} is associated with a ${institution.minScore} DET score in our reference data. This is not a score published by the institution.`;
   return {
     title,
     description,
@@ -79,13 +79,14 @@ export default async function InstitutionScorePage({ params }: ScorePageProps) {
         </nav>
 
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-amber-900">
-          <Target className="h-3.5 w-3.5" /> Score reference
+          <Target className="h-3.5 w-3.5" /> Platform estimate
         </div>
         <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">
-          DET score for {institution.name}: {score}+
+          DET score estimate for {institution.name}: {score}+
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-neutral-600">
-          {place}. This is the platform reference stored for {institution.registryKind.toLowerCase()} programs.
+          {place}. This figure is a DET Academy platform estimate stored for{' '}
+          {institution.registryKind.toLowerCase()} programs, not a score published by the institution.
           It is not an official admission decision; always verify the current requirement with the institution.
         </p>
 

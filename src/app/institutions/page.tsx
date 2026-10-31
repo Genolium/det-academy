@@ -52,7 +52,7 @@ export default function InstitutionsPage() {
           </p>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 text-left">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-8 text-left">
             <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
               <span className="text-2xl font-black text-[#0E1012] block">{t.statsWorld}</span>
               <span className="text-xs text-neutral-500">{t.statsWorldLabel}</span>
@@ -60,10 +60,6 @@ export default function InstitutionsPage() {
             <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
               <span className="text-2xl font-black text-emerald-600 block">{t.statsIvy}</span>
               <span className="text-xs text-neutral-500">{t.statsIvyLabel}</span>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
-              <span className="text-2xl font-black text-purple-600 block">{t.statsAvg}</span>
-              <span className="text-xs text-neutral-500">{t.statsAvgLabel}</span>
             </div>
             <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
               <span className="text-2xl font-black text-[#0C2418] block">{t.statsReports}</span>

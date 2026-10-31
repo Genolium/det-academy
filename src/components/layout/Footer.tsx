@@ -99,10 +99,6 @@ export const Footer: React.FC = () => {
                 <span>{t.scoreStepLabel}</span>
                 <span className="text-[#D2F544] font-bold">{t.scoreStepVal}</span>
               </div>
-              <div className="flex justify-between">
-                <span>{t.passScoreLabel}</span>
-                <span className="text-white font-bold">{t.passScoreVal}</span>
-              </div>
             </div>
           </div>
         </div>

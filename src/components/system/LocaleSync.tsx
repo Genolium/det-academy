@@ -9,6 +9,11 @@ export const LocaleSync: React.FC = () => {
 
   useEffect(() => {
     try {
+      const requested = new URLSearchParams(window.location.search).get('lang');
+      if (requested === 'ru' || requested === 'en') {
+        if (requested !== locale) setLocale(requested as Locale);
+        return;
+      }
       const stored = localStorage.getItem('det_locale');
       if ((stored === 'ru' || stored === 'en') && stored !== locale) {
         setLocale(stored as Locale);

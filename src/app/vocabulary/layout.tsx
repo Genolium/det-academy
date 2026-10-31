@@ -2,7 +2,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Словарь DET Academy — академические слова с IPA и примерами',
   description: 'Тренажёр словаря для Duolingo English Test: академические слова, IPA, коллокации, перевод и интервальные повторения.',
-  alternates: { canonical: '/vocabulary' },
+  alternates: {
+    canonical: '/vocabulary',
+    languages: {
+      ru: '/vocabulary',
+      en: '/vocabulary?lang=en',
+      'x-default': '/vocabulary',
+    },
+  },
 };
 export default function VocabularyLayout({ children }: { children: React.ReactNode }) {
   return children;

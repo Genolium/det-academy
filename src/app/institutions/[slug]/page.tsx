@@ -273,6 +273,14 @@ export default async function InstitutionPage({
           </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {institution.minScore !== null && (
+              <Link
+                href={`/institutions/${institution.slug}/det-score`}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0E1012] px-5 py-3 text-xs font-black text-[#0E1012] transition-colors hover:bg-[#0E1012] hover:text-white"
+              >
+                Open the DET score estimate <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
             <a
               href={institution.registryUrl}
               target="_blank"
