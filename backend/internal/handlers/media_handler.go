@@ -142,11 +142,22 @@ func (h *MediaHandler) UploadAudio(w http.ResponseWriter, r *http.Request) {
 	eval, err := h.catService.RecordAudioResponse(r.Context(), sessionID, userID, questionID, audioURL, transcript, durationSec, writtenBytes, asset, pronunciation)
 	if err != nil {
 		_ = h.store.Delete(targetPath)
-		if errors.Is(err, service.ErrQuestionAlreadyAnswered) {
-			RespondError(w, http.StatusConflict, err.Error())
-			return
+		switch {
+		case errors.Is(err, service.ErrQuestionAlreadyAnswered):
+			RespondErrorCode(w, http.StatusConflict, "already_answered", err.Error())
+		case errors.Is(err, service.ErrStageDeadlineExceeded), errors.Is(err, service.ErrItemDeadlineExceeded):
+			RespondErrorCode(w, http.StatusGone, "deadline_exceeded", err.Error())
+		case errors.Is(err, service.ErrQuestionNotIssued), errors.Is(err, service.ErrWrongStage):
+			RespondErrorCode(w, http.StatusConflict, "question_not_available", err.Error())
+		case errors.Is(err, service.ErrAudioNotSpeaking):
+			RespondErrorCode(w, http.StatusBadRequest, "not_a_speaking_question", err.Error())
+		case errors.Is(err, service.ErrSessionCompleted):
+			RespondErrorCode(w, http.StatusConflict, "session_completed", err.Error())
+		default:
+			// Infrastructure failures are not the learner's fault and must not
+			// be reported as a permanent 400 rejection.
+			RespondErrorCode(w, http.StatusInternalServerError, "audio_save_failed", "Failed to save audio file on server")
 		}
-		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

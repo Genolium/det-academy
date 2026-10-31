@@ -22,6 +22,21 @@ import (
 var ErrQuestionAlreadyAnswered = errors.New("question has already been answered")
 var ErrStageAlreadyCompleted = errors.New("stage has already been completed")
 
+var (
+	ErrStageDeadlineExceeded = errors.New("stage deadline exceeded: audio was not accepted")
+	ErrItemDeadlineExceeded  = errors.New("item deadline exceeded: audio was not accepted")
+	ErrQuestionNotIssued     = errors.New("question was not issued for this attempt")
+	ErrWrongStage            = errors.New("question belongs to another stage")
+	ErrSessionCompleted      = errors.New("session is already completed and cannot be modified")
+	ErrAudioNotSpeaking      = errors.New("audio responses are only accepted for speaking questions")
+)
+
+// Audio is recorded before it is uploaded. A slow mobile connection can spend
+// minutes transferring a valid recording, so the upload window is wider than
+// the text-answer grace. Recording time itself is still bounded by the stage
+// clock on the client.
+const audioUploadGrace = 3 * time.Minute
+
 const ItemSelectionPolicyVersion = "exclude-recent-v1"
 
 var StageSequence = []string{
@@ -50,11 +65,11 @@ var StageDefaultDurations = map[string]int{
 	"INTERACTIVE_LISTENING": 240, // 4 minutes
 	"WRITE_PHOTO":           180, // 3 items * 60s
 	"INTERACTIVE_WRITING":   480, // 5 min prompt + 3 min follow-up
-	"SPEAK_PHOTO":           90,  // 90s speech
-	"READ_THEN_SPEAK":       90,  // 90s speech
-	"INTERACTIVE_SPEAKING":  210, // 6 turns * 35s
+	"SPEAK_PHOTO":           150, // 20s prep + 90s speech + 40s upload budget
+	"READ_THEN_SPEAK":       150, // 20s prep + 90s speech + 40s upload budget
+	"INTERACTIVE_SPEAKING":  250, // 6 turns * 35s + upload budget
 	"WRITING_SAMPLE":        300, // 5 minutes
-	"SPEAKING_SAMPLE":       180, // 3 minutes
+	"SPEAKING_SAMPLE":       250, // 30s prep + 180s speech + 40s upload budget
 }
 
 // IRT Difficulty Theta Map matching CEFR bands on latent trait scale [-3.0 .. +3.0]
@@ -1204,37 +1219,47 @@ func (s *CATService) recordAudioResponseLocked(
 		return nil, errors.New("access denied: session does not belong to user")
 	}
 	if session.Status == "COMPLETED" || session.StageName == "COMPLETED" {
-		return nil, errors.New("session is already completed and cannot be modified")
+		return nil, ErrSessionCompleted
 	}
 	if questionID == "" {
 		return nil, errors.New("questionId is required for an audio response")
 	}
-	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(10*time.Second)) {
-		return nil, errors.New("stage deadline exceeded: audio was not accepted")
-	}
-	assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, questionID)
-	if err != nil {
-		return nil, errors.New("question was not issued for this attempt")
-	}
-	if assignment.StageName != session.StageName {
-		return nil, errors.New("question belongs to another stage")
-	}
-	if time.Now().After(assignment.DeadlineAt.Add(10 * time.Second)) {
-		return nil, errors.New("item deadline exceeded: audio was not accepted")
-	}
-	question, err := s.questionRepo.GetByID(ctx, questionID)
-	if err != nil || question == nil {
-		return nil, errors.New("question not found")
-	}
-	if !isSpeakingQuestionType(question.Type) {
-		return nil, errors.New("audio responses are only accepted for speaking questions")
-	}
+	// First write wins. Check this before deadlines: a retry after a lost
+	// response must be idempotent even if the stage has already advanced.
 	if existingResponses, existingErr := s.sessionRepo.GetSessionResponses(ctx, sessionID); existingErr == nil {
 		for _, existing := range existingResponses {
 			if existing.QuestionID == questionID {
 				return nil, ErrQuestionAlreadyAnswered
 			}
 		}
+	}
+	if session.DeadlineAt != nil && time.Now().After(session.DeadlineAt.Add(audioUploadGrace)) {
+		s.recordEvent(ctx, session, "AUDIO_REJECTED_DEADLINE", questionID, map[string]interface{}{
+			"deadlineAt": session.DeadlineAt,
+			"reason":     "stage deadline exceeded",
+		})
+		return nil, ErrStageDeadlineExceeded
+	}
+	assignment, err := s.sessionRepo.GetAssignedQuestion(ctx, sessionID, questionID)
+	if err != nil {
+		return nil, ErrQuestionNotIssued
+	}
+	if assignment.StageName != session.StageName {
+		return nil, ErrWrongStage
+	}
+	if time.Now().After(assignment.DeadlineAt.Add(audioUploadGrace)) {
+		s.recordEvent(ctx, session, "AUDIO_REJECTED_DEADLINE", questionID, map[string]interface{}{
+			"deadlineAt": assignment.DeadlineAt,
+			"reason":     "item deadline exceeded",
+		})
+		return nil, ErrItemDeadlineExceeded
+	}
+	question, err := s.questionRepo.GetByID(ctx, questionID)
+	if err != nil || question == nil {
+		return nil, errors.New("question not found")
+	}
+	if !isSpeakingQuestionType(question.Type) {
+		return nil, ErrAudioNotSpeaking
 	}
 
 	if err := s.sessionRepo.SaveMediaAsset(ctx, asset); err != nil {

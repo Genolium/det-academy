@@ -8,6 +8,7 @@ import { SpeechTimeline } from '@/lib/speechTimeline';
 import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciation';
 import { Button } from '@/components/ui/Button';
 import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
+import { isAudioAlreadyStored, speakingUploadErrorMessage } from '@/lib/speakingUploadError';
 import { Mic, Clock, ArrowRight, AlertCircle, BookOpen, Volume2 } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -65,6 +66,7 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
   const [transcript, setTranscript] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const transcriptRef = useRef(transcript);
@@ -77,10 +79,13 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
   const timelineRef = useRef<SpeechTimeline | null>(null);
   const phaseRef = useRef<'prep' | 'speaking'>('prep');
   const speakStartedAtRef = useRef<number | null>(null);
+  const autoStartFailedRef = useRef(false);
 
   const handleFinish = async () => {
     if (isCompletedRef.current) return;
     isCompletedRef.current = true;
+    setUploadFailed(false);
+    setSubmitError(null);
     const endedAtMs = performance.now();
     const durationSec = speakStartedAtRef.current
       ? Math.max(1, Math.round((endedAtMs - speakStartedAtRef.current) / 1000))
@@ -98,11 +103,12 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
     if (!recordedBlob || recordedBlob.size === 0) {
       isCompletedRef.current = false;
       setIsSubmitting(false);
+      setUploadFailed(true);
       setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
       return;
     }
 
-    if (backendSessionId && serverQ && recordedBlob && recordedBlob.size > 0) {
+    if (backendSessionId && serverQ && recordedBlob.size > 0) {
       const formData = new FormData();
       formData.append('audio', recordedBlob, 'read_then_speak.webm');
       formData.append('questionId', serverQ.id);
@@ -119,16 +125,30 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
           playbackText: promptText,
         });
         await api.uploadSpeakingAudio(backendSessionId, formData);
-      } catch {
+      } catch (err) {
         setIsSubmitting(false);
         isCompletedRef.current = false;
-        setSubmitError('Не удалось сохранить аудио на сервере. Проверьте соединение и повторите.');
+        if (isAudioAlreadyStored(err)) {
+          recordSpeakingResult(spokenText || 'Записан устный ответ (аудио)');
+          onComplete();
+          return;
+        }
+        setUploadFailed(true);
+        setSubmitError(speakingUploadErrorMessage(err, true));
         return;
       }
 
     }
 
     recordSpeakingResult(spokenText || (recordedBlob ? 'Записан устный ответ (аудио)' : ''));
+    onComplete();
+  };
+
+  const handleContinueWithoutAudio = () => {
+    if (isSubmitting) return;
+    recordSpeakingResult(
+      transcriptRef.current || 'Устный ответ не сохранён: аудио не загружено'
+    );
     onComplete();
   };
 
@@ -139,14 +159,18 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
 
   const startRecording = useCallback(async () => {
     if (phaseRef.current === 'speaking') return;
+    autoStartFailedRef.current = false;
+
+    const started = await audioRecorder.startRecording();
+    if (!started) {
+      autoStartFailedRef.current = true;
+      setMicError(audioRecorder.error || 'Не удалось включить микрофон. Попробуйте ещё раз.');
+      return;
+    }
+
     phaseRef.current = 'speaking';
     setPhase('speaking');
     speakStartedAtRef.current = performance.now();
-
-    const started = await audioRecorder.startRecording();
-    if (!started && audioRecorder.error) {
-      setMicError(audioRecorder.error);
-    }
     timelineRef.current = new SpeechTimeline(performance.now());
 
     const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
@@ -193,7 +217,7 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
         );
       }
 
-      if (remaining <= SPEAK_SECONDS && phaseRef.current === 'prep') {
+      if (remaining <= SPEAK_SECONDS && phaseRef.current === 'prep' && !autoStartFailedRef.current) {
         void startRecordingRef.current();
       }
 
@@ -246,6 +270,21 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
               </span>
               .
             </p>
+            {micError && (
+              <div className="mt-3 flex flex-col items-center gap-2 text-xs text-amber-300">
+                <span className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {micError}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void startRecording()}
+                  className="rounded-lg border border-amber-500/40 px-3 py-1.5 font-bold hover:bg-amber-500/10"
+                >
+                  Попробовать снова
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-[#0E1012] border border-neutral-800 rounded-xl p-5 space-y-3">
@@ -288,9 +327,29 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
               </div>
             )}
             {submitError && (
-              <div className="flex items-center gap-2 text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{submitError}</span>
+              <div className="text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{submitError}</span>
+                </div>
+                {uploadFailed && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleFinish()}
+                      className="rounded-lg border border-neutral-600 px-3 py-1.5 font-bold text-neutral-200 hover:border-neutral-400"
+                    >
+                      Повторить отправку
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleContinueWithoutAudio}
+                      className="rounded-lg border border-[#D2F544]/50 bg-[#D2F544]/10 px-3 py-1.5 font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
+                    >
+                      Продолжить без аудио
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -318,7 +377,7 @@ export const ReadThenSpeak: React.FC<ReadThenSpeakProps> = ({ onComplete }) => {
               disabled={speakSeconds < MIN_SPEAK_SECONDS || isSubmitting}
               className="gap-2"
             >
-              {isSubmitting ? 'Сохранение...' : 'Проверить ответ'}
+              {isSubmitting ? 'Сохранение...' : uploadFailed ? 'Повторить отправку' : 'Проверить ответ'}
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}

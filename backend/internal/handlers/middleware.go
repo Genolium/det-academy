@@ -25,6 +25,12 @@ func RespondError(w http.ResponseWriter, status int, message string) {
 	RespondJSON(w, status, map[string]string{"error": message})
 }
 
+// RespondErrorCode is used on paths where the client must distinguish
+// recoverable conditions (deadline, duplicate, quota) from a transport error.
+func RespondErrorCode(w http.ResponseWriter, status int, code, message string) {
+	RespondJSON(w, status, map[string]string{"error": message, "code": code})
+}
+
 func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

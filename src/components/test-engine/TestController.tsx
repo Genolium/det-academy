@@ -24,7 +24,7 @@ import { SpeakingSample } from './questions/SpeakingSample';
 import { TestResultModal } from './TestResultModal';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { Button } from '@/components/ui/Button';
-import { AlertTriangle, Clock, Loader2, RefreshCw, ShieldAlert, WifiOff } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, RefreshCw, ShieldAlert, WifiOff, SkipForward } from 'lucide-react';
 
 const STAGES_SEQUENCE: StageName[] = [
   'READ_SELECT',
@@ -299,7 +299,7 @@ export const TestController: React.FC = () => {
 
   const currentStageIndex = STAGES_SEQUENCE.indexOf(currentStage);
 
-  const handleStageAdvance = async () => {
+  const handleStageAdvance = async (force = false) => {
     if (advanceInFlightRef.current) return;
     const sessionId = useTestStore.getState().backendSessionId;
     if (!sessionId) {
@@ -320,15 +320,17 @@ export const TestController: React.FC = () => {
     setLastStageAction('advance');
 
     try {
-      const remaining = await flushResponseOutbox(sessionId);
-      if (remaining > 0) {
-        setStageSyncError(
-          tr(
-            'Часть ответов не сохранена на сервере. Этап не будет завершён до синхронизации.',
-            'Some answers are not saved on the server yet. The stage will not complete until everything is synced.'
-          )
-        );
-        return;
+      if (!force) {
+        const remaining = await flushResponseOutbox(sessionId);
+        if (remaining > 0) {
+          setStageSyncError(
+            tr(
+              'Часть ответов не сохранена на сервере. Этап не будет завершён до синхронизации.',
+              'Some answers are not saved on the server yet. The stage will not complete until everything is synced.'
+            )
+          );
+          return;
+        }
       }
 
       // The server derives stage accuracy from recorded responses. No client
@@ -368,6 +370,13 @@ export const TestController: React.FC = () => {
         setStage(STAGES_SEQUENCE[nextIndex]);
       }
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        // The server already advanced the stage but the response was lost.
+        // Re-hydrate instead of retrying the same stale stage forever.
+        await resumeAttempt();
+        setStageSyncError(null);
+        return;
+      }
       setStageSyncError(
         errorMessage(
           err,
@@ -377,6 +386,19 @@ export const TestController: React.FC = () => {
     } finally {
       advanceInFlightRef.current = false;
     }
+  };
+
+  const handleSkipStage = () => {
+    if (advanceInFlightRef.current) return;
+    const confirmed =
+      typeof window === 'undefined' ||
+      window.confirm(
+        tr(
+          'Завершить этап без ответа? Несохранённый ответ не попадёт в результат.',
+          'Finish this stage without an answer? An unsaved answer will not be scored.'
+        )
+      );
+    if (confirmed) void handleStageAdvance(true);
   };
 
   const retryLastAction = () => {
@@ -408,6 +430,20 @@ export const TestController: React.FC = () => {
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [deadlineAt]);
+
+  const deadlineAdvanceRef = useRef(false);
+  useEffect(() => {
+    deadlineAdvanceRef.current = false;
+  }, [deadlineAt]);
+
+  useEffect(() => {
+    if (secondsLeft === 0 && !deadlineAdvanceRef.current && attemptStatus === 'in_progress') {
+      // The server clock is authoritative; never leave the learner on an
+      // expired stage with a disabled or failed in-stage action.
+      deadlineAdvanceRef.current = true;
+      void handleStageAdvance(true);
+    }
+  }, [secondsLeft, attemptStatus, handleStageAdvance]);
 
   if (attemptStatus === 'starting') {
     return (
@@ -544,6 +580,14 @@ export const TestController: React.FC = () => {
               {(secondsLeft % 60).toString().padStart(2, '0')}
             </div>
           )}
+          <button
+            type="button"
+            onClick={handleSkipStage}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1 text-xs font-bold text-neutral-400 transition-colors hover:border-neutral-500 hover:text-neutral-200"
+          >
+            <SkipForward className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{tr('Пропустить этап', 'Skip stage')}</span>
+          </button>
         </div>
       </div>
 

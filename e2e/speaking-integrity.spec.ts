@@ -38,9 +38,10 @@ test('speaking sample does not complete without recorded audio', async ({ page }
   await expect(page.getByRole('heading', { name: 'Speaking Sample' })).toBeVisible();
   await page.getByRole('button', { name: /Начать говорить сейчас/ }).click();
   await page.clock.fastForward(61_000);
-  await page.getByRole('button', { name: /Проверить ответ|Далее/ }).click();
 
-  await expect(page.getByText('Аудио не записано')).toBeVisible();
+  // Mic denial must not enter a fake speaking phase or trap the learner.
+  await expect(page.getByText(/Не удалось включить микрофон|Permission denied/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Пропустить этап/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Speaking Sample' })).toBeVisible();
   await expect(page.getByText('Тренировочная оценка (Overall Estimate)')).toHaveCount(0);
 });

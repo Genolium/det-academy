@@ -53,6 +53,7 @@ export function useAudioRecorder(): AudioRecorderState {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const resolveStopRef = useRef<((blob: Blob | null) => void) | null>(null);
+  const audioBlobRef = useRef<Blob | null>(null);
 
   // Clean up all streams and audio contexts
   const cleanupTracksAndAudio = useCallback(() => {
@@ -129,6 +130,7 @@ export function useAudioRecorder(): AudioRecorderState {
     try {
       cleanupTracksAndAudio();
       audioChunksRef.current = [];
+      audioBlobRef.current = null;
       setError(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -156,6 +158,7 @@ export function useAudioRecorder(): AudioRecorderState {
       mediaRecorder.onstop = () => {
         const actualMime = mimeType || mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(audioChunksRef.current, { type: actualMime });
+        audioBlobRef.current = blob;
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
@@ -192,17 +195,30 @@ export function useAudioRecorder(): AudioRecorderState {
   const stopRecording = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
       if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
-        resolve(audioBlob);
+        resolve(audioBlobRef.current);
         return;
       }
 
-      resolveStopRef.current = resolve;
+      // Never leave the learner on a dead button if the recorder never emits
+      // onstop (background tab, dead track, browser bug).
+      const timeout = setTimeout(() => {
+        if (resolveStopRef.current) {
+          resolveStopRef.current(audioBlobRef.current);
+          resolveStopRef.current = null;
+        }
+      }, 5_000);
+
+      resolveStopRef.current = (blob) => {
+        clearTimeout(timeout);
+        resolve(blob);
+      };
       setIsRecording(false);
       setIsPaused(false);
 
       try {
         mediaRecorderRef.current.stop();
       } catch {
+        clearTimeout(timeout);
         resolve(null);
       }
     });
@@ -218,6 +234,7 @@ export function useAudioRecorder(): AudioRecorderState {
     }
     cleanupTracksAndAudio();
     audioChunksRef.current = [];
+    audioBlobRef.current = null;
     setAudioBlob(null);
     setAudioUrl(null);
     setDurationSec(0);
@@ -229,6 +246,7 @@ export function useAudioRecorder(): AudioRecorderState {
         URL.revokeObjectURL(audioUrl);
       } catch {}
     }
+    audioBlobRef.current = null;
     setAudioBlob(null);
     setAudioUrl(null);
     setDurationSec(0);

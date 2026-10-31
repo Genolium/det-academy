@@ -8,6 +8,7 @@ import { SpeechTimeline } from '@/lib/speechTimeline';
 import { appendPronunciationReportFromWords, toAsrSegments } from '@/lib/speechPronunciation';
 import type { WordTiming } from '@/lib/pronunciationAnalysis';
 import { Button } from '@/components/ui/Button';
+import { isAudioAlreadyStored, speakingUploadErrorMessage } from '@/lib/speakingUploadError';
 import { Mic, Clock, ArrowRight, AlertCircle, MessageSquare, Volume2, Sparkles } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -75,6 +76,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const [turnTranscripts, setTurnTranscripts] = useState<string[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPlayingPromptAudio, setIsPlayingPromptAudio] = useState(false);
 
@@ -192,6 +194,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       setTimeLeft(35);
     } else {
       isAdvancingRef.current = true;
+      setUploadFailed(false);
+      setSubmitError(null);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -205,6 +209,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       if (!recordedBlob || recordedBlob.size === 0) {
         setIsSubmitting(false);
         isAdvancingRef.current = false;
+        setUploadFailed(true);
         setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
         return;
       }
@@ -229,10 +234,16 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
             { endedAtMs: performance.now(), durationSec }
           );
           await api.uploadSpeakingAudio(backendSessionId, formData);
-        } catch {
+        } catch (err) {
           setIsSubmitting(false);
           isAdvancingRef.current = false;
-          setSubmitError('Не удалось сохранить аудио на сервере. Проверьте соединение и повторите.');
+          if (isAudioAlreadyStored(err)) {
+            recordSpeakingResult(fullTranscript || 'Записан интерактивный диалог');
+            onComplete();
+            return;
+          }
+          setUploadFailed(true);
+          setSubmitError(speakingUploadErrorMessage(err, true));
           return;
         }
       }
@@ -241,6 +252,13 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       recordSpeakingResult(fullTranscript || 'Записан интерактивный диалог');
       onComplete();
     }
+  };
+
+  const handleContinueWithoutAudio = () => {
+    if (isSubmitting) return;
+    const fullTranscript = [...turnTranscripts, transcriptRef.current].filter(Boolean).join('; ');
+    recordSpeakingResult(fullTranscript || 'Интерактивный диалог не сохранён: аудио не загружено');
+    onComplete();
   };
 
   const handleNextTurnRef = useRef(handleNextTurn);
@@ -367,9 +385,29 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
             </div>
           )}
           {submitError && (
-            <div className="flex items-center gap-2 text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{submitError}</span>
+            <div className="text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{submitError}</span>
+              </div>
+              {uploadFailed && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleNextTurn()}
+                    className="rounded-lg border border-neutral-600 px-3 py-1.5 font-bold text-neutral-200 hover:border-neutral-400"
+                  >
+                    Повторить отправку
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleContinueWithoutAudio}
+                    className="rounded-lg border border-[#D2F544]/50 bg-[#D2F544]/10 px-3 py-1.5 font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
+                  >
+                    Продолжить без аудио
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -387,9 +425,11 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
           >
             {isSubmitting
               ? 'Сохранение...'
-              : currentTurn + 1 === turns.length
-              ? 'Завершить этап'
-              : 'Следующая реплика'}
+              : uploadFailed
+                ? 'Повторить отправку'
+                : currentTurn + 1 === turns.length
+                  ? 'Завершить этап'
+                  : 'Следующая реплика'}
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>

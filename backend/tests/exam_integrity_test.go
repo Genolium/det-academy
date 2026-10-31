@@ -45,7 +45,7 @@ func TestAudioRequiresAssignedSpeakingQuestion(t *testing.T) {
 	}
 
 	status, body := uploadIntegrityAudio(t, r, token, sessionID, "sp-1")
-	if status != http.StatusBadRequest {
+	if status != http.StatusConflict {
 		t.Fatalf("audio for an unassigned speaking question must be rejected, got %d: %s", status, body)
 	}
 

@@ -669,11 +669,13 @@ export interface AnalyticsRetention {
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly code?: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -1138,15 +1140,36 @@ class ApiClient {
     // Do not set Content-Type header manually for FormData so browser sets correct boundary
     delete headers['Content-Type'];
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/audio`, {
-      method: 'POST',
-      headers,
-      credentials: 'include',
-      body: formData,
-    });
+    const send = () =>
+      fetch(`${API_BASE_URL}/api/v1/test/sessions/${sessionId}/audio`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: formData,
+      });
+    let res: Response;
+    try {
+      res = await send();
+      if (res.status === 401) {
+        // A long mock can outlive the access token. Refresh once instead of
+        // treating a valid recording as a permanent upload failure.
+        let refreshed = false;
+        try {
+          await this.refreshSession();
+          refreshed = true;
+        } catch {}
+        if (refreshed) res = await send();
+      }
+    } catch {
+      throw new ApiError('Не удалось сохранить аудио на сервере', 0, 'network');
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to upload speaking audio');
+      throw new ApiError(
+        data.error || 'Failed to upload speaking audio',
+        res.status,
+        data.code
+      );
     }
     return res.json();
   }
