@@ -1957,6 +1957,21 @@ func (r *sessionMemoryRepo) CountPendingEvaluationJobs(ctx context.Context, sess
 	return count, nil
 }
 
+func (r *sessionMemoryRepo) DeleteEvaluation(ctx context.Context, evaluationID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for sessionID, evals := range r.s.evaluations {
+		filtered := evals[:0]
+		for _, evaluation := range evals {
+			if evaluation.ID != evaluationID {
+				filtered = append(filtered, evaluation)
+			}
+		}
+		r.s.evaluations[sessionID] = filtered
+	}
+	return nil
+}
+
 func (r *sessionMemoryRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -1980,6 +1995,13 @@ func (r *sessionMemoryRepo) SaveMediaAsset(ctx context.Context, asset *models.Me
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
 	r.s.mediaAssets[asset.ID] = asset
+	return nil
+}
+
+func (r *sessionMemoryRepo) DeleteMediaAsset(ctx context.Context, assetID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	delete(r.s.mediaAssets, assetID)
 	return nil
 }
 
@@ -2717,6 +2739,18 @@ func vocabularySourcePrefix(source string) string {
 	default:
 		return ""
 	}
+}
+
+func (r *vocabularyMemoryRepo) GetByID(ctx context.Context, id string) (*models.VocabularyEntry, error) {
+	r.s.mu.RLock()
+	defer r.s.mu.RUnlock()
+	for _, entry := range r.s.vocabulary {
+		if entry.ID == id && entry.Status == "published" {
+			copy := entry
+			return &copy, nil
+		}
+	}
+	return nil, errors.New("vocabulary entry not found")
 }
 
 func (r *vocabularyMemoryRepo) ListAll(ctx context.Context) ([]models.VocabularyEntry, error) {

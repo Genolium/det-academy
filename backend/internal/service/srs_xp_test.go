@@ -2,12 +2,24 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
 )
+
+func TestSRSRejectsUnknownCardID(t *testing.T) {
+	store := memory.New()
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	study := NewStudyService(store, theory, cat)
+	if _, err := study.ReviewSRSCard(context.Background(), "srs-invalid-user", models.ReviewSRSCardRequest{
+		CardID:  "fabricated-card-id",
+		Quality: 5,
+	}); err == nil {
+		t.Fatal("unknown cardId must be rejected")
+	}
+}
 
 func TestSRSXPAwardsAreCappedPerDay(t *testing.T) {
 	store := memory.New()
@@ -16,10 +28,14 @@ func TestSRSXPAwardsAreCappedPerDay(t *testing.T) {
 	study := NewStudyService(store, theory, cat)
 	ctx := context.Background()
 	userID := "srs-cap-user"
+	entries, err := store.Vocabulary().ListAll(ctx)
+	if err != nil || len(entries) < 25 {
+		t.Fatalf("need vocabulary entries: %v (got %d)", err, len(entries))
+	}
 
 	for i := 0; i < 25; i++ {
 		if _, err := study.ReviewSRSCard(ctx, userID, models.ReviewSRSCardRequest{
-			CardID:  "card-" + strconv.Itoa(i),
+			CardID:  entries[i].ID,
 			Quality: 5,
 		}); err != nil {
 			t.Fatalf("review %d: %v", i, err)

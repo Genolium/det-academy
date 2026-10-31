@@ -1643,7 +1643,12 @@ func TestSpeakingAudioUploadAndEvaluation(t *testing.T) {
 }
 
 func TestStudyPlanAndSRSEngine(t *testing.T) {
-	r, _, _ := setupTestRouter()
+	r, _, store := setupTestRouter()
+	vocabulary, err := store.Vocabulary().ListAll(context.Background())
+	if err != nil || len(vocabulary) == 0 {
+		t.Fatalf("vocabulary fixtures: %v", err)
+	}
+	cardID := vocabulary[0].ID
 
 	// 1. Register User A
 	userA := models.RegisterRequest{
@@ -1815,7 +1820,7 @@ func TestStudyPlanAndSRSEngine(t *testing.T) {
 
 	// 6. Test SuperMemo SM-2 Spaced Repetition (SRS)
 	reviewCardReq := models.ReviewSRSCardRequest{
-		CardID:  "awl-001",
+		CardID:  cardID,
 		Quality: 4, // Good
 	}
 	reviewBody, _ := json.Marshal(reviewCardReq)
@@ -2059,8 +2064,12 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 	}
 
 	// 9. SuperMemo SM-2 Spaced Repetition Review
+	vocabulary, err := store.Vocabulary().ListAll(context.Background())
+	if err != nil || len(vocabulary) == 0 {
+		t.Fatalf("vocabulary fixtures: %v", err)
+	}
 	srsRevBody, _ := json.Marshal(models.ReviewSRSCardRequest{
-		CardID:  "card-ambiguous",
+		CardID:  vocabulary[0].ID,
 		Quality: 4, // Good
 	})
 	srsRevReq := httptest.NewRequest("POST", "/api/v1/user/srs/review", bytes.NewReader(srsRevBody))

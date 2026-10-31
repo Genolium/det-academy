@@ -1312,9 +1312,12 @@ func (s *CATService) recordAudioResponseLocked(
 			CreatedAt:        time.Now().UTC(),
 		}
 		if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err != nil {
+			_ = s.sessionRepo.DeleteMediaAsset(ctx, asset.ID)
 			return nil, fmt.Errorf("failed to save evaluation: %w", err)
 		}
 		if err := s.evaluationQueue.EnqueueAudioEvaluation(ctx, sessionID, questionID, eval.ID, asset.FilePath, asset.FileType, transcript); err != nil {
+			_ = s.sessionRepo.DeleteEvaluation(ctx, eval.ID)
+			_ = s.sessionRepo.DeleteMediaAsset(ctx, asset.ID)
 			return nil, fmt.Errorf("failed to enqueue evaluation: %w", err)
 		}
 	} else {
@@ -1322,7 +1325,10 @@ func (s *CATService) recordAudioResponseLocked(
 		eval.AudioURL = audioURL
 		eval.TranscriptSource = "client"
 		eval.Pronunciation = pronunciation
-		_ = s.sessionRepo.SaveEvaluation(ctx, &eval)
+		if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err != nil {
+			_ = s.sessionRepo.DeleteMediaAsset(ctx, asset.ID)
+			return nil, fmt.Errorf("failed to save evaluation: %w", err)
+		}
 	}
 
 	userResponseJSON, _ := json.Marshal(map[string]interface{}{
@@ -1344,6 +1350,8 @@ func (s *CATService) recordAudioResponseLocked(
 		CreatedAt:    time.Now().UTC(),
 	}
 	if err := s.sessionRepo.RecordResponse(ctx, resp); err != nil {
+		_ = s.sessionRepo.DeleteEvaluation(ctx, eval.ID)
+		_ = s.sessionRepo.DeleteMediaAsset(ctx, asset.ID)
 		return nil, fmt.Errorf("failed to record question response: %w", err)
 	}
 
@@ -1791,6 +1799,16 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Aggregate server-verified question responses by skill. There is no
 	// fallback to a client ratio or to another skill's average: a skipped
 	// skill stays not measured.
+	failedEvaluations := map[string]bool{}
+	if evaluations, evalErr := s.sessionRepo.GetSessionEvaluations(ctx, sessionID); evalErr == nil {
+		for _, evaluation := range evaluations {
+			if evaluation.Status == "FAILED" || evaluation.Status == "INSUFFICIENT" || evaluation.FeedbackStatus == "permanently_failed" {
+				// A permanently failed evaluation is not a zero score; the
+				// skill must stay unmeasured instead of silently collapsing.
+				failedEvaluations[evaluation.QuestionID] = true
+			}
+		}
+	}
 	type skillStats struct {
 		sum   float64
 		count int
@@ -1803,6 +1821,9 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 
 	for _, r := range responses {
+		if failedEvaluations[r.QuestionID] {
+			continue
+		}
 		qType := s.questionTypeForResponse(ctx, sessionID, r.QuestionID)
 		skill := MapQuestionTypeToSkill(qType)
 		st := stats[skill]

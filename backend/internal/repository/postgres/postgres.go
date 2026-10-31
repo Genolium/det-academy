@@ -351,7 +351,7 @@ func (r *TheoryRepo) GetUserProgress(ctx context.Context, userID string) ([]stri
 		}
 		lessons = append(lessons, slug)
 	}
-	return lessons, nil
+	return lessons, rows.Err()
 }
 
 func (r *TheoryRepo) ToggleProgress(ctx context.Context, userID, lessonSlug string) (bool, error) {
@@ -452,7 +452,7 @@ func (r *QuestionRepo) ListAllActive(ctx context.Context) ([]models.Question, er
 		q.CorrectAnswers = correctBytes
 		questions = append(questions, q)
 	}
-	return questions, nil
+	return questions, rows.Err()
 }
 
 func (r *QuestionRepo) Create(ctx context.Context, q *models.Question) error {
@@ -759,7 +759,7 @@ func (r *SessionRepo) GetSessionResponses(ctx context.Context, sessionID string)
 		q.UserResponse = respBytes
 		responses = append(responses, q)
 	}
-	return responses, nil
+	return responses, rows.Err()
 }
 
 func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]models.TestSession, error) {
@@ -778,7 +778,7 @@ func (r *SessionRepo) GetUserSessions(ctx context.Context, userID string) ([]mod
 		}
 		sessions = append(sessions, s)
 	}
-	return sessions, nil
+	return sessions, rows.Err()
 }
 
 func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestSession, error) {
@@ -852,6 +852,11 @@ func (r *SessionRepo) GetStats(ctx context.Context) (int, int, float64, map[stri
 	}
 
 	return total, completed, avg, scoreDist, nil
+}
+
+func (r *SessionRepo) DeleteEvaluation(ctx context.Context, evaluationID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM evaluations WHERE id = $1`, evaluationID)
+	return err
 }
 
 func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
@@ -1076,6 +1081,11 @@ func (r *SessionRepo) CountPendingEvaluationJobs(ctx context.Context, sessionID 
 		WHERE session_id = $1 AND status IN ('queued', 'processing', 'retryable_failed')
 	`, sessionID).Scan(&count)
 	return count, err
+}
+
+func (r *SessionRepo) DeleteMediaAsset(ctx context.Context, assetID string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM media_assets WHERE id = $1`, assetID)
+	return err
 }
 
 func (r *SessionRepo) SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error {
@@ -2094,6 +2104,27 @@ func (r *VocabularyRepo) List(ctx context.Context, search, level, source string,
 		entries = append(entries, entry)
 	}
 	return entries, rows.Err()
+}
+
+func (r *VocabularyRepo) GetByID(ctx context.Context, id string) (*models.VocabularyEntry, error) {
+	query := `
+		SELECT id, word, COALESCE(ipa, ''), COALESCE(pos, ''), level, meaning_ru,
+		       definition_en, COALESCE(example, ''), collocations, source,
+		       COALESCE(source_url, ''), status, version, reviewed_at
+		FROM vocabulary_entries
+		WHERE id = $1 AND status = 'published'
+	`
+	var entry models.VocabularyEntry
+	var collocations []byte
+	if err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&entry.ID, &entry.Word, &entry.IPA, &entry.PartOfSpeech, &entry.Level,
+		&entry.MeaningRu, &entry.DefinitionEn, &entry.Example, &collocations,
+		&entry.Source, &entry.SourceURL, &entry.Status, &entry.Version, &entry.ReviewedAt,
+	); err != nil {
+		return nil, err
+	}
+	_ = json.Unmarshal(collocations, &entry.Collocations)
+	return &entry, nil
 }
 
 func (r *VocabularyRepo) ListAll(ctx context.Context) ([]models.VocabularyEntry, error) {

@@ -80,6 +80,9 @@ type TestSessionRepository interface {
 	GetAllAssignedQuestions(ctx context.Context, sessionID string) ([]models.SessionQuestion, error)
 	GetAssignedQuestion(ctx context.Context, sessionID, questionID string) (*models.SessionQuestion, error)
 	SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error
+	// DeleteEvaluation removes a partially-created evaluation after a later
+	// step in the audio pipeline fails.
+	DeleteEvaluation(ctx context.Context, evaluationID string) error
 	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
 	UpdateEvaluation(ctx context.Context, eval *models.EvaluationResult) error
 	CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error
@@ -91,6 +94,7 @@ type TestSessionRepository interface {
 	CountPendingEvaluationJobs(ctx context.Context, sessionID string) (int, error)
 	UpdateResponseScore(ctx context.Context, sessionID, questionID string, rawScore float64, isCorrect bool) error
 	SaveMediaAsset(ctx context.Context, asset *models.MediaAsset) error
+	DeleteMediaAsset(ctx context.Context, assetID string) error
 	GetMediaAssetByID(ctx context.Context, id string) (*models.MediaAsset, error)
 	// DeleteMediaAssetsBySession removes the media rows of a session and
 	// returns their file paths so the caller can delete the files.
@@ -203,6 +207,7 @@ type StudyRepository interface {
 
 type VocabularyRepository interface {
 	List(ctx context.Context, search, level, source string, limit, offset int) ([]models.VocabularyEntry, error)
+	GetByID(ctx context.Context, id string) (*models.VocabularyEntry, error)
 	ListAll(ctx context.Context) ([]models.VocabularyEntry, error)
 	CountFiltered(ctx context.Context, search, level, source string) (int, error)
 	UpdateStatus(ctx context.Context, id, status string) error

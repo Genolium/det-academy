@@ -238,8 +238,14 @@ func (q *EvaluationQueue) processJob(ctx context.Context, job *models.Evaluation
 		q.fail(ctx, job, err)
 		return
 	}
-	_ = q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6)
-	_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
+	if err := q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6); err != nil {
+		q.fail(ctx, job, err)
+		return
+	}
+	if err := q.sessionRepo.CompleteEvaluationJob(ctx, job.ID); err != nil {
+		q.fail(ctx, job, err)
+		return
+	}
 }
 
 func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.EvaluationJob, evaluation *models.EvaluationResult) {
@@ -314,8 +320,14 @@ func (q *EvaluationQueue) processWritingJob(ctx context.Context, job *models.Eva
 		q.fail(ctx, job, err)
 		return
 	}
-	_ = q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6)
-	_ = q.sessionRepo.CompleteEvaluationJob(ctx, job.ID)
+	if err := q.sessionRepo.UpdateResponseScore(ctx, job.SessionID, job.QuestionID, result.Score, result.Score >= 0.6); err != nil {
+		q.fail(ctx, job, err)
+		return
+	}
+	if err := q.sessionRepo.CompleteEvaluationJob(ctx, job.ID); err != nil {
+		q.fail(ctx, job, err)
+		return
+	}
 }
 
 func (q *EvaluationQueue) fail(ctx context.Context, job *models.EvaluationJob, err error) {
@@ -325,6 +337,19 @@ func (q *EvaluationQueue) fail(ctx context.Context, job *models.EvaluationJob, e
 	}
 	log.Printf("[EvaluationQueue] job %s failed: %v", job.ID, err)
 	_ = q.sessionRepo.FailEvaluationJob(ctx, job.ID, time.Now().UTC().Add(backoff), err.Error())
+	if job.Attempts+1 >= job.MaxAttempts && job.EvaluationID != "" {
+		if evaluations, listErr := q.sessionRepo.GetSessionEvaluations(ctx, job.SessionID); listErr == nil {
+			for _, evaluation := range evaluations {
+				if evaluation.ID == job.EvaluationID {
+					evaluation.Status = "FAILED"
+					evaluation.FeedbackStatus = "permanently_failed"
+					evaluation.LastError = err.Error()
+					_ = q.sessionRepo.UpdateEvaluation(ctx, &evaluation)
+					break
+				}
+			}
+		}
+	}
 }
 
 func (q *EvaluationQueue) EnqueueAudioEvaluation(

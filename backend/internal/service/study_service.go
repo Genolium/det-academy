@@ -802,6 +802,12 @@ func (s *StudyService) ReviewSRSCard(ctx context.Context, userID string, req mod
 	if req.CardID == "" {
 		return nil, errors.New("cardId is required")
 	}
+	if len(req.CardID) > 100 {
+		return nil, errors.New("cardId is invalid")
+	}
+	if _, err := s.storage.Vocabulary().GetByID(ctx, req.CardID); err != nil {
+		return nil, errors.New("cardId does not exist in the published vocabulary")
+	}
 	if req.Quality < 1 || req.Quality > 5 {
 		req.Quality = 4 // Default Good
 	}
