@@ -9,7 +9,7 @@ import { appendPronunciationReportFromWords, toAsrSegments } from '@/lib/speechP
 import type { WordTiming } from '@/lib/pronunciationAnalysis';
 import { Button } from '@/components/ui/Button';
 import { isAudioAlreadyStored, speakingUploadErrorMessage } from '@/lib/speakingUploadError';
-import { deleteAudioDraft, loadAudioDraft, saveAudioDraft } from '@/lib/audioDraft';
+import { deleteAudioDraft, loadAudioDraftRecord, saveAudioDraft } from '@/lib/audioDraft';
 import { Mic, Clock, ArrowRight, AlertCircle, MessageSquare, Volume2, Sparkles } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -79,6 +79,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [draftTranscript, setDraftTranscript] = useState('');
+  const [draftDuration, setDraftDuration] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPlayingPromptAudio, setIsPlayingPromptAudio] = useState(false);
 
@@ -122,9 +124,11 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   useEffect(() => {
     if (!backendSessionId || !serverQ) return;
     let active = true;
-    void loadAudioDraft(backendSessionId, serverQ.id).then((blob) => {
-      if (!active || !blob) return;
-      audioRecorder.restoreAudio(blob);
+    void loadAudioDraftRecord(backendSessionId, serverQ.id).then((draft) => {
+      if (!active || !draft) return;
+      audioRecorder.restoreAudio(draft.blob);
+      setDraftTranscript(draft.transcript);
+      setDraftDuration(draft.durationSec);
       setHasDraft(true);
     });
     return () => {
@@ -230,8 +234,6 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       }
 
       if (backendSessionId && serverQ) {
-        await saveAudioDraft(backendSessionId, serverQ.id, recordedBlob);
-        setHasDraft(true);
         const formData = new FormData();
         formData.append('audio', recordedBlob, 'interactive_speaking.webm');
         formData.append('questionId', serverQ.id);
@@ -242,6 +244,11 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
           ? Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000))
           : Math.max(1, audioRecorder.durationSec);
         formData.append('durationSec', durationSec.toString());
+        await saveAudioDraft(backendSessionId, serverQ.id, recordedBlob, {
+          durationSec,
+          transcript: fullTranscript,
+        });
+        setHasDraft(true);
 
         try {
           await appendPronunciationReportFromWords(
@@ -284,7 +291,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
     const formData = new FormData();
     formData.append('audio', blob, 'interactive_speaking.webm');
     formData.append('questionId', serverQ.id);
-    formData.append('durationSec', '1');
+    formData.append('durationSec', String(draftDuration || 1));
+    if (draftTranscript) formData.append('transcript', draftTranscript);
     try {
       await api.uploadSpeakingAudio(backendSessionId, formData);
       await deleteAudioDraft(backendSessionId, serverQ.id);

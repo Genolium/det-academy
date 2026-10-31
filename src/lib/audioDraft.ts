@@ -8,6 +8,14 @@ interface AudioDraftRecord {
   createdAt: number;
   sessionId: string;
   questionId: string;
+  durationSec?: number;
+  transcript?: string;
+}
+
+export interface AudioDraft {
+  blob: Blob;
+  durationSec: number;
+  transcript: string;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -32,7 +40,8 @@ function draftKey(sessionId: string, questionId: string): string {
 export async function saveAudioDraft(
   sessionId: string,
   questionId: string,
-  blob: Blob
+  blob: Blob,
+  metadata: { durationSec?: number; transcript?: string } = {}
 ): Promise<void> {
   try {
     const db = await openDb();
@@ -44,6 +53,8 @@ export async function saveAudioDraft(
         createdAt: Date.now(),
         sessionId,
         questionId,
+        durationSec: metadata.durationSec,
+        transcript: metadata.transcript,
       } satisfies AudioDraftRecord);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -54,10 +65,10 @@ export async function saveAudioDraft(
   }
 }
 
-export async function loadAudioDraft(
+export async function loadAudioDraftRecord(
   sessionId: string,
   questionId: string
-): Promise<Blob | null> {
+): Promise<AudioDraft | null> {
   try {
     const db = await openDb();
     const record = await new Promise<AudioDraftRecord | undefined>((resolve, reject) => {
@@ -71,10 +82,21 @@ export async function loadAudioDraft(
       if (record) await deleteAudioDraft(sessionId, questionId);
       return null;
     }
-    return record.blob;
+    return {
+      blob: record.blob,
+      durationSec: record.durationSec || 0,
+      transcript: record.transcript || '',
+    };
   } catch {
     return null;
   }
+}
+
+export async function loadAudioDraft(
+  sessionId: string,
+  questionId: string
+): Promise<Blob | null> {
+  return (await loadAudioDraftRecord(sessionId, questionId))?.blob ?? null;
 }
 
 export async function deleteAudioDraft(sessionId: string, questionId: string): Promise<void> {

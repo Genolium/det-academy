@@ -594,7 +594,26 @@ func (s *StudyService) GetXPProfile(ctx context.Context, userID string) (*models
 // --- Error Notebook with 2-Recall Cycle ---
 
 func (s *StudyService) GetErrors(ctx context.Context, userID string) ([]models.UserErrorItem, error) {
-	return s.storage.Study().GetErrors(ctx, userID)
+	items, err := s.storage.Study().GetErrors(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range items {
+		humanizeStoredError(&items[i])
+	}
+	return items, nil
+}
+
+func humanizeStoredError(item *models.UserErrorItem) {
+	if item == nil {
+		return
+	}
+	if value := humanizeAnswer(item.QuestionType, json.RawMessage(item.CorrectAnswer)); value != "" {
+		item.CorrectAnswer = value
+	}
+	if value := humanizeAnswer(item.QuestionType, json.RawMessage(item.UserAnswer)); value != "" {
+		item.UserAnswer = value
+	}
 }
 
 func (s *StudyService) SaveError(ctx context.Context, userID string, req models.SaveErrorRequest) (*models.UserErrorItem, error) {
@@ -652,6 +671,7 @@ func (s *StudyService) RecallError(ctx context.Context, userID, errorID, answer 
 	if err != nil {
 		return nil, errors.New("error item not found")
 	}
+	humanizeStoredError(item)
 
 	cleanAnswer := normalizeRecallAnswer(answer)
 	cleanCorrect := normalizeRecallAnswer(item.CorrectAnswer)

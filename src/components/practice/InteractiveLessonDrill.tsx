@@ -108,6 +108,29 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [serverGradeError, setServerGradeError] = useState<string | null>(null);
   const [serverGradedBadge, setServerGradedBadge] = useState<{ isCorrect: boolean; score: number } | null>(null);
 
+  const persistDrillAttempt = async (
+    questionType: string,
+    userResponse: Record<string, unknown>,
+    isCorrect: boolean,
+    score: number
+  ) => {
+    if (!assignment?.assignmentId) return;
+    try {
+      const result = await api.recordPracticeAttempt({
+        assignmentId: assignment.assignmentId,
+        questionId: assignment.questionId,
+        questionType,
+        promptContext: `Local drill: ${lessonSlug}`,
+        userResponse,
+        isCorrect,
+        score,
+      });
+      setServerGradedBadge({ isCorrect: result.isCorrect, score: result.score });
+    } catch {
+      // The local result is still shown; the assignment may already be consumed.
+    }
+  };
+
   useEffect(() => {
     let active = true;
     const fetchAssignment = async () => {
@@ -670,6 +693,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     const percent = Math.min(100, Math.round(ratio * 100));
     setAloudScore(percent);
     setAloudEvaluated(true);
+    void persistDrillAttempt('READ_ALOUD', { transcript: text, matchPercent: percent }, percent >= 60, percent / 100);
     if (percent >= 60) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -685,6 +709,12 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     if (readingSentenceIdx === currentReadingBlock.sentenceOptions.correctIndex) score += 35;
     if (readingHighlightDone) score += 30;
     setReadingChecked(true);
+    void persistDrillAttempt('INTERACTIVE_READING', {
+      gapChoice: readingGapChoice,
+      sentenceIndex: readingSentenceIdx,
+      highlighted: readingHighlightDone,
+      score,
+    }, score >= 60, score / 100);
     if (score >= 60) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -707,6 +737,11 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       currentListeningBlock.turns.forEach((t, i) => {
         if (updated[i] === t.correctIndex) correct++;
       });
+      void persistDrillAttempt('INTERACTIVE_LISTENING', {
+        choices: updated,
+        correctCount: correct,
+        totalTurns: currentListeningBlock.turns.length,
+      }, correct >= 2, correct / Math.max(1, currentListeningBlock.turns.length));
       if (correct >= 2) {
         setDrillCompleted(true);
         onDrillCompleted?.();
@@ -720,6 +755,10 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const handlePhotoWriteAnalyze = () => {
     const analysis = analyzeWritingVocabulary(photoWriteText);
     setPhotoWriteAnalysis(analysis);
+    void persistDrillAttempt('WRITE_PHOTO', {
+      text: photoWriteText,
+      wordCount: analysis.wordCount,
+    }, !analysis.isGibberish && analysis.wordCount >= 20, 0.5);
     if (!analysis.isGibberish && analysis.wordCount >= 20) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -732,6 +771,10 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const handleWritingAnalyze = () => {
     const analysis = analyzeWritingVocabulary(writingText);
     setWritingAnalysis(analysis);
+    void persistDrillAttempt('WRITING_SAMPLE', {
+      text: writingText,
+      wordCount: analysis.wordCount,
+    }, !analysis.isGibberish && analysis.wordCount >= writingPrompt.minWords * 0.5, 0.5);
     if (!analysis.isGibberish && analysis.wordCount >= writingPrompt.minWords * 0.5) {
       setDrillCompleted(true);
       onDrillCompleted?.();
@@ -789,6 +832,11 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     }
     const words = (speakingTranscriptRef.current || '').trim().split(/\s+/).filter(Boolean);
     if (words.length >= 5) {
+      const speakType = isReadAloud ? 'READ_ALOUD' : isReadListenSpeak ? 'READ_THEN_SPEAK' : 'SPEAKING_SAMPLE';
+      void persistDrillAttempt(speakType, {
+        transcript: speakingTranscriptRef.current,
+        durationSec: 60,
+      }, true, 0.5);
       setSpeakingCompleted(true);
       setDrillCompleted(true);
       onDrillCompleted?.();
