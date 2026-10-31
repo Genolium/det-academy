@@ -8,8 +8,16 @@ log() { printf '[cleanup] %s\n' "$1"; }
 if command -v docker >/dev/null 2>&1; then
   log "pruning unused images older than 7 days"
   docker image prune -f --filter "until=168h" >/dev/null || true
-  log "pruning build cache older than 7 days"
-  docker builder prune -f --filter "until=168h" >/dev/null || true
+  log "pruning all build cache"
+  docker builder prune -f >/dev/null || true
+  log "removing old det-academy release tags (keeping latest/previous)"
+  for service in backend frontend; do
+    docker images "det-academy-${service}" --format '{{.Tag}}' 2>/dev/null \
+      | grep -vE '^(latest|previous|<none>)$' \
+      | while IFS= read -r tag; do
+          [ -n "$tag" ] && docker rmi "det-academy-${service}:${tag}" >/dev/null 2>&1 || true
+        done
+  done
   log "removing stopped containers"
   docker container prune -f >/dev/null || true
 fi
