@@ -58,26 +58,30 @@ echo "repository: $REPO_ROOT"
 echo "branch:     $(git rev-parse --abbrev-ref HEAD)"
 echo "commit:     $(git rev-parse --short HEAD)"
 
-log "Pulling origin/master"
-# Only tracked modifications are a problem. Untracked files such as backups or
-# build artefacts on the server must not block a deployment.
-if [ "$FORCE" != true ] && [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  echo "the working tree has local modifications:" >&2
-  git status --short --untracked-files=no >&2
-  echo "commit or stash them, or re-run with --force" >&2
-  exit 1
-fi
-git fetch --quiet origin master
-git checkout --quiet master
-git merge --ff-only --quiet origin/master
-git log --oneline -1
+if [ "${DEPLOY_SKIP_PULL:-false}" != "true" ]; then
+  log "Pulling origin/master"
+  # Only tracked modifications are a problem. Untracked files such as backups or
+  # build artefacts on the server must not block a deployment.
+  if [ "$FORCE" != true ] && [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo "the working tree has local modifications:" >&2
+    git status --short --untracked-files=no >&2
+    echo "commit or stash them, or re-run with --force" >&2
+    exit 1
+  fi
+  git fetch --quiet origin master
+  git checkout --quiet master
+  git merge --ff-only --quiet origin/master
+  git log --oneline -1
 
-# Bash reads this file incrementally. If the pull changed the deploy script
-# itself (for example a new seed), the running copy may not contain it. Re-exec
-# once with the updated file so seeds and checks are never skipped.
-if [ "${DET_DEPLOY_REEXEC:-0}" != "1" ] && git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null | grep -q '^scripts/deploy_production.sh$'; then
-  export DET_DEPLOY_REEXEC=1
-  exec "$0" "$@"
+  # Bash reads this file incrementally. If the pull changed the deploy script
+  # itself (for example a new seed), the running copy may not contain it.
+  if [ "${DET_DEPLOY_REEXEC:-0}" != "1" ] && git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null | grep -q '^scripts/deploy_production.sh$'; then
+    export DET_DEPLOY_REEXEC=1
+    exec "$0" "$@"
+  fi
+else
+  log "Using the checked-out commit (CI tag deploy)"
+  git log --oneline -1
 fi
 
 log "Running production preflight"

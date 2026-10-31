@@ -49,10 +49,11 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           TAG: ${{ github.ref_name }}
+          DEPLOY_SKIP_PULL: "true"
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            "cd /root/det-academy && git fetch origin --tags --force '$TAG' && git checkout --force FETCH_HEAD && ./scripts/deploy_production.sh --backup"
+            "cd /root/det-academy && git fetch origin --tags --force '$TAG' && git checkout --force FETCH_HEAD && DEPLOY_SKIP_PULL=true ./scripts/deploy_production.sh --backup"
 
       - name: Health gate
         run: |
