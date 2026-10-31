@@ -70,6 +70,9 @@ type TestSessionRepository interface {
 	// CountUserSessionsSince counts full mock attempts created after the given time.
 	CountUserSessionsSince(ctx context.Context, userID string, since time.Time) (int, error)
 	WithSessionLock(ctx context.Context, sessionID string, fn func() error) error
+	// WithUserLock serializes quota checks and session creation per user across
+	// processes. The memory store is single-process and may simply call fn.
+	WithUserLock(ctx context.Context, userID string, fn func() error) error
 	RecordEvent(ctx context.Context, event *models.SessionEvent) error
 	GetSessionEvents(ctx context.Context, sessionID string) ([]models.SessionEvent, error)
 	AssignQuestions(ctx context.Context, assignments []models.SessionQuestion) error

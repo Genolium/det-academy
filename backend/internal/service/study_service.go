@@ -892,7 +892,9 @@ func (s *StudyService) ReviewSRSCard(ctx context.Context, userID string, req mod
 
 	_ = s.storage.Study().RecordActivity(ctx, userID, todayStr, "srs")
 	_ = s.CompletePlanTaskWithSource(ctx, userID, "task-srs", todayStr, "srs_review")
-	_, _ = s.AwardXP(ctx, userID, "srs", "srs:"+req.CardID+":"+todayStr, 5)
+	if s.srsXPAwardAllowed(ctx, userID) {
+		_, _ = s.AwardXP(ctx, userID, "srs", "srs:"+req.CardID+":"+todayStr, 5)
+	}
 	emitLearningEvent(ctx, s.storage.Study(), userID, "srs_reviewed", "srs:"+req.CardID+":"+todayStr, map[string]any{
 		"cardId": req.CardID,
 	})
@@ -906,6 +908,22 @@ func (s *StudyService) ReviewSRSCard(ctx context.Context, userID string, req mod
 		StreakDays:     stats.StreakDays,
 		TotalReviewed:  stats.TotalReviewed,
 	}, nil
+}
+
+func (s *StudyService) srsXPAwardAllowed(ctx context.Context, userID string) bool {
+	const maxDailyAwards = 20
+	history, err := s.storage.Study().XPHistory(ctx, userID, 300)
+	if err != nil {
+		return false
+	}
+	dayStart := time.Now().UTC().Truncate(24 * time.Hour)
+	awards := 0
+	for _, event := range history {
+		if event.EventType == "srs" && !event.CreatedAt.Before(dayStart) {
+			awards++
+		}
+	}
+	return awards < maxDailyAwards
 }
 
 // --- Skill Analytics & 4 Modalities Breakdown ---

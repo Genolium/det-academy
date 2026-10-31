@@ -193,45 +193,55 @@ func (s *CATService) StartSession(ctx context.Context, userID, candidateName, in
 	if userID == "" {
 		return nil, nil, errors.New("authorization required to start test session")
 	}
-	if mode == "full" {
-		if err := checkMockDailyLimit(ctx, s.sessionRepo, userID); err != nil {
-			return nil, nil, err
+
+	var session *models.TestSession
+	var questions []models.Question
+	err := s.sessionRepo.WithUserLock(ctx, userID, func() error {
+		if mode == "full" {
+			if err := checkMockDailyLimit(ctx, s.sessionRepo, userID); err != nil {
+				return err
+			}
 		}
-	}
 
-	initialStage := StageSequence[0]
-	durationSec := StageDefaultDurations[initialStage]
-	if durationSec <= 0 {
-		durationSec = 180
-	}
-	deadline := time.Now().Add(time.Duration(durationSec) * time.Second)
+		initialStage := StageSequence[0]
+		durationSec := StageDefaultDurations[initialStage]
+		if durationSec <= 0 {
+			durationSec = 180
+		}
+		deadline := time.Now().Add(time.Duration(durationSec) * time.Second)
 
-	session := &models.TestSession{
-		ID:               uuid.New().String(),
-		UserID:           userID,
-		CandidateName:    candidateName,
-		Status:           "IN_PROGRESS",
-		CurrentStage:     1,
-		StageName:        initialStage,
-		DifficultyLevel:  initialDifficulty,
-		Mode:             mode,
-		BlueprintVersion: "2026.1",
-		ScoringVersion:   "irt-2pl-v2",
-		DeadlineAt:       &deadline,
-		CreatedAt:        time.Now().UTC(),
-	}
+		session = &models.TestSession{
+			ID:               uuid.New().String(),
+			UserID:           userID,
+			CandidateName:    candidateName,
+			Status:           "IN_PROGRESS",
+			CurrentStage:     1,
+			StageName:        initialStage,
+			DifficultyLevel:  initialDifficulty,
+			Mode:             mode,
+			BlueprintVersion: "2026.1",
+			ScoringVersion:   "irt-2pl-v2",
+			DeadlineAt:       &deadline,
+			CreatedAt:        time.Now().UTC(),
+		}
 
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
-		return nil, nil, fmt.Errorf("failed to create test session: %w", err)
-	}
+		if err := s.sessionRepo.Create(ctx, session); err != nil {
+			return fmt.Errorf("failed to create test session: %w", err)
+		}
 
-	// Fetch a deterministic blueprint-sized initial question set.
-	questions, err := s.stageQuestions(ctx, session.UserID, session.StageName, session.DifficultyLevel, session.Mode)
+		// Fetch a deterministic blueprint-sized initial question set.
+		var fetchErr error
+		questions, fetchErr = s.stageQuestions(ctx, session.UserID, session.StageName, session.DifficultyLevel, session.Mode)
+		if fetchErr != nil {
+			return fmt.Errorf("failed to fetch initial questions: %w", fetchErr)
+		}
+		if err := s.assignSessionQuestions(ctx, session, questions); err != nil {
+			return fmt.Errorf("failed to assign initial questions: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch initial questions: %w", err)
-	}
-	if err := s.assignSessionQuestions(ctx, session, questions); err != nil {
-		return nil, nil, fmt.Errorf("failed to assign initial questions: %w", err)
+		return nil, nil, err
 	}
 
 	return session, sanitizeQuestionsForStudent(questions), nil
@@ -1739,7 +1749,10 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	}
 	if s.evaluationQueue != nil {
 		pending, pendingErr := s.evaluationQueue.PendingForSession(ctx, sessionID)
-		if pendingErr == nil && pending > 0 {
+		if pendingErr != nil {
+			return nil, fmt.Errorf("check pending evaluations: %w", pendingErr)
+		}
+		if pending > 0 {
 			return nil, ErrEvaluationPending
 		}
 	}

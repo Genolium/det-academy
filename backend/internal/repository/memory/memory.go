@@ -1709,6 +1709,10 @@ func (r *sessionMemoryRepo) WithSessionLock(ctx context.Context, sessionID strin
 	return fn()
 }
 
+func (r *sessionMemoryRepo) WithUserLock(ctx context.Context, userID string, fn func() error) error {
+	return r.WithSessionLock(ctx, "user:"+userID, fn)
+}
+
 func (r *sessionMemoryRepo) RecordResponse(ctx context.Context, resp *models.QuestionResponse) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()

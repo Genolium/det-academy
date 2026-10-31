@@ -701,6 +701,24 @@ func (r *SessionRepo) WithSessionLock(ctx context.Context, sessionID string, fn 
 	return fn()
 }
 
+func (r *SessionRepo) WithUserLock(ctx context.Context, userID string, fn func() error) error {
+	conn, err := r.db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	key := "user:" + userID
+	if _, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock(hashtext($1))`, key); err != nil {
+		return err
+	}
+	defer func() {
+		_, _ = conn.ExecContext(context.Background(), `SELECT pg_advisory_unlock(hashtext($1))`, key)
+	}()
+
+	return fn()
+}
+
 func (r *SessionRepo) RecordResponse(ctx context.Context, resp *models.QuestionResponse) error {
 	query := `
 		INSERT INTO question_responses (id, session_id, question_id, user_response, is_correct, raw_score, time_spent_sec, created_at)
@@ -785,8 +803,12 @@ func (r *SessionRepo) ListRecent(ctx context.Context, limit int) ([]models.TestS
 func (r *SessionRepo) CountUserSessionsSince(ctx context.Context, userID string, since time.Time) (int, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM test_sessions
-		WHERE user_id = $1 AND created_at >= $2 AND COALESCE(mode, 'full') = 'full'
+		SELECT COUNT(*) FROM test_sessions ts
+		WHERE ts.user_id = $1 AND ts.created_at >= $2
+		  AND COALESCE(ts.mode, 'full') = 'full'
+		  AND (ts.status = 'COMPLETED' OR EXISTS (
+		      SELECT 1 FROM question_responses qr WHERE qr.session_id = ts.id
+		  ))
 	`, userID, since).Scan(&count)
 	return count, err
 }
