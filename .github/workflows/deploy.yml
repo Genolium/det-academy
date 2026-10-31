@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            "cd /root/det-academy && git fetch origin --tags --force '$TAG' && git checkout --force FETCH_HEAD && docker compose build backend frontend && docker compose up -d backend frontend"
+            "cd /root/det-academy && git fetch origin --tags --force '$TAG' && git checkout --force FETCH_HEAD && ./scripts/deploy_production.sh --backup"
 
       - name: Health gate
         run: |
@@ -67,3 +67,13 @@ jobs:
           done
           echo "::error::production did not become ready after the deploy"
           exit 1
+
+      - name: Roll back the previous images
+        if: failure()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            "cd /root/det-academy && ./scripts/rollback_production.sh"

@@ -92,8 +92,25 @@ if [ "$BACKUP" = true ]; then
   BACKUP_DIR="${BACKUP_DIR:-/var/backups/det}" ./scripts/backup_postgres.sh
 fi
 
+log "Tagging the current images for rollback"
+previous_tag="${DEPLOY_PREVIOUS_TAG:-previous}"
+for service in backend frontend; do
+  image="det-academy-${service}:latest"
+  if docker image inspect "$image" >/dev/null 2>&1; then
+    docker tag "$image" "det-academy-${service}:${previous_tag}"
+  fi
+done
+
 log "Rebuilding and restarting the stack"
 docker compose up -d --build --remove-orphans
+
+deploy_sha="$(git rev-parse --short HEAD)"
+for service in backend frontend; do
+  image="det-academy-${service}:latest"
+  if docker image inspect "$image" >/dev/null 2>&1; then
+    docker tag "$image" "det-academy-${service}:${deploy_sha}"
+  fi
+done
 
 log "Applying migrations (a failed migration aborts the deployment)"
 docker compose exec -T backend /app/server migrate
@@ -160,6 +177,11 @@ fi
 
 log "Current container state"
 docker compose ps
+
+if [ -x scripts/cleanup_host.sh ]; then
+  log "Cleaning old images and build cache"
+  ./scripts/cleanup_host.sh || true
+fi
 
 log "Done. Public check:"
 echo "  curl -fsS https://det-academy.ru/api/v1/health"
