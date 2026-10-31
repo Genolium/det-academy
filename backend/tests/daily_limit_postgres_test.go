@@ -2,10 +2,14 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/postgres"
 
 	"github.com/google/uuid"
@@ -90,5 +94,67 @@ func TestPostgresDailyLimitCounterPersists(t *testing.T) {
 	}
 	if !allowed || used != 1 {
 		t.Fatalf("after purge = (%d, %v), want (1, true)", used, allowed)
+	}
+}
+
+// TestPostgresMockQuotaIsAtomicUnderConcurrency exercises the real advisory
+// lock used by StartSession: concurrent quota checks must not create more than
+// the configured number of full mock attempts.
+func TestPostgresMockQuotaIsAtomicUnderConcurrency(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	store, err := postgres.New(databaseURL)
+	if err != nil {
+		t.Fatalf("open postgres: %v", err)
+	}
+	defer store.Close()
+	if err := store.RunMigrations("../db/migrations"); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	ctx := context.Background()
+	userID := uuid.NewString()
+	user := &models.User{
+		ID: userID, Email: "quota-" + userID[:8] + "@example.com",
+		PasswordHash: "not-used", Name: "Quota User", Role: "student",
+		Locale: "ru", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+	}
+	if err := store.Users().Create(ctx, user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	const limit = 2
+	dayStart := time.Now().UTC().Truncate(24 * time.Hour)
+	errQuota := errors.New("quota reached")
+	var successes atomic.Int32
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := store.Sessions().WithUserLock(ctx, userID, func() error {
+				used, err := store.Sessions().CountUserSessionsSince(ctx, userID, dayStart)
+				if err != nil {
+					return err
+				}
+				if used >= limit {
+					return errQuota
+				}
+				return store.Sessions().Create(ctx, &models.TestSession{
+					ID: uuid.NewString(), UserID: userID, CandidateName: "Quota User",
+					Status: "COMPLETED", CurrentStage: 14, StageName: "COMPLETED",
+					DifficultyLevel: "B1", Mode: "full", CreatedAt: time.Now().UTC(),
+				})
+			})
+			if err == nil {
+				successes.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if got := successes.Load(); got != limit {
+		t.Fatalf("concurrent quota allowed %d sessions, want %d", got, limit)
 	}
 }

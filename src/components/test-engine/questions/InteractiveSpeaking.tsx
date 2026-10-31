@@ -9,6 +9,7 @@ import { appendPronunciationReportFromWords, toAsrSegments } from '@/lib/speechP
 import type { WordTiming } from '@/lib/pronunciationAnalysis';
 import { Button } from '@/components/ui/Button';
 import { isAudioAlreadyStored, speakingUploadErrorMessage } from '@/lib/speakingUploadError';
+import { deleteAudioDraft, loadAudioDraft, saveAudioDraft } from '@/lib/audioDraft';
 import { Mic, Clock, ArrowRight, AlertCircle, MessageSquare, Volume2, Sparkles } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -77,6 +78,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPlayingPromptAudio, setIsPlayingPromptAudio] = useState(false);
 
@@ -116,6 +118,19 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
   useEffect(() => {
     recorderRef.current = audioRecorder;
   });
+
+  useEffect(() => {
+    if (!backendSessionId || !serverQ) return;
+    let active = true;
+    void loadAudioDraft(backendSessionId, serverQ.id).then((blob) => {
+      if (!active || !blob) return;
+      audioRecorder.restoreAudio(blob);
+      setHasDraft(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [audioRecorder, backendSessionId, serverQ?.id]);
 
   // One MediaRecorder for the whole conversation. Restarting it for every turn
   // discarded all previous turns and left orphaned recorders behind.
@@ -215,6 +230,8 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       }
 
       if (backendSessionId && serverQ) {
+        await saveAudioDraft(backendSessionId, serverQ.id, recordedBlob);
+        setHasDraft(true);
         const formData = new FormData();
         formData.append('audio', recordedBlob, 'interactive_speaking.webm');
         formData.append('questionId', serverQ.id);
@@ -238,6 +255,7 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
           setIsSubmitting(false);
           isAdvancingRef.current = false;
           if (isAudioAlreadyStored(err)) {
+            await deleteAudioDraft(backendSessionId, serverQ.id);
             recordSpeakingResult(fullTranscript || 'Записан интерактивный диалог');
             onComplete();
             return;
@@ -249,13 +267,47 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
       }
 
       setIsSubmitting(false);
+      if (backendSessionId && serverQ) {
+        await deleteAudioDraft(backendSessionId, serverQ.id);
+      }
       recordSpeakingResult(fullTranscript || 'Записан интерактивный диалог');
       onComplete();
     }
   };
 
+  const handleSendDraft = async () => {
+    const blob = audioRecorder.audioBlob;
+    if (!blob || !backendSessionId || !serverQ || isSubmitting) return;
+    setIsSubmitting(true);
+    setUploadFailed(false);
+    setSubmitError(null);
+    const formData = new FormData();
+    formData.append('audio', blob, 'interactive_speaking.webm');
+    formData.append('questionId', serverQ.id);
+    formData.append('durationSec', '1');
+    try {
+      await api.uploadSpeakingAudio(backendSessionId, formData);
+      await deleteAudioDraft(backendSessionId, serverQ.id);
+      recordSpeakingResult('Сохранённый интерактивный диалог');
+      onComplete();
+    } catch (err) {
+      setIsSubmitting(false);
+      if (isAudioAlreadyStored(err)) {
+        await deleteAudioDraft(backendSessionId, serverQ.id);
+        recordSpeakingResult('Сохранённый интерактивный диалог');
+        onComplete();
+        return;
+      }
+      setUploadFailed(true);
+      setSubmitError(speakingUploadErrorMessage(err, true));
+    }
+  };
+
   const handleContinueWithoutAudio = () => {
     if (isSubmitting) return;
+    if (backendSessionId && serverQ) {
+      void deleteAudioDraft(backendSessionId, serverQ.id);
+    }
     const fullTranscript = [...turnTranscripts, transcriptRef.current].filter(Boolean).join('; ');
     recordSpeakingResult(fullTranscript || 'Интерактивный диалог не сохранён: аудио не загружено');
     onComplete();
@@ -384,6 +436,21 @@ export const InteractiveSpeaking: React.FC<InteractiveSpeakingProps> = ({ onComp
               <span>{micError}</span>
             </div>
           )}
+          {hasDraft && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+              <p className="mb-2">
+                Есть сохранённая запись с прошлой попытки. Её можно отправить без повторной записи.
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleSendDraft()}
+                className="rounded-lg border border-[#D2F544]/60 px-3 py-1.5 font-bold text-[#D2F544]"
+              >
+                Отправить сохранённую запись
+              </button>
+            </div>
+          )}
+
           {submitError && (
             <div className="text-xs text-red-300 bg-red-500/10 p-2.5 rounded-lg border border-red-500/30">
               <div className="flex items-center gap-2">

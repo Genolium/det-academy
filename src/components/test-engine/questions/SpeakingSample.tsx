@@ -9,6 +9,7 @@ import { appendPronunciationReport, toAsrSegments } from '@/lib/speechPronunciat
 import { Button } from '@/components/ui/Button';
 import { TaskPrompt } from '@/components/test-engine/TaskPrompt';
 import { isAudioAlreadyStored, speakingUploadErrorMessage } from '@/lib/speakingUploadError';
+import { deleteAudioDraft, loadAudioDraft, saveAudioDraft } from '@/lib/audioDraft';
 import { Mic, Clock, ArrowRight, AlertCircle, Sparkles, Volume2 } from 'lucide-react';
 
 interface SpeechRecognitionEvent {
@@ -68,6 +69,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const transcriptRef = useRef(transcript);
@@ -81,6 +83,19 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
   const phaseRef = useRef<'prep' | 'speaking'>('prep');
   const speakStartedAtRef = useRef<number | null>(null);
   const autoStartFailedRef = useRef(false);
+
+  useEffect(() => {
+    if (isStandaloneDrill || !backendSessionId || !serverQ) return;
+    let active = true;
+    void loadAudioDraft(backendSessionId, serverQ.id).then((blob) => {
+      if (!active || !blob) return;
+      audioRecorder.restoreAudio(blob);
+      setHasDraft(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [audioRecorder, backendSessionId, isStandaloneDrill, serverQ?.id]);
 
   const handleFinish = async () => {
     if (isCompletedRef.current) return;
@@ -107,6 +122,11 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
       setUploadFailed(true);
       setSubmitError('Аудио не записано. Проверьте микрофон и повторите.');
       return;
+    }
+
+    if (!isStandaloneDrill && backendSessionId && serverQ) {
+      await saveAudioDraft(backendSessionId, serverQ.id, recordedBlob);
+      setHasDraft(true);
     }
 
     if (!isStandaloneDrill && backendSessionId && serverQ && recordedBlob.size > 0) {
@@ -141,18 +161,34 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
 
     }
 
+    if (!isStandaloneDrill && backendSessionId && serverQ) {
+      await deleteAudioDraft(backendSessionId, serverQ.id);
+    }
     if (!isStandaloneDrill) recordSpeakingResult(spokenText || (recordedBlob ? 'Записан Speaking Sample' : ''));
     onComplete();
   };
 
   const handleContinueWithoutAudio = () => {
     if (isSubmitting) return;
+    if (!isStandaloneDrill && backendSessionId && serverQ) {
+      void deleteAudioDraft(backendSessionId, serverQ.id);
+    }
     if (!isStandaloneDrill) {
       recordSpeakingResult(
         transcriptRef.current || 'Speaking Sample не сохранён: аудио не загружено'
       );
     }
     onComplete();
+  };
+
+  const discardDraft = () => {
+    if (!isStandaloneDrill && backendSessionId && serverQ) {
+      void deleteAudioDraft(backendSessionId, serverQ.id);
+    }
+    audioRecorder.resetAudio();
+    setHasDraft(false);
+    setUploadFailed(false);
+    setSubmitError(null);
   };
 
   const handleFinishRef = useRef(handleFinish);
@@ -265,6 +301,30 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
           </div>
           <TaskPrompt prompt={promptText} />
         </div>
+
+        {hasDraft && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <p className="mb-2">
+              Есть сохранённая запись с прошлой попытки. Её можно отправить без повторной записи.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleFinish()}
+                className="rounded-lg border border-[#D2F544]/60 px-3 py-1.5 font-bold text-[#D2F544]"
+              >
+                Отправить сохранённую запись
+              </button>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="rounded-lg border border-neutral-600 px-3 py-1.5 font-bold text-neutral-300"
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live Audio Feedback */}
         {phase === 'prep' ? (
