@@ -22,7 +22,7 @@ var ErrDailyLimitReached = errors.New("daily limit reached")
 // SpeakingQuestionTypes are the server question types that consume the daily
 // speaking allowance.
 var SpeakingQuestionTypes = []string{
-	"SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE",
+	"SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE", "READ_ALOUD",
 }
 
 func envLimit(name string, fallback int) int {

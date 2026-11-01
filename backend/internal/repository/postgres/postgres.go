@@ -2287,6 +2287,20 @@ func (r *RefreshTokenRepo) GetByHash(ctx context.Context, tokenHash string) (*mo
 	return &token, nil
 }
 
+func (r *RefreshTokenRepo) Claim(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	var token models.RefreshToken
+	err := r.db.QueryRowContext(ctx, `
+		UPDATE refresh_tokens
+		SET revoked_at = NOW()
+		WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > NOW()
+		RETURNING id, user_id, token_hash, expires_at, revoked_at, created_at
+	`, tokenHash).Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &token.RevokedAt, &token.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
 func (r *RefreshTokenRepo) Revoke(ctx context.Context, tokenHash string) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE refresh_tokens SET revoked_at = NOW() WHERE token_hash = $1`, tokenHash)
 	return err
@@ -2478,5 +2492,13 @@ func (r *UserRepo) SetCalibrationConsent(ctx context.Context, userID string, ena
 		VALUES ($1, $2, NOW(), NOW())
 		ON CONFLICT (user_id) DO UPDATE SET revoked_at = NOW(), consent_version = EXCLUDED.consent_version
 	`, userID, version)
+	return err
+}
+
+func (r *UserRepo) RecordAdminAudit(ctx context.Context, actorID, action, targetID, ip string) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO admin_audit (actor_id, action, target_id, ip)
+		VALUES (NULLIF($1, '')::uuid, $2, NULLIF($3, '')::uuid, $4)
+	`, actorID, action, targetID, ip)
 	return err
 }

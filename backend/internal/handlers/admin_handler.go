@@ -77,6 +77,7 @@ func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	h.authService.AuditAdminAction(r.Context(), GetUserIDFromContext(r.Context()), "user.role", id, RequestIP(r))
 
 	RespondJSON(w, http.StatusOK, map[string]string{"status": "updated", "role": req.Role})
 }
@@ -92,6 +93,7 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.authService.AuditAdminAction(r.Context(), GetUserIDFromContext(r.Context()), "user.delete", id, RequestIP(r))
 
 	RespondJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }

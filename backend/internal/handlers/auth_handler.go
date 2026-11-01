@@ -120,6 +120,18 @@ func (h *AuthHandler) StartOAuth(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	// Bind the OAuth state to this browser. The provider round-trip must come
+	// back with the same state, otherwise an attacker can inject their own
+	// code and log the victim into the attacker's account.
+	http.SetCookie(w, &http.Cookie{
+		Name:     "det_oauth_state",
+		Value:    response.State,
+		Path:     "/",
+		MaxAge:   600,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookie,
+	})
 	RespondJSON(w, http.StatusOK, response)
 }
 
@@ -129,6 +141,16 @@ func (h *AuthHandler) OAuthLogin(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+
+	stateCookie, cookieErr := r.Cookie("det_oauth_state")
+	if cookieErr != nil || stateCookie.Value == "" || req.State == "" || req.State != stateCookie.Value {
+		RespondError(w, http.StatusBadRequest, "oauth state is invalid or expired")
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name: "det_oauth_state", Value: "", Path: "/", MaxAge: -1,
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: h.secureCookie,
+	})
 
 	user, token, err := h.authService.OAuthLogin(r.Context(), req)
 	if err != nil {

@@ -220,7 +220,7 @@ func GradeClosedItem(q *models.Question, userResponse json.RawMessage) (isCorrec
 func isOpenEndedQuestionType(questionType string) bool {
 	switch questionType {
 	case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE",
-		"SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+		"SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE", "READ_ALOUD":
 		return true
 	default:
 		return false

@@ -1595,7 +1595,7 @@ func MapQuestionTypeToSkill(qType string) string {
 		return "listening"
 	case "WRITE_PHOTO", "INTERACTIVE_WRITING", "WRITING_SAMPLE":
 		return "writing"
-	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE", "READ_ALOUD":
 		return "speaking"
 	default:
 		return "reading"

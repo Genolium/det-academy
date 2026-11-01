@@ -179,7 +179,9 @@ func (s *AuthService) Register(ctx context.Context, req models.RegisterRequest) 
 
 	// Check if user already exists
 	if _, err := s.userRepo.GetByEmail(ctx, req.Email); err == nil {
-		return nil, "", errors.New("user with this email already exists")
+		// Do not disclose whether an account exists. The same generic message
+		// is returned for malformed registration and duplicate email.
+		return nil, "", errors.New("unable to register with these details")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -230,6 +232,9 @@ func (s *AuthService) Login(ctx context.Context, req models.LoginRequest) (*mode
 
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
+		// Compare against a fixed hash so unknown emails and wrong passwords
+		// take the same bcrypt path and are not distinguishable by timing.
+		_ = bcrypt.CompareHashAndPassword([]byte("$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"), []byte(req.Password))
 		return nil, "", errors.New("invalid email or password")
 	}
 
@@ -1492,21 +1497,16 @@ func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*mod
 		return nil, "", "", errors.New("refresh token is invalid")
 	}
 	hash := hashState(strings.TrimSpace(rawToken))
-	stored, err := s.refreshRepo.GetByHash(ctx, hash)
+	stored, err := s.refreshRepo.Claim(ctx, hash)
 	if err != nil {
+		// If the hash exists but is already revoked, this is reuse of a stolen
+		// token: revoke the whole family and invalidate access tokens.
+		if old, lookupErr := s.refreshRepo.GetByHash(ctx, hash); lookupErr == nil && old.RevokedAt != nil {
+			_ = s.refreshRepo.RevokeAllForUser(ctx, old.UserID)
+			_ = s.userRepo.IncrementTokenVersion(ctx, old.UserID)
+		}
 		return nil, "", "", errors.New("refresh token is invalid or expired")
 	}
-	if stored.RevokedAt != nil {
-		// Reuse of a revoked token means the family is compromised. Revoke all
-		// refresh tokens and invalidate existing access tokens.
-		_ = s.refreshRepo.RevokeAllForUser(ctx, stored.UserID)
-		_ = s.userRepo.IncrementTokenVersion(ctx, stored.UserID)
-		return nil, "", "", errors.New("refresh token is invalid or expired")
-	}
-	if stored.ExpiresAt.Before(time.Now().UTC()) {
-		return nil, "", "", errors.New("refresh token is invalid or expired")
-	}
-	_ = s.refreshRepo.Revoke(ctx, hash)
 	user, err := s.userRepo.GetByID(ctx, stored.UserID)
 	if err != nil {
 		return nil, "", "", errors.New("user not found")
@@ -1542,6 +1542,12 @@ func (s *AuthService) UpdateUserRole(ctx context.Context, id, role string) error
 
 func (s *AuthService) DeleteUser(ctx context.Context, id string) error {
 	return s.userRepo.Delete(ctx, id)
+}
+
+// AuditAdminAction records a destructive admin mutation. It is best-effort:
+// the action itself must not fail only because the audit insert failed.
+func (s *AuthService) AuditAdminAction(ctx context.Context, actorID, action, targetID, ip string) {
+	_ = s.userRepo.RecordAdminAudit(ctx, actorID, action, targetID, ip)
 }
 
 // EnsureBootstrapAdmin creates the first administrator only when explicitly

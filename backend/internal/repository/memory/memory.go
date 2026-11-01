@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,10 +34,11 @@ type MemoryStorage struct {
 	certificates        map[string]*models.Certificate
 	banners             map[string]*models.AdBanner
 	institutions        map[string]*models.Institution
-	socialAccounts      map[string][]models.SocialAccount             // userID -> []SocialAccount
-	goals               map[string]*models.UserGoal                   // userID -> *UserGoal
-	emailPreferences    map[string]bool                               // userID -> digest enabled
-	calibrationConsents map[string]models.CalibrationConsent          // userID -> consent
+	socialAccounts      map[string][]models.SocialAccount    // userID -> []SocialAccount
+	goals               map[string]*models.UserGoal          // userID -> *UserGoal
+	emailPreferences    map[string]bool                      // userID -> digest enabled
+	calibrationConsents map[string]models.CalibrationConsent // userID -> consent
+	adminAudit          []models.AdminAudit
 	errors              map[string]map[string]*models.UserErrorItem   // userID -> errorID -> *UserErrorItem
 	srsStats            map[string]*models.SRSStats                   // userID -> *SRSStats
 	srsCards            map[string]map[string]*models.SRSCardProgress // userID -> cardID -> *SRSCardProgress
@@ -2864,6 +2867,20 @@ func (r *refreshTokenMemoryRepo) GetByHash(ctx context.Context, tokenHash string
 	return &copyToken, nil
 }
 
+func (r *refreshTokenMemoryRepo) Claim(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	token, ok := r.s.refreshTokens[tokenHash]
+	if !ok || token.RevokedAt != nil || token.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("refresh token is invalid")
+	}
+	now := time.Now().UTC()
+	token.RevokedAt = &now
+	r.s.refreshTokens[tokenHash] = token
+	copyToken := token
+	return &copyToken, nil
+}
+
 func (r *refreshTokenMemoryRepo) Revoke(ctx context.Context, tokenHash string) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -3006,5 +3023,14 @@ func (r *userMemoryRepo) SetCalibrationConsent(_ context.Context, userID string,
 		consent.RevokedAt = &now
 	}
 	r.s.calibrationConsents[userID] = consent
+	return nil
+}
+
+func (r *userMemoryRepo) RecordAdminAudit(_ context.Context, actorID, action, targetID, ip string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	r.s.adminAudit = append(r.s.adminAudit, models.AdminAudit{
+		ID: uuid.NewString(), ActorID: actorID, Action: action, TargetID: targetID, IP: ip, CreatedAt: time.Now().UTC(),
+	})
 	return nil
 }

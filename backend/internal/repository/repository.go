@@ -23,6 +23,7 @@ type UserRepository interface {
 	SetEmailDigestEnabled(ctx context.Context, userID string, enabled bool) error
 	GetCalibrationConsent(ctx context.Context, userID string) (*models.CalibrationConsent, error)
 	SetCalibrationConsent(ctx context.Context, userID string, enabled bool, version string) error
+	RecordAdminAudit(ctx context.Context, actorID, action, targetID, ip string) error
 
 	// Social accounts / linked providers
 	GetSocialAccounts(ctx context.Context, userID string) ([]models.SocialAccount, error)
@@ -35,6 +36,9 @@ type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *models.RefreshToken) error
 	GetActiveByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
 	GetByHash(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
+	// Claim atomically revokes an active refresh token. Exactly one concurrent
+	// caller can claim a token; the rest get an error and cannot mint pairs.
+	Claim(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
 	Revoke(ctx context.Context, tokenHash string) error
 	RevokeAllForUser(ctx context.Context, userID string) error
 }

@@ -21,6 +21,15 @@ type User struct {
 	UpdatedAt                  time.Time  `json:"updatedAt"`
 }
 
+type AdminAudit struct {
+	ID        string    `json:"id"`
+	ActorID   string    `json:"actorId"`
+	Action    string    `json:"action"`
+	TargetID  string    `json:"targetId"`
+	IP        string    `json:"ip"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 type CalibrationConsent struct {
 	UserID         string     `json:"userId"`
 	ConsentVersion string     `json:"consentVersion"`
