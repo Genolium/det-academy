@@ -33,14 +33,18 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Dump on the production host
+      - name: Dump database and media on the production host
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            'cd /root/det-academy && set -a && . ./.env && set +a && BACKUP_DIR=/var/backups/det ./scripts/backup_postgres.sh'
+            'cd /root/det-academy && set -a && . ./.env && set +a && BACKUP_DIR=/var/backups/det ./scripts/backup_postgres.sh && \
+             stamp=$(date -u +%Y%m%dT%H%M%SZ) && \
+             docker run --rm -v det-academy_media_data:/data -v /var/backups/det:/backup alpine:3.20 \
+               tar -czf "/backup/media-$stamp.tar.gz" -C /data . && \
+             echo "media backup: /var/backups/det/media-$stamp.tar.gz"'
 
       - name: Fetch and encrypt the latest dump
         env:
@@ -55,11 +59,16 @@ jobs:
           fi
           LATEST="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
             "ls -t /var/backups/det/det_academy_*.dump | head -1")"
+          LATEST_MEDIA="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            "ls -t /var/backups/det/media-*.tar.gz | head -1")"
           scp -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}:$LATEST" ./backup.dump
+          scp -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}:$LATEST_MEDIA" ./backup_media.tar.gz
           openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
             -in ./backup.dump -out ./det_academy_latest.dump.enc
-          rm -f ./backup.dump
-          sha256sum ./det_academy_latest.dump.enc > ./det_academy_latest.dump.enc.sha256
+          openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
+            -in ./backup_media.tar.gz -out ./det_academy_latest.media.tar.gz.enc
+          rm -f ./backup.dump ./backup_media.tar.gz
+          sha256sum ./det_academy_latest.dump.enc ./det_academy_latest.media.tar.gz.enc > ./det_academy_latest.sha256
 
       - name: Upload encrypted offsite artifact
         uses: actions/upload-artifact@v4
@@ -67,6 +76,7 @@ jobs:
           name: det-academy-backup-${{ github.run_id }}
           path: |
             det_academy_latest.dump.enc
-            det_academy_latest.dump.enc.sha256
+            det_academy_latest.media.tar.gz.enc
+            det_academy_latest.sha256
           retention-days: 14
           if-no-files-found: error
