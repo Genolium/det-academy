@@ -43,8 +43,11 @@ prune_det_release_tags() {
 }
 
 if command -v docker >/dev/null 2>&1; then
-  log "pruning dangling images older than 7 days"
-  docker image prune -f --filter "until=168h" >/dev/null || true
+  log "pruning dangling images"
+  # Dangling images are untagged and unreferenced by containers. Removing all
+  # of them (not only week-old ones) reclaims the previous release images left
+  # behind by the latest deploy. Tagged images of other projects are untouched.
+  docker image prune -f >/dev/null || true
 
   log "pruning all build cache"
   docker builder prune -f >/dev/null || true
@@ -56,6 +59,9 @@ if command -v docker >/dev/null 2>&1; then
 
   log "removing stopped containers"
   docker container prune -f >/dev/null || true
+
+  log "docker disk usage after cleanup"
+  docker system df 2>/dev/null || true
 fi
 
 if command -v journalctl >/dev/null 2>&1; then
