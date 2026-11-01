@@ -37,16 +37,33 @@ interface SrsStorage {
 
 export const SrsFlashcards: React.FC = () => {
   const [vocabData, setVocabData] = useState<VocabWord[]>([]);
+  const [vocabLoaded, setVocabLoaded] = useState(false);
   const { locale } = useSettingsStore();
   const ru = locale === 'ru';
   const { user } = useAuthStore();
 
   useEffect(() => {
     let active = true;
-    void import('@/data/academicVocabulary.json').then((mod) => {
-      if (active) setVocabData(mod.default as VocabWord[]);
-    });
-    return () => { active = false; };
+    // Defer the 62 KB vocabulary chunk until after the dashboard shell paints.
+    const load = () => {
+      void import('@/data/academicVocabulary.json').then((mod) => {
+        if (!active) return;
+        setVocabData(mod.default as VocabWord[]);
+        setVocabLoaded(true);
+      });
+    };
+    const idle = window.requestIdleCallback?.(
+      () => load(),
+      { timeout: 1500 }
+    );
+    if (idle === undefined) {
+      const timer = window.setTimeout(load, 0);
+      return () => { active = false; window.clearTimeout(timer); };
+    }
+    return () => {
+      active = false;
+      window.cancelIdleCallback?.(idle);
+    };
   }, []);
   const [queueMode, setQueueMode] = useState<'due' | 'new' | 'all'>('due');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -167,7 +184,7 @@ export const SrsFlashcards: React.FC = () => {
       newCards: fresh,
       allCards: vocabData,
     };
-  }, [storage.cards, todayStr]);
+  }, [storage.cards, todayStr, vocabData]);
 
   // Determine active list according to mode
   const computedActiveList = useMemo(() => {
