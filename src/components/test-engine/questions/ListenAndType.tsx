@@ -163,14 +163,14 @@ export const ListenAndType: React.FC<ListenAndTypeProps> = ({ onComplete }) => {
           <button
             onClick={playAudio}
             disabled={playCount >= currentItem.playsAllowed || isPlayingAudio}
-            className={`w-24 h-24 rounded-full flex flex-col items-center justify-center mx-auto transition-all ${
+            className={`w-28 h-28 rounded-full flex flex-col items-center justify-center mx-auto px-2 text-center transition-all ${
               playCount < currentItem.playsAllowed && !isPlayingAudio
                 ? 'bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] shadow-lg hover:scale-105 active:scale-95 cursor-pointer'
                 : 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-60'
             }`}
           >
             <Volume2 className="w-8 h-8 mb-1" />
-            <span className="text-[11px] font-black uppercase">
+            <span className="text-[10px] font-black uppercase leading-tight break-words">
               {isPlayingAudio
                 ? t.playingAudio
                 : `${t.playsRemaining} (${currentItem.playsAllowed - playCount}/${currentItem.playsAllowed})`}

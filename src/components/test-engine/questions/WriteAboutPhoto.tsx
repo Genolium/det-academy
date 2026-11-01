@@ -154,9 +154,9 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
         {/* Input box */}
         <div className="bg-[#111315] border border-neutral-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
           <div>
-            <div className="flex items-center justify-between text-xs text-neutral-400 mb-3">
-              <span className="font-bold text-[#D2F544] uppercase">{t.photoInstruction}</span>
-              <span>
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs text-neutral-400 mb-3">
+              <span className="min-w-0 font-bold text-[#D2F544] uppercase">{t.photoInstruction}</span>
+              <span className="whitespace-nowrap">
                 {t.wordsCounter}: <strong className="text-white font-mono">{wordCount}</strong> ({t.recommendedRange})
               </span>
             </div>

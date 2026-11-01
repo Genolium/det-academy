@@ -360,7 +360,7 @@ export default function PracticeHubPage() {
               {hub.mockBanner}
             </h2>
           </div>
-          <Button href="/test" size="lg" className="whitespace-nowrap">
+          <Button href="/test" size="lg" className="w-full sm:w-auto text-center">
             {hub.mockCta}
           </Button>
         </div>

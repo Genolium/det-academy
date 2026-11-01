@@ -114,7 +114,7 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
   const progressPercent = ((limit - timeLeft) / limit) * 100;
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
+    <div className="w-full min-w-0 max-w-2xl mx-auto py-12 px-4">
       <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
         <span>
           {t.wordStep} {index + 1} / {pool.length}
@@ -128,11 +128,11 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
         />
       </div>
 
-      <div className="bg-[#111315] border border-neutral-800 rounded-3xl p-12 text-center mb-8 shadow-2xl">
+      <div className="bg-[#111315] border border-neutral-800 rounded-3xl p-6 sm:p-12 text-center mb-8 shadow-2xl">
         <span className="text-xs uppercase tracking-widest text-neutral-500 font-bold block mb-4">
           Is this an actual English word?
         </span>
-        <div className="text-4xl sm:text-6xl font-black text-white tracking-wide">
+        <div className="min-w-0 break-words [overflow-wrap:anywhere] text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-wide">
           {currentItem?.word}
         </div>
       </div>
@@ -140,13 +140,13 @@ export const ReadAndSelect: React.FC<ReadAndSelectProps> = ({ onComplete }) => {
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={() => handleChoice(true)}
-          className="bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer"
+          className="min-w-0 bg-[#D2F544] hover:bg-[#C4F22C] text-[#0C2418] py-4 px-3 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md cursor-pointer"
         >
           <Check className="w-6 h-6" /> {t.yesKey}
         </button>
         <button
           onClick={() => handleChoice(false)}
-          className="bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 border border-neutral-700 cursor-pointer"
+          className="min-w-0 bg-neutral-800 hover:bg-neutral-700 text-white py-4 px-3 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2 transition-transform active:scale-95 border border-neutral-700 cursor-pointer"
         >
           <X className="w-6 h-6 text-red-400" /> {t.noKey}
         </button>
