@@ -251,6 +251,13 @@ func TestEvaluationQueueReapsExhaustedProcessingJob(t *testing.T) {
 	if _, err := store.Sessions().ClaimEvaluationJob(ctx); err == nil {
 		t.Fatal("exhausted processing job must not be reclaimed")
 	}
+	evaluations, err := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if err != nil || len(evaluations) != 1 {
+		t.Fatalf("read evaluations: %v %v", evaluations, err)
+	}
+	if evaluations[0].Status != "FAILED" || evaluations[0].FeedbackStatus != "permanently_failed" {
+		t.Fatalf("reaped job left an orphan evaluation: %+v", evaluations[0])
+	}
 }
 
 func TestEvaluationQueueStatsCountsStatuses(t *testing.T) {

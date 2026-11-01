@@ -1890,6 +1890,18 @@ func (r *sessionMemoryRepo) CompleteEvaluationJob(ctx context.Context, jobID str
 	return nil
 }
 
+func (r *sessionMemoryRepo) markEvaluationFailedLocked(sessionID, evaluationID, lastError string) {
+	for index := range r.s.evaluations[sessionID] {
+		evaluation := &r.s.evaluations[sessionID][index]
+		if evaluation.ID == evaluationID {
+			evaluation.Status = "FAILED"
+			evaluation.FeedbackStatus = "permanently_failed"
+			evaluation.LastError = lastError
+			return
+		}
+	}
+}
+
 func (r *sessionMemoryRepo) FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()
@@ -1899,6 +1911,7 @@ func (r *sessionMemoryRepo) FailEvaluationJob(ctx context.Context, jobID string,
 		job.UpdatedAt = time.Now().UTC()
 		if job.Attempts >= job.MaxAttempts {
 			job.Status = "permanently_failed"
+			r.markEvaluationFailedLocked(job.SessionID, job.EvaluationID, lastError)
 		} else {
 			job.Status = "retryable_failed"
 		}
@@ -1918,6 +1931,7 @@ func (r *sessionMemoryRepo) ReapStaleEvaluationJobs(ctx context.Context) (int, e
 			if job.LastError == "" {
 				job.LastError = "processing lease expired after max attempts"
 			}
+			r.markEvaluationFailedLocked(job.SessionID, job.EvaluationID, job.LastError)
 			job.UpdatedAt = now
 			reaped++
 		}

@@ -1036,32 +1036,52 @@ func (r *SessionRepo) CompleteEvaluationJob(ctx context.Context, jobID string) e
 
 func (r *SessionRepo) FailEvaluationJob(ctx context.Context, jobID string, retryAt time.Time, lastError string) error {
 	query := `
-		UPDATE evaluation_jobs
-		SET status = CASE WHEN attempts >= max_attempts THEN 'permanently_failed' ELSE 'retryable_failed' END,
-		    next_attempt_at = $2,
-		    last_error = $3,
-		    updated_at = NOW()
-		WHERE id = $1
+		WITH failed AS (
+			UPDATE evaluation_jobs
+			SET status = CASE WHEN attempts >= max_attempts THEN 'permanently_failed' ELSE 'retryable_failed' END,
+			    next_attempt_at = $2,
+			    last_error = $3,
+			    updated_at = NOW()
+			WHERE id = $1
+			RETURNING evaluation_id, status, last_error
+		), failed_evaluations AS (
+			UPDATE evaluations e
+			SET status = 'FAILED',
+			    feedback_status = 'permanently_failed',
+			    last_error = f.last_error
+			FROM failed f
+			WHERE e.id = f.evaluation_id
+			  AND f.status = 'permanently_failed'
+		)
+		SELECT 1
 	`
 	_, err := r.db.ExecContext(ctx, query, jobID, retryAt, lastError)
 	return err
 }
 
 func (r *SessionRepo) ReapStaleEvaluationJobs(ctx context.Context) (int, error) {
-	res, err := r.db.ExecContext(ctx, `
-		UPDATE evaluation_jobs
-		SET status = 'permanently_failed',
-		    last_error = CASE WHEN last_error = '' THEN 'processing lease expired after max attempts' ELSE last_error END,
-		    updated_at = NOW()
-		WHERE status = 'processing'
-		  AND attempts >= max_attempts
-		  AND updated_at < NOW() - INTERVAL '2 minutes'
-	`)
-	if err != nil {
-		return 0, err
-	}
-	count, _ := res.RowsAffected()
-	return int(count), nil
+	var count int
+	err := r.db.QueryRowContext(ctx, `
+		WITH reaped AS (
+			UPDATE evaluation_jobs
+			SET status = 'permanently_failed',
+			    last_error = CASE WHEN last_error = '' THEN 'processing lease expired after max attempts' ELSE last_error END,
+			    updated_at = NOW()
+			WHERE status = 'processing'
+			  AND attempts >= max_attempts
+			  AND updated_at < NOW() - INTERVAL '2 minutes'
+			RETURNING evaluation_id, last_error
+		), failed_evaluations AS (
+			UPDATE evaluations e
+			SET status = 'FAILED',
+			    feedback_status = 'permanently_failed',
+			    last_error = COALESCE(NULLIF(e.last_error, ''), r.last_error)
+			FROM reaped r
+			WHERE e.id = r.evaluation_id
+		)
+		SELECT count(*) FROM reaped
+	`).Scan(&count)
+	return count, err
 }
 
 func (r *SessionRepo) EvaluationQueueStats(ctx context.Context) (*models.EvaluationQueueStats, error) {
