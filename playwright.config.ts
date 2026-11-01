@@ -12,9 +12,16 @@ export default defineConfig({
   workers: 1,
   timeout: 90_000,
   expect: { timeout: 15_000 },
-  // The HTML report is what CI uploads when a test fails. The list reporter
-  // alone leaves no report directory, so a red job would have no evidence.
-  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+  // The HTML report is what CI uploads when a test fails. The JSON report is
+  // summarized into the public job summary, because raw job logs require a
+  // GitHub login even for a public repository.
+  reporter: isCI
+    ? [
+        ['list'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+      ]
+    : [['list']],
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',

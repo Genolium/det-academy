@@ -90,6 +90,34 @@ jobs:
       - run: npx playwright test
         env:
           CI: "true"
+      - name: Summarize failing Playwright tests
+        if: failure()
+        run: |
+          node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('fs');
+          const file = 'test-results/results.json';
+          if (!fs.existsSync(file)) {
+            console.log('## Playwright failure\n\nNo JSON report was produced; the web server likely failed to start. Check the uploaded artifact and the build log.');
+            process.exit(0);
+          }
+          const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const failures = [];
+          function walk(suite, trail) {
+            const path = suite.file || trail;
+            for (const spec of suite.specs || []) {
+              if (!spec.ok) {
+                const test = (spec.tests || [])[0] || {};
+                const result = (test.results || [])[0] || {};
+                const error = (result.error && result.error.message) || result.status || 'failed';
+                failures.push(`- \`${path}\` › ${spec.title}\n\n\`\`\`\n${String(error).split('\n').slice(0, 8).join('\n')}\n\`\`\``);
+              }
+            }
+            for (const child of suite.suites || []) walk(child, path);
+          }
+          for (const suite of data.suites || []) walk(suite, suite.file || '');
+          console.log(`## Playwright failures (${failures.length})`);
+          console.log(failures.join('\n\n') || 'No failing spec was found in the JSON report.');
+          NODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:
