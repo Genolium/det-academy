@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"det-academy-backend/internal/models"
@@ -13,6 +14,15 @@ import (
 
 	"github.com/google/uuid"
 )
+
+func isSpeakingType(questionType string) bool {
+	switch questionType {
+	case "SPEAK_PHOTO", "READ_THEN_SPEAK", "INTERACTIVE_SPEAKING", "SPEAKING_SAMPLE":
+		return true
+	default:
+		return false
+	}
+}
 
 // answerPayload is accepted by every grader: unknown fields are ignored and the
 // test is about the flow, not about answer accuracy.
@@ -74,6 +84,28 @@ func TestPostgresFullMockCompletesExactlyOnce(t *testing.T) {
 		}
 
 		for _, question := range assigned {
+			detail, err := store.Questions().GetByID(ctx, question.QuestionID)
+			if err != nil {
+				t.Fatalf("load question %s: %v", question.QuestionID, err)
+			}
+			if isSpeakingType(detail.Type) {
+				asset := &models.MediaAsset{
+					ID:          uuid.NewString(),
+					UserID:      user.ID,
+					SessionID:   session.ID,
+					QuestionID:  question.QuestionID,
+					FileType:    "audio/webm",
+					FilePath:    filepath.Join(t.TempDir(), "answer.webm"),
+					URL:         "/api/v1/media/audio/test.webm",
+					FileSize:    5,
+					DurationSec: 60,
+				}
+				if _, err := cat.RecordAudioResponse(ctx, session.ID, user.ID, question.QuestionID,
+					asset.URL, "test transcript", 60, asset.FileSize, asset, nil); err != nil {
+					t.Fatalf("stage %s question %s (audio): %v", stage, question.QuestionID, err)
+				}
+				continue
+			}
 			if _, _, err := cat.RecordQuestionResponse(ctx, session.ID, user.ID, models.SubmitResponseRequest{
 				QuestionID:   question.QuestionID,
 				UserResponse: answerPayload,
@@ -84,11 +116,32 @@ func TestPostgresFullMockCompletesExactlyOnce(t *testing.T) {
 		}
 
 		// A retried answer must never replace the graded one.
-		if _, _, err := cat.RecordQuestionResponse(ctx, session.ID, user.ID, models.SubmitResponseRequest{
-			QuestionID:   assigned[0].QuestionID,
-			UserResponse: answerPayload,
-			TimeSpentSec: 1,
-		}); !errors.Is(err, service.ErrQuestionAlreadyAnswered) {
+		firstDetail, err := store.Questions().GetByID(ctx, assigned[0].QuestionID)
+		if err != nil {
+			t.Fatalf("load first question: %v", err)
+		}
+		if isSpeakingType(firstDetail.Type) {
+			asset := &models.MediaAsset{
+				ID:          uuid.NewString(),
+				UserID:      user.ID,
+				SessionID:   session.ID,
+				QuestionID:  assigned[0].QuestionID,
+				FileType:    "audio/webm",
+				FilePath:    filepath.Join(t.TempDir(), "retry.webm"),
+				URL:         "/api/v1/media/audio/retry.webm",
+				FileSize:    5,
+				DurationSec: 60,
+			}
+			_, err = cat.RecordAudioResponse(ctx, session.ID, user.ID, assigned[0].QuestionID,
+				asset.URL, "retry transcript", 60, asset.FileSize, asset, nil)
+		} else {
+			_, _, err = cat.RecordQuestionResponse(ctx, session.ID, user.ID, models.SubmitResponseRequest{
+				QuestionID:   assigned[0].QuestionID,
+				UserResponse: answerPayload,
+				TimeSpentSec: 1,
+			})
+		}
+		if !errors.Is(err, service.ErrQuestionAlreadyAnswered) {
 			t.Fatalf("stage %s: expected ErrQuestionAlreadyAnswered, got %v", stage, err)
 		}
 

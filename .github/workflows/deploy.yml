@@ -13,12 +13,58 @@ concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: production
     steps:
       - uses: actions/checkout@v4
+
+      - name: Require a release tag
+        if: github.ref_type != 'tag'
+        run: |
+          echo "::error::Production deploys must run from a tag, not ${{ github.ref_type }} ${{ github.ref_name }}"
+          exit 1
+
+      - name: Require a green CI run for this exact commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::GITHUB_TOKEN is required to verify CI"
+            exit 1
+          fi
+          deadline=$((SECONDS + 1800))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            runs="$(curl -fsS \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&per_page=20")"
+            conclusions="$(printf '%s' "$runs" | jq -r '.workflow_runs[] | select(.status == "completed") | .conclusion')"
+            if printf '%s\n' "$conclusions" | grep -qx 'success'; then
+              echo "CI is green for $SHA"
+              exit 0
+            fi
+            if printf '%s\n' "$conclusions" | grep -Eq '^(failure|cancelled|timed_out|action_required|stale)$'; then
+              echo "::error::CI for $SHA has a failed or cancelled run; refusing to deploy"
+              exit 1
+            fi
+            if printf '%s' "$runs" | jq -e '.workflow_runs | length > 0' >/dev/null; then
+              echo "CI is still running for $SHA; waiting..."
+            else
+              echo "No CI run exists yet for $SHA; waiting..."
+            fi
+            sleep 20
+          done
+          echo "::error::timed out waiting for a green CI run for $SHA"
+          exit 1
 
       - name: Configure SSH
         env:
@@ -45,6 +91,7 @@ jobs:
             "cd /root/det-academy && ./scripts/production_preflight.sh"
 
       - name: Deploy the tag
+        id: deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -70,7 +117,7 @@ jobs:
           exit 1
 
       - name: Roll back the previous images
-        if: failure()
+        if: failure() && steps.deploy.outcome != 'skipped'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}

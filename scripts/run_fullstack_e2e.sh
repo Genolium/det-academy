@@ -47,4 +47,4 @@ if lsof -ti tcp:"$FRONTEND_PORT" >/dev/null 2>&1; then
 fi
 
 cd "$ROOT"
-npx playwright test -c playwright.fullstack.config.ts --reporter=list
+npx playwright test -c playwright.fullstack.config.ts

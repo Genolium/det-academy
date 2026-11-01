@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * route with `?lang=en`. This gives crawlers and users a stable URL while the
  * application keeps one route tree.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (pathname !== '/en' && !pathname.startsWith('/en/')) {
     return NextResponse.next();

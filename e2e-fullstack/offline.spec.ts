@@ -13,16 +13,24 @@ async function waitForServiceWorker(page: import('@playwright/test').Page) {
   });
 }
 
-test('published vocabulary survives an offline reload with a real backend', async ({ page, context }) => {
+test('published vocabulary survives an offline reload with a real backend', async ({ page, context, request }) => {
+  // The vocabulary page paginates, so use the actual first published entry
+  // instead of hard-coding a word that may not be on the first page.
+  const response = await request.get(`${API}/api/v1/vocabulary?limit=1`);
+  expect(response.ok()).toBeTruthy();
+  const { entries } = await response.json();
+  const word = entries[0]?.word as string | undefined;
+  expect(word).toBeTruthy();
+
   await page.addInitScript(() => localStorage.setItem('det_cookie_consent', 'true'));
   await page.goto('/vocabulary');
-  await expect(page.getByRole('heading', { name: 'Substantiate' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: word, exact: true })).toBeVisible({ timeout: 20_000 });
   await waitForServiceWorker(page);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Substantiate' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: word, exact: true })).toBeVisible();
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Substantiate' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: word, exact: true })).toBeVisible();
   await expect(page.getByText('Офлайн-режим')).toBeVisible();
   await context.setOffline(false);
 });
