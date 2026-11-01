@@ -1,9 +1,10 @@
-name: Nightly database backup
+name: Nightly database and media backup
 
 # Runs on the production host over SSH: the database is not exposed to the
-# internet, so the dump must be produced where Postgres lives. The latest dump
-# is streamed to the runner, encrypted with BACKUP_ENCRYPTION_KEY and retained
-# as an offsite GitHub Actions artifact for 14 days.
+# internet, so the dump must be produced where Postgres lives. The runner then
+# restores the dump into a disposable Postgres, verifies that every media row
+# has a file in the archive, encrypts both files with BACKUP_ENCRYPTION_KEY and
+# keeps the encrypted pair as an offsite GitHub Actions artifact for 14 days.
 on:
   schedule:
     - cron: '0 2 * * *'
@@ -12,12 +13,14 @@ on:
 concurrency:
   group: production-backup
 
+permissions:
+  contents: read
+
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-
       - name: Configure SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -39,17 +42,101 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            'cd /root/det-academy && set -a && . ./.env && set +a && BACKUP_DIR=/var/backups/det ./scripts/backup_postgres.sh && \
-             stamp=$(date -u +%Y%m%dT%H%M%SZ) && \
-             docker run --rm -v det-academy_media_data:/data -v /var/backups/det:/backup alpine:3.20 \
-               tar -czf "/backup/media-$stamp.tar.gz" -C /data . && \
-             echo "media backup: /var/backups/det/media-$stamp.tar.gz"'
+          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" '
+            set -euo pipefail
+            cd /root/det-academy
+            set -a && . ./.env && set +a
+            export BACKUP_DIR=/var/backups/det
+            stamp=$(date -u +%Y%m%dT%H%M%SZ)
+            export BACKUP_STAMP="$stamp"
+            ./scripts/backup_postgres.sh
+            docker run --rm \
+              -v det-academy_media_data:/data \
+              -v "$BACKUP_DIR:/backup" \
+              alpine:3.20 tar -czf "/backup/media-$stamp.tar.gz" -C /data .
+            find "$BACKUP_DIR" -name "media-*.tar.gz" -type f -mtime +14 -delete
+            printf "%s" "$stamp" > /tmp/det-backup-stamp
+            echo "backup stamp: $stamp"
+          '
 
-      - name: Fetch and encrypt the latest dump
+      - name: Fetch the matching dump and media archive
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          STAMP="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
+            "cat /tmp/det-backup-stamp")"
+          test -n "$STAMP"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          scp -i ~/.ssh/deploy_key \
+            "${DEPLOY_USER:-root}@${DEPLOY_HOST}:/var/backups/det/det_academy_${STAMP}.dump" \
+            ./backup.dump
+          scp -i ~/.ssh/deploy_key \
+            "${DEPLOY_USER:-root}@${DEPLOY_HOST}:/var/backups/det/media-${STAMP}.tar.gz" \
+            ./backup_media.tar.gz
+
+      - name: Restore drill into a disposable Postgres
+        run: |
+          set -euo pipefail
+          container=det-restore-test
+          cleanup() { docker rm -f "$container" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+
+          docker run -d --name "$container" \
+            -e POSTGRES_PASSWORD=restore \
+            -e POSTGRES_DB=restore \
+            postgres:16-alpine >/dev/null
+
+          # The official image starts a temporary server for init and then
+          # restarts it. Wait for the second "ready" message, not pg_isready.
+          ready=0
+          for _ in $(seq 1 60); do
+            count="$(docker logs "$container" 2>&1 | grep -c 'database system is ready to accept connections' || true)"
+            if [ "$count" -ge 2 ]; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs "$container" 2>&1 | tail -40
+            echo "::error::disposable Postgres did not become ready"
+            exit 1
+          fi
+
+          docker cp ./backup.dump "$container:/tmp/restore.dump"
+          docker exec "$container" pg_restore -U postgres -d restore \
+            --no-owner --no-acl /tmp/restore.dump
+
+          docker exec "$container" psql -U postgres -d restore -tAc \
+            "SELECT 'users=' || count(*) FROM users UNION ALL \
+             SELECT 'sessions=' || count(*) FROM test_sessions UNION ALL \
+             SELECT 'responses=' || count(*) FROM question_responses UNION ALL \
+             SELECT 'media=' || count(*) FROM media_assets;"
+
+          sessions="$(docker exec "$container" psql -U postgres -d restore -tAc \
+            'SELECT count(*) FROM test_sessions')"
+          if [ "${sessions:-0}" -lt 1 ]; then
+            echo "::error::restored database has no test sessions"
+            exit 1
+          fi
+
+          docker exec "$container" psql -U postgres -d restore -tAc \
+            'SELECT file_path FROM media_assets' \
+            | sed 's#^/data/media/##' | sort > /tmp/db-media.txt
+          tar -tzf ./backup_media.tar.gz \
+            | sed 's#^\./##' | grep -v '/$' | sort > /tmp/archive-media.txt
+          missing="$(comm -23 /tmp/db-media.txt /tmp/archive-media.txt | wc -l)"
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::$missing media rows have no file in the archive"
+            comm -23 /tmp/db-media.txt /tmp/archive-media.txt | head -20
+            exit 1
+          fi
+          echo "restore drill passed: $(wc -l < /tmp/db-media.txt) media files verified"
+
+      - name: Encrypt the matching pair
+        env:
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
@@ -57,18 +144,13 @@ jobs:
             echo "::error::BACKUP_ENCRYPTION_KEY is required"
             exit 1
           fi
-          LATEST="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            "ls -t /var/backups/det/det_academy_*.dump | head -1")"
-          LATEST_MEDIA="$(ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}" \
-            "ls -t /var/backups/det/media-*.tar.gz | head -1")"
-          scp -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}:$LATEST" ./backup.dump
-          scp -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@${DEPLOY_HOST}:$LATEST_MEDIA" ./backup_media.tar.gz
           openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
             -in ./backup.dump -out ./det_academy_latest.dump.enc
           openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY \
             -in ./backup_media.tar.gz -out ./det_academy_latest.media.tar.gz.enc
           rm -f ./backup.dump ./backup_media.tar.gz
-          sha256sum ./det_academy_latest.dump.enc ./det_academy_latest.media.tar.gz.enc > ./det_academy_latest.sha256
+          sha256sum ./det_academy_latest.dump.enc \
+            ./det_academy_latest.media.tar.gz.enc > ./det_academy_latest.sha256
 
       - name: Upload encrypted offsite artifact
         uses: actions/upload-artifact@v4

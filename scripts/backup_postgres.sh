@@ -7,7 +7,9 @@ RETENTION_DAYS="${RETENTION_DAYS:-14}"
 BACKUP_S3_URI="${BACKUP_S3_URI:-}"
 DRY_RUN="${DRY_RUN:-false}"
 mkdir -p "$BACKUP_DIR"
-STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+# A caller can pass BACKUP_STAMP so the database dump and the media archive
+# share one timestamp and can be restored as a matching pair.
+STAMP="${BACKUP_STAMP:-$(date -u +%Y%m%dT%H%M%SZ)}"
 TARGET="$BACKUP_DIR/det_academy_$STAMP.dump"
 
 if command -v pg_dump >/dev/null 2>&1; then
