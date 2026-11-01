@@ -18,7 +18,7 @@ docker compose exec -T postgres psql -U "$db_user" -d "$db_name" -Atc \
   "SELECT id || '|' || file_path FROM media_assets" >"$rows"
 
 docker run --rm -v det-academy_media_data:/data alpine:3.20 \
-  sh -c 'find /data -type f -printf "%f\n"' >"$files"
+  sh -c 'find /data -type f | sed "s#.*/##"' >"$files"
 
 missing=0
 while IFS='|' read -r id path; do
