@@ -622,7 +622,7 @@ export const AdminDashboard: React.FC = () => {
                     </table>
                   </div>
                   <p className="text-[10px] text-neutral-400 mt-3">
-                    Стоимость считается по ценам AI_PRICE_INPUT_PER_1M и AI_PRICE_OUTPUT_PER_1M. Без цен показываются только токены.
+                    Стоимость LLM считается по AI_PRICE_INPUT_PER_1M и AI_PRICE_OUTPUT_PER_1M, SpeechKit TTS — по AI_PRICE_TTS_PER_REQUEST. Без цен показываются только объёмы.
                   </p>
                 </>
               ) : (

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"det-academy-backend/internal/models"
@@ -88,6 +89,7 @@ func (s *StudyService) AdaptivePractice(ctx context.Context, userID string) (*mo
 	if best > 0 {
 		reason = fmt.Sprintf("%d неусвоенных ошибок типа %s. Сначала закройте их.", best, focus)
 	}
+	sort.Strings(ids[focus])
 	return &models.AdaptivePractice{
 		FocusType:  focus,
 		FocusSlug:  adaptiveSlug[focus],

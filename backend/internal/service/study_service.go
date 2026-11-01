@@ -450,6 +450,7 @@ func (s *StudyService) GetAIUsage(ctx context.Context, days int) (*models.AIUsag
 
 	inputPrice := envFloat("AI_PRICE_INPUT_PER_1M", 0)
 	outputPrice := envFloat("AI_PRICE_OUTPUT_PER_1M", 0)
+	ttsPrice := envFloat("AI_PRICE_TTS_PER_REQUEST", 0)
 	summary := &models.AIUsageSummary{
 		Days:     days,
 		Currency: envOrString("AI_PRICE_CURRENCY", "USD"),
@@ -457,7 +458,13 @@ func (s *StudyService) GetAIUsage(ctx context.Context, days int) (*models.AIUsag
 	}
 	for index := range summary.Rows {
 		row := &summary.Rows[index]
-		row.Cost = (float64(row.PromptTokens)*inputPrice + float64(row.CompletionTokens)*outputPrice) / 1_000_000
+		if row.Kind == "tts" {
+			// SpeechKit bills per synthesis request in the Yandex AI Studio
+			// invoice, not per token.
+			row.Cost = float64(row.Calls) * ttsPrice
+		} else {
+			row.Cost = (float64(row.PromptTokens)*inputPrice + float64(row.CompletionTokens)*outputPrice) / 1_000_000
+		}
 		summary.PromptTokens += row.PromptTokens
 		summary.CompletionTokens += row.CompletionTokens
 		summary.Calls += row.Calls

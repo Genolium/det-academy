@@ -5,6 +5,7 @@ import (
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -333,5 +334,26 @@ func TestGetAIUsageComputesConfiguredCost(t *testing.T) {
 	}
 	if len(summary.Rows) != 1 || summary.Rows[0].Cost != 800 {
 		t.Fatalf("rows = %+v", summary.Rows)
+	}
+}
+
+func TestGetAIUsagePricesTTSRequests(t *testing.T) {
+	t.Setenv("AI_PRICE_TTS_PER_REQUEST", "0.25")
+	t.Setenv("AI_PRICE_CURRENCY", "RUB")
+	store := memory.New()
+	ctx := context.Background()
+	for i := 0; i < 122; i++ {
+		if err := store.Study().RecordAIUsage(ctx, &models.AIUsageEvent{
+			ID: "tts-" + strconv.Itoa(i), Kind: "tts", Model: "yandex-speechkit",
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	summary, err := NewStudyService(store, nil, nil).GetAIUsage(ctx, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Cost < 30.49 || summary.Cost > 30.51 {
+		t.Fatalf("tts cost = %v, want 30.50 RUB", summary.Cost)
 	}
 }
