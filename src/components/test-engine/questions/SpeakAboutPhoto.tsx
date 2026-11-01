@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { useTestStore } from '@/store/useTestStore';
 import { useAudioRecorder } from '@/lib/useAudioRecorder';
 import { api } from '@/lib/api';
@@ -75,6 +76,7 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const transcriptRef = useRef(transcript);
@@ -307,14 +309,13 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
       <div className="bg-[#16191D] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6">
         {/* Photo Display */}
         <div className="relative w-full h-64 sm:h-72 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-          <img
-            src={imageSource}
+          <Image
+            src={imageFailed ? 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80' : imageSource}
             alt="Exam Prompt Photo"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80';
-            }}
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover"
+            onError={() => setImageFailed(true)}
           />
         </div>
 

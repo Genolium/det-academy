@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { vocabularyPreview, VOCABULARY_TOTAL } from '@/data/vocabularyPreview';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { getAuthCacheUserId, hasAuthSession } from '@/lib/auth-session';
@@ -352,7 +353,7 @@ export const SrsFlashcards: React.FC = () => {
               {ru ? 'Интервальное повторение (SuperMemo SM-2)' : 'Spaced repetition (SuperMemo SM-2)'}
             </span>
             <span className="text-neutral-500 text-xs">•</span>
-            <span className="text-xs text-neutral-400 font-medium">{vocabData.length} {ru ? 'слов Academic Word List' : 'Academic Word List words'}</span>
+            <span className="text-xs text-neutral-400 font-medium">{VOCABULARY_TOTAL} {ru ? 'слов Academic Word List' : 'Academic Word List words'}</span>
           </div>
           <h2 className="text-xl font-black text-white tracking-tight">
             {ru ? 'Академический словарь C1/C2' : 'Academic vocabulary C1/C2'}

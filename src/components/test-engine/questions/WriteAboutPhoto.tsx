@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { useTestStore } from '@/store/useTestStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
@@ -135,13 +136,16 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         {/* Photo view */}
-        <div className="bg-[#111315] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center overflow-hidden shadow-xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentPhoto.imageUrl}
-            alt={currentPhoto.altText}
-            className="w-full h-72 object-cover rounded-2xl"
-          />
+        <div className="relative bg-[#111315] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center overflow-hidden shadow-xl">
+          <div className="relative w-full h-72">
+            <Image
+              src={currentPhoto.imageUrl}
+              alt={currentPhoto.altText}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover rounded-2xl"
+            />
+          </div>
           <span className="text-[11px] text-neutral-400 mt-2 italic text-center">
             {currentPhoto.altText}
           </span>

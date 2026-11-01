@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import { api, AIUsageSummary, AdminStats, User, BackendTestSession, AdBannerData, BackendQuestion, Institution } from '@/lib/api';
 import { PillBadge } from '@/components/ui/PillBadge';
 import { AdminAnalyticsDashboard } from '@/components/admin/AdminAnalyticsDashboard';
+import { useFocusTrap } from '@/lib/useFocusTrap';
 import {
   Users,
   Award,
@@ -73,12 +74,16 @@ export const AdminDashboard: React.FC = () => {
 
   // New Banner Form Modal
   const [showNewBannerModal, setShowNewBannerModal] = useState(false);
+  const bannerDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(showNewBannerModal, () => setShowNewBannerModal(false), bannerDialogRef);
   const [newBannerPlacement, setNewBannerPlacement] = useState<'HEADER' | 'FOOTER'>('HEADER');
   const [newBannerAlt, setNewBannerAlt] = useState('');
   const [newBannerUrl, setNewBannerUrl] = useState('');
 
   // New Question Form Modal
   const [showNewQuestionModal, setShowNewQuestionModal] = useState(false);
+  const questionDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(showNewQuestionModal, () => setShowNewQuestionModal(false), questionDialogRef);
   const [newQType, setNewQType] = useState('READ_SELECT');
   const [newQDiff, setNewQDiff] = useState('B2');
   const [newQWord, setNewQWord] = useState('');
@@ -1079,8 +1084,8 @@ export const AdminDashboard: React.FC = () => {
         {/* New Banner Modal */}
         {showNewBannerModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl max-w-md w-full border border-neutral-200 shadow-2xl space-y-4">
-              <h3 className="text-lg font-black uppercase text-[#0E1012]">
+            <div ref={bannerDialogRef} role="dialog" aria-modal="true" aria-labelledby="new-banner-title" className="bg-white p-6 sm:p-8 rounded-3xl max-w-md w-full border border-neutral-200 shadow-2xl space-y-4">
+              <h3 id="new-banner-title" className="text-lg font-black uppercase text-[#0E1012]">
                 Создать рекламный баннер
               </h3>
 
@@ -1144,8 +1149,8 @@ export const AdminDashboard: React.FC = () => {
         {/* New Question Modal */}
         {showNewQuestionModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl max-w-md w-full border border-neutral-200 shadow-2xl space-y-4">
-              <h3 className="text-lg font-black uppercase text-[#0E1012]">
+            <div ref={questionDialogRef} role="dialog" aria-modal="true" aria-labelledby="new-question-title" className="bg-white p-6 sm:p-8 rounded-3xl max-w-md w-full border border-neutral-200 shadow-2xl space-y-4">
+              <h3 id="new-question-title" className="text-lg font-black uppercase text-[#0E1012]">
                 Добавить вопрос в банк CAT
               </h3>
 
