@@ -2009,11 +2009,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 
 	var cert *models.Certificate
 	if eligible {
-		prefixLen := 8
-		if len(session.ID) < prefixLen {
-			prefixLen = len(session.ID)
-		}
-		certID := "det-cert-" + session.ID[:prefixLen]
+		certID := newCertificateID()
 		cert = &models.Certificate{
 			ID:                 certID,
 			UserID:             session.UserID,

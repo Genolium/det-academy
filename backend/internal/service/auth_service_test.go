@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ import (
 	"det-academy-backend/internal/repository/memory"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func rsaJWKS(t *testing.T, key *rsa.PrivateKey, kid string) http.HandlerFunc {
@@ -291,5 +293,95 @@ func TestEmailVerificationFlow(t *testing.T) {
 	}
 	if !verified.EmailVerified {
 		t.Fatal("expected email to be verified")
+	}
+}
+
+func newRefreshTestService(t *testing.T, verified bool) (*AuthService, *memory.MemoryStorage, *models.User) {
+	t.Helper()
+	store := memory.New()
+	user := &models.User{
+		ID:            uuid.NewString(),
+		Email:         "refresh-" + uuid.NewString()[:8] + "@example.com",
+		PasswordHash:  "not-used",
+		Name:          "Refresh Test",
+		Role:          "student",
+		Locale:        "ru",
+		EmailVerified: verified,
+	}
+	if err := store.Users().Create(context.Background(), user); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	auth := NewAuthService(store.Users(), "refresh-test-secret")
+	auth.SetRefreshTokenRepo(store.RefreshTokens())
+	return auth, store, user
+}
+
+func TestRefreshSessionAllowsImmediateRetryAfterRotation(t *testing.T) {
+	ctx := context.Background()
+	auth, store, user := newRefreshTestService(t, true)
+	first, err := auth.IssueRefreshToken(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("issue first token: %v", err)
+	}
+
+	if _, _, second, err := auth.RefreshSession(ctx, first); err != nil || second == "" {
+		t.Fatalf("first refresh: %q %v", second, err)
+	}
+
+	// A concurrent tab may replay the token it just lost. Inside the grace
+	// window this must not revoke the newly issued family.
+	if _, _, _, err := auth.RefreshSession(ctx, first); err == nil {
+		t.Fatal("expected a replayed token to be rejected")
+	}
+	reloaded, err := store.Users().GetByID(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("reload user: %v", err)
+	}
+	if reloaded.TokenVersion != 0 {
+		t.Fatalf("benign replay revoked the family: token version %d", reloaded.TokenVersion)
+	}
+}
+
+func TestUnverifiedUserRefreshDoesNotBurnToken(t *testing.T) {
+	ctx := context.Background()
+	auth, store, user := newRefreshTestService(t, false)
+	auth.requireEmailVerification = true
+	refresh, err := auth.IssueRefreshToken(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("issue token: %v", err)
+	}
+
+	if _, _, _, err := auth.RefreshSession(ctx, refresh); !errors.Is(err, ErrEmailNotVerified) {
+		t.Fatalf("expected ErrEmailNotVerified, got %v", err)
+	}
+	if _, err := store.RefreshTokens().GetActiveByHash(ctx, hashState(refresh)); err != nil {
+		t.Fatalf("unverified refresh must not consume the token: %v", err)
+	}
+}
+
+func TestStaleRefreshReuseRevokesFamily(t *testing.T) {
+	ctx := context.Background()
+	auth, store, user := newRefreshTestService(t, true)
+	first, err := auth.IssueRefreshToken(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("issue token: %v", err)
+	}
+	if _, _, _, err := auth.RefreshSession(ctx, first); err != nil {
+		t.Fatalf("first refresh: %v", err)
+	}
+
+	previous := refreshReuseGrace
+	refreshReuseGrace = 0
+	defer func() { refreshReuseGrace = previous }()
+
+	if _, _, _, err := auth.RefreshSession(ctx, first); err == nil {
+		t.Fatal("expected stale reuse to be rejected")
+	}
+	reloaded, err := store.Users().GetByID(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("reload user: %v", err)
+	}
+	if reloaded.TokenVersion == 0 {
+		t.Fatal("stale reuse outside the grace window must revoke the family")
 	}
 }

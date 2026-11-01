@@ -1492,19 +1492,22 @@ func (s *AuthService) RevokeRefreshToken(ctx context.Context, rawToken string) e
 	return s.refreshRepo.Revoke(ctx, hashState(strings.TrimSpace(rawToken)))
 }
 
+// refreshReuseGrace absorbs a benign race between two tabs. A token that was
+// revoked moments ago is not treated as theft; the losing request can retry
+// with the rotated cookie. Reuse outside this window revokes the family.
+var refreshReuseGrace = 10 * time.Second
+
 func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*models.User, string, string, error) {
 	if s.refreshRepo == nil || strings.TrimSpace(rawToken) == "" {
 		return nil, "", "", errors.New("refresh token is invalid")
 	}
 	hash := hashState(strings.TrimSpace(rawToken))
-	stored, err := s.refreshRepo.Claim(ctx, hash)
+
+	// Check the user before claiming the token. An unverified account must not
+	// burn a valid refresh token; after verification the same token still works.
+	stored, err := s.refreshRepo.GetActiveByHash(ctx, hash)
 	if err != nil {
-		// If the hash exists but is already revoked, this is reuse of a stolen
-		// token: revoke the whole family and invalidate access tokens.
-		if old, lookupErr := s.refreshRepo.GetByHash(ctx, hash); lookupErr == nil && old.RevokedAt != nil {
-			_ = s.refreshRepo.RevokeAllForUser(ctx, old.UserID)
-			_ = s.userRepo.IncrementTokenVersion(ctx, old.UserID)
-		}
+		s.revokeFamilyOnStaleReuse(ctx, hash)
 		return nil, "", "", errors.New("refresh token is invalid or expired")
 	}
 	user, err := s.userRepo.GetByID(ctx, stored.UserID)
@@ -1514,6 +1517,12 @@ func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*mod
 	if s.requireEmailVerification && !user.EmailVerified {
 		return nil, "", "", ErrEmailNotVerified
 	}
+
+	if _, err := s.refreshRepo.Claim(ctx, hash); err != nil {
+		s.revokeFamilyOnStaleReuse(ctx, hash)
+		return nil, "", "", errors.New("refresh token is invalid or expired")
+	}
+
 	access, err := s.GenerateToken(user)
 	if err != nil {
 		return nil, "", "", err
@@ -1525,6 +1534,21 @@ func (s *AuthService) RefreshSession(ctx context.Context, rawToken string) (*mod
 	return user, access, refresh, nil
 }
 
+// revokeFamilyOnStaleReuse invalidates every refresh token only when a revoked
+// token is replayed after the grace window. A replay inside the window is
+// treated as a concurrent-tab race and leaves the newly issued family alive.
+func (s *AuthService) revokeFamilyOnStaleReuse(ctx context.Context, tokenHash string) {
+	old, err := s.refreshRepo.GetByHash(ctx, tokenHash)
+	if err != nil || old.RevokedAt == nil {
+		return
+	}
+	if time.Since(*old.RevokedAt) <= refreshReuseGrace {
+		return
+	}
+	_ = s.refreshRepo.RevokeAllForUser(ctx, old.UserID)
+	_ = s.userRepo.IncrementTokenVersion(ctx, old.UserID)
+}
+
 func (s *AuthService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	return s.userRepo.GetByID(ctx, id)
 }
@@ -1533,15 +1557,53 @@ func (s *AuthService) ListUsers(ctx context.Context, page, limit int, search, ro
 	return s.userRepo.ListAll(ctx, page, limit, search, role)
 }
 
-func (s *AuthService) UpdateUserRole(ctx context.Context, id, role string) error {
+func (s *AuthService) UpdateUserRoleAs(ctx context.Context, actorID, targetID, role string) error {
 	if role != "student" && role != "editor" && role != "admin" {
 		return errors.New("invalid role: must be student, editor, or admin")
 	}
-	return s.userRepo.UpdateRole(ctx, id, role)
+	if actorID != "" && actorID == targetID && role != "admin" {
+		return errors.New("cannot remove your own administrator role")
+	}
+	target, err := s.userRepo.GetByID(ctx, targetID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+	if target.Role == "admin" && role != "admin" {
+		if err := s.ensureAnotherAdmin(ctx); err != nil {
+			return err
+		}
+	}
+	return s.userRepo.UpdateRole(ctx, targetID, role)
 }
 
-func (s *AuthService) DeleteUser(ctx context.Context, id string) error {
-	return s.userRepo.Delete(ctx, id)
+func (s *AuthService) DeleteUserAs(ctx context.Context, actorID, targetID string) error {
+	if actorID != "" && actorID == targetID {
+		return errors.New("cannot delete your own account from the admin panel")
+	}
+	target, err := s.userRepo.GetByID(ctx, targetID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+	if target.Role == "admin" {
+		if err := s.ensureAnotherAdmin(ctx); err != nil {
+			return err
+		}
+	}
+	return s.userRepo.Delete(ctx, targetID)
+}
+
+// ensureAnotherAdmin refuses to leave the platform without an administrator.
+// The check is intentionally conservative: concurrent demotions can still
+// race, but the common lockout path is blocked.
+func (s *AuthService) ensureAnotherAdmin(ctx context.Context) error {
+	_, admins, err := s.userRepo.ListAll(ctx, 1, 1, "", "admin")
+	if err != nil {
+		return errors.New("failed to verify administrator count")
+	}
+	if admins <= 1 {
+		return errors.New("cannot remove the last administrator")
+	}
+	return nil
 }
 
 // AuditAdminAction records a destructive admin mutation. It is best-effort:

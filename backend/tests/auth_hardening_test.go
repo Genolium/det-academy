@@ -93,12 +93,14 @@ func TestAuthHardeningRefreshReuseRevokesFamily(t *testing.T) {
 		t.Fatalf("reused refresh token must be rejected, got %d", reuseW.Code)
 	}
 
+	// An immediate replay is treated as a concurrent-tab race, not theft: the
+	// newly rotated token must remain usable.
 	family := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
 	family.AddCookie(&http.Cookie{Name: "det_refresh", Value: newRefresh})
 	familyW := httptest.NewRecorder()
 	r.ServeHTTP(familyW, family)
-	if familyW.Code != http.StatusUnauthorized {
-		t.Fatalf("reuse must revoke the whole token family, got %d", familyW.Code)
+	if familyW.Code != http.StatusOK {
+		t.Fatalf("benign replay inside the grace window must keep the family alive, got %d", familyW.Code)
 	}
 }
 

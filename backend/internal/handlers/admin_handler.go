@@ -73,7 +73,7 @@ func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.authService.UpdateUserRole(r.Context(), id, req.Role); err != nil {
+	if err := h.authService.UpdateUserRoleAs(r.Context(), GetUserIDFromContext(r.Context()), id, req.Role); err != nil {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -89,8 +89,8 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.authService.DeleteUser(r.Context(), id); err != nil {
-		RespondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.authService.DeleteUserAs(r.Context(), GetUserIDFromContext(r.Context()), id); err != nil {
+		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	h.authService.AuditAdminAction(r.Context(), GetUserIDFromContext(r.Context()), "user.delete", id, RequestIP(r))

@@ -76,7 +76,7 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, us
 		session.LiteracyScore == nil || session.ComprehensionScore == nil || session.ProductionScore == nil || session.ConversationScore == nil {
 		return nil, errors.New("cannot issue certificate: session is missing one or more skill scores")
 	}
-	certID := "det-cert-" + session.ID[:8]
+	certID := newCertificateID()
 	cert := &models.Certificate{
 		ID:                 certID,
 		UserID:             session.UserID,

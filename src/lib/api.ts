@@ -719,6 +719,21 @@ export interface PracticeAttemptResult {
   createdAt: string;
 }
 
+const REFRESH_LOCK_NAME = 'det-auth-refresh';
+
+/**
+ * Serializes refresh across tabs. Each tab has its own single-flight promise,
+ * but without a browser-wide lock two tabs can claim the same rotating cookie
+ * and revoke each other's session.
+ */
+async function withCrossTabRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  const lockManager = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+  if (lockManager) {
+    return lockManager.request(REFRESH_LOCK_NAME, task);
+  }
+  return task();
+}
+
 class ApiClient {
   private refreshPromise: Promise<AuthResponse> | null = null;
 
@@ -868,7 +883,7 @@ class ApiClient {
 
   async refreshSession(): Promise<AuthResponse> {
     if (this.refreshPromise) return this.refreshPromise;
-    this.refreshPromise = (async () => {
+    this.refreshPromise = withCrossTabRefreshLock(async () => {
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -883,7 +898,7 @@ class ApiClient {
       }
       setAuthToken(data.token);
       return data;
-    })();
+    });
     try {
       return await this.refreshPromise;
     } finally {
