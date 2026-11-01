@@ -133,7 +133,7 @@ class CalibrationExportTest(unittest.TestCase):
                         "question_id": "WRITING_SAMPLE_1",
                         "question_type": "WRITING_SAMPLE",
                         "prompt": "Write about a photo",
-                        "response": "Learner text",
+                        "response": "My email is learner@example.com and my phone is +1 555 123 4567. Learner text",
                         "model_score": 4,
                         "model_raw_score": 0.8,
                         "cefr": "B2",
@@ -190,6 +190,9 @@ class CalibrationExportTest(unittest.TestCase):
             self.assertIn("JOIN calibration_consents", query)
             self.assertIn("cc.revoked_at IS NULL", query)
             self.assertIn("cc.consent_version = '2026-10-29'", query)
+            self.assertIn("qr.created_at >= cc.granted_at", query)
+            self.assertIn("e.session_id = qr.session_id", query)
+            self.assertIn("WRITE_PHOTO", query)
             self.assertNotIn("user_id", query.split("FROM")[0])
             self.assertNotIn("email", query.split("FROM")[0])
 
@@ -203,6 +206,10 @@ class CalibrationExportTest(unittest.TestCase):
             self.assertNotIn("user_id", item)
             self.assertNotIn("email", item)
             self.assertNotIn("name", item)
+            self.assertEqual(
+                item["response"],
+                "My email is [email] and my phone is [phone]. Learner text",
+            )
             self.assertNotEqual(item["item_id"], "11111111-1111-1111-1111-111111111111")
             self.assertTrue(item["item_id"].startswith("item_"))
             self.assertTrue(item["question_id"].startswith("question_"))

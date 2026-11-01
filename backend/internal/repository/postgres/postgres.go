@@ -859,6 +859,13 @@ func (r *SessionRepo) DeleteEvaluation(ctx context.Context, evaluationID string)
 	return err
 }
 
+func (r *SessionRepo) SetEvaluationResponseID(ctx context.Context, evaluationID, responseID string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE evaluations SET response_id = $2 WHERE id = $1 AND response_id IS NULL`,
+		evaluationID, responseID)
+	return err
+}
+
 func (r *SessionRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
 	query := `
 		INSERT INTO evaluations (

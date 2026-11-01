@@ -87,6 +87,8 @@ type TestSessionRepository interface {
 	// DeleteEvaluation removes a partially-created evaluation after a later
 	// step in the audio pipeline fails.
 	DeleteEvaluation(ctx context.Context, evaluationID string) error
+	// SetEvaluationResponseID links an evaluation to the answer it graded.
+	SetEvaluationResponseID(ctx context.Context, evaluationID, responseID string) error
 	GetSessionEvaluations(ctx context.Context, sessionID string) ([]models.EvaluationResult, error)
 	UpdateEvaluation(ctx context.Context, eval *models.EvaluationResult) error
 	CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error

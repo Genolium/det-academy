@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,8 +28,8 @@ from urllib.parse import unquote, urlparse
 
 QUESTION_TYPES = (
     "WRITING_SAMPLE",
-    "WRITE_ABOUT_PHOTO",
-    "SPEAK_ABOUT_PHOTO",
+    "WRITE_PHOTO",
+    "SPEAK_PHOTO",
     "READ_THEN_SPEAK",
     "SPEAKING_SAMPLE",
     "INTERACTIVE_WRITING",
@@ -38,28 +39,62 @@ QUESTION_TYPES = (
 CONSENT_VERSION = "2026-10-29"
 
 SQL = """
+WITH candidates AS (
+  SELECT
+    qr.id AS item_id,
+    qr.question_id,
+    qr.user_response,
+    qr.created_at,
+    CASE COALESCE(e.question_type, q.type)
+      WHEN 'WRITE_ABOUT_PHOTO' THEN 'WRITE_PHOTO'
+      WHEN 'SPEAK_ABOUT_PHOTO' THEN 'SPEAK_PHOTO'
+      ELSE COALESCE(e.question_type, q.type)
+    END AS question_type,
+    COALESCE(
+      q.content_payload->>'prompt',
+      q.content_payload->>'scenario',
+      concat_ws(' ', q.content_payload->>'part1Prompt', q.content_payload->>'part2Prompt'),
+      ''
+    ) AS prompt,
+    e.transcript,
+    e.score,
+    e.cefr_level,
+    e.provider,
+    e.evaluator_version,
+    COALESCE(e.audio_url, '') AS audio_url
+  FROM question_responses qr
+  JOIN questions q ON q.id = qr.question_id
+  JOIN test_sessions ts ON ts.id = qr.session_id
+  JOIN calibration_consents cc ON cc.user_id = ts.user_id
+  LEFT JOIN evaluations e
+    ON e.session_id = qr.session_id
+   AND e.question_id = qr.question_id
+  WHERE cc.revoked_at IS NULL
+    AND cc.consent_version = '{consent_version}'
+    AND qr.created_at >= cc.granted_at
+)
 SELECT json_build_object(
-  'item_id', qr.id,
-  'question_id', qr.question_id,
-  'question_type', COALESCE(e.question_type, q.type),
-  'prompt', COALESCE(q.content_payload->>'prompt', q.content_payload->>'scenario', ''),
-  'response', COALESCE(e.transcript, qr.user_response->>'text', qr.user_response->>'response', qr.user_response::text),
-  'model_score', CASE WHEN e.score IS NULL THEN NULL ELSE LEAST(5, GREATEST(0, ROUND(e.score * 5)::int)) END,
-  'model_raw_score', e.score,
-  'cefr', e.cefr_level,
-  'provider', e.provider,
-  'evaluator_version', e.evaluator_version,
-  'audio_url', COALESCE(e.audio_url, '')
+  'item_id', item_id,
+  'question_id', question_id,
+  'question_type', question_type,
+  'prompt', prompt,
+  'response', CASE
+    WHEN transcript IS NOT NULL AND btrim(transcript) <> '' THEN transcript
+    WHEN question_type = 'INTERACTIVE_WRITING' THEN concat_ws(E'\\n\\n', user_response->>'part1', user_response->>'part2')
+    WHEN question_type IN ('WRITE_PHOTO', 'WRITING_SAMPLE') THEN COALESCE(user_response->>'text', '')
+    WHEN question_type IN ('SPEAK_PHOTO', 'READ_THEN_SPEAK', 'INTERACTIVE_SPEAKING', 'SPEAKING_SAMPLE') THEN COALESCE(user_response->>'transcript', '')
+    ELSE COALESCE(user_response->>'text', user_response->>'response', '')
+  END,
+  'model_score', CASE WHEN score IS NULL THEN NULL ELSE LEAST(5, GREATEST(0, ROUND(score * 5)::int)) END,
+  'model_raw_score', score,
+  'cefr', cefr_level,
+  'provider', provider,
+  'evaluator_version', evaluator_version,
+  'audio_url', audio_url
 )::text
-FROM question_responses qr
-JOIN questions q ON q.id = qr.question_id
-JOIN test_sessions ts ON ts.id = qr.session_id
-JOIN calibration_consents cc ON cc.user_id = ts.user_id
-LEFT JOIN evaluations e ON e.response_id = qr.id
-WHERE cc.revoked_at IS NULL
-  AND cc.consent_version = '{consent_version}'
-  AND COALESCE(e.question_type, q.type) IN ({types})
-ORDER BY qr.created_at DESC
+FROM candidates
+WHERE question_type IN ({types})
+ORDER BY created_at DESC
 LIMIT {limit};
 """
 
@@ -72,6 +107,25 @@ def stable_hash(salt: str, prefix: str, value: str) -> str:
 def audio_basename(url: str) -> str:
     parsed = urlparse(url)
     return unquote(os.path.basename(parsed.path))
+
+
+EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+URL_RE = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
+PHONE_RE = re.compile(r"(?<![\w])\+?\d[\d\s().-]{7,}\d(?![\w])")
+
+
+def redact_pii(text: str | None) -> str | None:
+    """Remove common direct identifiers from learner-authored text.
+
+    The export is still reviewed before release; this is a defense-in-depth
+    filter, not a replacement for the consent and review process.
+    """
+    if not text:
+        return text
+    redacted = EMAIL_RE.sub("[email]", text)
+    redacted = URL_RE.sub("[url]", redacted)
+    redacted = PHONE_RE.sub("[phone]", redacted)
+    return redacted
 
 
 def main() -> int:
@@ -157,7 +211,7 @@ def main() -> int:
                 "question_id": stable_hash(salt, "question", row.pop("question_id", "")),
                 "question_type": row.pop("question_type"),
                 "prompt": row.pop("prompt"),
-                "response": row.pop("response"),
+                "response": redact_pii(row.pop("response")),
                 "model_score": row.pop("model_score"),
                 "model_raw_score": row.pop("model_raw_score"),
                 "cefr": row.pop("cefr"),

@@ -536,8 +536,9 @@ func TestTestSessionLifecycle(t *testing.T) {
 		t.Fatalf("expected 200 on submit response, got %d: %s", respW.Code, respW.Body.String())
 	}
 
-	// Answer one issued question per stage so the overall score is measured.
-	// Skipped skills must not borrow another skill's score.
+	// Answer one issued question per stage. This is below the 90% coverage
+	// threshold, so skill scores are still measured but the overall score and
+	// certificate must stay unmeasured.
 	completeCurrentStage(t, r, token, sessionID, "READ_SELECT")
 	for index, stage := range service.StageSequence {
 		if index == 0 {
@@ -575,8 +576,14 @@ func TestTestSessionLifecycle(t *testing.T) {
 	var compResult models.SessionCompleteResponse
 	_ = json.Unmarshal(compW.Body.Bytes(), &compResult)
 
-	if compResult.Scores.Overall < 60 || compResult.Scores.Overall > 160 {
-		t.Fatalf("expected score between 60 and 160, got %d", compResult.Scores.Overall)
+	if compResult.Scores.AnswerCoverage >= service.MinScoredCoverage {
+		t.Fatalf("expected low answer coverage, got %.2f", compResult.Scores.AnswerCoverage)
+	}
+	if compResult.Scores.Overall != 0 {
+		t.Fatalf("low-coverage attempt must not receive an overall score, got %d", compResult.Scores.Overall)
+	}
+	if compResult.CertificateEligible || compResult.Certificate != nil {
+		t.Fatal("low-coverage attempt must not receive a certificate")
 	}
 
 	// Verify all 4 individual skill scores and 4 integrated subscores are calculated
@@ -1990,23 +1997,21 @@ func TestCompletePlatformEndToEndJourney(t *testing.T) {
 		t.Fatalf("expected COMPLETED status, got %v", finalSession["status"])
 	}
 	overallScore := int(finalSession["overallScore"].(float64))
-	if overallScore <= 0 || overallScore > 160 {
-		t.Fatalf("invalid overall score: %d", overallScore)
+	scores := compResp["scores"].(map[string]interface{})
+	coverage := scores["answerCoverage"].(float64)
+	if coverage >= service.MinScoredCoverage {
+		t.Fatalf("test answered only one item per stage; expected low coverage, got %.2f", coverage)
+	}
+	if overallScore != 0 {
+		t.Fatalf("a low-coverage attempt must not receive an overall score, got %d", overallScore)
 	}
 
-	// 7. Verify Certificate Security
-	certMap, hasCert := compResp["certificate"].(map[string]interface{})
-	if !hasCert || certMap == nil {
-		t.Fatalf("expected certificate to be issued upon exam completion")
+	// 7. A low-coverage attempt must not receive a certificate.
+	if eligible, _ := compResp["certificateEligible"].(bool); eligible {
+		t.Fatal("low-coverage attempt must not be certificate-eligible")
 	}
-	certID := certMap["id"].(string)
-
-	// Valid certificate verification returns 200 with full details
-	verReq := httptest.NewRequest("GET", "/api/v1/certificates/"+certID, nil)
-	verW := httptest.NewRecorder()
-	r.ServeHTTP(verW, verReq)
-	if verW.Code != http.StatusOK {
-		t.Fatalf("expected 200 on valid certificate verification, got %d", verW.Code)
+	if certMap, hasCert := compResp["certificate"]; hasCert && certMap != nil {
+		t.Fatalf("low-coverage attempt must not receive a certificate: %+v", certMap)
 	}
 
 	// Non-existent certificate returns 404 (prevents fake certificate generation)

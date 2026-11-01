@@ -169,6 +169,8 @@ export interface SessionCompleteResponse {
     rangeHigh: number;
     notMeasured?: string[];
     answeredQuestions: number;
+    /** 0..1 share of assigned items the learner answered. */
+    answerCoverage?: number;
     timeoutEvents?: number;
   };
   certificateEligible: boolean;

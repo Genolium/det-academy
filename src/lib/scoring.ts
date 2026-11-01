@@ -64,5 +64,7 @@ export interface CalculatedScores {
   /** Skill names that had no server-verified responses. */
   notMeasured?: string[];
   answeredQuestions?: number;
+  /** 0..1 share of assigned items the learner answered. */
+  answerCoverage?: number;
   timeoutEvents?: number;
 }

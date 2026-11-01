@@ -45,6 +45,8 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
   const notMeasured = scores.notMeasured || [];
   const overallMeasured = (scores.overall || 0) > 0 && !notMeasured.includes('overall');
   const completeness = Math.round((scores.completeness ?? 1) * 100);
+  const coveragePercent = Math.round((scores.answerCoverage ?? 1) * 100);
+  const coverageTooLow = coveragePercent < 90;
   const rangeLow = scores.rangeLow ?? Math.max(10, (scores.overall || 0) - 10);
   const rangeHigh = scores.rangeHigh ?? Math.min(160, (scores.overall || 0) + 10);
   const confidenceLabel =
@@ -197,8 +199,10 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
                   Недостаточно данных
                 </div>
                 <span className="text-xs text-neutral-400 mt-2 block max-w-md">
-                  Итоговый балл не выставлен, потому что не все четыре навыка были измерены
-                  сервером. Завершено {completeness}% проверки.
+                  {coverageTooLow
+                    ? `Итоговый балл не выставлен: отвечено ${coveragePercent}% заданий, а для тренировочной оценки нужно не менее 90%.`
+                    : 'Итоговый балл не выставлен, потому что не все четыре навыка были измерены сервером.'}{' '}
+                  Завершено {completeness}% проверки.
                 </span>
               </>
             )}
@@ -218,7 +222,9 @@ export const TestResultModal: React.FC<TestResultModalProps> = ({
               </div>
             ) : (
               <div className="text-amber-300 font-bold">
-                Пропущенные навыки: {notMeasured.filter((skill) => skill !== 'overall').join(', ') || '—'}
+                {coverageTooLow
+                  ? `Покрытие ответов: ${coveragePercent}% (нужно ≥90%)`
+                  : `Пропущенные навыки: ${notMeasured.filter((skill) => skill !== 'overall').join(', ') || '—'}`}
               </div>
             )}
             <div className="text-neutral-500 pt-1">

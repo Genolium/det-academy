@@ -42,6 +42,11 @@ const audioUploadGrace = 3 * time.Minute
 
 const ItemSelectionPolicyVersion = "exclude-recent-v1"
 
+// MinScoredCoverage is the share of assigned items a learner must answer
+// before an overall score or a certificate can be issued. A high score from a
+// mostly empty attempt is not a valid result.
+const MinScoredCoverage = 0.9
+
 var StageSequence = []string{
 	"READ_SELECT",
 	"FILL_BLANKS",
@@ -769,12 +774,15 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 		}
 	}
 
+	// The evaluation and the response describe one answer. Generate the
+	// response id first so both rows can reference each other.
+	responseID := uuid.NewString()
 	trimmedResponse := strings.TrimSpace(string(req.UserResponse))
 	// Empty responses always receive 0 score
 	if trimmedResponse == "" || trimmedResponse == `""` || trimmedResponse == "null" || trimmedResponse == "{}" || trimmedResponse == "[]" {
 		isCorrect := false
 		resp := &models.QuestionResponse{
-			ID:           uuid.New().String(),
+			ID:           responseID,
 			SessionID:    sessionID,
 			QuestionID:   req.QuestionID,
 			UserResponse: req.UserResponse,
@@ -787,6 +795,7 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 
 	var calculatedScore float64
 	var isCorrect bool
+	pendingEvaluationID := ""
 
 	q := s.questionFromAssignment(ctx, *assignment)
 	if q != nil && (len(q.CorrectAnswers) > 0 || isOpenEndedQuestionType(q.Type)) {
@@ -803,9 +812,17 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 						QuestionType: q.Type, Status: "PENDING", FeedbackStatus: "queued",
 						Provider: "pending", EvaluatorVersion: "2026.1", CreatedAt: time.Now().UTC(),
 					}
-					if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err == nil {
-						_ = s.evaluationQueue.EnqueueWritingEvaluation(ctx, sessionID, req.QuestionID, eval.ID, userText)
+					if err := s.sessionRepo.SaveEvaluation(ctx, &eval); err != nil {
+						return false, 0, fmt.Errorf("save writing evaluation: %w", err)
 					}
+					if err := s.evaluationQueue.EnqueueWritingEvaluation(ctx, sessionID, req.QuestionID, eval.ID, userText); err != nil {
+						// Fail closed: never turn a queue outage into a zero
+						// score. Removing the pending row lets the client retry
+						// the same answer without leaving an orphan job.
+						_ = s.sessionRepo.DeleteEvaluation(ctx, eval.ID)
+						return false, 0, fmt.Errorf("enqueue writing evaluation: %w", err)
+					}
+					pendingEvaluationID = eval.ID
 					calculatedScore = 0
 					isCorrect = false
 				} else {
@@ -856,7 +873,7 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 	}
 
 	resp := &models.QuestionResponse{
-		ID:           uuid.New().String(),
+		ID:           responseID,
 		SessionID:    sessionID,
 		QuestionID:   req.QuestionID,
 		UserResponse: req.UserResponse,
@@ -865,7 +882,15 @@ func (s *CATService) recordQuestionResponseLocked(ctx context.Context, sessionID
 		TimeSpentSec: req.TimeSpentSec,
 	}
 
-	return isCorrect, calculatedScore, s.sessionRepo.RecordResponse(ctx, resp)
+	if err := s.sessionRepo.RecordResponse(ctx, resp); err != nil {
+		return false, 0, err
+	}
+	if pendingEvaluationID != "" {
+		// Link the evaluation to the answer for calibration joins. The
+		// response already exists here, so the foreign key is satisfied.
+		_ = s.sessionRepo.SetEvaluationResponseID(ctx, pendingEvaluationID, responseID)
+	}
+	return isCorrect, calculatedScore, nil
 }
 
 func firstString(content map[string]interface{}, keys ...string) string {
@@ -1292,6 +1317,7 @@ func (s *CATService) recordAudioResponseLocked(
 
 	qType := question.Type
 	keywords := extractContextKeywords(question.ContentPayload)
+	responseID := uuid.NewString()
 
 	var eval models.EvaluationResult
 	if s.evaluationQueue != nil {
@@ -1340,7 +1366,7 @@ func (s *CATService) recordAudioResponseLocked(
 
 	isCorrect := eval.Score >= 0.6
 	resp := &models.QuestionResponse{
-		ID:           uuid.New().String(),
+		ID:           responseID,
 		SessionID:    sessionID,
 		QuestionID:   questionID,
 		UserResponse: userResponseJSON,
@@ -1354,6 +1380,9 @@ func (s *CATService) recordAudioResponseLocked(
 		_ = s.sessionRepo.DeleteMediaAsset(ctx, asset.ID)
 		return nil, fmt.Errorf("failed to record question response: %w", err)
 	}
+	// Link the evaluation to the answer for calibration joins. The response
+	// already exists here, so the foreign key is satisfied.
+	_ = s.sessionRepo.SetEvaluationResponseID(ctx, eval.ID, responseID)
 
 	return &eval, nil
 }
@@ -1712,7 +1741,7 @@ func (s *CATService) completedSessionResponse(ctx context.Context, session *mode
 	cert, _ := s.certRepo.GetBySessionID(ctx, session.ID)
 	eligible := cert != nil
 	if !eligible {
-		eligible = s.theoryService.IsTheoryCompleted(ctx, session.UserID) && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
+		eligible = s.theoryService.IsTheoryCompleted(ctx, session.UserID) && scores.Overall >= 105 && answerCoverage >= MinScoredCoverage && timeoutEvents == 0
 	}
 
 	return &models.SessionCompleteResponse{
@@ -1892,7 +1921,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 
 	overall := 0
 	meetsMinimumItems := len(answeredQuestionIDs) >= 8
-	if len(notMeasured) == 0 && meetsMinimumItems {
+	if len(notMeasured) == 0 && meetsMinimumItems && answerCoverage >= MinScoredCoverage {
 		overall = RoundToDetScale(float64(readingScore+listeningScore+writingScore+speakingScore) / 4.0)
 	} else {
 		notMeasured = append(notMeasured, "overall")
@@ -1976,7 +2005,7 @@ func (s *CATService) completeSessionLocked(ctx context.Context, sessionID, userI
 	// Check certificate eligibility:
 	// Rule from MAIN.MD: theory_progress_percentage == 100% AND best_mock_test_score >= 105
 	isTheoryComplete := s.theoryService.IsTheoryCompleted(ctx, session.UserID)
-	eligible := session.Mode == "full" && isTheoryComplete && scores.Overall >= 105 && answerCoverage >= 0.3 && timeoutEvents == 0
+	eligible := session.Mode == "full" && isTheoryComplete && scores.Overall >= 105 && answerCoverage >= MinScoredCoverage && timeoutEvents == 0
 
 	var cert *models.Certificate
 	if eligible {

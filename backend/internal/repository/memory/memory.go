@@ -1975,6 +1975,22 @@ func (r *sessionMemoryRepo) DeleteEvaluation(ctx context.Context, evaluationID s
 	return nil
 }
 
+func (r *sessionMemoryRepo) SetEvaluationResponseID(ctx context.Context, evaluationID, responseID string) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	for _, evaluations := range r.s.evaluations {
+		for index := range evaluations {
+			if evaluations[index].ID == evaluationID {
+				if evaluations[index].ResponseID == "" {
+					evaluations[index].ResponseID = responseID
+				}
+				return nil
+			}
+		}
+	}
+	return errors.New("evaluation not found")
+}
+
 func (r *sessionMemoryRepo) SaveEvaluation(ctx context.Context, eval *models.EvaluationResult) error {
 	r.s.mu.Lock()
 	defer r.s.mu.Unlock()

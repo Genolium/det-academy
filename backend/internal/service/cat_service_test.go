@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"testing"
+	"time"
 
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository"
 	"det-academy-backend/internal/repository/memory"
-	"encoding/json"
-	"testing"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestLevenshteinDistance(t *testing.T) {
@@ -227,5 +230,127 @@ func TestStartSessionSetsCreatedAt(t *testing.T) {
 	}
 	if sessionRepo.captured == nil || sessionRepo.captured.CreatedAt.IsZero() {
 		t.Fatal("createdAt must be set before the repository insert")
+	}
+}
+
+type failingEnqueueRepo struct {
+	repository.TestSessionRepository
+}
+
+func (r *failingEnqueueRepo) CreateEvaluationJob(ctx context.Context, job *models.EvaluationJob) error {
+	return errors.New("evaluation queue unavailable")
+}
+
+// A queue outage must not be recorded as a zero score. The response and the
+// pending evaluation are rolled back so the learner can retry the same answer.
+func TestWritingEnqueueFailureDoesNotRecordZeroScore(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	userID := uuid.NewString()
+	session := &models.TestSession{
+		ID:              uuid.NewString(),
+		UserID:          userID,
+		Status:          "IN_PROGRESS",
+		StageName:       "WRITING_SAMPLE",
+		CurrentStage:    11,
+		DifficultyLevel: "B1",
+		Mode:            "full",
+	}
+	if err := store.Sessions().Create(ctx, session); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	if err := store.Sessions().AssignQuestions(ctx, []models.SessionQuestion{{
+		SessionID:  session.ID,
+		QuestionID: "q-ws-01",
+		StageName:  "WRITING_SAMPLE",
+		Position:   1,
+		IssuedAt:   time.Now().UTC(),
+		DeadlineAt: time.Now().Add(time.Hour),
+	}}); err != nil {
+		t.Fatalf("assign question: %v", err)
+	}
+
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	queue := NewEvaluationQueue(&failingEnqueueRepo{TestSessionRepository: store.Sessions()}, store.Questions(), nil, nil)
+	cat.SetEvaluationQueue(queue)
+
+	_, _, err := cat.RecordQuestionResponse(ctx, session.ID, userID, models.SubmitResponseRequest{
+		QuestionID:   "q-ws-01",
+		UserResponse: json.RawMessage(`{"text":"A balanced education combines theory with practical skills."}`),
+		TimeSpentSec: 10,
+	})
+	if err == nil {
+		t.Fatal("expected the enqueue failure to be returned")
+	}
+
+	responses, err := store.Sessions().GetSessionResponses(ctx, session.ID)
+	if err != nil {
+		t.Fatalf("read responses: %v", err)
+	}
+	if len(responses) != 0 {
+		t.Fatalf("expected no recorded response after a queue failure, got %d", len(responses))
+	}
+	evaluations, err := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if err != nil {
+		t.Fatalf("read evaluations: %v", err)
+	}
+	if len(evaluations) != 0 {
+		t.Fatalf("expected no orphan evaluation after a queue failure, got %d", len(evaluations))
+	}
+}
+
+// The evaluation and the answer must share one id so calibration exports can
+// join them without guessing from the session/question pair.
+func TestWritingEvaluationLinksResponseID(t *testing.T) {
+	store := memory.New()
+	ctx := context.Background()
+	userID := uuid.NewString()
+	session := &models.TestSession{
+		ID:              uuid.NewString(),
+		UserID:          userID,
+		Status:          "IN_PROGRESS",
+		StageName:       "WRITING_SAMPLE",
+		CurrentStage:    11,
+		DifficultyLevel: "B1",
+		Mode:            "full",
+	}
+	if err := store.Sessions().Create(ctx, session); err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+	if err := store.Sessions().AssignQuestions(ctx, []models.SessionQuestion{{
+		SessionID:  session.ID,
+		QuestionID: "q-ws-01",
+		StageName:  "WRITING_SAMPLE",
+		Position:   1,
+		IssuedAt:   time.Now().UTC(),
+		DeadlineAt: time.Now().Add(time.Hour),
+	}}); err != nil {
+		t.Fatalf("assign question: %v", err)
+	}
+
+	theory := NewTheoryService(store.Theory())
+	cat := NewCATService(store.Sessions(), store.Questions(), store.Theory(), store.Certificates(), theory, store.Study())
+	queue := NewEvaluationQueue(store.Sessions(), store.Questions(), nil, nil)
+	cat.SetEvaluationQueue(queue)
+
+	if _, _, err := cat.RecordQuestionResponse(ctx, session.ID, userID, models.SubmitResponseRequest{
+		QuestionID:   "q-ws-01",
+		UserResponse: json.RawMessage(`{"text":"A balanced education combines theory with practical skills."}`),
+		TimeSpentSec: 10,
+	}); err != nil {
+		t.Fatalf("record response: %v", err)
+	}
+
+	responses, err := store.Sessions().GetSessionResponses(ctx, session.ID)
+	if err != nil || len(responses) != 1 {
+		t.Fatalf("read responses: %v %v", responses, err)
+	}
+	evaluations, err := store.Sessions().GetSessionEvaluations(ctx, session.ID)
+	if err != nil || len(evaluations) != 1 {
+		t.Fatalf("read evaluations: %v %v", evaluations, err)
+	}
+	if evaluations[0].ResponseID != responses[0].ID {
+		t.Fatalf("evaluation response id = %q, want %q", evaluations[0].ResponseID, responses[0].ID)
 	}
 }

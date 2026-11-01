@@ -29,12 +29,22 @@ blocked until all of the following are true:
      --audio-source /path/to/stored/audio
    ```
 
-   The exporter joins `calibration_consents` on `revoked_at IS NULL` and the
-   current consent version, never selects `user_id`, email or name, hashes
-   `item_id`/`question_id` with the salt, and copies audio under hashed names.
-   Keep the salt to reproduce ids; a different salt produces different hashes.
-   The exporter selects speaking/writing response types only and includes the
-   rule-based model score normalized to the 0–5 rubric.
+   The exporter joins `calibration_consents` on `revoked_at IS NULL`, the
+   current consent version, and `qr.created_at >= cc.granted_at`, so a response
+   captured before consent is never exported. It never selects `user_id`, email
+   or name, hashes `item_id`/`question_id` with the salt, and copies audio under
+   hashed names. Keep the salt to reproduce ids; a different salt produces
+   different hashes.
+
+   The exporter selects the current speaking/writing task names (`WRITE_PHOTO`,
+   `SPEAK_PHOTO`, `WRITING_SAMPLE`, `READ_THEN_SPEAK`, `INTERACTIVE_WRITING`,
+   `INTERACTIVE_SPEAKING`, `SPEAKING_SAMPLE`), extracts readable text instead of
+   raw JSON (`e.transcript`, `user_response.text`, `part1`/`part2`, or the
+   client transcript), and applies a PII filter for emails, URLs and phone
+   numbers. This filter is defense in depth; the pack is still reviewed before
+   release. Evaluations are joined by `(session_id, question_id)` and linked to
+   `question_responses` through `evaluations.response_id` (migration 036
+   backfills old rows and enforces one evaluation per answer).
 
 3. Two experts label every item independently. Add one JSONL row per rater:
 

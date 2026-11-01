@@ -122,8 +122,21 @@ def build_report(payload: dict[str, Any]) -> dict[str, Any]:
     else:
         status = "fixture_only"
 
-    writing_types = {"WRITING_SAMPLE", "WRITE_ABOUT_PHOTO", "INTERACTIVE_WRITING"}
-    speaking_types = {"SPEAK_ABOUT_PHOTO", "READ_THEN_SPEAK", "SPEAKING_SAMPLE", "INTERACTIVE_SPEAKING"}
+    # Accept the current task names and the legacy names used by older
+    # calibration datasets.
+    writing_types = {
+        "WRITING_SAMPLE",
+        "WRITE_PHOTO",
+        "WRITE_ABOUT_PHOTO",
+        "INTERACTIVE_WRITING",
+    }
+    speaking_types = {
+        "SPEAK_PHOTO",
+        "SPEAK_ABOUT_PHOTO",
+        "READ_THEN_SPEAK",
+        "SPEAKING_SAMPLE",
+        "INTERACTIVE_SPEAKING",
+    }
 
     writing_human: list[int] = []
     writing_model: list[int] = []
