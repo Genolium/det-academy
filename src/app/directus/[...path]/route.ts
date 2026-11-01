@@ -18,7 +18,6 @@ export const dynamic = 'force-dynamic';
 
 const READ_ONLY_COLLECTIONS = new Set([
   'theory_lessons',
-  'questions',
   'institutions',
   'ad_banners',
   'vocabulary_publication',

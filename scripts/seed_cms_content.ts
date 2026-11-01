@@ -33,7 +33,6 @@ ON CONFLICT (collection) DO NOTHING;
 INSERT INTO directus_permissions (collection, action, permissions, validation, presets, fields, policy)
 VALUES
     ('theory_lessons', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
-    ('questions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
     ('institutions', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17'),
     ('ad_banners', 'read', '{}', '{}', NULL, '*', 'abf8a154-5b1c-4a46-ac9c-7300570f4f17')
 ON CONFLICT DO NOTHING;
