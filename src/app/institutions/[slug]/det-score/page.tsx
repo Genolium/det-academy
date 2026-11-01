@@ -33,6 +33,9 @@ export async function generateMetadata({ params }: ScorePageProps): Promise<Meta
     title,
     description,
     alternates: { canonical },
+    robots: institution.requirementVerified
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     openGraph: { title, description, url: canonical, siteName: SITE_NAME, type: 'website' },
     twitter: { card: 'summary', title, description },
   };

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     canonical: '/theory',
     languages: {
       ru: '/theory',
-      en: '/theory?lang=en',
+      en: '/en/theory',
       'x-default': '/theory',
     },
   },

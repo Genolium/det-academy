@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     canonical: '/privacy',
     languages: {
       ru: '/privacy',
-      en: '/privacy?lang=en',
+      en: '/en/privacy',
       'x-default': '/privacy',
     },
   },

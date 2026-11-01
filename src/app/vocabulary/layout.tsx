@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     canonical: '/vocabulary',
     languages: {
       ru: '/vocabulary',
-      en: '/vocabulary?lang=en',
+      en: '/en/vocabulary',
       'x-default': '/vocabulary',
     },
   },

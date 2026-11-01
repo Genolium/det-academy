@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     canonical: '/institutions',
     languages: {
       ru: '/institutions',
-      en: '/institutions?lang=en',
+      en: '/en/institutions',
       'x-default': '/institutions',
     },
   },

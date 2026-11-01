@@ -27,6 +27,8 @@ interface InstitutionLocation {
 
 interface InstitutionMetadata {
   minScore?: number;
+  requirementVerified?: boolean;
+  requirementStatus?: string;
   minLiteracy?: number;
   minComprehension?: number;
   minProduction?: number;
@@ -61,6 +63,7 @@ export interface SeoInstitution {
   subscores: SeoSubscores | null;
   /** Whether the official registry marks at least one program as DET-fulfilling. */
   fulfillsRequirement: boolean;
+  requirementVerified: boolean;
   registryUrl: string;
   checkedAt: string;
 }
@@ -213,6 +216,7 @@ function buildInstitutions(): SeoInstitution[] {
       minScore,
       subscores: minScore ? buildSubscores(meta) : null,
       fulfillsRequirement: row.fulfillsRequirement === true,
+      requirementVerified: meta?.requirementVerified === true,
       registryUrl: DET_REGISTRY_URL,
       checkedAt: REQUIREMENT_CHECKED_AT,
     };

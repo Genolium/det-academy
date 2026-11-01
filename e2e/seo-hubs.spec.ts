@@ -18,7 +18,7 @@ for (const hub of HUBS) {
     const canonical = page.locator('link[rel="canonical"]');
     await expect(canonical).toHaveAttribute('href', new RegExp(`${hub.canonical}/?$`));
     const english = page.locator('link[rel="alternate"][hreflang="en"]');
-    await expect(english).toHaveAttribute('href', new RegExp(`${hub.canonical}\\?lang=en$`));
+    await expect(english).toHaveAttribute('href', new RegExp(`/en${hub.canonical}$`));
   });
 }
 
@@ -28,7 +28,7 @@ test('theory lesson renders content for crawlers without the auth spinner', asyn
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('?lang=en switches the client locale and document language', async ({ page }) => {
-  await page.goto('/vocabulary?lang=en');
+test('/en/vocabulary switches the client locale and document language', async ({ page }) => {
+  await page.goto('/en/vocabulary');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });

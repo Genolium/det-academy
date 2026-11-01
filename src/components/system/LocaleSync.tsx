@@ -9,6 +9,10 @@ export const LocaleSync: React.FC = () => {
 
   useEffect(() => {
     try {
+      if (window.location.pathname === '/en' || window.location.pathname.startsWith('/en/')) {
+        if (locale !== 'en') setLocale('en');
+        return;
+      }
       const requested = new URLSearchParams(window.location.search).get('lang');
       if (requested === 'ru' || requested === 'en') {
         if (requested !== locale) setLocale(requested as Locale);

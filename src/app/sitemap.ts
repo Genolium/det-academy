@@ -47,7 +47,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  const scoreRoutes: MetadataRoute.Sitemap = getScoreInstitutions(20).map((institution) => ({
+  const scoreRoutes: MetadataRoute.Sitemap = getScoreInstitutions(5000)
+    .filter((institution) => institution.requirementVerified)
+    .map((institution) => ({
     url: `${SITE_URL}/institutions/${institution.slug}/det-score`,
     lastModified: registryDate,
     changeFrequency: 'monthly',

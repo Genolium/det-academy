@@ -740,9 +740,6 @@ export const InstitutionsMap: React.FC = () => {
 
                     <div className={`text-xs flex items-center justify-between ${isSelected ? 'text-neutral-400' : 'text-neutral-500'}`}>
                       <span>📍 {formatLocation(inst, locale)}</span>
-                      {inst.acceptanceRate && (
-                        <span>{t.acceptanceLabel} {inst.acceptanceRate}</span>
-                      )}
                     </div>
                   </div>
                 );
