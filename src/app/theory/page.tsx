@@ -56,10 +56,13 @@ export default function TheoryCatalogPage() {
     };
   }, []);
 
-  const totalLessons = lessons.length;
-  // Count only completed lessons that actually match existing course modules
+  // The intro (`start-here`) is a local orientation lesson, not one of the
+  // 16 certificate modules. Keep it out of the progress denominator so 16/16
+  // is actually reachable.
+  const trackableLessons = lessons.filter((lesson) => lesson.slug !== 'start-here');
+  const totalLessons = trackableLessons.length;
   const validCompletedCount = completedLessons.filter((slug) =>
-    lessons.some((l) => l.slug === slug)
+    trackableLessons.some((l) => l.slug === slug)
   ).length;
   const progressPercent = totalLessons > 0 ? Math.round((validCompletedCount / totalLessons) * 100) : 0;
 

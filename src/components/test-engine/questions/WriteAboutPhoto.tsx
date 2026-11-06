@@ -139,6 +139,7 @@ export const WriteAboutPhoto: React.FC<WriteAboutPhotoProps> = ({ onComplete }) 
         <div className="relative bg-[#111315] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center overflow-hidden shadow-xl">
           <div className="relative w-full h-72">
             <Image
+              priority
               src={currentPhoto.imageUrl}
               alt={currentPhoto.altText}
               fill

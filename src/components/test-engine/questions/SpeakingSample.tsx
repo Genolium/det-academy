@@ -52,7 +52,7 @@ const TOTAL_SECONDS = PREP_SECONDS + SPEAK_SECONDS;
 const MIN_SPEAK_SECONDS = 60;
 
 export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isStandaloneDrill }) => {
-  const { recordSpeakingResult, serverQuestions, backendSessionId } = useTestStore();
+  const { recordSpeakingResult, serverQuestions, backendSessionId, deadlineAt: stageDeadlineAt } = useTestStore();
   const audioRecorder = useAudioRecorder();
 
   const serverQ = isStandaloneDrill ? undefined : serverQuestions.find((q) => q.type === 'SPEAKING_SAMPLE');
@@ -63,9 +63,16 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
 
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
   // One countdown covers preparation and speaking: 3:30 in total.
+  const [taskDeadline] = useState(() => {
+    const fixed = Date.now() + TOTAL_SECONDS * 1000;
+    return stageDeadlineAt ? Math.min(fixed, stageDeadlineAt - 15_000) : fixed;
+  });
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
+  const stageLimited =
+    stageDeadlineAt !== null && stageDeadlineAt - 15_000 < Date.now() + TOTAL_SECONDS * 1000;
   const [speakSeconds, setSpeakSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
+  const [showTranscript, setShowTranscript] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
@@ -247,7 +254,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
   // One task deadline for 30 s prep + 180 s speaking. It must not depend on
   // startRecording: the recorder object changes with every volume update.
   useEffect(() => {
-    const deadline = Date.now() + TOTAL_SECONDS * 1000;
+    const deadline = taskDeadline;
 
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -270,7 +277,7 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
     }, 250);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [taskDeadline]);
 
   return (
     <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
@@ -291,6 +298,12 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
           </span>
         </div>
       </div>
+
+      {stageLimited && (
+        <div className="mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200" role="status">
+          До конца этапа осталось меньше времени, чем на полный ответ. Запись остановится автоматически, чтобы сохранить результат.
+        </div>
+      )}
 
       <div className="bg-[#16191D] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6">
         {/* Topic Prompt Card */}
@@ -353,7 +366,13 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
             )}
           </div>
         ) : (
-          <div className="bg-[#0E1012] border border-neutral-800 rounded-xl p-5 space-y-3">
+          <>
+            {timeLeft <= 15 && (
+              <p className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-200" role="status">
+                Запись остановится автоматически через {timeLeft} с.
+              </p>
+            )}
+            <div className="bg-[#0E1012] border border-neutral-800 rounded-xl p-5 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-2 text-neutral-400">
                 <span className="relative flex h-3 w-3">
@@ -374,19 +393,26 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
               </div>
             </div>
 
-            {transcript ? (
+            <div className="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
+              <span>{audioRecorder.volumeLevel > 15 ? 'Голос записывается' : 'Говорите в микрофон'}</span>
+              {transcript && (
+                <button
+                  type="button"
+                  onClick={() => setShowTranscript((value) => !value)}
+                  className="rounded-full border border-neutral-700 px-2.5 py-1 text-[10px] font-bold text-neutral-300 hover:border-neutral-500"
+                >
+                  {showTranscript ? 'Скрыть расшифровку' : 'Показать расшифровку'}
+                </button>
+              )}
+            </div>
+
+            {showTranscript && transcript && (
               <p className="text-sm text-neutral-300 font-mono italic bg-neutral-900/60 p-3 rounded-lg border border-neutral-800/80">
                 &ldquo;{transcript}&rdquo;
               </p>
-            ) : (
-              <p className="text-xs text-neutral-500 italic">
-                {audioRecorder.volumeLevel > 15
-                  ? 'Голос зафиксирован. Идёт запись образца речи...'
-                  : 'Ожидание голосового потока... Говорите связно и аргументированно.'}
-              </p>
             )}
 
-            {micError && (
+                        {micError && (
               <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{micError}</span>
@@ -418,7 +444,8 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
                 )}
               </div>
             )}
-          </div>
+            </div>
+          </>
         )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-neutral-800/80">

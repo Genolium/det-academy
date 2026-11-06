@@ -27,6 +27,18 @@ body {
   overflow-x: hidden;
 }
 
+/* The cookie notice is fixed to the bottom. Keep the last section reachable
+   instead of letting the notice cover it. */
+body.has-cookie-banner {
+  padding-bottom: 9.5rem;
+}
+
+@media (min-width: 640px) {
+  body.has-cookie-banner {
+    padding-bottom: 4.5rem;
+  }
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 8px;

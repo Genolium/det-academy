@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { translations } from '@/lib/translations';
-import { X, Lock, Mail, User, Info } from 'lucide-react';
+import { X, Lock, Mail, User, Info, Eye, EyeOff } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -15,16 +15,38 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+function localizeAuthError(message: string | null): string {
+  switch (message) {
+    case 'email, password, and name are required':
+      return 'Заполните имя, email и пароль.';
+    case 'password must contain at least 8 characters':
+      return 'Пароль должен содержать минимум 8 символов.';
+    case 'password must contain at least one letter and one digit':
+      return 'Пароль должен содержать хотя бы одну букву и одну цифру.';
+    case 'invalid email or password':
+      return 'Неверный email или пароль.';
+    case 'email is not verified':
+    case 'Email is not verified':
+      return 'Этот email ещё не подтверждён.';
+    default:
+      return message || 'Не удалось выполнить действие. Попробуйте ещё раз.';
+  }
+}
+
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  const { login, register, oauthLogin, isLoading, error, clearError } = useAuthStore();
+  const { login, register, oauthLogin, isLoading, error, errorCode, clearError } = useAuthStore();
   const { setCandidateName, syncWithBackend } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
@@ -75,11 +97,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
+
   if (!isOpen) return null;
+
+  const isEmailNotVerified = errorCode === 'email_not_verified';
+  const isRegistrationConflict =
+    isRegister && Boolean(error?.toLowerCase().includes('unable to register'));
+
+  const resendVerificationEmail = async () => {
+    if (!email.trim()) {
+      setResendStatus('Сначала укажите email.');
+      return;
+    }
+    setResending(true);
+    setResendStatus(null);
+    try {
+      await api.resendVerificationByEmail(email.trim());
+      setResendStatus(
+        'Если аккаунт существует и ещё не подтверждён, мы отправили новое письмо. Проверьте «Входящие» и «Спам». Используйте последнее письмо — старые ссылки перестают действовать.'
+      );
+    } catch (err) {
+      setResendStatus(
+        err instanceof Error ? err.message : 'Не удалось отправить письмо. Попробуйте позже.'
+      );
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setResendStatus(null);
     if (isRegister) {
       const ok = await register(email, password, name);
       if (ok) {
@@ -138,7 +190,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
-        className="relative w-full max-w-md bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white shadow-2xl"
       >
         {/* Close Button */}
         <button
@@ -199,8 +251,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {error && (
-          <div role="alert" className="mb-4 p-3 bg-red-950/80 border border-red-800 text-red-300 text-xs rounded-xl">
-            {error}
+          <div
+            ref={errorRef}
+            role="alert"
+            tabIndex={-1}
+            className="mb-4 p-3 bg-red-950/80 border border-red-800 text-red-300 text-xs rounded-xl outline-none"
+          >
+            <p>
+              {isEmailNotVerified
+                ? 'Этот email ещё не подтверждён. Подтвердите его, чтобы войти, или запросите новое письмо.'
+                : isRegistrationConflict
+                  ? 'Не удалось создать аккаунт. Возможно, он уже существует — войдите или запросите новое письмо.'
+                  : error}
+            </p>
+            {(isEmailNotVerified || isRegistrationConflict) && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void resendVerificationEmail()}
+                  disabled={resending}
+                  className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1.5 font-bold text-red-100 disabled:opacity-50"
+                >
+                  {resending ? 'Отправляем...' : 'Отправить письмо ещё раз'}
+                </button>
+                {isRegistrationConflict && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegister(false);
+                      clearError();
+                      setResendStatus(null);
+                    }}
+                    className="rounded-lg border border-neutral-600 px-3 py-1.5 font-bold text-neutral-200"
+                  >
+                    Войти
+                  </button>
+                )}
+              </div>
+            )}
+            {resendStatus && (
+              <p className="mt-2 text-[11px] leading-relaxed text-red-100/80" role="status">
+                {resendStatus}
+              </p>
+            )}
           </div>
         )}
 
@@ -230,7 +323,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <User className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
                 <input
                   id="auth-name"
+                  name="name"
                   type="text"
+                  autoComplete="name"
                   required
                   placeholder={t.namePlaceholder}
                   value={name}
@@ -249,7 +344,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Mail className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
               <input
                 id="auth-email"
+                name="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 required
                 placeholder={t.emailPlaceholder}
                 value={email}
@@ -267,14 +365,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Lock className="absolute left-3.5 top-3 w-4 h-4 text-neutral-500" />
               <input
                 id="auth-password"
-                type="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#D2F544]"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-11 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#D2F544]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
+            {isRegister && (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500">
+                Минимум 8 символов, хотя бы одна буква и одна цифра.
+              </p>
+            )}
           </div>
 
           <button

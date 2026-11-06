@@ -19,6 +19,7 @@ import { BentoCard } from '@/components/ui/BentoCard';
 import { ServerAssignmentDrill } from '@/components/practice/ServerAssignmentDrill';
 import { Button } from '@/components/ui/Button';
 import { PillBadge } from '@/components/ui/PillBadge';
+import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { api, PracticeAssignment } from '@/lib/api';
 import { 
   Sparkles, 
@@ -100,6 +101,29 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
 
   // General State
   const [drillCompleted, setDrillCompleted] = useState(false);
+  const practiceLimit = isReadSelect
+    ? 75
+    : isListenSelect
+      ? 75
+      : isFillBlanks
+        ? 120
+        : isCTest
+          ? 180
+          : isListenType
+            ? 180
+            : isInteractiveReading
+              ? 420
+              : isInteractiveListening
+                ? 240
+                : isPhotoWriting
+                  ? 180
+                  : isInteractiveWriting
+                    ? 480
+                    : isWritingSample
+                      ? 300
+                      : 0;
+  const [practiceTimeLeft, setPracticeTimeLeft] = useState(practiceLimit);
+  const [practiceExpired, setPracticeExpired] = useState(false);
   const [assignment, setAssignment] = useState<PracticeAssignment | null>(null);
   // A malformed payload (for example an empty object from a proxy) must never
   // crash the drill: without a usable assignment the local mode is used.
@@ -107,6 +131,22 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [isServerGrading, setIsServerGrading] = useState(false);
   const [serverGradeError, setServerGradeError] = useState<string | null>(null);
   const [serverGradedBadge, setServerGradedBadge] = useState<{ isCorrect: boolean; score: number } | null>(null);
+
+  useEffect(() => {
+    if (!practiceLimit) return;
+    setPracticeTimeLeft(practiceLimit);
+    setPracticeExpired(false);
+    const deadline = Date.now() + practiceLimit * 1000;
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setPracticeTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        setPracticeExpired(true);
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [lessonSlug, practiceLimit]);
 
   const persistDrillAttempt = async (
     questionType: string,
@@ -911,6 +951,20 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 {serverGradeError}
               </span>
             )}
+            {practiceLimit > 0 && (
+              <CountdownTimer
+                seconds={practiceTimeLeft}
+                totalSeconds={practiceLimit}
+                tone="practice"
+                warnAt={Math.min(60, Math.max(10, practiceLimit / 2))}
+                criticalAt={Math.min(10, Math.max(3, practiceLimit / 4))}
+              />
+            )}
+            {practiceExpired && (
+              <span className="text-[10px] font-bold text-amber-800">
+                {lessonSlug.includes('writing') || lessonSlug.includes('read') ? 'Время вышло — можно завершить' : 'Время вышло'}
+              </span>
+            )}
           </div>
         </div>
         
@@ -1015,7 +1069,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                     onClick={playCurrentLsWord}
                     className="w-20 h-20 mx-auto rounded-3xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
                   >
-                    <Volume2 className={`w-10 h-10 ${lsPlaying ? 'animate-bounce' : ''}`} />
+                    <Volume2 className={`w-10 h-10 ${lsPlaying ? 'animate-pulse' : ''}`} />
                   </button>
                   <p className="text-xs text-neutral-500 font-medium mt-3">
                     Нажмите, чтобы прослушать произношение слова вслух

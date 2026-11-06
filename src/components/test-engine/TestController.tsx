@@ -125,6 +125,7 @@ export const TestController: React.FC = () => {
   const [stageSyncError, setStageSyncError] = useState<string | null>(null);
   const [lastStageAction, setLastStageAction] = useState<'advance' | 'finalize' | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [deadlineNotice, setDeadlineNotice] = useState(false);
   const [resumeUnavailable, setResumeUnavailable] = useState(false);
 
   const finalizeAttempt = useCallback(
@@ -448,9 +449,22 @@ export const TestController: React.FC = () => {
       // The server clock is authoritative; never leave the learner on an
       // expired stage with a disabled or failed in-stage action.
       deadlineAdvanceRef.current = true;
-      void handleStageAdvance(true);
+      const speakingStage = ['SPEAK_PHOTO', 'READ_THEN_SPEAK', 'INTERACTIVE_SPEAKING', 'SPEAKING_SAMPLE'].includes(
+        currentStage
+      );
+      if (speakingStage) setDeadlineNotice(true);
+      const timer = setTimeout(
+        () => void handleStageAdvance(true),
+        speakingStage ? 20_000 : 0
+      );
+      return () => clearTimeout(timer);
     }
-  }, [secondsLeft, attemptStatus, handleStageAdvance]);
+    return undefined;
+  }, [secondsLeft, attemptStatus, handleStageAdvance, currentStage]);
+
+  useEffect(() => {
+    setDeadlineNotice(false);
+  }, [currentStage]);
 
   if (attemptStatus === 'starting') {
     return (
@@ -602,6 +616,17 @@ export const TestController: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0E1012] text-white flex flex-col justify-between py-6">
+      {deadlineNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4" role="status" aria-live="assertive">
+          <div className="max-w-md rounded-3xl border border-amber-500/40 bg-[#111315] p-6 text-center shadow-2xl">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#D2F544]" />
+            <h2 className="mt-3 text-lg font-black text-white">Время этапа истекло</h2>
+            <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+              Сохраняем запись и переходим к следующему заданию. Не закрывайте вкладку.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-neutral-800">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#D2F544] text-[#0C2418] font-black flex items-center justify-center text-sm">

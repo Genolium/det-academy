@@ -58,8 +58,8 @@ export default function VocabularyPage() {
         });
         setEntries((current) => (append ? [...current, ...response.entries] : response.entries));
         setTotal(response.total);
-      } catch (error) {
-        setLoadError(error instanceof Error ? error.message : vocabularyCopy[locale].error);
+      } catch {
+        setLoadError(vocabularyCopy[locale].error);
         if (!append) {
           setEntries([]);
           setTotal(0);
@@ -131,7 +131,7 @@ export default function VocabularyPage() {
             <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl bg-neutral-100 p-1">
               {(
                 [
-                  ['dictionary', `${copy.tabs.dictionary} (${total || '…'})`],
+                  ['dictionary', `${copy.tabs.dictionary} (${loading ? '…' : total})`],
                   ['read-select', `${copy.tabs.readSelect} (${readSelectBank.length})`],
                   ['fill-blanks', `${copy.tabs.fillBlanks} (${fillBlanksBank.length})`],
                 ] as const
@@ -203,7 +203,14 @@ export default function VocabularyPage() {
               </div>
             ) : loadError ? (
               <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
-                {loadError}
+                <p>{loadError}</p>
+                <button
+                  type="button"
+                  onClick={() => void fetchPage(0, false)}
+                  className="mt-3 rounded-full border border-rose-300 bg-white px-4 py-2 text-xs font-bold text-rose-800 transition-colors hover:border-rose-400"
+                >
+                  {locale === 'ru' ? 'Повторить' : 'Try again'}
+                </button>
               </div>
             ) : entries.length === 0 ? (
               <div className="rounded-3xl border border-neutral-200 bg-white p-10 text-center">

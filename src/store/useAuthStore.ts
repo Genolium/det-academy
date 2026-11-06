@@ -12,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  errorCode: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   oauthLogin: (params: {
@@ -39,11 +40,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  errorCode: null,
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, errorCode: null }),
 
   login: async (email, password) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, errorCode: null });
     try {
       const resp = await api.login({ email, password });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
@@ -57,13 +59,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
-      set({ error: msg, isLoading: false });
+      set({
+        error: msg,
+        errorCode: err instanceof ApiError ? err.code ?? null : null,
+        isLoading: false,
+      });
       return false;
     }
   },
 
   register: async (email, password, name) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, errorCode: null });
     try {
       const resp = await api.register({ email, password, name });
       set({ user: resp.user, isAuthenticated: true, isLoading: false });
@@ -77,7 +83,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
-      set({ error: msg, isLoading: false });
+      set({
+        error: msg,
+        errorCode: err instanceof ApiError ? err.code ?? null : null,
+        isLoading: false,
+      });
       return false;
     }
   },
@@ -133,7 +143,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.removeItem('det_active_test_attempt_v2');
         localStorage.removeItem('det_active_test_session_id');
       }
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, isLoading: false, error: null, errorCode: null });
     }
   },
 

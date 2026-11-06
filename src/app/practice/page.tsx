@@ -228,7 +228,7 @@ export default function PracticeHubPage() {
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${strictMode ? 'bg-red-500 animate-pulse' : 'bg-neutral-300'}`} />
-            {strictMode ? 'Strict mode: ON' : 'Strict mode: OFF'}
+            {strictMode ? (locale === 'ru' ? 'Строгий режим: ВКЛ' : 'Strict mode: ON') : locale === 'ru' ? 'Строгий режим: ВЫКЛ' : 'Strict mode: OFF'}
           </button>
           <span className="text-[11px] text-neutral-500 max-w-md text-center">
             {copy.strictNote}

@@ -16,7 +16,7 @@ export const HeroSection: React.FC = () => {
   const [authOpen, setAuthOpen] = useState(false);
 
   return (
-    <section className="relative pt-12 pb-20 md:pt-16 md:pb-28 overflow-hidden ambient-glow">
+    <section className="relative pt-12 pb-16 md:pt-16 md:pb-20 overflow-hidden ambient-glow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-flex items-center gap-2 mb-6">
           <PillBadge variant="mint" prefixHash>

@@ -1402,6 +1402,34 @@ func (s *AuthService) ResendVerification(ctx context.Context, userID string) err
 	return s.sendVerificationEmail(ctx, user)
 }
 
+// ResendVerificationByEmail lets a user who cannot sign in request a fresh
+// verification link. The method deliberately returns nil for unknown or
+// already verified addresses so the endpoint cannot be used to enumerate
+// accounts; delivery failures are logged without exposing them to the caller.
+func (s *AuthService) ResendVerificationByEmail(ctx context.Context, emailAddress string) {
+	emailAddress = normalizeEmail(emailAddress)
+	if emailAddress == "" {
+		return
+	}
+	user, err := s.userRepo.GetByEmail(ctx, emailAddress)
+	if err != nil || user.EmailVerified {
+		return
+	}
+	// Do not let an unauthenticated caller invalidate a fresh link every second.
+	// The token lives for 24 hours; a 60-second cooldown still allows a real
+	// retry after a failed delivery.
+	if user.EmailVerificationExpires != nil &&
+		user.EmailVerificationExpires.After(time.Now().Add(24*time.Hour-time.Minute)) {
+		return
+	}
+	link, err := s.prepareVerificationEmail(ctx, user)
+	if err != nil {
+		log.Printf("[Auth] failed to prepare verification email: %v", err)
+		return
+	}
+	s.deliverVerificationEmailAsync(user.Email, link)
+}
+
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	role := user.Role
 	if role == "" {

@@ -323,6 +323,7 @@ func main() {
 			r.Post("/oauth", authHandler.OAuthLogin)
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 			r.Post("/verify-email", authHandler.VerifyEmail)
+			r.Post("/resend-verification-by-email", authHandler.ResendVerificationByEmail)
 			r.Post("/refresh", authHandler.Refresh)
 
 			// Protected auth endpoints

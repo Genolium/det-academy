@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -362,5 +363,27 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "sent"})
+}
+
+// ResendVerificationByEmail is the unauthenticated recovery path for a user
+// who cannot log in because the account is still unverified. The response is
+// always the same, so it cannot be used to discover registered addresses.
+func (h *AuthHandler) ResendVerificationByEmail(w http.ResponseWriter, r *http.Request) {
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeAuth) {
+		return
+	}
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if strings.TrimSpace(req.Email) == "" {
+		RespondError(w, http.StatusBadRequest, "email is required")
+		return
+	}
+	h.authService.ResendVerificationByEmail(r.Context(), req.Email)
 	RespondJSON(w, http.StatusOK, map[string]string{"status": "sent"})
 }

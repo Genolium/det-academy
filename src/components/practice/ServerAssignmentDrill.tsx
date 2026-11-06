@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Loader2, Volume2, XCircle } from 'lucide-react';
 import { api, PracticeAssignment } from '@/lib/api';
 import { sound } from '@/lib/sound';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { CountdownTimer } from '@/components/ui/CountdownTimer';
 
 interface ServerAssignmentDrillProps {
   assignment: PracticeAssignment;
@@ -28,6 +29,21 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; isCorrect: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const limit = Math.max(0, Number(assignment.timeLimitSec || 0));
+  const [timeLeft, setTimeLeft] = useState(limit);
+  const expired = limit > 0 && timeLeft <= 0;
+
+  useEffect(() => {
+    if (!limit) return;
+    setTimeLeft(limit);
+    const deadline = Date.now() + limit * 1000;
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) clearInterval(timer);
+    }, 250);
+    return () => clearInterval(timer);
+  }, [assignment.assignmentId, limit]);
 
   const word = asString(payload, 'word');
   const prefix = asString(payload, 'givenPrefix');
@@ -39,12 +55,13 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
     : [];
 
   const canSubmit = useMemo(() => {
+    if (expired) return false;
     if (assignment.questionType === 'READ_SELECT') return selected !== null;
     if (assignment.questionType === 'C_TEST') {
       return damagedTokens.length > 0 && damagedTokens.every((_, index) => Boolean(cTestInputs[String(index)]?.trim()));
     }
     return answer.trim().length > 0;
-  }, [answer, assignment.questionType, cTestInputs, damagedTokens, selected]);
+  }, [answer, assignment.questionType, cTestInputs, damagedTokens, expired, selected]);
 
   const submit = async () => {
     if (!canSubmit || submitting) return;
@@ -88,9 +105,20 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
         <span className="text-[10px] font-black uppercase tracking-wider text-[#D2F544]">
           {ru ? 'Серверное задание' : 'Server assignment'} · {label}
         </span>
-        <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-400">
-          {assignment.difficultyBand}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-400">
+            {assignment.difficultyBand}
+          </span>
+          {limit > 0 && (
+            <CountdownTimer
+              seconds={timeLeft}
+              totalSeconds={limit}
+              tone="exam"
+              warnAt={Math.min(30, Math.max(5, limit / 2))}
+              criticalAt={Math.min(10, Math.max(3, limit / 4))}
+            />
+          )}
+        </div>
       </div>
 
       {assignment.questionType === 'READ_SELECT' ? (
@@ -130,7 +158,7 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value.replace(/[^A-Za-z]/g, ''))}
                 maxLength={missingLength}
-                disabled={Boolean(result)}
+                disabled={Boolean(result) || expired}
                 className="w-24 bg-transparent text-center font-mono text-[#D2F544] outline-none"
                 placeholder={'_'.repeat(missingLength)}
               />
@@ -160,7 +188,7 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
                     }))
                   }
                   maxLength={Number(token.missingLength || 1)}
-                  disabled={Boolean(result)}
+                  disabled={Boolean(result) || expired}
                   className="min-w-0 flex-1 bg-transparent text-[#D2F544] outline-none"
                   placeholder={'_'.repeat(Number(token.missingLength || 1))}
                 />
@@ -183,7 +211,7 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
           <textarea
             value={answer}
             onChange={(event) => setAnswer(event.target.value)}
-            disabled={Boolean(result)}
+            disabled={Boolean(result) || expired}
             rows={3}
             className="mt-3 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white outline-none focus:border-[#D2F544]"
             placeholder={ru ? 'Введите услышанное, включая пунктуацию' : 'Type what you hear, including punctuation'}
@@ -212,6 +240,11 @@ export function ServerAssignmentDrill({ assignment, onCompleted }: ServerAssignm
         )}
       </div>
 
+      {expired && !result ? (
+        <p role="status" className="mt-3 text-xs font-bold text-amber-300">
+          {ru ? 'Время задания истекло. Начните новое задание из плана.' : 'Task time is up. Start a new assignment from the plan.'}
+        </p>
+      ) : null}
       {error ? <p role="alert" className="mt-3 text-xs text-rose-300">{error}</p> : null}
     </div>
   );

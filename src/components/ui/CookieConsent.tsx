@@ -29,6 +29,18 @@ export const CookieConsent: React.FC = () => {
     }
   }, [setCookieConsentAccepted]);
 
+  // Reserve space for the fixed notice so it never covers the page's next
+  // section or its primary action on a phone.
+  useEffect(() => {
+    const visible =
+      mounted &&
+      !dismissed &&
+      !cookieConsentAccepted &&
+      !pathname?.startsWith('/test/session');
+    document.body.classList.toggle('has-cookie-banner', Boolean(visible));
+    return () => document.body.classList.remove('has-cookie-banner');
+  }, [mounted, dismissed, cookieConsentAccepted, pathname]);
+
   // The exam must stay distraction-free and its controls must never be
   // covered by a consent banner.
   if (!mounted || dismissed || cookieConsentAccepted || pathname?.startsWith('/test/session')) {
@@ -36,7 +48,7 @@ export const CookieConsent: React.FC = () => {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-6 sm:pb-5">
       <div
         role="region"
         aria-label={t.label}

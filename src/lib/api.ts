@@ -790,7 +790,7 @@ class ApiClient {
       });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Registration failed');
+      throw new ApiError(data.error || 'Registration failed', res.status, data.code);
     }
     const data: AuthResponse = await res.json();
     if (!data?.token || !data?.user) {
@@ -807,7 +807,7 @@ class ApiClient {
       });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Login failed');
+      throw new ApiError(data.error || 'Login failed', res.status, data.code);
     }
     const data: AuthResponse = await res.json();
     if (!data?.token || !data?.user) {
@@ -923,6 +923,19 @@ class ApiClient {
       method: 'POST',
       headers: this.getHeaders(),
       credentials: 'include',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Не удалось отправить письмо', res.status);
+    }
+  }
+
+  async resendVerificationByEmail(email: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/resend-verification-by-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

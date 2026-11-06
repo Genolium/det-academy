@@ -152,8 +152,8 @@ export const InstitutionsMap: React.FC = () => {
             setInstitutions(Array.from(baseMap.values()));
           }
         } catch {}
-      } catch (err) {
-        setLoadError(err instanceof Error ? err.message : (locale === 'ru' ? 'Не удалось загрузить каталог вузов' : 'Could not load the university catalogue'));
+      } catch {
+        setLoadError(locale === 'ru' ? 'Не удалось загрузить каталог вузов. Проверьте соединение и обновите страницу.' : 'Could not load the university catalogue. Check your connection and refresh the page.');
       } finally {
         setLoading(false);
       }
