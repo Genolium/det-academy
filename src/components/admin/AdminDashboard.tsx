@@ -91,7 +91,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Load stats and active tab data only if user is admin
   const loadData = async () => {
-    if (!user || user.role !== 'admin') return;
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) return;
     setLoading(true);
     try {
       const statsData = await api.getAdminStats();
@@ -129,7 +129,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user && user.role === 'admin') {
+    if (user && (user.role === 'admin' || user.role === 'superadmin')) {
       loadData();
     }
   }, [user, activeTab, userSearch, userRoleFilter]);
@@ -150,8 +150,8 @@ export const AdminDashboard: React.FC = () => {
         setLoginError('Неверный email или пароль');
       } else {
         const currentUser = useAuthStore.getState().user;
-        if (currentUser?.role !== 'admin') {
-          setLoginError(`Учётная запись ${currentUser?.email} имеет роль "${currentUser?.role}", а не "admin".`);
+        if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') {
+          setLoginError(`Учётная запись ${currentUser?.email} имеет роль "${currentUser?.role}", а не "admin/superadmin".`);
         }
       }
     } catch (err: unknown) {
@@ -264,7 +264,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   // If user is not admin, show login form or access restricted screen
-  if (!user || user.role !== 'admin') {
+  if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return (
       <div className="min-h-[85vh] flex items-center justify-center p-4 py-12">
         <div className="max-w-md w-full bg-[#0E1012] border border-neutral-800 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl">
@@ -286,7 +286,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {user && user.role !== 'admin' && (
+          {user && user.role !== 'admin' && user.role !== 'superadmin' && (
             <div className="p-3.5 bg-amber-950/60 border border-amber-800/80 rounded-2xl text-amber-300 text-xs space-y-2">
               <div className="font-bold flex items-center gap-1.5">
                 <span>⚠️ Текущий аккаунт не имеет прав администратора</span>
@@ -745,7 +745,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                       <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${
-                        u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-neutral-100 text-neutral-600'
+                        (u.role === 'admin' || u.role === 'superadmin') ? 'bg-purple-100 text-purple-800' : 'bg-neutral-100 text-neutral-600'
                       }`}>
                         {u.role}
                       </span>
@@ -819,6 +819,7 @@ export const AdminDashboard: React.FC = () => {
                   <option value="">Все роли</option>
                   <option value="student">Студенты</option>
                   <option value="admin">Администраторы</option>
+                  <option value="superadmin">Superadmin</option>
                 </select>
               </div>
             </div>
@@ -847,7 +848,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="py-3 px-2 text-neutral-600 font-mono">{u.email}</td>
                       <td className="py-3 px-2">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          u.role === 'admin'
+                          (u.role === 'admin' || u.role === 'superadmin')
                             ? 'bg-purple-100 text-purple-800'
                             : 'bg-emerald-100 text-emerald-800'
                         }`}>
@@ -860,9 +861,10 @@ export const AdminDashboard: React.FC = () => {
                       <td className="py-3 px-2 text-right space-x-2">
                         <button
                           onClick={() => handleRoleChange(u.id, u.role)}
-                          className="px-2.5 py-1 rounded-lg border border-neutral-300 hover:border-black text-[11px] font-bold transition-colors cursor-pointer"
+                          disabled={u.role === 'superadmin'}
+                          className="px-2.5 py-1 rounded-lg border border-neutral-300 hover:border-black text-[11px] font-bold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {u.role === 'admin' ? 'Снять админа' : 'Сделать админом'}
+                          {u.role === 'superadmin' ? 'Superadmin' : u.role === 'admin' ? 'Снять админа' : 'Сделать админом'}
                         </button>
                         <button
                           onClick={() => handleDeleteUser(u.id)}

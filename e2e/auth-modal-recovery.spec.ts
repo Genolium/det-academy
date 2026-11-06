@@ -62,3 +62,41 @@ test('duplicate registration is explained without a dead end', async ({ page }) 
   await expect(page.getByRole('alert').getByRole('button', { name: 'Войти', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Отправить письмо ещё раз' })).toBeVisible();
 });
+
+test('successful login stores no access token and sends the CSRF header', async ({ page, context }) => {
+  await context.addCookies([
+    { name: 'det_csrf', value: 'csrf-test-token', url: 'http://localhost:3101' },
+  ]);
+  let seenCsrf = '';
+  await page.route('**/api/v1/auth/login', (route) => {
+    seenCsrf = route.request().headers()['x-csrf-token'] || '';
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'server-issued-token',
+        user: {
+          id: 'user-a',
+          email: 'student@example.com',
+          name: 'User A',
+          role: 'student',
+          locale: 'ru',
+        },
+      }),
+    });
+  });
+
+  await openAuthModal(page);
+  await page.getByLabel('Email').fill('student@example.com');
+  await page.getByLabel('Пароль', { exact: true }).fill('strongPassword123!');
+  await page.getByRole('button', { name: 'Войти в аккаунт' }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+
+  const storage = await page.evaluate(() => ({
+    token: localStorage.getItem('det_auth_token'),
+    userId: localStorage.getItem('det_auth_user_id'),
+  }));
+  expect(storage.token).toBeNull();
+  expect(storage.userId).toBe('user-a');
+  expect(seenCsrf).toBe('csrf-test-token');
+});

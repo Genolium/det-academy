@@ -1167,7 +1167,7 @@ func (s *AuthService) LinkSocialAccount(ctx context.Context, userID string, req 
 		if consumed.Action != "link" {
 			return errors.New("oauth transaction is not for linking")
 		}
-		if consumed.UserID != "" && consumed.UserID != userID {
+		if consumed.UserID == "" || consumed.UserID != userID {
 			return errors.New("oauth transaction belongs to another user")
 		}
 		transaction = consumed
@@ -1585,18 +1585,31 @@ func (s *AuthService) ListUsers(ctx context.Context, page, limit int, search, ro
 	return s.userRepo.ListAll(ctx, page, limit, search, role)
 }
 
-func (s *AuthService) UpdateUserRoleAs(ctx context.Context, actorID, targetID, role string) error {
-	if role != "student" && role != "editor" && role != "admin" {
-		return errors.New("invalid role: must be student, editor, or admin")
+func (s *AuthService) UpdateUserRoleAs(ctx context.Context, actorID, actorRole, targetID, role string) error {
+	switch role {
+	case "student", "editor", "admin", "superadmin":
+	default:
+		return errors.New("invalid role: must be student, editor, admin, or superadmin")
 	}
-	if actorID != "" && actorID == targetID && role != "admin" {
+	if role == "superadmin" && actorRole != "superadmin" {
+		return errors.New("only a superadmin can grant the superadmin role")
+	}
+	if actorID != "" && actorID == targetID && role != "admin" && role != "superadmin" {
 		return errors.New("cannot remove your own administrator role")
 	}
 	target, err := s.userRepo.GetByID(ctx, targetID)
 	if err != nil {
 		return errors.New("user not found")
 	}
-	if target.Role == "admin" && role != "admin" {
+	if target.Role == "superadmin" && role != "superadmin" {
+		if actorRole != "superadmin" {
+			return errors.New("only a superadmin can change a superadmin account")
+		}
+		if err := s.ensureAnotherSuperadmin(ctx); err != nil {
+			return err
+		}
+	}
+	if target.Role == "admin" && role != "admin" && role != "superadmin" {
 		if err := s.ensureAnotherAdmin(ctx); err != nil {
 			return err
 		}
@@ -1604,13 +1617,21 @@ func (s *AuthService) UpdateUserRoleAs(ctx context.Context, actorID, targetID, r
 	return s.userRepo.UpdateRole(ctx, targetID, role)
 }
 
-func (s *AuthService) DeleteUserAs(ctx context.Context, actorID, targetID string) error {
+func (s *AuthService) DeleteUserAs(ctx context.Context, actorID, actorRole, targetID string) error {
 	if actorID != "" && actorID == targetID {
 		return errors.New("cannot delete your own account from the admin panel")
 	}
 	target, err := s.userRepo.GetByID(ctx, targetID)
 	if err != nil {
 		return errors.New("user not found")
+	}
+	if target.Role == "superadmin" {
+		if actorRole != "superadmin" {
+			return errors.New("only a superadmin can delete a superadmin account")
+		}
+		if err := s.ensureAnotherSuperadmin(ctx); err != nil {
+			return err
+		}
 	}
 	if target.Role == "admin" {
 		if err := s.ensureAnotherAdmin(ctx); err != nil {
@@ -1624,12 +1645,29 @@ func (s *AuthService) DeleteUserAs(ctx context.Context, actorID, targetID string
 // The check is intentionally conservative: concurrent demotions can still
 // race, but the common lockout path is blocked.
 func (s *AuthService) ensureAnotherAdmin(ctx context.Context) error {
-	_, admins, err := s.userRepo.ListAll(ctx, 1, 1, "", "admin")
+	users, _, err := s.userRepo.ListAll(ctx, 1, 1000, "", "")
 	if err != nil {
 		return errors.New("failed to verify administrator count")
 	}
-	if admins <= 1 {
+	count := 0
+	for _, user := range users {
+		if user.Role == "admin" || user.Role == "superadmin" {
+			count++
+		}
+	}
+	if count <= 1 {
 		return errors.New("cannot remove the last administrator")
+	}
+	return nil
+}
+
+func (s *AuthService) ensureAnotherSuperadmin(ctx context.Context) error {
+	_, count, err := s.userRepo.ListAll(ctx, 1, 1, "", "superadmin")
+	if err != nil {
+		return errors.New("failed to verify superadmin count")
+	}
+	if count <= 1 {
+		return errors.New("cannot remove the last superadmin")
 	}
 	return nil
 }
@@ -1666,7 +1704,7 @@ func (s *AuthService) EnsureBootstrapAdmin(ctx context.Context, email, password,
 		Email:        email,
 		PasswordHash: string(hash),
 		Name:         name,
-		Role:         "admin",
+		Role:         "superadmin",
 		Locale:       "ru",
 		CreatedAt:    time.Now().UTC(),
 		UpdatedAt:    time.Now().UTC(),

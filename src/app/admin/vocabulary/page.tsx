@@ -16,7 +16,7 @@ export default function AdminVocabularyPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') return;
+    if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'superadmin')) return;
     setLoading(true);
     api
       .getAdminVocabulary()
@@ -50,7 +50,7 @@ export default function AdminVocabularyPage() {
     }
   };
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'superadmin')) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="rounded-3xl border border-neutral-800 bg-[#0E1012] p-10 text-center text-white">

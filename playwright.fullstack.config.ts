@@ -23,6 +23,7 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_API_URL: '',
       NEXT_PUBLIC_API_SAME_ORIGIN: 'true',
+      NEXT_PUBLIC_ALLOW_LEGACY_BEARER: 'true',
       API_PROXY_TARGET: 'http://localhost:18081',
       NEXT_DIST_DIR: '.next-fullstack',
     },

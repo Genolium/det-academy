@@ -1,4 +1,4 @@
-import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth-session';
+import { clearAuthToken, getAuthToken, getCsrfToken, setAuthUser } from '@/lib/auth-session';
 import { getDeviceId } from '@/lib/device-id';
 
 const API_BASE_URL =
@@ -14,7 +14,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'student' | 'editor' | 'admin';
+  role: 'student' | 'editor' | 'admin' | 'superadmin';
   avatarUrl?: string;
   emailVerified?: boolean;
   locale: string;
@@ -22,7 +22,8 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string;
+  /** Present for API clients; browser sessions rely on HttpOnly cookies. */
+  token?: string;
   user: User;
 }
 
@@ -745,6 +746,10 @@ class ApiClient {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    const csrf = getCsrfToken();
+    if (csrf) {
+      headers['X-CSRF-Token'] = csrf;
+    }
     const deviceId = getDeviceId();
     if (deviceId) {
       headers['X-Device-Id'] = deviceId;
@@ -793,10 +798,10 @@ class ApiClient {
       throw new ApiError(data.error || 'Registration failed', res.status, data.code);
     }
     const data: AuthResponse = await res.json();
-    if (!data?.token || !data?.user) {
+    if (!data?.user) {
       throw new ApiError('Invalid registration response', 500);
     }
-    setAuthToken(data.token);
+    setAuthUser(data.user.id);
     return data;
   }
 
@@ -810,10 +815,10 @@ class ApiClient {
       throw new ApiError(data.error || 'Login failed', res.status, data.code);
     }
     const data: AuthResponse = await res.json();
-    if (!data?.token || !data?.user) {
+    if (!data?.user) {
       throw new ApiError('Invalid authentication response', 500);
     }
-    setAuthToken(data.token);
+    setAuthUser(data.user.id);
     return data;
   }
 
@@ -854,10 +859,10 @@ class ApiClient {
       throw new Error(data.error || 'OAuth authentication failed');
     }
     const data: AuthResponse = await res.json();
-    if (!data?.token || !data?.user) {
+    if (!data?.user) {
       throw new ApiError('Invalid authentication response', 500);
     }
-    setAuthToken(data.token);
+    setAuthUser(data.user.id);
     return data;
   }
 
@@ -893,10 +898,10 @@ class ApiClient {
         throw new ApiError('Session refresh failed', res.status);
       }
       const data: AuthResponse = await res.json();
-      if (!data?.token || !data?.user) {
+      if (!data?.user) {
         throw new ApiError('Invalid authentication response', 500);
       }
-      setAuthToken(data.token);
+      setAuthUser(data.user.id);
       return data;
     });
     try {

@@ -72,6 +72,7 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 	r := chi.NewRouter()
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(handlers.CSRFMiddleware())
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			handlers.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		})

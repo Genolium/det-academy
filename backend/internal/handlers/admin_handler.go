@@ -73,7 +73,12 @@ func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.authService.UpdateUserRoleAs(r.Context(), GetUserIDFromContext(r.Context()), id, req.Role); err != nil {
+	claims := GetUserClaimsFromContext(r.Context())
+	actorRole := ""
+	if claims != nil {
+		actorRole = claims.Role
+	}
+	if err := h.authService.UpdateUserRoleAs(r.Context(), GetUserIDFromContext(r.Context()), actorRole, id, req.Role); err != nil {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -89,7 +94,12 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.authService.DeleteUserAs(r.Context(), GetUserIDFromContext(r.Context()), id); err != nil {
+	claims := GetUserClaimsFromContext(r.Context())
+	actorRole := ""
+	if claims != nil {
+		actorRole = claims.Role
+	}
+	if err := h.authService.DeleteUserAs(r.Context(), GetUserIDFromContext(r.Context()), actorRole, id); err != nil {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}

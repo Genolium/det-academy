@@ -10,7 +10,7 @@ type User struct {
 	Email                      string     `json:"email"`
 	PasswordHash               string     `json:"-"`
 	Name                       string     `json:"name"`
-	Role                       string     `json:"role"` // "student", "editor", "admin"
+	Role                       string     `json:"role"` // "student", "editor", "admin", "superadmin"
 	AvatarURL                  string     `json:"avatarUrl"`
 	Locale                     string     `json:"locale"`
 	TokenVersion               int        `json:"-"`

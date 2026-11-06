@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'student', -- 'student', 'editor', 'admin'
+    role VARCHAR(20) DEFAULT 'student', -- 'student', 'editor', 'admin', 'superadmin'
     avatar_url TEXT DEFAULT '',
     locale VARCHAR(10) DEFAULT 'ru',
     token_version INT NOT NULL DEFAULT 0,

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -52,6 +53,18 @@ func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, r *http.Request, use
 			Secure:   h.secureCookie,
 		})
 	}
+	// Double-submit CSRF token. It must be readable by the same-origin client,
+	// so unlike the access and refresh cookies it is not HttpOnly.
+	csrfToken := strings.ReplaceAll(uuid.NewString(), "-", "")
+	http.SetCookie(w, &http.Cookie{
+		Name:     "det_csrf",
+		Value:    csrfToken,
+		Path:     "/",
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: false,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookie,
+	})
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -251,6 +264,15 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookie,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "det_csrf",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 		Secure:   h.secureCookie,
 	})

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, ApiError, User } from '@/lib/api';
-import { hasAuthSession } from '@/lib/auth-session';
+import { getAuthToken, hasAuthSession, setAuthUser } from '@/lib/auth-session';
 import { cacheUser, clearOfflineData, getCachedUser } from '@/lib/offline-cache';
 import { clearAllResponseOutbox } from '@/lib/response-outbox';
 import { useProgressStore } from '@/store/useProgressStore';
@@ -162,8 +162,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       set({ isLoading: true });
+      const hadLegacyToken = Boolean(getAuthToken());
       try {
         const user = await api.getMe();
+        if (hadLegacyToken) {
+          // Exchange the one-time Bearer migration token for fresh cookies.
+          await api.refreshSession().catch(() => {});
+        }
+        setAuthUser(user.id);
         set({ user, isAuthenticated: true, isLoading: false });
         cacheUser(user);
         if (user?.name) {
@@ -176,6 +182,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           // Access token expired: try the rotating HttpOnly refresh cookie once.
           try {
             const refreshed = await api.refreshSession();
+            setAuthUser(refreshed.user.id);
             set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
             cacheUser(refreshed.user);
             useProgressStore.getState().syncWithBackend(refreshed.user.id);

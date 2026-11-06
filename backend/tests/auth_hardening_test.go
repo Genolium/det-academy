@@ -176,3 +176,38 @@ func TestOAuthHardeningDoesNotLinkUnverifiedVKEmail(t *testing.T) {
 	}
 	_ = r
 }
+
+func TestCookieAuthRequiresCSRFForMutations(t *testing.T) {
+	r, _, _ := setupTestRouter()
+	loginBody, _ := json.Marshal(models.LoginRequest{Email: "student@det-academy.com", Password: "password123"})
+	login := postJSONWithToken(t, r, "/api/v1/auth/login", "", loginBody)
+	if login.Code != http.StatusOK {
+		t.Fatalf("login: %d %s", login.Code, login.Body.String())
+	}
+	access := cookieFromResponse(t, login, "det_token")
+	csrf := cookieFromResponse(t, login, "det_csrf")
+	if access == "" || csrf == "" {
+		t.Fatalf("login must set both det_token and det_csrf: access=%q csrf=%q", access, csrf)
+	}
+
+	goalsBody, _ := json.Marshal(models.UpdateGoalsRequest{TargetScore: 120, TargetDate: "2026-12-01", DailyMinutes: 30})
+	without := httptest.NewRequest(http.MethodPut, "/api/v1/user/goals", bytes.NewReader(goalsBody))
+	without.AddCookie(&http.Cookie{Name: "det_token", Value: access})
+	without.Header.Set("Content-Type", "application/json")
+	withoutW := httptest.NewRecorder()
+	r.ServeHTTP(withoutW, without)
+	if withoutW.Code != http.StatusForbidden {
+		t.Fatalf("cookie mutation without CSRF = %d, want 403", withoutW.Code)
+	}
+
+	with := httptest.NewRequest(http.MethodPut, "/api/v1/user/goals", bytes.NewReader(goalsBody))
+	with.AddCookie(&http.Cookie{Name: "det_token", Value: access})
+	with.AddCookie(&http.Cookie{Name: "det_csrf", Value: csrf})
+	with.Header.Set("Content-Type", "application/json")
+	with.Header.Set("X-CSRF-Token", csrf)
+	withW := httptest.NewRecorder()
+	r.ServeHTTP(withW, with)
+	if withW.Code != http.StatusOK {
+		t.Fatalf("cookie mutation with CSRF = %d: %s", withW.Code, withW.Body.String())
+	}
+}

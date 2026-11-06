@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"det-academy-backend/internal/models"
 	"det-academy-backend/internal/repository/memory"
@@ -47,5 +48,40 @@ func TestOAuthTransactionIsOneTimeAndChecksRedirect(t *testing.T) {
 		RedirectURI: "https://evil.example/callback",
 	}, ""); err == nil {
 		t.Fatal("expected non-allowlisted redirect to fail")
+	}
+}
+
+func TestOAuthLinkRequiresAuthenticatedUser(t *testing.T) {
+	t.Setenv("GOOGLE_CLIENT_ID", "google-client-id")
+	store := memory.New()
+	service := NewAuthService(store.Users(), "test-secret", store.OAuthTransactions())
+	ctx := context.Background()
+
+	if _, err := service.StartOAuth(ctx, models.OAuthStartRequest{
+		Provider:    "google",
+		Action:      "link",
+		RedirectURI: "https://det-academy.ru/auth/callback",
+	}, ""); err == nil {
+		t.Fatal("anonymous link start must be rejected")
+	}
+
+	transaction := &models.OAuthTransaction{
+		ID:          "tx-link",
+		StateHash:   hashState("link-state"),
+		Provider:    "google",
+		Action:      "link",
+		RedirectURI: "https://det-academy.ru/auth/callback",
+		ExpiresAt:   time.Now().UTC().Add(10 * time.Minute),
+		CreatedAt:   time.Now().UTC(),
+	}
+	if err := store.OAuthTransactions().Create(ctx, transaction); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.LinkSocialAccount(ctx, "user-1", models.LinkProviderRequest{
+		Provider: "google",
+		Code:     "fake-code",
+		State:    "link-state",
+	}); err == nil {
+		t.Fatal("a link transaction without an owner must not be consumed")
 	}
 }

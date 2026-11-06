@@ -84,6 +84,9 @@ func (s *AuthService) StartOAuth(ctx context.Context, req models.OAuthStartReque
 	if action != "login" && action != "link" {
 		return nil, errors.New("unsupported oauth action")
 	}
+	if action == "link" && strings.TrimSpace(userID) == "" {
+		return nil, errors.New("authentication is required to link a provider")
+	}
 	if req.RedirectURI == "" || !isAllowedOAuthRedirect(req.RedirectURI) {
 		return nil, errors.New("redirect uri is not allowed")
 	}

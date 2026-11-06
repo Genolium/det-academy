@@ -46,6 +46,9 @@ export default defineConfig({
     timeout: isCI ? 300_000 : 180_000,
     env: {
       NEXT_PUBLIC_API_URL: BASE_URL,
+      // Test-only: mocks identify the fixture user with a Bearer token.
+      // Production never sets this flag and never stores an access token.
+      NEXT_PUBLIC_ALLOW_LEGACY_BEARER: 'true',
     },
   },
 });
