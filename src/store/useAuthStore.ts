@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api, ApiError, User } from '@/lib/api';
-import { getAuthToken, hasAuthSession, setAuthUser } from '@/lib/auth-session';
+import { hasAuthSession, setAuthUser } from '@/lib/auth-session';
 import { cacheUser, clearOfflineData, getCachedUser } from '@/lib/offline-cache';
 import { clearAllResponseOutbox } from '@/lib/response-outbox';
 import { useProgressStore } from '@/store/useProgressStore';
@@ -162,13 +162,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       set({ isLoading: true });
-      const hadLegacyToken = Boolean(getAuthToken());
       try {
         const user = await api.getMe();
-        if (hadLegacyToken) {
-          // Exchange the one-time Bearer migration token for fresh cookies.
-          await api.refreshSession().catch(() => {});
-        }
+        // `/auth/me` also installs the readable CSRF cookie for a legacy
+        // Bearer session, so no extra refresh rotation is needed here.
         setAuthUser(user.id);
         set({ user, isAuthenticated: true, isLoading: false });
         cacheUser(user);

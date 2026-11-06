@@ -53,8 +53,10 @@ func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, r *http.Request, use
 			Secure:   h.secureCookie,
 		})
 	}
-	// Double-submit CSRF token. It must be readable by the same-origin client,
-	// so unlike the access and refresh cookies it is not HttpOnly.
+	h.setCSRFCookie(w)
+}
+
+func (h *AuthHandler) setCSRFCookie(w http.ResponseWriter) {
 	csrfToken := strings.ReplaceAll(uuid.NewString(), "-", "")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "det_csrf",
@@ -65,6 +67,15 @@ func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, r *http.Request, use
 		SameSite: http.SameSiteLaxMode,
 		Secure:   h.secureCookie,
 	})
+}
+
+// ensureCSRFCookie gives a legacy Bearer/cookie session a double-submit token
+// without rotating it on every profile read.
+func (h *AuthHandler) ensureCSRFCookie(w http.ResponseWriter, r *http.Request) {
+	if cookie, err := r.Cookie("det_csrf"); err == nil && cookie.Value != "" {
+		return
+	}
+	h.setCSRFCookie(w)
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -193,6 +204,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.ensureCSRFCookie(w, r)
 	RespondJSON(w, http.StatusOK, user)
 }
 

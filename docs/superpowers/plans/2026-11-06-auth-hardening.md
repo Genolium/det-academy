@@ -67,19 +67,16 @@
 - [ ] Add role checks, migration promoting the oldest admin when no superadmin exists, and frontend guard acceptance.
 - [ ] Run Go + frontend tests.
 
-### Task 5: CSP nonce (blocked by static rendering)
+### Task 5: CSP nonce for authenticated app routes
 
-Attempted in this pass: generated a nonce in `src/proxy.ts` and set a strict
-`script-src 'nonce-…' 'strict-dynamic'` policy for app routes. Next.js did not
-attach the nonce to the statically generated `/test` document; every Next chunk
-and the inline bootstrap were blocked, and `window.__next_f` was missing. The
-experiment was reverted.
+Completed after adding `force-dynamic` layouts for `/dashboard`, `/profile`,
+`/admin` and `/test`. Next.js now attaches the per-request nonce to every app
+chunk and inline bootstrap script.
 
-Next attempt must first force dynamic rendering for the covered routes (or
-adopt hash-based CSP), then verify the same policy. Keeping the current nginx
-`'unsafe-inline'` policy is safer than shipping a broken app:
-- [ ] Decide dynamic-render scope (app routes only vs all routes).
-- [ ] Add `export const dynamic = 'force-dynamic'` or equivalent per covered page.
-- [ ] Generate nonce in `src/proxy.ts`, set CSP header, let Next attach nonce.
-- [ ] Remove `script-src 'unsafe-inline'` from nginx for covered routes.
-- [ ] Verify no CSP violation in browser console on `/dashboard`, `/test/session`, `/admin`.
+- [x] Generate a nonce in `src/proxy.ts` and set a strict `script-src` policy.
+- [x] Force dynamic rendering for the covered route segments.
+- [x] Keep `style-src 'unsafe-inline'` for Next/Tailwind inline styles (script
+      inline is no longer allowed).
+- [x] Verify the production build: all 17 scripts on `/test` carry the nonce,
+      `window.__next_f` exists, and the browser console has no CSP violations.
+- [x] Add `e2e/csp-nonce.spec.ts` to the CI suite.
