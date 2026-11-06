@@ -165,6 +165,14 @@ func (s *SMTPSender) SendVerification(ctx context.Context, to, link string) erro
 	})
 }
 
+func (s *SMTPSender) SendPasswordReset(ctx context.Context, to, link string) error {
+	return s.Send(ctx, Message{
+		To:      to,
+		Subject: "Сброс пароля в DET Academy",
+		HTML:    passwordResetHTML(link),
+	})
+}
+
 // senderAddress extracts the bare address from a "Name <mail@host>" string.
 func senderAddress(from string) (string, error) {
 	trimmed := strings.TrimSpace(from)

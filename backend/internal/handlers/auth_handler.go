@@ -5,6 +5,7 @@ import (
 	"det-academy-backend/internal/service"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -252,15 +253,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, http.StatusOK, models.AuthResponse{Token: access, User: *user})
 }
 
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	if userID := GetUserIDFromContext(r.Context()); userID != "" {
-		_ = h.authService.RevokeUserTokens(r.Context(), userID)
-	}
-	if cookie, err := r.Cookie("det_refresh"); err == nil && cookie.Value != "" {
-		// Revoke the refresh token even when the access token has already
-		// expired: the browser cookie alone must not leave a live session.
-		_ = h.authService.RevokeRefreshToken(r.Context(), cookie.Value)
-	}
+func (h *AuthHandler) clearAuthCookies(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "det_token",
 		Value:    "",
@@ -288,6 +281,18 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		Secure:   h.secureCookie,
 	})
+}
+
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if userID := GetUserIDFromContext(r.Context()); userID != "" {
+		_ = h.authService.RevokeUserTokens(r.Context(), userID)
+	}
+	if cookie, err := r.Cookie("det_refresh"); err == nil && cookie.Value != "" {
+		// Revoke the refresh token even when the access token has already
+		// expired: the browser cookie alone must not leave a live session.
+		_ = h.authService.RevokeRefreshToken(r.Context(), cookie.Value)
+	}
+	h.clearAuthCookies(w)
 
 	RespondJSON(w, http.StatusOK, map[string]string{"message": "successfully logged out"})
 }
@@ -420,4 +425,60 @@ func (h *AuthHandler) ResendVerificationByEmail(w http.ResponseWriter, r *http.R
 	}
 	h.authService.ResendVerificationByEmail(r.Context(), req.Email)
 	RespondJSON(w, http.StatusOK, map[string]string{"status": "sent"})
+}
+
+// ForgotPassword always returns the same response, whether the address exists,
+// so the endpoint cannot be used to enumerate accounts.
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeAuth) {
+		return
+	}
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if strings.TrimSpace(req.Email) == "" {
+		RespondError(w, http.StatusBadRequest, "email is required")
+		return
+	}
+	if _, err := h.authService.RequestPasswordReset(r.Context(), req.Email); err != nil {
+		// Keep the public response identical even when persistence fails, so
+		// the endpoint cannot become an account-existence oracle under stress.
+		log.Printf("[Auth] password reset request failed: %v", err)
+	}
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "sent"})
+}
+
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	if !CheckDailyLimit(w, r, h.limits, service.LimitScopeAuth) {
+		return
+	}
+	var req struct {
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if strings.TrimSpace(req.Token) == "" || req.Password == "" {
+		RespondError(w, http.StatusBadRequest, "token and password are required")
+		return
+	}
+	if err := h.authService.ResetPassword(r.Context(), req.Token, req.Password); err != nil {
+		if errors.Is(err, service.ErrInvalidPasswordReset) {
+			RespondErrorCode(w, http.StatusBadRequest, "invalid_reset_token", "password reset link is invalid or expired")
+			return
+		}
+		RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	// The reset increments the token version and revokes refresh tokens. Clear
+	// whatever session this browser still holds so it cannot keep using a
+	// stale access cookie.
+	h.clearAuthCookies(w)
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "reset"})
 }

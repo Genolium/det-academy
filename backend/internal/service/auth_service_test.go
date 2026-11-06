@@ -160,9 +160,10 @@ func TestVerifyGoogleTokenChecksAudienceAndVerifiedEmail(t *testing.T) {
 }
 
 type captureSender struct {
-	mu   sync.Mutex
-	link string
-	sent chan string
+	mu        sync.Mutex
+	link      string
+	resetLink string
+	sent      chan string
 }
 
 func (s *captureSender) Send(ctx context.Context, msg email.Message) error {
@@ -178,6 +179,32 @@ func (s *captureSender) SendVerification(ctx context.Context, to, link string) e
 	default:
 	}
 	return nil
+}
+
+func (s *captureSender) SendPasswordReset(ctx context.Context, to, link string) error {
+	s.mu.Lock()
+	s.resetLink = link
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *captureSender) waitForResetLink(t *testing.T) string {
+	t.Helper()
+	deadline := time.After(5 * time.Second)
+	for {
+		s.mu.Lock()
+		link := s.resetLink
+		s.mu.Unlock()
+		if link != "" {
+			return link
+		}
+		select {
+		case <-deadline:
+			t.Fatal("expected password reset link")
+			return ""
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
 }
 
 // waitForLink waits for the background delivery of the verification email.
@@ -211,6 +238,11 @@ func (s *slowSender) Send(ctx context.Context, msg email.Message) error {
 }
 
 func (s *slowSender) SendVerification(ctx context.Context, to, link string) error {
+	time.Sleep(s.delay)
+	return nil
+}
+
+func (s *slowSender) SendPasswordReset(ctx context.Context, to, link string) error {
 	time.Sleep(s.delay)
 	return nil
 }

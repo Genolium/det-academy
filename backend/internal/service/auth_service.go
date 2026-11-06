@@ -1327,6 +1327,9 @@ func min(a, b int) int {
 }
 
 var ErrEmailNotVerified = errors.New("email is not verified")
+var ErrInvalidPasswordReset = errors.New("password reset link is invalid or expired")
+
+const passwordResetTTL = 30 * time.Minute
 
 // prepareVerificationEmail stores a fresh verification token and returns the
 // link that has to be delivered. The database write stays synchronous so the
@@ -1370,7 +1373,7 @@ func (s *AuthService) deliverVerificationEmailAsync(emailAddress, link string) {
 	select {
 	case s.mailSlots <- struct{}{}:
 	default:
-		log.Printf("[Auth] verification email for %s skipped: too many pending deliveries", emailAddress)
+		log.Printf("[Auth] verification email skipped: too many pending deliveries")
 		return
 	}
 
@@ -1382,6 +1385,90 @@ func (s *AuthService) deliverVerificationEmailAsync(emailAddress, link string) {
 			log.Printf("[Auth] failed to send verification email: %v", err)
 		}
 	}()
+}
+
+// RequestPasswordReset creates a single-use reset link for an existing email.
+// Unknown addresses are silently ignored so the endpoint cannot enumerate
+// accounts. The returned link is used by tests and by the email delivery path;
+// handlers must never expose it.
+func (s *AuthService) RequestPasswordReset(ctx context.Context, emailAddress string) (string, error) {
+	emailAddress = normalizeEmail(emailAddress)
+	if emailAddress == "" {
+		return "", nil
+	}
+	user, err := s.userRepo.GetByEmail(ctx, emailAddress)
+	if err != nil {
+		return "", nil
+	}
+	raw, err := randomHex(32)
+	if err != nil {
+		return "", err
+	}
+	now := time.Now().UTC()
+	token := &models.PasswordResetToken{
+		TokenHash: hashState(raw),
+		UserID:    user.ID,
+		ExpiresAt: now.Add(passwordResetTTL),
+		CreatedAt: now,
+	}
+	if err := s.userRepo.CreatePasswordReset(ctx, token); err != nil {
+		return "", err
+	}
+	// Keep the token in the fragment: browsers never send it to the server, so
+	// it cannot leak into nginx, proxy or CDN access logs.
+	link := s.publicAppURL + "/auth/reset-password#token=" + raw
+	s.deliverPasswordResetEmailAsync(user.Email, link)
+	return link, nil
+}
+
+func (s *AuthService) deliverPasswordResetEmailAsync(emailAddress, link string) {
+	if link == "" || emailAddress == "" {
+		return
+	}
+	select {
+	case s.mailSlots <- struct{}{}:
+	default:
+		log.Printf("[Auth] password reset email skipped: too many pending deliveries")
+		return
+	}
+	go func() {
+		defer func() { <-s.mailSlots }()
+		ctx, cancel := context.WithTimeout(context.Background(), emailDeliveryTimeout)
+		defer cancel()
+		if err := s.emailSender.SendPasswordReset(ctx, emailAddress, link); err != nil {
+			log.Printf("[Auth] failed to send password reset email: %v", err)
+		}
+	}()
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, rawToken, newPassword string) error {
+	rawToken = strings.TrimSpace(rawToken)
+	if rawToken == "" {
+		return ErrInvalidPasswordReset
+	}
+	if err := validatePassword(newPassword); err != nil {
+		return err
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+	token, err := s.userRepo.ConsumePasswordReset(ctx, hashState(rawToken))
+	if err != nil {
+		return ErrInvalidPasswordReset
+	}
+	if _, err := s.userRepo.GetByID(ctx, token.UserID); err != nil {
+		return ErrInvalidPasswordReset
+	}
+	if err := s.userRepo.UpdatePassword(ctx, token.UserID, string(hashedPassword)); err != nil {
+		return err
+	}
+	if s.refreshRepo != nil {
+		if err := s.refreshRepo.RevokeAllForUser(ctx, token.UserID); err != nil {
+			log.Printf("[Auth] password reset succeeded but refresh tokens were not revoked: %v", err)
+		}
+	}
+	return nil
 }
 
 func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*models.User, error) {

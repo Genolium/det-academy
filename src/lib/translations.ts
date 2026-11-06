@@ -173,6 +173,7 @@ export interface Translations {
     emailLabel: string;
     emailPlaceholder: string;
     passwordLabel: string;
+    forgotPassword: string;
     loginBtn: string;
     registerBtn: string;
     loading: string;
@@ -662,6 +663,7 @@ export const translations: Record<Locale, Translations> = {
       emailLabel: 'Email',
       emailPlaceholder: 'student@example.com',
       passwordLabel: 'Пароль',
+      forgotPassword: 'Забыли пароль?',
       loginBtn: 'Войти в аккаунт',
       registerBtn: 'Зарегистрироваться',
       loading: 'Загрузка...',
@@ -1149,6 +1151,7 @@ export const translations: Record<Locale, Translations> = {
       emailLabel: 'Email',
       emailPlaceholder: 'student@example.com',
       passwordLabel: 'Password',
+      forgotPassword: 'Forgot password?',
       loginBtn: 'Sign In',
       registerBtn: 'Create Account',
       loading: 'Loading...',

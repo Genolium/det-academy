@@ -30,6 +30,14 @@ type AdminAudit struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+type PasswordResetToken struct {
+	TokenHash string     `json:"-"`
+	UserID    string     `json:"userId"`
+	ExpiresAt time.Time  `json:"expiresAt"`
+	UsedAt    *time.Time `json:"usedAt,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
+}
+
 type CalibrationConsent struct {
 	UserID         string     `json:"userId"`
 	ConsentVersion string     `json:"consentVersion"`

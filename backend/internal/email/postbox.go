@@ -155,6 +155,10 @@ func (s *PostboxSender) SendVerification(ctx context.Context, to, link string) e
 	return s.Send(ctx, Message{To: to, Subject: "Подтвердите email в DET Academy", HTML: verificationHTML(link)})
 }
 
+func (s *PostboxSender) SendPasswordReset(ctx context.Context, to, link string) error {
+	return s.Send(ctx, Message{To: to, Subject: "Сброс пароля в DET Academy", HTML: passwordResetHTML(link)})
+}
+
 func signPostboxRequest(accessKey, secretKey, region, host, path string, payload []byte, now time.Time) (map[string]string, error) {
 	const service = "ses"
 	amzDate := now.Format("20060102T150405Z")

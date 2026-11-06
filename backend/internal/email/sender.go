@@ -23,12 +23,20 @@ type Message struct {
 type Sender interface {
 	Send(ctx context.Context, msg Message) error
 	SendVerification(ctx context.Context, to, link string) error
+	SendPasswordReset(ctx context.Context, to, link string) error
 }
 
 // verificationHTML renders the account verification email body.
 func verificationHTML(link string) string {
 	return fmt.Sprintf(
 		`<p>Здравствуйте!</p><p>Подтвердите email, чтобы сохранить прогресс и получать отчёты.</p><p><a href="%s">Подтвердить email</a></p><p>Ссылка действует 24 часа.</p>`,
+		link,
+	)
+}
+
+func passwordResetHTML(link string) string {
+	return fmt.Sprintf(
+		`<p>Здравствуйте!</p><p>Вы запросили сброс пароля в DET Academy.</p><p><a href="%s">Задать новый пароль</a></p><p>Ссылка действует 30 минут. Если вы не запрашивали сброс, просто игнорируйте письмо.</p>`,
 		link,
 	)
 }
@@ -44,6 +52,10 @@ func (l LogSender) SendVerification(ctx context.Context, to, link string) error 
 	// Never log the verification link or the address: the link is a bearer
 	// token for the account and mail logs are routinely shipped off-host.
 	return l.Send(ctx, Message{To: to, Subject: "Подтвердите email в DET Academy", HTML: verificationHTML(link)})
+}
+
+func (l LogSender) SendPasswordReset(ctx context.Context, to, link string) error {
+	return l.Send(ctx, Message{To: to, Subject: "Сброс пароля в DET Academy", HTML: passwordResetHTML(link)})
 }
 
 type ResendSender struct {
@@ -87,6 +99,14 @@ func (s *ResendSender) SendVerification(ctx context.Context, to, link string) er
 		To:      to,
 		Subject: "Подтвердите email в DET Academy",
 		HTML:    verificationHTML(link),
+	})
+}
+
+func (s *ResendSender) SendPasswordReset(ctx context.Context, to, link string) error {
+	return s.Send(ctx, Message{
+		To:      to,
+		Subject: "Сброс пароля в DET Academy",
+		HTML:    passwordResetHTML(link),
 	})
 }
 

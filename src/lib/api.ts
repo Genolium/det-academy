@@ -923,6 +923,28 @@ class ApiClient {
     return res.json();
   }
 
+  async forgotPassword(email: string): Promise<void> {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Не удалось отправить письмо', res.status);
+    }
+  }
+
+  async resetPassword(params: { token: string; password: string }): Promise<void> {
+    const res = await this.authFetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+      });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Ссылка сброса недействительна', res.status, data.code);
+    }
+  }
+
   async resendVerification(): Promise<void> {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/resend-verification`, {
       method: 'POST',

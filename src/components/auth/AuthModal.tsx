@@ -388,6 +388,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 Минимум 8 символов, хотя бы одна буква и одна цифра.
               </p>
             )}
+            {!isRegister && (
+              <div className="mt-1.5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    router.push('/auth/forgot-password');
+                  }}
+                  className="text-[11px] font-semibold text-neutral-400 underline-offset-2 hover:text-[#D2F544] hover:underline"
+                >
+                  {t.forgotPassword}
+                </button>
+              </div>
+            )}
           </div>
 
           <button

@@ -73,7 +73,7 @@ func TestCSRFSkipsSafeMethods(t *testing.T) {
 }
 
 func TestCSRFExemptsLoginAndRefresh(t *testing.T) {
-	for _, path := range []string{"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/verify-email"} {
+	for _, path := range []string{"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/verify-email", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password"} {
 		code := runCSRFRequest(t, http.MethodPost, path, map[string]string{"det_token": "stale", "det_refresh": "refresh"}, "", "")
 		if code != http.StatusNoContent {
 			t.Fatalf("%s = %d, want 204", path, code)

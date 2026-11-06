@@ -17,6 +17,10 @@ type UserRepository interface {
 	IncrementTokenVersion(ctx context.Context, id string) error
 	SetEmailVerification(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error
 	MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error)
+	// CreatePasswordReset invalidates older unused reset links for the user.
+	CreatePasswordReset(ctx context.Context, token *models.PasswordResetToken) error
+	// ConsumePasswordReset atomically marks a valid token used.
+	ConsumePasswordReset(ctx context.Context, tokenHash string) (*models.PasswordResetToken, error)
 	Delete(ctx context.Context, id string) error
 	ListAll(ctx context.Context, page, limit int, search, role string) ([]models.User, int, error)
 	GetEmailDigestEnabled(ctx context.Context, userID string) (bool, error)

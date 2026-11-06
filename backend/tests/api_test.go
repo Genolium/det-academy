@@ -85,6 +85,8 @@ func setupTestRouter() (*chi.Mux, *service.AuthService, *memory.MemoryStorage) {
 			r.With(handlers.OptionalAuthMiddleware(authService)).Post("/oauth/start", authHandler.StartOAuth)
 			r.Post("/verify-email", authHandler.VerifyEmail)
 			r.Post("/resend-verification-by-email", authHandler.ResendVerificationByEmail)
+			r.Post("/forgot-password", authHandler.ForgotPassword)
+			r.Post("/reset-password", authHandler.ResetPassword)
 			r.Post("/refresh", authHandler.Refresh)
 			r.With(handlers.AuthMiddleware(authService)).Get("/me", authHandler.Me)
 			r.With(handlers.AuthMiddleware(authService)).Post("/password", authHandler.SetPassword)

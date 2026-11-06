@@ -42,7 +42,7 @@ func TestRunMigrationsCreatesMissingTablesAndIsIdempotent(t *testing.T) {
 	if err := store.RunMigrations("../db/migrations"); err != nil {
 		t.Fatalf("first migration run: %v", err)
 	}
-	for _, table := range []string{"oauth_transactions", "vocabulary_entries", "evaluation_jobs", "schema_migrations"} {
+	for _, table := range []string{"oauth_transactions", "vocabulary_entries", "evaluation_jobs", "password_reset_tokens", "schema_migrations"} {
 		var exists bool
 		if err := store.DB().QueryRow(`SELECT to_regclass($1) IS NOT NULL`, schema+"."+table).Scan(&exists); err != nil {
 			t.Fatalf("check table %s: %v", table, err)

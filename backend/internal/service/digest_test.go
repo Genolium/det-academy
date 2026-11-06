@@ -23,11 +23,17 @@ func (c *digestSenderCapture) Send(_ context.Context, msg email.Message) error {
 func (c *digestSenderCapture) SendVerification(ctx context.Context, to, link string) error {
 	return nil
 }
+func (c *digestSenderCapture) SendPasswordReset(ctx context.Context, to, link string) error {
+	return nil
+}
 
 type failingTransport struct{}
 
 func (failingTransport) Send(context.Context, email.Message) error { return nil }
 func (failingTransport) SendVerification(context.Context, string, string) error {
+	return nil
+}
+func (failingTransport) SendPasswordReset(context.Context, string, string) error {
 	return nil
 }
 func (failingTransport) Check(context.Context) error {

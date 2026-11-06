@@ -49,6 +49,7 @@ type MemoryStorage struct {
 	vocabulary          map[string]models.VocabularyEntry   // entryID -> entry
 	oauthTransactions   map[string]models.OAuthTransaction  // stateHash -> transaction
 	refreshTokens       map[string]models.RefreshToken
+	passwordResets      map[string]*models.PasswordResetToken
 	learningEvents      map[string][]models.LearningEvent              // userID -> events
 	practiceAssignments map[string]*models.PracticeAssignment          // assignmentID -> assignment
 	practiceAttempts    map[string][]models.PracticeAttempt            // userID -> attempts
@@ -88,6 +89,7 @@ func New() *MemoryStorage {
 		vocabulary:          make(map[string]models.VocabularyEntry),
 		oauthTransactions:   make(map[string]models.OAuthTransaction),
 		refreshTokens:       make(map[string]models.RefreshToken),
+		passwordResets:      make(map[string]*models.PasswordResetToken),
 		learningEvents:      make(map[string][]models.LearningEvent),
 		practiceAssignments: make(map[string]*models.PracticeAssignment),
 		practiceAttempts:    make(map[string][]models.PracticeAttempt),
@@ -1345,6 +1347,34 @@ func (r *userMemoryRepo) SetEmailVerification(ctx context.Context, userID, token
 	user.EmailVerificationTokenHash = tokenHash
 	user.EmailVerificationExpires = &expiresAt
 	return nil
+}
+
+func (r *userMemoryRepo) CreatePasswordReset(ctx context.Context, token *models.PasswordResetToken) error {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	now := time.Now().UTC()
+	for _, existing := range r.s.passwordResets {
+		if existing.UserID == token.UserID && existing.UsedAt == nil {
+			used := now
+			existing.UsedAt = &used
+		}
+	}
+	copyToken := *token
+	r.s.passwordResets[token.TokenHash] = &copyToken
+	return nil
+}
+
+func (r *userMemoryRepo) ConsumePasswordReset(ctx context.Context, tokenHash string) (*models.PasswordResetToken, error) {
+	r.s.mu.Lock()
+	defer r.s.mu.Unlock()
+	token, ok := r.s.passwordResets[tokenHash]
+	if !ok || token.UsedAt != nil || !token.ExpiresAt.After(time.Now().UTC()) {
+		return nil, errors.New("password reset token is invalid or expired")
+	}
+	now := time.Now().UTC()
+	token.UsedAt = &now
+	copyToken := *token
+	return &copyToken, nil
 }
 
 func (r *userMemoryRepo) MarkEmailVerified(ctx context.Context, tokenHash string) (*models.User, error) {

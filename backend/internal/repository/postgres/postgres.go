@@ -217,6 +217,42 @@ func (r *UserRepo) MarkEmailVerified(ctx context.Context, tokenHash string) (*mo
 	return &u, nil
 }
 
+func (r *UserRepo) CreatePasswordReset(ctx context.Context, token *models.PasswordResetToken) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE password_reset_tokens
+		SET used_at = NOW()
+		WHERE user_id = $1 AND used_at IS NULL
+	`, token.UserID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO password_reset_tokens (token_hash, user_id, expires_at, created_at)
+		VALUES ($1, $2, $3, $4)
+	`, token.TokenHash, token.UserID, token.ExpiresAt, token.CreatedAt); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (r *UserRepo) ConsumePasswordReset(ctx context.Context, tokenHash string) (*models.PasswordResetToken, error) {
+	var token models.PasswordResetToken
+	err := r.db.QueryRowContext(ctx, `
+		UPDATE password_reset_tokens
+		SET used_at = NOW()
+		WHERE token_hash = $1 AND used_at IS NULL AND expires_at > NOW()
+		RETURNING token_hash, user_id, expires_at, used_at, created_at
+	`, tokenHash).Scan(&token.TokenHash, &token.UserID, &token.ExpiresAt, &token.UsedAt, &token.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
 func (r *UserRepo) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
