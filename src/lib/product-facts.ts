@@ -1,7 +1,9 @@
+import { THEORY_TASK_COUNT } from '@/data/theoryTaxonomy';
+
 /** Single source of product facts shown in marketing and UI. */
 
 export const PRODUCT_FACTS = {
-  theoryLessons: 16,
+  theoryLessons: THEORY_TASK_COUNT,
   activeTaskTypes: 13,
   comingSoonTaskTypes: 0,
   vocabularyCount: 506,

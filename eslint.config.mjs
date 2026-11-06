@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     ".tmp-phonemes/**",
     ".next-fullstack/**",
+    "playwright-report/**",
+    "test-results/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

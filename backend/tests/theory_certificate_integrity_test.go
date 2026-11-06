@@ -181,3 +181,68 @@ func TestDiagnosticCannotIssueCertificate(t *testing.T) {
 func ptrTime(value time.Time) *time.Time {
 	return &value
 }
+
+func TestCertificateRequiresThirteenTheoryTasks(t *testing.T) {
+	r, _, store := setupTestRouter()
+	token := loginIntegrityStudent(t, r)
+	user, err := store.Users().GetByEmail(context.Background(), "student@det-academy.com")
+	if err != nil {
+		t.Fatalf("load user: %v", err)
+	}
+	for _, slug := range service.LessonSlugs {
+		if err := store.Theory().SetProgress(context.Background(), user.ID, slug, false); err != nil {
+			t.Fatalf("clear theory progress: %v", err)
+		}
+	}
+	for _, slug := range service.LessonSlugs[:service.TotalTheoryLessons-1] {
+		status, body := toggleTheoryLesson(t, r, token, slug)
+		if status != http.StatusOK {
+			t.Fatalf("toggle lesson %s: %d %s", slug, status, body)
+		}
+	}
+
+	overall, reading, listening, writing, speaking := 125, 120, 121, 126, 128
+	literacy, comprehension, production, conversation := 121, 120, 127, 127
+	session := &models.TestSession{
+		ID:                 fmt.Sprintf("thirteen-cert-%d", time.Now().UnixNano()),
+		UserID:             user.ID,
+		CandidateName:      "Thirteen Candidate",
+		Status:             "COMPLETED",
+		StageName:          "COMPLETED",
+		Mode:               "full",
+		OverallScore:       &overall,
+		ReadingScore:       &reading,
+		ListeningScore:     &listening,
+		WritingScore:       &writing,
+		SpeakingScore:      &speaking,
+		LiteracyScore:      &literacy,
+		ComprehensionScore: &comprehension,
+		ProductionScore:    &production,
+		ConversationScore:  &conversation,
+		CompletedAt:        ptrTime(time.Now()),
+	}
+	if err := store.Sessions().Create(context.Background(), session); err != nil {
+		t.Fatalf("seed completed session: %v", err)
+	}
+
+	issue := func() *httptest.ResponseRecorder {
+		payload, _ := json.Marshal(map[string]string{"testSessionId": session.ID})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/certificates/", bytes.NewReader(payload))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		return w
+	}
+
+	if w := issue(); w.Code != http.StatusBadRequest {
+		t.Fatalf("certificate with 12/13 theory = %d %s, want 400", w.Code, w.Body.String())
+	}
+	last := service.LessonSlugs[service.TotalTheoryLessons-1]
+	if status, body := toggleTheoryLesson(t, r, token, last); status != http.StatusOK {
+		t.Fatalf("toggle final lesson %s: %d %s", last, status, body)
+	}
+	if w := issue(); w.Code != http.StatusCreated {
+		t.Fatalf("certificate with 13/13 theory = %d %s, want 201", w.Code, w.Body.String())
+	}
+}

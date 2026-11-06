@@ -89,10 +89,10 @@ func TestPostgresTheoryTaxonomyMigration(t *testing.T) {
 		}
 	}
 	for number, slug := range map[int]string{
-		1: "rules-and-technicalities",
-		2: "subscores-and-cat-engine",
-		4: "listen-and-select",
-		8: "read-aloud",
+		1:  "rules-and-technicalities",
+		2:  "subscores-and-cat-engine",
+		4:  "listen-and-select",
+		8:  "read-aloud",
 		15: "read-listen-speak",
 	} {
 		if _, err := db.Exec(`
@@ -106,6 +106,7 @@ func TestPostgresTheoryTaxonomyMigration(t *testing.T) {
 
 	userAll := uuid.NewString()
 	userCombined := uuid.NewString()
+	userReadAloud := uuid.NewString()
 	for _, slug := range []string{"listen-and-select", "read-aloud", "read-listen-speak"} {
 		if _, err := db.Exec(`INSERT INTO theory_progress (user_id, lesson_slug, is_completed) VALUES ($1, $2, TRUE)`, userAll, slug); err != nil {
 			t.Fatalf("seed progress %s: %v", slug, err)
@@ -113,6 +114,9 @@ func TestPostgresTheoryTaxonomyMigration(t *testing.T) {
 	}
 	if _, err := db.Exec(`INSERT INTO theory_progress (user_id, lesson_slug, is_completed) VALUES ($1, 'read-listen-speak', TRUE)`, userCombined); err != nil {
 		t.Fatalf("seed combined progress: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO theory_progress (user_id, lesson_slug, is_completed) VALUES ($1, 'read-aloud', TRUE)`, userReadAloud); err != nil {
+		t.Fatalf("seed read-aloud progress: %v", err)
 	}
 
 	migration, err := os.ReadFile("../db/migrations/039_theory_taxonomy.sql")
@@ -173,6 +177,7 @@ func TestPostgresTheoryTaxonomyMigration(t *testing.T) {
 	assertProgress(userAll, "interactive-speaking")
 	assertProgress(userCombined, "read-then-speak")
 	assertProgress(userCombined, "interactive-speaking")
+	assertProgress(userReadAloud, "read-then-speak")
 
 	var retiredProgress int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM theory_progress WHERE lesson_slug IN ('listen-and-select', 'read-aloud', 'read-listen-speak')`).Scan(&retiredProgress); err != nil {
@@ -180,5 +185,72 @@ func TestPostgresTheoryTaxonomyMigration(t *testing.T) {
 	}
 	if retiredProgress != 0 {
 		t.Fatalf("retired progress rows = %d, want 0", retiredProgress)
+	}
+
+	// A migrate-only deployment has no content seed. The migration itself must
+	// leave a complete 15-row catalogue, and a second run must stay idempotent.
+	if _, err := db.Exec(`DELETE FROM theory_progress; DELETE FROM theory_lessons;`); err != nil {
+		t.Fatalf("clear catalogue: %v", err)
+	}
+	if _, err := db.Exec(string(migration)); err != nil {
+		t.Fatalf("apply migration to empty catalogue: %v", err)
+	}
+	var freshTotal, freshTrackable int
+	if err := db.QueryRow(`SELECT COUNT(*), COUNT(*) FILTER (WHERE is_trackable) FROM theory_lessons`).Scan(&freshTotal, &freshTrackable); err != nil {
+		t.Fatalf("count fresh catalogue: %v", err)
+	}
+	if freshTotal != 15 || freshTrackable != 13 {
+		t.Fatalf("fresh migration catalogue = %d rows / %d trackable, want 15 / 13", freshTotal, freshTrackable)
+	}
+}
+
+func TestBootstrapSchemaAndTheorySeedWithoutMigrations(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+	admin, err := sql.Open("postgres", databaseURL)
+	if err != nil {
+		t.Fatalf("open admin db: %v", err)
+	}
+	defer admin.Close()
+
+	schema := "theory_bootstrap_" + strings.ReplaceAll(uuid.NewString()[:8], "-", "")
+	if _, err := admin.Exec(`CREATE SCHEMA "` + schema + `"`); err != nil {
+		t.Fatalf("create schema: %v", err)
+	}
+	defer admin.Exec(`DROP SCHEMA IF EXISTS "` + schema + `" CASCADE`)
+
+	separator := "?"
+	if strings.Contains(databaseURL, "?") {
+		separator = "&"
+	}
+	db, err := sql.Open("postgres", databaseURL+separator+"search_path="+schema)
+	if err != nil {
+		t.Fatalf("open scoped db: %v", err)
+	}
+	defer db.Close()
+
+	initSQL, err := os.ReadFile("../db/init.sql")
+	if err != nil {
+		t.Fatalf("read init.sql: %v", err)
+	}
+	if _, err := db.Exec(string(initSQL)); err != nil {
+		t.Fatalf("apply init.sql: %v", err)
+	}
+	seedSQL, err := os.ReadFile("../db/03-content-seed.sql")
+	if err != nil {
+		t.Fatalf("read content seed: %v", err)
+	}
+	if _, err := db.Exec(string(seedSQL)); err != nil {
+		t.Fatalf("apply content seed without migrations: %v", err)
+	}
+
+	var total, trackable int
+	if err := db.QueryRow(`SELECT COUNT(*), COUNT(*) FILTER (WHERE is_trackable) FROM theory_lessons`).Scan(&total, &trackable); err != nil {
+		t.Fatalf("count seeded theory lessons: %v", err)
+	}
+	if total != 15 || trackable != 13 {
+		t.Fatalf("seeded catalogue = %d rows / %d trackable, want 15 / 13", total, trackable)
 	}
 }

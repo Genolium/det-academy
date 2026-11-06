@@ -50,11 +50,19 @@ VALUES (
 5. Качественное фронтальное освещение.',
   '[{"question":"Кандидат во время написания эссе регулярно смотрел на стену слева от монитора в течение нескольких секунд.","modelAnswer":"Сессия отклоняется с пометкой о нарушении зрительного контроля (candidate did not look at the screen).","comment":"Взгляд должен оставаться в пределах границ монитора на протяжении всего экзамена."}]'::jsonb,
   '["Использование второго подключенного монитора.","Шепот или проговаривание текста губами во время чтения.","Появление домашних животных в поле зрения веб-камеры."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -79,11 +87,19 @@ VALUES (
 • Production (письмо и говорение): Write About the Photo, Interactive Writing, Writing Sample, Speak About the Photo, Read Then Speak, Interactive Speaking, Speaking Sample.',
   '[{"question":"Кандидат написал грамматически корректные, но предельно короткие предложения в эссе (по 4–5 слов).","modelAnswer":"Оценка за Production окажется низкой из-за ограниченного лексического разнообразия.","comment":"Для высокого балла требуются сложные синтаксические конструкции и развитый академический словарь."}]'::jsonb,
   '["Невнимательность на простых заданиях в начале теста.","Использование однотипных конструкций на протяжении всего ответа."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -107,11 +123,19 @@ VALUES (
 3. Очевидная ошибка в словообразовании (например, dramatical) -> No.',
   '[{"question":"Слово: ineffable","modelAnswer":"Yes","comment":"Литературное прилагательное со значением ''невыразимый словами''."},{"question":"Слово: dramatical","modelAnswer":"No","comment":"Существуют формы dramatic и dramatically, формы dramatical нет."}]'::jsonb,
   '["Попытка подтверждать все слова подряд наугад.","Спешка при нажатии клавиш, приводящая к случайному вводу для следующего слова."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -136,11 +160,19 @@ VALUES (
 4. Проверка грамматического согласования.',
   '[{"question":"The committee reached a unanimous dec____ on the proposed budget changes.","sampleText":"dec + 5 пустых ячеек -> dec[ision]","modelAnswer":"decision","comment":"После прилагательного unanimous требуется существительное из 8 букв."}]'::jsonb,
   '["Попытка угадать слово, прочитав только первые два слова предложения.","Несогласованность по времени (например, ввод основы глагола вместо формы прошедшего времени)."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -165,11 +197,19 @@ VALUES (
 • 8 букв: 4 даны, 4 пропущены (rese[arch]).',
   '[{"question":"Scientific experiments require rigorous preparation. Rese____ must docu____ every observation to ensure reli____ results.","sampleText":"Rese[archers] (7 ячеек), docu[ment] (4 ячейки), reli[able] (4 ячейки).","modelAnswer":"Researchers / document / reliable","comment":"Слова логически связаны с темой научного исследования и согласованы по синтаксису."}]'::jsonb,
   '["Длительная остановка на первом сложном слове с потерей времени на остальной текст.","Использование британских вариантов написания (например, behaviour вместо behavior)."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -193,11 +233,19 @@ VALUES (
 Попытка 3: проверка грамматических окончаний и пунктуации.',
   '[{"question":"Прослушайте предложение и запишите его в точности, включая пунктуацию.","audioPrompt":"The administrative department will publish the schedule tomorrow morning.","modelAnswer":"The administrative department will publish the schedule tomorrow morning.","comment":"Заглавная буква T, слово department написано без опечаток, в конце стоит точка."}]'::jsonb,
   '["Использование всех трех прослушиваний подряд в начале задания.","Пропуск точки или вопросительного знака в конце строки.","Запись чисел цифрами вместо слов."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -221,11 +269,19 @@ VALUES (
 • Отсылка к ранее упомянутому: this process, these findings, such methods.',
   '[{"question":"Вопрос: выделите предложение, объясняющее причину миграции птиц в тексте.","modelAnswer":"Seasonal fluctuations in food availability compel the flock to travel southward before winter conditions set in.","comment":"Выделено строго одно предложение, содержащее прямое указание на причину миграции."}]'::jsonb,
   '["Трата более половины времени на первый экран, из-за чего последние вопросы выполняются в спешке.","Выделение нескольких лишних предложений вокруг ответа."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -249,11 +305,19 @@ VALUES (
 3. Итоговая договоренность: In response, I agreed to submit the revised draft by...',
   '[{"question":"Тема беседы: перенос дедлайна эссе из-за технического сбоя в лаборатории.","modelAnswer":"I spoke with my biology professor regarding a brief extension for my laboratory assignment due to equipment maintenance. The instructor agreed to grant an additional forty-eight hours to finalize the data interpretation. Consequently, I committed to submitting the complete report before Friday afternoon.","comment":"Объем 45 слов, логично отражены цель встречи, решение преподавателя и срок сдачи."}]'::jsonb,
   '["Ответ одним коротким предложением вместо связного резюме.","Использование прямой речи в кавычках вместо косвенной речи.","Пропуск финального соглашения о сроке или следующем шаге."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -277,11 +341,19 @@ VALUES (
 3. Контекст или гипотеза: Judging by the setup, they seem to be preparing for...',
   '[{"question":"Фотография: инженер в каске изучает строительную документацию на площадке.","modelAnswer":"This image shows a civil engineer in a protective helmet carefully examining construction blueprints outdoors. In the background, cranes and unfinished concrete foundations indicate an active building site. Judging by his focused posture, he appears to be verifying structural measurements prior to the next phase of work.","comment":"Объем 49 слов, использованы сложные предложения, причастия и уместные предметные термины."}]'::jsonb,
   '["Использование простого настоящего времени вместо Present Continuous для длящихся действий.","Объем ответа менее 20 слов.","Оборванная на полуслове фраза из-за истечения времени."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -304,11 +376,19 @@ VALUES (
 • Часть 2: Ссылка на первую часть (Building on my earlier point regarding...) -> Ответ на уточняющий вопрос -> Итоговое соображение.',
   '[{"question":"Часть 1: Should universities prioritize practical vocational skills over theoretical academic subjects?","modelAnswer":"In discussions of higher education curricula, opinions vary regarding the emphasis on theoretical knowledge versus practical training. I maintain that universities should offer a balanced curriculum that integrates both approaches. Theoretical foundations foster critical thinking and enable students to understand underlying scientific principles. Meanwhile, practical instruction equips graduates with marketable skills demanded by modern industries. For example, engineering students who combine rigorous mathematics with hands-on laboratory experience adapt to professional demands more rapidly. Therefore, incorporating applied projects into academic programs produces well-rounded professionals.","comment":"Объем 85 слов, академический стиль, логичные связки between theory and practice."}]'::jsonb,
   '["Короткий текст в первой части (менее 60 слов).","Разговорные вводные обороты вроде ''Well, I think''.","Отсутствие времени на вычитку текста перед окончанием таймера."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -333,11 +413,19 @@ VALUES (
 4. Заключение: In summary, [обобщающий вывод].',
   '[{"question":"Should public transportation in large cities be fully funded by municipal taxes and free for passengers?","modelAnswer":"The financing of municipal public transport represents an important civic consideration in urban planning. I support the view that cities should fund public transit through tax revenues and eliminate ticket fares for residents. First, universal fare-free transit encourages commuters to leave private automobiles at home, which directly reduces traffic congestion and urban air pollution. Furthermore, accessible public transit provides equitable mobility for lower-income families who rely on buses and trains to reach employment opportunities and essential services. For example, several European municipalities that introduced free transit recorded significant decreases in downtown traffic volume. In summary, public funding for urban transportation is a sensible investment that improves both environmental quality and economic mobility.","comment":"Объем 119 слов, выдержана строгая структура, использована предметная лексика по урбанистике и экологии."}]'::jsonb,
   '["Объем эссе менее 85 слов.","Попытка перечислить слишком много разрозненных мыслей без должного раскрытия.","Отсутствие проверки орфографии в конце отведенного времени."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -363,11 +451,19 @@ VALUES (
 5. Заключение: Overall, the image reflects...',
   '[{"question":"Изображение: студенты за столом в университетской библиотеке готовятся к семинару.","modelAnswer":"This photograph depicts a group of university students collaborating around a wooden table in an academic library. In the center, two individuals are reviewing notes while another student points toward an open laptop screen. In the background, tall shelves filled with reference books and large windows create a calm, studious atmosphere. Judging by their focused expressions and the presence of highlighted articles, they appear to be preparing for an upcoming seminar presentation. Overall, the scene highlights effective teamwork in an academic setting.","comment":"Ответ звучит около 75 секунд при спокойном темпе, содержит последовательные переходы от центра к окружению."}]'::jsonb,
   '["Остановка ответа на 30-й секунде.","Повторение одного и того же описания несколько раз подряд.","Отвод взгляда от экрана во время говорения."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -388,11 +484,19 @@ VALUES (
   'Тезис → причина → пример → вывод. На каждый подпункт промпта: одно прямое предложение, одно пояснение, один пример.',
   '[{"question":"Describe a difficult decision you had to make in your studies. What was the situation? Why was the decision difficult? What was the outcome?","modelAnswer":"A challenging decision I faced during my studies involved choosing between an intensive chemistry course and an environmental science seminar. The choice was difficult because I enjoyed laboratory work, yet the environmental syllabus aligned more closely with my career goals in sustainability. After discussing the options with my academic advisor, I decided to register for the environmental seminar. In retrospect, that choice proved beneficial because it provided practical project experience that later helped me secure a research internship.","comment":"Ответ охватывает все три пункта промпта за 75 секунд и последовательно использует прошедшее время."}]'::jsonb,
   '["Подробный ответ только на первый вопрос и нехватка времени на остальные.","Переход на настоящее время при описании прошлых событий.","Повтор одного связующего слова вместо разнообразных союзов и вводных конструкций."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -413,11 +517,19 @@ VALUES (
   'Opinion → Reason → Example → Outcome. В 35 секундах достаточно двух-трех предложений с одной ясной мыслью.',
   '[{"question":"Do you think technology makes it easier or harder to concentrate?","modelAnswer":"I think technology makes concentration harder for most students because every notification competes for attention. For example, when I study, I often check my phone after a message even if the task is not urgent. As a result, I now keep my phone in another room during deep work, which helps me stay focused for longer.","comment":"Ответ дает позицию, причину, личный пример и практический вывод в рамках 35 секунд."}]'::jsonb,
   '["Ответ не по теме вопроса или уход в заученный монолог.","Слишком длинная пауза в начале ответа: времени на подготовку нет.","Попытка ответить на все возможные follow-up сразу вместо одного ясного ответа."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
@@ -442,11 +554,19 @@ VALUES (
 4. Взвешенный итог: On balance, I believe the most practical approach involves...',
   '[{"question":"Should public funding support historical museums and heritage sites, or should they rely solely on admission tickets and private donations?","modelAnswer":"The funding of historical museums raises important questions regarding cultural heritage preservation. I believe that public municipal support is essential alongside private contributions. First, public investment ensures that museums remain accessible to students and low-income visitors regardless of admission fees, thereby promoting historical literacy. In addition, relying entirely on private sponsorship might encourage institutions to prioritize commercially attractive exhibits over culturally significant archives. Therefore, while ticket sales contribute to operating budgets, baseline public funding remains necessary to safeguard national heritage.","comment":"Ответ структурирован, аргументы подкреплены логикой доступности и независимости культурных учреждений."}]'::jsonb,
   '["Преждевременная остановка записи до истечения полутора минут.","Попытка воспроизвести несвязанный заученный топик.","Частый отвод взгляда от объектива камеры."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
+) ON CONFLICT (slug) DO UPDATE SET
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
   pitfalls = EXCLUDED.pitfalls;
 

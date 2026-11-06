@@ -96,6 +96,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           category: dLesson.category as LessonGuide['category'],
           categoryLabelRu: dLesson.category_label_ru,
           categoryLabelEn: dLesson.category_label_en,
+          isTrackable: dLesson.is_trackable !== false && staticLesson?.isTrackable !== false,
           format: dLesson.format,
           formatEn: staticLesson?.formatEn,
           timeLimitEn: staticLesson?.timeLimitEn,

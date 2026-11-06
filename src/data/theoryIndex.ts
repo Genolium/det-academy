@@ -80,8 +80,8 @@ export const theoryIndex: TheoryIndexLesson[] = [
     "category": "listening",
     "categoryLabelRu": "Диалог",
     "categoryLabelEn": "Listening",
-    "format": "Сценарий академической беседы (студент-профессор или студенты). Интерактивный диалог (выбор реплик) + пауза для повторения + 75 секунд на написание Summary (резюме).",
-    "formatEn": "An academic conversation with choices, a 15-second pause and a summary."
+    "format": "Два академических диалога. В каждом: аудиосценарий, 3–4 задания Listen and Complete, 5–6 заданий Listen and Respond и 75-секундное резюме. На первую часть отводится 6:30; сценарий можно переслушивать.",
+    "formatEn": "Two academic conversations. Each has a scenario, 3–4 Listen and Complete items, 5–6 Listen and Respond items and a 75-second summary. The first part lasts 6:30; the scenario audio can be replayed."
   },
   {
     "slug": "write-about-photo",

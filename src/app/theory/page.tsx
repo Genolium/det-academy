@@ -8,9 +8,9 @@ import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { PillBadge } from '@/components/ui/PillBadge';
-import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { CheckCircle2, Circle, ArrowUpRight } from 'lucide-react';
 import { translations } from '@/lib/translations';
+import { THEORY_TASK_COUNT, isTheoryTaskSlug } from '@/data/theoryTaxonomy';
 
 export default function TheoryCatalogPage() {
   const { completedLessons } = useProgressStore();
@@ -44,6 +44,14 @@ export default function TheoryCatalogPage() {
           examples: d.examples,
           pitfalls: d.pitfalls,
         }));
+        const mappedTaskCount = mapped.filter(
+          (lesson) => lesson.slug !== 'start-here' && lesson.isTrackable !== false
+        ).length;
+        if (mappedTaskCount !== THEORY_TASK_COUNT) {
+          // A partial or stale catalogue must not lower the denominator or
+          // silently remove lessons. Keep the explicit local fallback.
+          return;
+        }
         const intro = lessonsData.find((lesson) => lesson.slug === 'start-here');
         if (intro && !mapped.some((lesson) => lesson.slug === intro.slug)) {
           mapped.unshift(intro);
@@ -67,10 +75,8 @@ export default function TheoryCatalogPage() {
     (lesson) => lesson.slug !== 'start-here' && lesson.isTrackable === false
   );
   const mainLessons = introLesson ? [introLesson, ...trackableLessons] : trackableLessons;
-  const totalLessons = trackableLessons.length;
-  const validCompletedCount = completedLessons.filter((slug) =>
-    trackableLessons.some((l) => l.slug === slug)
-  ).length;
+  const totalLessons = THEORY_TASK_COUNT;
+  const validCompletedCount = completedLessons.filter(isTheoryTaskSlug).length;
   const progressPercent = totalLessons > 0 ? Math.round((validCompletedCount / totalLessons) * 100) : 0;
 
   return (

@@ -383,26 +383,25 @@ export const lessonsData: LessonGuide[] = [
     "category": "listening",
     "categoryLabelRu": "Диалог",
     "categoryLabelEn": "Listening",
-    "format": "Сценарий академической беседы (студент-профессор или студенты). Интерактивный диалог (выбор реплик) + пауза для повторения + 75 секунд на написание Summary (резюме).",
-    "formatEn": "An academic conversation with choices, a 15-second pause and a summary.",
-    "scoring": "Формирует сабскоры Comprehension, Conversation и Literacy. Оценивается способность поддерживать диалог, отбирать релевантные факты и лаконично резюмировать беседу на письме.",
-    "timeLimit": "Диалог (~4 мин) + пауза (15 сек) + Summary (75 сек)",
-    "timeLimitEn": "Dialogue ~4 min + 15 sec pause + 75 sec summary",
+    "format": "Два академических диалога. В каждом: аудиосценарий, 3–4 задания Listen and Complete, 5–6 заданий Listen and Respond и 75-секундное резюме. На первую часть отводится 6:30; сценарий можно переслушивать.",
+    "formatEn": "Two academic conversations. Each has a scenario, 3–4 Listen and Complete items, 5–6 Listen and Respond items and a 75-second summary. The first part lasts 6:30; the scenario audio can be replayed.",
+    "scoring": "Listening, Comprehension, Conversation. Резюме дополнительно оценивается как письменная продукция: полнота фактов, связность и грамматика.",
+    "timeLimit": "6:30 на диалог + 75 секунд на резюме; 2 диалога",
+    "timeLimitEn": "6:30 per dialogue + 75 sec summary; 2 dialogues",
     "mentorIntro": "Interactive Listening — одно из самых динамичных заданий теста. Сначала вы знакомитесь со сценарием: кто вы и с какой проблемой пришли к собеседнику. Затем собеседник произносит реплику, а вы выбираете наиболее уместный ответ из предложенных вариантов. После завершения беседы у вас есть ровно 75 секунд, чтобы написать связное резюме разговора. Поскольку делать записи на бумаге запрещено, вы должны удерживать всю нить беседы в голове.",
     "rules": [
-      "Ответы должны быть реактивными: если профессор задал конкретный вопрос о вашей теме эссе, ваш вариант ответа обязан отвечать на этот вопрос, а не быть шаблонным подтверждением вроде 'I see'.",
-      "Секретный буфер чтения: После финальной реплики диалога НЕ нажимайте сразу 'Continue'! Используйте оставшиеся секунды, чтобы проскроллить весь диалог на экране сверху вниз и зафиксировать факты перед экраном написания Summary.",
-      "Лимит 75 секунд на Summary: За это время физически невозможно написать больше 3–4 качественных предложений.",
-      "Строгая структура резюме: 1. Исходная проблема/цель визита -> 2. Рекомендация собеседника -> 3. Итоговое решение/план действий."
+      "Аудиосценарий можно переслушивать; реплики Listen and Respond звучат только один раз.",
+      "Listen and Complete: 3–4 пропуска. Можно перефразировать ответ, если смысл сохранен.",
+      "Listen and Respond: выберите лучший ответ. После ответа показывается правильный вариант, поэтому следующий вопрос можно исправить.",
+      "Резюме: 75 секунд, 3 связных предложения. Укажите повод разговора, решение и следующий шаг."
     ],
     "strategySteps": [
-      "Шаг 1: Внимательно прочитайте сценарий перед стартом диалога: он уже содержит формулировку вашей проблемы для первого предложения резюме.",
-      "Шаг 2: Ведение диалога: вслушивайтесь в вопрос и выбирайте реплику, развивающую академическую дискуссию.",
-      "Шаг 3: Буфер памяти: перед переходом к Summary пробегите глазами реплики профессора — выделите 2 главных совета.",
-      "Шаг 4: Написание резюме по Золотой формуле трех предложений (Three-Sentence Rule).",
-      "Шаг 5: Последние 10 секунд: проверка времен (все резюме пишется в Past Simple или Reported Speech: 'The professor suggested that I should...')."
+      "Сначала прослушайте сценарий целиком: зафиксируйте участников, проблему и цель разговора.",
+      "В Listen and Complete отвечайте по смыслу, не копируйте услышанное дословно.",
+      "В Listen and Respond следите за отношениями говорящих и целью беседы.",
+      "Перед резюме мысленно соберите три пункта и используйте past tense с косвенной речью."
     ],
-    "formula": "Золотая формула академического Summary (75 секунд):\n• Предложение 1 (Ситуация): I consulted my professor/peer regarding [проблема из начального сценария].\n• Предложение 2 (Рекомендация): They explained that [главная причина проблемы] and recommended that I should [конкретный совет].\n• Предложение 3 (Решение): Ultimately, I decided to [итоговое действие/план], which will resolve the issue.",
+    "formula": "Трехчастная схема резюме диалога:\n1. Причина обращения: I met with my instructor to discuss...\n2. Разъяснение преподавателя: The professor explained that... and advised me to...\n3. Итоговая договоренность: In response, I agreed to submit the revised draft by...",
     "proTips": [
       "В диалоге обращайте внимание на интеррогативные маркеры собеседника: если профессор задает вопрос 'Have you already consulted the archival records?', ваш ответ обязан прямо отвечать на этот вопрос фактом, а не общими рассуждениями.",
       "При написании резюме пишите от первого лица (I met with my academic advisor...), используя глаголы косвенной речи: explained, suggested, recommended, pointed out.",
@@ -841,7 +840,7 @@ export const lessonsData: LessonGuide[] = [
       "Шаг 3: Стратегическое использование синтаксиса C1. Алгоритм оценивает лексическую плотность (Lexical Sophistication) и разнообразие грамматических структур (Grammatical Complexity), а не отсутствие ошибок.",
       "Шаг 4: Управление временем на адаптивных экранах. Не спешите нажимать 'Next' мгновенно: используйте все отведенные секунды для проверки согласования времен и окончаний."
     ],
-    "formula": "Матрица сабскоров DET:\n• Literacy = Чтение (Read & Select, C-Test, Interactive Reading) + Письмо (Photo, Essays)\n• Comprehension = Чтение (C-Test, Reading) + Аудирование (Listen & Type, Dictations, Dialogues)\n• Conversation = Аудирование (Listening) + Говорение (Photo, Monologues, Samples)\n• Production = Письмо (Essays, Photo) + Говорение (Monologues, Photo, Samples)",
+    "formula": "Распределение навыков по сабскорам:\n• Literacy: Read and Select, Read and Complete, Interactive Reading, Write About the Photo, Interactive Writing, Writing Sample.\n• Comprehension: Read and Select, Fill in the Blanks, Read and Complete, Listen and Type, Interactive Reading, Interactive Listening.\n• Conversation: Listen and Type, Interactive Listening, Read Then Speak, Interactive Speaking, Speak About the Photo, Speaking Sample.\n• Production: Write About the Photo, Interactive Writing, Writing Sample, Speak About the Photo, Read Then Speak, Interactive Speaking, Speaking Sample.",
     "proTips": [
       "B2 vs C1 в психометрии CAT: Кандидат B2 дает грамматически верные, но лексически бедные ответы ('The weather was bad, so people stayed home'). Алгоритм присваивает такому предложению сложность B1-B2. Кандидат C1 пишет: 'Due to severe meteorological disturbances, the vast majority of residents were compelled to remain indoors', что немедленно поднимает оценку Theta в диапазон 130+.",
       "В сабскоре Production объем текста критичен: 120 слов грамотного текста с редкими опечатками всегда получат более высокий балл, чем 45 стерильных слов без единой ошибки.",

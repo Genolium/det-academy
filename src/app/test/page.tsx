@@ -65,13 +65,13 @@ export default function TestLobbyPage() {
     { title: 'Read and Complete (C-Test)', timing: locale === 'ru' ? '3 минуты' : '3 minutes', status: 'Active' },
     { title: 'Listen and Type', timing: locale === 'ru' ? '60с (макс 3 аудио)' : '60s (max 3 replays)', status: 'Active' },
     { title: 'Interactive Reading', timing: locale === 'ru' ? '5 экранов' : '5 screens', status: 'Active' },
-    { title: 'Interactive Listening', timing: locale === 'ru' ? 'Диалог + 75с Summary' : 'Dialogue + 75s Summary', status: 'Active' },
+    { title: 'Interactive Listening', timing: locale === 'ru' ? '2 диалога × 6:30 + 75с' : '2 dialogues x 6:30 + 75s', status: 'Active' },
     { title: 'Write About the Photo', timing: locale === 'ru' ? '3 фото по 60с' : '3 photos x 60s', status: 'Active' },
     { title: 'Interactive Writing', timing: locale === 'ru' ? '5 мин + 3 мин follow-up' : '5 min + 3 min follow-up', status: 'Active' },
-    { title: 'Writing Sample', timing: locale === 'ru' ? '5 минут (100+ слов)' : '5 minutes (100+ words)', status: 'Active' },
     { title: 'Speak About the Photo', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
-    { title: 'Read / Listen, Then Speak', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
+    { title: 'Read, Then Speak', timing: locale === 'ru' ? '90 секунд' : '90 seconds', status: 'Active' },
     { title: 'Interactive Speaking', timing: locale === 'ru' ? '35с на вопрос' : '35s per prompt', status: 'Active' },
+    { title: 'Writing Sample', timing: locale === 'ru' ? '5 минут (100+ слов)' : '5 minutes (100+ words)', status: 'Active' },
     { title: 'Speaking Sample', timing: locale === 'ru' ? '3 минуты' : '3 minutes', status: 'Active' },
   ];
 
