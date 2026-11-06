@@ -361,6 +361,7 @@ func main() {
 			r.Post("/errors/{id}/recall", studyHandler.RecallError)
 			r.Delete("/errors/{id}", studyHandler.DeleteError)
 			r.Get("/streak", studyHandler.GetStreak)
+			r.Get("/dashboard", studyHandler.GetDashboard)
 			r.Post("/activity", studyHandler.RecordActivity)
 			r.Get("/srs", studyHandler.GetSRSState)
 			r.Post("/srs/review", studyHandler.ReviewSRSCard)

@@ -108,6 +108,59 @@ func (s *StudyService) UpdateGoals(ctx context.Context, userID string, req model
 	return goal, nil
 }
 
+// GetDashboard returns the single authenticated payload consumed by the
+// dashboard. It keeps the per-resource endpoints for mutations and fallback.
+func (s *StudyService) GetDashboard(ctx context.Context, userID string, utcOffsetMinutes int) (*models.DashboardResponse, error) {
+	if userID == "" {
+		return nil, errors.New("authorization required")
+	}
+	streak, err := s.GetStreak(ctx, userID, utcOffsetMinutes)
+	if err != nil {
+		return nil, err
+	}
+	theory, err := s.theoryService.GetProgress(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	rawSessions, err := s.catService.GetUserSessions(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	sessions := make([]models.TestSession, 0, len(rawSessions))
+	for _, session := range rawSessions {
+		if session.Status != "COMPLETED" || intVal(session.OverallScore) <= 0 {
+			continue
+		}
+		// The dashboard only needs scores and timestamps. Never ship the
+		// per-session content snapshot to the browser.
+		session.ContentSnapshot = nil
+		sessions = append(sessions, session)
+	}
+
+	plan, planErr := s.GetStudyPlan(ctx, userID)
+	goalsConfigured := true
+	if errors.Is(planErr, ErrGoalsNotConfigured) {
+		goalsConfigured = false
+		plan = nil
+	} else if planErr != nil {
+		return nil, planErr
+	}
+
+	bestWpm, err := s.storage.Study().GetBestTypingWPM(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.DashboardResponse{
+		Streak:          *streak,
+		Theory:          *theory,
+		Sessions:        sessions,
+		StudyPlan:       plan,
+		GoalsConfigured: goalsConfigured,
+		BestWpm:         bestWpm,
+	}, nil
+}
+
 func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models.StudyPlanResponse, error) {
 	goal, err := s.GetGoals(ctx, userID)
 	if err != nil {

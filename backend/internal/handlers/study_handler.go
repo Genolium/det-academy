@@ -223,6 +223,23 @@ func (h *StudyHandler) GetStreak(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, http.StatusOK, streak)
 }
 
+// GetDashboard returns the single aggregate payload used by the authenticated
+// dashboard. Mutations and fallback screens keep using their own endpoints.
+func (h *StudyHandler) GetDashboard(w http.ResponseWriter, r *http.Request) {
+	userID := GetUserIDFromContext(r.Context())
+	if userID == "" {
+		RespondError(w, http.StatusUnauthorized, "authorization required")
+		return
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("utc_offset_minutes"))
+	dashboard, err := h.studyService.GetDashboard(r.Context(), userID, offset)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	RespondJSON(w, http.StatusOK, dashboard)
+}
+
 func (h *StudyHandler) RecordActivity(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	if userID == "" {

@@ -404,6 +404,17 @@ type TheoryProgressResponse struct {
 	IsAllCompleted   bool     `json:"isAllCompleted"`
 }
 
+// DashboardResponse is the single payload used by the authenticated dashboard.
+// It deliberately omits heavy session internals such as content snapshots.
+type DashboardResponse struct {
+	Streak          UserStreak             `json:"streak"`
+	Theory          TheoryProgressResponse `json:"theory"`
+	Sessions        []TestSession          `json:"sessions"`
+	StudyPlan       *StudyPlanResponse     `json:"studyPlan,omitempty"`
+	GoalsConfigured bool                   `json:"goalsConfigured"`
+	BestWpm         int                    `json:"bestWpm"`
+}
+
 type StartSessionRequest struct {
 	CandidateName   string `json:"candidateName,omitempty"`
 	DifficultyLevel string `json:"difficultyLevel,omitempty"` // Default B1
