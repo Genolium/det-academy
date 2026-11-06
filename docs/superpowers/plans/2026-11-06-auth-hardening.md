@@ -1,6 +1,6 @@
 # Auth hardening implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans. Steps use `- [ ]` checkboxes.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans. Steps use `- [x]` checkboxes.
 
 **Goal:** Remove the persistent access token from browser storage, protect cookie-authenticated mutations with CSRF, require authentication before OAuth linking, and separate `superadmin` from `admin`.
 
@@ -32,40 +32,40 @@
 
 **Files:** create `backend/internal/handlers/csrf.go`, `backend/internal/handlers/csrf_test.go`; modify `auth_handler.go`, `cmd/server/main.go`, `backend/tests/api_test.go`.
 
-- [ ] Write middleware tests: unsafe cookie request without CSRF header → 403; matching header → next handler; Bearer request → next; safe GET → next; login path exempt.
-- [ ] Run tests; expect failure because middleware is absent.
-- [ ] Implement `CSRFMiddleware` with double-submit check and `setAuthCookies` setting/clearing `det_csrf`.
-- [ ] Wire middleware into `/api/v1` in production and test routers.
-- [ ] Run Go tests.
+- [x] Write middleware tests: unsafe cookie request without CSRF header → 403; matching header → next handler; Bearer request → next; safe GET → next; login path exempt.
+- [x] Run tests; expect failure because middleware is absent.
+- [x] Implement `CSRFMiddleware` with double-submit check and `setAuthCookies` setting/clearing `det_csrf`.
+- [x] Wire middleware into `/api/v1` in production and test routers.
+- [x] Run Go tests.
 
 ### Task 2: Cookie-only client
 
 **Files:** `src/lib/auth-session.ts`, `src/lib/api.ts`, `src/store/useAuthStore.ts`, `playwright.config.ts`, `e2e/auth-session.spec.ts`.
 
-- [ ] Write a test/assertion that login stores no `det_auth_token`, but stores a non-secret user marker and sends `X-CSRF-Token`.
-- [ ] Run; expect failure.
-- [ ] Add `getCsrfToken`, `setAuthUser`, `clearAuthSession`; make `getAuthToken` return null in production and keep legacy only behind the test env flag.
-- [ ] Replace `setAuthToken` calls with `setAuthUser`; add CSRF header; update `checkAuth`/logout.
-- [ ] Set `NEXT_PUBLIC_ALLOW_LEGACY_BEARER=true` in the e2e web server env only.
-- [ ] Run typecheck, build, auth E2E.
+- [x] Write a test/assertion that login stores no `det_auth_token`, but stores a non-secret user marker and sends `X-CSRF-Token`.
+- [x] Run; expect failure.
+- [x] Add `getCsrfToken`, `setAuthUser`, `clearAuthSession`; make `getAuthToken` return null in production and keep legacy only behind the test env flag.
+- [x] Replace `setAuthToken` calls with `setAuthUser`; add CSRF header; update `checkAuth`/logout.
+- [x] Set `NEXT_PUBLIC_ALLOW_LEGACY_BEARER=true` in the e2e web server env only.
+- [x] Run typecheck, build, auth E2E.
 
 ### Task 3: OAuth link fail-closed
 
 **Files:** `backend/internal/service/oauth_transaction.go`, `backend/internal/service/auth_service.go`, tests.
 
-- [ ] Write tests: anonymous `action=link` start → error; link transaction with empty `UserID` cannot be consumed; transaction owned by another user is rejected.
-- [ ] Run; expect failure.
-- [ ] Require authenticated `userID` for link start and exact `consumed.UserID == userID` on consume.
-- [ ] Run tests.
+- [x] Write tests: anonymous `action=link` start → error; link transaction with empty `UserID` cannot be consumed; transaction owned by another user is rejected.
+- [x] Run; expect failure.
+- [x] Require authenticated `userID` for link start and exact `consumed.UserID == userID` on consume.
+- [x] Run tests.
 
 ### Task 4: Superadmin separation
 
 **Files:** `backend/internal/service/auth_service.go`, `backend/internal/handlers/admin_handler.go`, `backend/db/migrations/037_superadmin.sql`, admin frontend guards, tests.
 
-- [ ] Write tests: admin cannot grant `superadmin`; admin cannot delete/demote a `superadmin`; superadmin can; last-admin protection counts both roles.
-- [ ] Run; expect failure.
-- [ ] Add role checks, migration promoting the oldest admin when no superadmin exists, and frontend guard acceptance.
-- [ ] Run Go + frontend tests.
+- [x] Write tests: admin cannot grant `superadmin`; admin cannot delete/demote a `superadmin`; superadmin can; last-admin protection counts both roles.
+- [x] Run; expect failure.
+- [x] Add role checks, migration promoting the oldest admin when no superadmin exists, and frontend guard acceptance.
+- [x] Run Go + frontend tests.
 
 ### Task 5: CSP nonce for authenticated app routes
 
