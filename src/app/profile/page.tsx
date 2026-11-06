@@ -28,10 +28,8 @@ import {
   X,
   Mail,
 } from 'lucide-react';
-import { generateRandomString, generateCodeChallenge } from '@/lib/pkce';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
 import { UniversityMatchWidget } from '@/components/institutions/UniversityMatchWidget';
-import { loadGoogleIdentity } from '@/lib/google-identity';
 import { SkillRadarChart } from '@/components/dashboard/SkillRadarChart';
 import { profileCopy } from '@/lib/profileCopy';
 import { snoozeCalibrationConsentPrompt } from '@/lib/calibrationConsent';
@@ -228,111 +226,17 @@ function ProfileContent() {
   const handleLink = async (provider: 'google' | 'apple' | 'vk' | 'yandex') => {
     setErrorMsg(null);
     setSuccessMsg(null);
-
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://det-academy.ru';
     const redirectUri = `${origin}/auth/callback`;
-
-    if (provider === 'google') {
-      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-      if (!googleClientId) {
-        setErrorMsg(c.googleMissing);
-        return;
-      }
-
-      try {
-        await loadGoogleIdentity();
-      } catch {
-        setErrorMsg(c.googleSdk);
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const google = (window as any).google;
-      if (google && google.accounts && google.accounts.oauth2) {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: googleClientId,
-          scope: 'openid email profile',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          callback: async (tokenResponse: any) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              try {
-                setActionLoading('google');
-                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                if (userInfoRes.ok) {
-                  const profile = await userInfoRes.json();
-                  await api.linkProvider({
-                    provider: 'google',
-                    code: tokenResponse.access_token,
-                    email: profile.email,
-                    providerUserId: profile.sub || profile.id,
-                  });
-                  setSuccessMsg(c.googleLinked);
-                  await loadProviders();
-                }
-              } catch (e: unknown) {
-                setErrorMsg(e instanceof Error ? e.message : c.googleError);
-              } finally {
-                setActionLoading(null);
-              }
-            }
-          },
-        });
-        client.requestAccessToken();
-        return;
-      }
-
-      // Fallback: redirect
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=token&scope=openid%20email%20profile&state=provider%3Dgoogle%26action%3Dlink`;
-      window.location.href = authUrl;
-      return;
-    }
-
-    if (provider === 'vk') {
-      const vkClientId = process.env.NEXT_PUBLIC_VK_CLIENT_ID || '54805089';
-      if (!vkClientId) {
-        setErrorMsg(c.vkMissing);
-        return;
-      }
-      const codeVerifier = generateRandomString(64);
-      generateCodeChallenge(codeVerifier).then((codeChallenge) => {
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('vk_code_verifier', codeVerifier);
-          sessionStorage.setItem('vk_state', 'provider=vk&action=link');
-        }
-
-        const vkUrl = new URL('https://id.vk.ru/authorize');
-        vkUrl.searchParams.set('response_type', 'code');
-        vkUrl.searchParams.set('client_id', vkClientId);
-        vkUrl.searchParams.set('redirect_uri', redirectUri);
-        vkUrl.searchParams.set('state', 'provider=vk&action=link');
-        vkUrl.searchParams.set('code_challenge', codeChallenge);
-        vkUrl.searchParams.set('code_challenge_method', 's256');
-        vkUrl.searchParams.set('scope', 'vkid.personal_info email');
-
-        window.location.href = vkUrl.toString();
-      });
-      return;
-    }
-
-    if (provider === 'yandex') {
-      const yandexClientId = process.env.NEXT_PUBLIC_YANDEX_CLIENT_ID || '';
-      if (!yandexClientId) {
-        setErrorMsg(c.yandexMissing);
-        return;
-      }
-      const authUrl = `https://oauth.yandex.ru/authorize?response_type=code&client_id=${yandexClientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&state=provider%3Dyandex%26action%3Dlink`;
-      window.location.href = authUrl;
-      return;
-    }
-
-    if (provider === 'apple') {
-      setErrorMsg(c.appleOff);
-      return;
+    setActionLoading(provider);
+    try {
+      // The server creates a one-time link transaction and binds its state to
+      // an HttpOnly cookie. Never build OAuth authorization URLs client-side.
+      const response = await api.startOAuth({ provider, action: 'link', redirectUri });
+      window.location.href = response.url;
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : c.googleError);
+      setActionLoading(null);
     }
   };
 

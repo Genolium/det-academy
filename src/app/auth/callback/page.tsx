@@ -43,9 +43,15 @@ function CallbackContent() {
         hashParams = new URLSearchParams(window.location.hash.substring(1));
       }
       const state = searchParams.get('state') || hashParams?.get('state') || '';
+      const stateParts = state.split('.');
+      const stateAction = stateParts[0] || '';
+      const stateProvider = stateParts[1] || '';
 
-      // 2. Extract provider (from query param or state)
+      // 2. Extract provider (from server-issued state, query param, or legacy state)
       let providerParam = searchParams.get('provider') as 'google' | 'apple' | 'vk' | 'yandex' | null;
+      if (!providerParam && ['google', 'apple', 'vk', 'yandex'].includes(stateProvider)) {
+        providerParam = stateProvider as 'google' | 'apple' | 'vk' | 'yandex';
+      }
       if (!providerParam && state) {
         if (state.includes('yandex')) providerParam = 'yandex';
         else if (state.includes('vk')) providerParam = 'vk';
@@ -66,7 +72,7 @@ function CallbackContent() {
       }
 
       try {
-        const isLinking = state.includes('action=link') || state.includes('link');
+        const isLinking = stateAction === 'link' || state.includes('action=link');
 
         if (isLinking) {
           // Action: Link account in cabinet

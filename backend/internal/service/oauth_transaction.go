@@ -98,6 +98,10 @@ func (s *AuthService) StartOAuth(ctx context.Context, req models.OAuthStartReque
 	if err != nil {
 		return nil, err
 	}
+	// The callback needs to know the action and provider before it consumes the
+	// transaction. Keep them as a non-secret prefix; the random suffix remains
+	// the CSRF-bearing one-time state.
+	state = action + "." + provider + "." + state
 	nonce, err := randomHex(32)
 	if err != nil {
 		return nil, err

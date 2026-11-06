@@ -27,6 +27,9 @@ func TestOAuthTransactionIsOneTimeAndChecksRedirect(t *testing.T) {
 	if response.State == "" || response.URL == "" {
 		t.Fatal("expected state and authorization url")
 	}
+	if !strings.HasPrefix(response.State, "login.google.") {
+		t.Fatalf("state must carry action/provider safely: %q", response.State)
+	}
 	if !strings.Contains(response.URL, "code_challenge") || !strings.Contains(response.URL, response.State) {
 		t.Fatalf("expected PKCE challenge and state in url: %s", response.URL)
 	}
