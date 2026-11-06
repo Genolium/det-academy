@@ -59,6 +59,7 @@ export interface TheoryCatalogLesson {
   formula?: string;
   examples: Array<{ question?: string; sampleText?: string; audioPrompt?: string; modelAnswer: string; comment: string }>;
   pitfalls: string[];
+  is_trackable: boolean;
   publish_status: string;
   version: string;
   updated_at: string;

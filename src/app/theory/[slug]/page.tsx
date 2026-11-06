@@ -28,6 +28,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { sound } from '@/lib/sound';
+import { THEORY_TASK_COUNT } from '@/data/theoryTaxonomy';
 
 interface LessonPageProps {
   params: Promise<{ slug: string }>;
@@ -38,18 +39,17 @@ const PRACTICE_LINKS: Record<string, string> = {
   'rules-and-technicalities': '/test',
   'subscores-and-cat-engine': '/dashboard',
   'read-and-select': '/practice?drill=read-and-select',
-  'listen-and-select': '/practice',
   'fill-in-the-blanks': '/practice?drill=fill-in-the-blanks',
   'read-and-complete': '/practice?drill=read-and-complete',
   'listen-and-type': '/practice?drill=listen-and-type',
-  'read-aloud': '/practice/pronunciation',
   'interactive-reading': '/practice?drill=read-and-complete',
   'interactive-listening': '/practice?drill=listen-and-type',
   'write-about-photo': '/practice?drill=write-about-the-photo',
   'interactive-writing': '/practice?drill=writing-inspector',
   'writing-sample': '/practice?drill=writing-inspector',
   'speak-about-photo': '/practice?drill=speak-about-photo',
-  'read-listen-speak': '/practice?drill=speak-about-photo',
+  'read-then-speak': '/practice?drill=read-then-speak',
+  'interactive-speaking': '/test',
   'speaking-sample': '/practice?drill=speaking-sample',
 };
 
@@ -58,24 +58,22 @@ const THEORY_SOURCES: Record<string, string> = {
   'rules-and-technicalities': 'THEORY.MD · Full Test 3 Duolingo English Test.pdf',
   'subscores-and-cat-engine': 'Subscores explained.pdf · Copy of Production Score.pdf',
   'read-and-select': '20 Vocabulary Tests.pdf · HEDWIG-VOCABULARY.pdf',
-  'listen-and-select': 'Test Your Vocabulary Through Listening.pdf',
   'fill-in-the-blanks': '5 C test (easy) x 84.pdf · 5 C test (hard) x 92.pdf',
   'read-and-complete': '5 C test (easy) x 84.pdf · 5 C test (hard) x 92.pdf',
   'listen-and-type': 'Difficult Dictation 20 Tests.pdf · Dictation Tips.pdf',
-  'read-aloud': 'Read-aloud Tips and Examples.pdf',
   'interactive-reading': 'Full Test 3 Duolingo English Test.pdf · Full test 4.pdf',
   'interactive-listening': '6 interview listen (speaking).pdf · Full test 5.pdf',
   'write-about-photo': 'Copy of Writing - Descrive a picture.pdf · 2 writing image.pdf',
   'interactive-writing': '3 Writing Interview.pdf · Copy of Writing- Tips _ Argument .pdf',
   'writing-sample': '5 writing tips.pdf · Copy of Writing  - Recount.pdf',
   'speak-about-photo': '7 speaking describe image.pdf · Duolingo-short description of image_.pdf',
-  'read-listen-speak': '9 speaking interview read.pdf · 8 speaking free response.pdf',
+  'read-then-speak': 'THEORY.MD · 9 speaking interview read.pdf',
+  'interactive-speaking': 'THEORY.MD · DET Scoring Guide for Teachers (2026).pdf',
   'speaking-sample': 'Speaking - 90 seconds about a topic.pdf · speaking and writing template.pdf',
 };
 
 const INTERACTIVE_EXAMPLE_SLUGS = new Set([
   'read-and-select',
-  'listen-and-select',
   'fill-in-the-blanks',
   'listen-and-type',
 ]);
@@ -127,7 +125,8 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const isCompleted = completedLessons.includes(lesson.slug);
+  const isReference = lesson.isTrackable === false;
+  const isCompleted = !isReference && completedLessons.includes(lesson.slug);
   const title = locale === 'ru' ? lesson.titleRu : lesson.titleEn;
   const categoryLabel = locale === 'ru' ? lesson.categoryLabelRu : lesson.categoryLabelEn;
   const format = locale === 'ru' ? lesson.format : (lesson.formatEn || lesson.format);
@@ -169,7 +168,11 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
           {/* Title Block */}
           <div className="bg-[#111315] text-white p-8 sm:p-10 rounded-3xl border border-neutral-800 shadow-xl mb-8">
             <div className="flex items-center gap-2 text-xs font-mono text-[#D2F544] mb-3">
-              <span>{t.lessonPrefix.toUpperCase()} {lesson.number < 10 ? `0${lesson.number}` : lesson.number} / {lessonsData.length}</span>
+              <span>
+                {isReference
+                  ? t.referenceBadge
+                  : `${t.lessonPrefix.toUpperCase()} ${lesson.number < 10 ? `0${lesson.number}` : lesson.number} / ${THEORY_TASK_COUNT}`}
+              </span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" /> {timeLimit}
@@ -419,7 +422,7 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
             )}
 
             {/* Interactive Dynamic Drill (for practical test modules) */}
-            {lesson.category !== 'rules' && (
+            {!isReference && lesson.category !== 'rules' && lesson.slug !== 'interactive-speaking' && (
               <InteractiveLessonDrill
                 lessonSlug={lesson.slug}
                 category={lesson.category}
@@ -431,25 +434,50 @@ export default function LessonDetailsPage({ params }: LessonPageProps) {
               />
             )}
 
-            {/* Complete Lesson Action */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <div className="text-sm font-bold text-[#0E1012]">
-                  {t.completedQuestion}
+            {!isReference && lesson.slug === 'interactive-speaking' && (
+              <BentoCard variant="light" className="border-emerald-200 bg-emerald-50/40">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#0E1012]">
+                      {locale === 'ru' ? 'Практика Interactive Speaking' : 'Interactive Speaking practice'}
+                    </h2>
+                    <p className="mt-1 text-xs leading-relaxed text-neutral-600">
+                      {locale === 'ru'
+                        ? 'Отдельного тренажёра адаптивного диалога пока нет. Проверьте формат в полном пробном тесте: 6–8 вопросов, 35 секунд на ответ.'
+                        : 'There is no standalone adaptive-conversation drill yet. Try the full mock: 6–8 questions, 35 seconds per answer.'}
+                    </p>
+                  </div>
+                  <Link
+                    href="/test"
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#D2F544] px-5 py-2.5 text-xs font-black text-[#0C2418]"
+                  >
+                    {locale === 'ru' ? 'Открыть пробный тест' : 'Open the mock test'}
+                  </Link>
                 </div>
-                <p className="text-xs text-neutral-500">
-                  {t.completedNote}
-                </p>
+              </BentoCard>
+            )}
+
+            {/* Completion is only available for the 13 graded task lessons. */}
+            {!isReference && (
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-bold text-[#0E1012]">
+                    {t.completedQuestion}
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    {t.completedNote}
+                  </p>
+                </div>
+                <Button
+                  variant={isCompleted ? 'mint' : 'primary'}
+                  size="md"
+                  onClick={() => toggleLessonCompleted(lesson.slug)}
+                  icon={<CheckCircle2 className="w-4 h-4" />}
+                >
+                  {isCompleted ? t.markUndone : t.markDone}
+                </Button>
               </div>
-              <Button
-                variant={isCompleted ? 'mint' : 'primary'}
-                size="md"
-                onClick={() => toggleLessonCompleted(lesson.slug)}
-                icon={<CheckCircle2 className="w-4 h-4" />}
-              >
-                {isCompleted ? t.markUndone : t.markDone}
-              </Button>
-            </div>
+            )}
 
             {/* Bottom Lesson Navigation */}
             <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-neutral-200">

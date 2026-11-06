@@ -49,6 +49,25 @@ const nextConfig: NextConfig = {
     // reads DIRECTUS_INTERNAL_URL at request time.
     return [{ source: '/api/v1/:path*', destination: `${apiTarget}/api/v1/:path*` }];
   },
+  async redirects() {
+    return [
+      {
+        source: '/theory/listen-and-select',
+        destination: '/theory/fill-in-the-blanks',
+        permanent: true,
+      },
+      {
+        source: '/theory/read-aloud',
+        destination: '/theory/read-then-speak',
+        permanent: true,
+      },
+      {
+        source: '/theory/read-listen-speak',
+        destination: '/theory/read-then-speak',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

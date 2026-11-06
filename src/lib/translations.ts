@@ -267,6 +267,9 @@ export interface Translations {
   theory: {
     curriculumBadge: string;
     lessonsCount: string;
+    referenceBadge: string;
+    referenceTitle: string;
+    referenceSubtitle: string;
     title: string;
     progressCardLabel: string;
     progressCardStatus: string;
@@ -757,6 +760,9 @@ export const translations: Record<Locale, Translations> = {
     theory: {
       curriculumBadge: `DET Curriculum ${YEAR}`,
       lessonsCount: '13 типов заданий DET',
+      referenceBadge: 'Справочник',
+      referenceTitle: 'Справочные модули',
+      referenceSubtitle: 'Регламент и устройство оценивания. Не входят в 13 зачётных типов.',
       title: 'База знаний и стратегий DET',
       progressCardLabel: 'Прогресс теории для сертификата:',
       progressCardStatus: 'завершено • Нужно 100% + тест ≥105',
@@ -1245,6 +1251,9 @@ export const translations: Record<Locale, Translations> = {
     theory: {
       curriculumBadge: `DET Curriculum ${YEAR}`,
       lessonsCount: '13 DET task types',
+      referenceBadge: 'Reference',
+      referenceTitle: 'Reference modules',
+      referenceSubtitle: 'Protocol and scoring. Not part of the 13 graded task types.',
       title: 'DET Knowledge Base & Strategies',
       progressCardLabel: 'Curriculum Progress for Certificate:',
       progressCardStatus: 'completed • Requires 100% + Test ≥105',

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useProgressStore } from '@/store/useProgressStore';
+import { TOTAL_LESSONS, useProgressStore } from '@/store/useProgressStore';
 import { api, LinkedProvidersResponse } from '@/lib/api';
 import {
   User as UserIcon,
@@ -907,12 +907,12 @@ function ProfileContent() {
               <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
             <div className="text-2xl font-black text-white">
-              {completedLessons.length} <span className="text-sm font-normal text-neutral-500">/ {locale === 'ru' ? '17 уроков' : '17 lessons'}</span>
+              {completedLessons.length} <span className="text-sm font-normal text-neutral-500">/ {TOTAL_LESSONS} {locale === 'ru' ? 'уроков' : 'lessons'}</span>
             </div>
             <div className="mt-3 w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden">
               <div
                 className="bg-[#D2F544] h-full rounded-full transition-all"
-                style={{ width: `${Math.round((completedLessons.length / 16) * 100)}%` }}
+                style={{ width: `${Math.round((completedLessons.length / TOTAL_LESSONS) * 100)}%` }}
               />
             </div>
           </Link>

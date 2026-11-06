@@ -34,6 +34,7 @@ export default function TheoryCatalogPage() {
           category: d.category as LessonGuide['category'],
           categoryLabelRu: d.category_label_ru,
           categoryLabelEn: d.category_label_en,
+          isTrackable: d.is_trackable !== false,
           format: d.format,
           scoring: d.scoring,
           timeLimit: d.time_limit,
@@ -56,10 +57,16 @@ export default function TheoryCatalogPage() {
     };
   }, []);
 
-  // The intro (`start-here`) is a local orientation lesson, not one of the
-  // 16 certificate modules. Keep it out of the progress denominator so 16/16
-  // is actually reachable.
-  const trackableLessons = lessons.filter((lesson) => lesson.slug !== 'start-here');
+  // The local intro and the two orientation guides are useful reading, but
+  // only the 13 DET task lessons count toward progress and certificates.
+  const introLesson = lessons.find((lesson) => lesson.slug === 'start-here') || null;
+  const trackableLessons = lessons.filter(
+    (lesson) => lesson.slug !== 'start-here' && lesson.isTrackable !== false
+  );
+  const referenceLessons = lessons.filter(
+    (lesson) => lesson.slug !== 'start-here' && lesson.isTrackable === false
+  );
+  const mainLessons = introLesson ? [introLesson, ...trackableLessons] : trackableLessons;
   const totalLessons = trackableLessons.length;
   const validCompletedCount = completedLessons.filter((slug) =>
     trackableLessons.some((l) => l.slug === slug)
@@ -117,8 +124,9 @@ export default function TheoryCatalogPage() {
 
           {/* Lessons List Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lessons.map((lesson) => {
-              const isDone = completedLessons.includes(lesson.slug);
+            {mainLessons.map((lesson) => {
+              const isReference = lesson.slug === 'start-here' || lesson.isTrackable === false;
+              const isDone = !isReference && completedLessons.includes(lesson.slug);
               const title = locale === 'ru' ? lesson.titleRu : lesson.titleEn;
               const categoryLabel = locale === 'ru' ? lesson.categoryLabelRu : lesson.categoryLabelEn;
               const format = locale === 'ru' ? lesson.format : (lesson.formatEn || lesson.format);
@@ -127,6 +135,7 @@ export default function TheoryCatalogPage() {
               return (
                 <BentoCard
                   key={lesson.slug}
+                  data-testid={isReference ? 'theory-reference-card' : 'theory-task-card'}
                   variant="light"
                   className="flex flex-col justify-between group hover:border-[#0E1012] hover:shadow-lg transition-all relative cursor-pointer"
                 >
@@ -146,7 +155,11 @@ export default function TheoryCatalogPage() {
                         {categoryLabel}
                       </PillBadge>
                       <div className="flex items-center gap-1.5 text-xs font-mono">
-                        {isDone ? (
+                        {isReference ? (
+                          <span className="text-neutral-400 flex items-center gap-1 font-bold">
+                            {t.referenceBadge}
+                          </span>
+                        ) : isDone ? (
                           <span className="text-emerald-600 flex items-center gap-1 font-bold">
                             <CheckCircle2 className="w-4 h-4" /> {t.studiedBadge}
                           </span>
@@ -159,7 +172,9 @@ export default function TheoryCatalogPage() {
                     </div>
 
                     <div className="text-xs font-mono text-neutral-400 mb-1">
-                      {t.lessonPrefix} {lesson.number < 10 ? `0${lesson.number}` : lesson.number}
+                      {isReference
+                        ? t.referenceBadge
+                        : `${t.lessonPrefix} ${lesson.number < 10 ? `0${lesson.number}` : lesson.number}`}
                     </div>
                     <h2 className="text-lg font-bold text-[#0E1012] group-hover:text-emerald-700 transition-colors line-clamp-2 mb-3">
                       {title}
@@ -184,6 +199,54 @@ export default function TheoryCatalogPage() {
               );
             })}
           </div>
+
+          {referenceLessons.length > 0 && (
+            <section className="mt-16" aria-labelledby="theory-reference-title">
+              <div className="mb-6">
+                <h2 id="theory-reference-title" className="text-2xl font-black uppercase text-[#0E1012] tracking-tight">
+                  {t.referenceTitle}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-neutral-500">
+                  {t.referenceSubtitle}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {referenceLessons.map((lesson) => {
+                  const title = locale === 'ru' ? lesson.titleRu : lesson.titleEn;
+                  const format = locale === 'ru' ? lesson.format : (lesson.formatEn || lesson.format);
+                  return (
+                    <BentoCard
+                      key={lesson.slug}
+                      data-testid="theory-reference-card"
+                      variant="sage"
+                      className="relative flex flex-col justify-between gap-4"
+                    >
+                      <Link
+                        href={`/theory/${lesson.slug}`}
+                        className="absolute inset-0 z-0 rounded-3xl"
+                        aria-label={title}
+                      />
+                      <div className="relative z-10 pointer-events-none">
+                        <PillBadge variant="slate" prefixHash className="mb-3 text-[10px]">
+                          {t.referenceBadge}
+                        </PillBadge>
+                        <h3 className="text-lg font-bold text-[#0E1012] mb-2">{title}</h3>
+                        <p className="text-xs leading-relaxed text-neutral-600 line-clamp-2">{format}</p>
+                      </div>
+                      <div className="relative z-10 flex justify-end">
+                        <Link
+                          href={`/theory/${lesson.slug}`}
+                          className="inline-flex items-center justify-center gap-1 text-xs font-bold text-[#0E1012] bg-[#D2F544] px-3.5 py-1.5 rounded-full"
+                        >
+                          {t.openGuide} <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </BentoCard>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       </div>
   );
