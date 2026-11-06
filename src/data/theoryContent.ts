@@ -1,4 +1,4 @@
-// DET Academy - Complete 16-Module Curriculum
+// DET Academy - Current 13-task DET curriculum + reference guides
 // Comprehensive Master Textbooks written in clear, pedagogical and natural academic Russian
 // Strictly following neutral encyclopedic guidelines (ВП:ПРГЕН)
 
@@ -10,6 +10,8 @@ export interface LessonGuide {
   category: 'rules' | 'vocab' | 'listening' | 'interactive' | 'images' | 'writing' | 'speaking';
   categoryLabelRu: string;
   categoryLabelEn: string;
+  /** False for orientation/reference pages that never count toward progress. */
+  isTrackable?: boolean;
   format: string;
   formatEn?: string;
   scoring: string;
@@ -37,9 +39,11 @@ export interface LessonGuide {
 }
 
 export const lessonsData: LessonGuide[] = [
+
   {
     "slug": "start-here",
     "number": 0,
+    "isTrackable": false,
     "titleRu": "С чего начать: платформа, экзамен и первые 7 дней",
     "titleEn": "Start here: platform, exam and your first 7 days",
     "category": "rules",
@@ -101,118 +105,10 @@ export const lessonsData: LessonGuide[] = [
       "Считать диапазон на дашборде официальным баллом: это тренировочная оценка с честной пометкой уверенности."
     ]
   },
-  {
-    "slug": "rules-and-technicalities",
-    "number": 1,
-    "titleRu": "Регламент тестирования и технические требования",
-    "titleEn": "Testing protocol and technical requirements",
-    "category": "rules",
-    "categoryLabelRu": "Регламент",
-    "categoryLabelEn": "Protocol",
-    "format": "Десктопное приложение Duolingo English Test с непрерывной видео-, аудио- и экранной записью сессии.",
-    "formatEn": "The DET desktop app with continuous video, audio and screen recording.",
-    "scoring": "Верификация сессии: статус Certified либо отказ в сертификации (Uncertified) при малейшем нарушении протокола.",
-    "timeLimit": "60 мин (45 мин адаптивный CAT-блок + 15 мин образцы речи и письма)",
-    "timeLimitEn": "60 min (45 min adaptive CAT block + 15 min samples)",
-    "mentorIntro": "Экзамен Duolingo English Test проводится дистанционно в специализированном защищенном приложении, однако процедура контроля регламентирована так же строго, как в очных центрах тестирования. Каждая видеозапись анализируется алгоритмами компьютерного зрения (Computer Vision) и затем проходит обязательную повторную проверку двумя независимыми живыми прокторами. Любое несоответствие техническим условиям — от взгляда мимо монитора до шевеления губами без звука — влечет мгновенное аннулирование результатов (Uncertified) без возврата оплаты за попытку.",
-    "rules": [
-      "Полный запрет на бумагу и ручки (No Note-Taking): Запрещено делать любые записи во время теста. Весь анализ, планирование эссе, удержание аргументов и структуры диалога должно происходить исключительно в уме.",
-      "Строгий трекинг взгляда (Gaze Tracking): Взгляд обязан постоянно оставаться в границах экрана. Взгляд вниз на клавиатуру дольше 3 секунд, взгляд в потолок при размышлении или поворот головы в сторону алгоритмически маркируются как считывание внешних подсказок.",
-      "Требования к помещению: В комнате категорически запрещено присутствие посторонних людей, домашних животных, а также любые фоновые звуки (разговоры за дверью, уведомления телефона, шум бытовой техники).",
-      "Полный запрет на наушники: Уши кандидата должны быть непрерывно открыты на камеру. Звук воспроизводится исключительно через внешние динамики компьютера, а микрофон записывает всё окружающее акустическое пространство.",
-      "Обязательный американский английский (US Spelling): В заданиях на восстановление слов (C-Test и Fill in the Blanks) количество пропущенных букв строго фиксировано под американскую орфографию (color, center, analyze, traveling).",
-      "Финальные семплы теперь оцениваются (Graded Samples): Секции Writing Sample и Speaking Sample с 2024 года официально входят в расчет сабскоров Production, Literacy и Conversation, а видеозапись и текст отправляются в приемные комиссии выбранных университетов.",
-      "Устранение минимальных лимитов слов: Хотя формальный порог в 50 слов убран, объем текста и речи напрямую определяет балл за беглость и лексическое разнообразие. Кандидаты на 125-135+ пишут 100-140+ слов."
-    ],
-    "strategySteps": [
-      "Шаг 1: Подготовка рабочего места за 24 часа. Освободите стол от бумаг, книг, стикеров и гаджетов. Обеспечьте яркое фронтальное освещение без контрового света из окна за спиной.",
-      "Шаг 2: Настройка операционной системы. Полностью закройте все фоновые приложения (Telegram, WhatsApp, Discord, Slack), облачные синхронизаторы (Dropbox, OneDrive), утилиты удаленного доступа (AnyDesk, TeamViewer) и плагины проверки правописания (Grammarly).",
-      "Шаг 3: Калибровка взгляда и слепой печати. Установите экран на уровне глаз на расстоянии вытянутой руки. Смотрите на текстовое поле ввода и таймер на экране, тренируйте печать вслепую, чтобы не опускать глаза на клавиатуру.",
-      "Шаг 4: Контроль мимики и дыхания. Приучите себя не читать тексты шепотом и не двигать губами на незвуковых заданиях — алгоритм расценивает шевеление губ как шепот сообщнику.",
-      "Шаг 5: Проверка документов и стабильности сети. Используйте оригинальный заграничный паспорт. Подключите интернет по кабелю Ethernet или сядьте в метре от Wi-Fi роутера со скоростью от 25 Мбит/с."
-    ],
-    "formula": "Чек-лист безупречного прокторинга DET:\n1. Физическая среда: Изолированная комната + пустой стол + уши открыты + фронтальный свет.\n2. Аппаратная часть: Динамики компьютера + встроенный микрофон + закрытые фоновые процессы.\n3. Поведенческий протокол: Взгляд строго на экран + отсутствие шевеления губами + запрет на записи.",
-    "proTips": [
-      "Разница между кандидатом B2 (100–115) и C1 (125–135+): кандидат B2 смотрит на клавиатуру, нервно оглядывается при размышлении, пишет минимальные 50 слов и использует шаблонные слова ('I think', 'important'). Кандидат C1 сохраняет железный фокус на экране, печатает вслепую 110–140 слов с богатым академическим вокабуляром ('It is my firm conviction that', 'of paramount significance') и методично вычитывает текст в последние 45 секунд.",
-      "Поместите наклейку или цветную точку рядом с веб-камерой или центром монитора — если вам трудно держать взгляд, фокусируйтесь на этой точке во время пауз на обдумывание устных ответов.",
-      "Перед запуском теста перезагрузите компьютер и отключите все всплывающие уведомления в системных настройках Windows/macOS, чтобы внезапное системное окно не вызвало сбой сессии.",
-      "Помните: если во время теста вам нужно подумать, смотрите на виртуальный таймер или заголовок вопроса, а не в окно или на пол."
-    ],
-    "examples": [
-      {
-        "question": "Кандидат во время обдумывания аргументов в Writing Sample посмотрел вверх в правый угол на 7 секунд.",
-        "modelAnswer": "Статус прокторинга: Нарушение зафиксировано алгоритмом (Gaze deviation detected). Сессия отклонена с вердиктом 'Looked away from screen for an extended period'. Попытка аннулирована.",
-        "comment": "Держите взгляд строго на текстовом окне или таймере на экране. Даже если вы просто думаете, отводить глаза запрещено."
-      },
-      {
-        "question": "Кандидат в задании Read and Complete вписал британский вариант 'colour' вместо 'color' или 'centre' вместо 'center'.",
-        "modelAnswer": "Оценка C-Test: 0 баллов за данное слово. Система выделила строго 2 символа для 'c_l_r' (color: o, o) и не принимает 6-буквенный 'colour'.",
-        "comment": "DET настроен исключительно на американскую орфографию. Запомните: color, honor, favor, center, theater, realize, analyze, traveler."
-      }
-    ],
-    "pitfalls": [
-      "Опускание глаз на клавиатуру при печати дольше 3 секунд — главная причина аннулирования у кандидатов со слабой слепой печатью.",
-      "Попытка держать рядом черновик или ручку — алгоритм детектирует опускание взгляда и движения рук под столом.",
-      "Шевеление губами при чтении заданий C-Test или Interactive Reading — маркируется как сторонний шепот.",
-      "Внезапный вход родственника в комнату или громкий лай собаки за дверью."
-    ]
-  },
-  {
-    "slug": "subscores-and-cat-engine",
-    "number": 2,
-    "titleRu": "Структура сабскоров и адаптивный алгоритм CAT",
-    "titleEn": "Subscores breakdown and the computer-adaptive engine",
-    "category": "rules",
-    "categoryLabelRu": "Алгоритм",
-    "categoryLabelEn": "Engine",
-    "format": "Адаптивное тестирование CAT (Computer Adaptive Testing) на основе психометрической модели IRT (Item Response Theory).",
-    "formatEn": "Computer-adaptive testing built on an IRT psychometric model.",
-    "scoring": "Общий балл 10–160 с шагом 5 баллов. Четыре интегрированных сабскора: Literacy, Comprehension, Conversation, Production.",
-    "timeLimit": "Динамический адаптивный подбор сложности",
-    "timeLimitEn": "Adaptive difficulty",
-    "mentorIntro": "В Duolingo English Test нет фиксированного набора вопросов одинаковой сложности. Алгоритм CAT непрерывно пересчитывает ваш скрытый уровень владения языком (параметр Theta в модели IRT) после каждого ответа. Правильный ответ повышает сложность последующих вопросов и потолок потенциального балла; серия ошибок снижает сложность заданий, и даже при идеальных последующих ответах система не сможет поднять итоговый балл выше определенного предела. Важно понимать, как устроены четыре интегрированных сабскора, чтобы стратегически распределять усилия.",
-    "rules": [
-      "Literacy (Грамотность): способность читать и писать. Формируется из C-Test, Read and Select, Interactive Reading, Write About Photo, Interactive Writing и Writing Sample.",
-      "Comprehension (Понимание): способность читать и слушать. Формируется из C-Test, Read and Select, Listen and Select, Listen and Type, Interactive Reading и Interactive Listening.",
-      "Conversation (Общение): способность слушать и говорить. Формируется из Listen and Type, Interactive Listening, Read/Listen then Speak, Speak About Photo и Speaking Sample.",
-      "Production (Продуктивные навыки): способность самостоятельно формулировать мысли на письме и в речи. Включает Write About Photo, Interactive Writing, Writing Sample, Speak About Photo, Read/Listen then Speak и Speaking Sample.",
-      "Решающая роль первых заданий: Ошибки на начальных вопросах теста резко занижают расчетную траекторию Theta. Цена ошибки на простом вопросе в начале теста намного выше, чем на ультрасложном вопросе в конце.",
-      "Взаимопроникновение сабскоров: Каждое задание влияет сразу на два сабскора. Например, диктант (Listen and Type) идет одновременно в Comprehension и Conversation."
-    ],
-    "strategySteps": [
-      "Шаг 1: Максимальная концентрация на первых 5-7 вопросах. Не допускайте небрежных опечаток в начале сессии, чтобы алгоритм сразу вывел вас в категорию C1/C2.",
-      "Шаг 2: Фокус на Production — самом слабом сабскоре большинства кандидатов. Средний балл по миру за Production на 15–20 пунктов ниже остальных сабскоров. Чтобы получить 130+, вам нужно подтянуть именно открытое письмо и говорение.",
-      "Шаг 3: Стратегическое использование синтаксиса C1. Алгоритм оценивает лексическую плотность (Lexical Sophistication) и разнообразие грамматических структур (Grammatical Complexity), а не отсутствие ошибок.",
-      "Шаг 4: Управление временем на адаптивных экранах. Не спешите нажимать 'Next' мгновенно: используйте все отведенные секунды для проверки согласования времен и окончаний."
-    ],
-    "formula": "Матрица сабскоров DET:\n• Literacy = Чтение (Read & Select, C-Test, Interactive Reading) + Письмо (Photo, Essays)\n• Comprehension = Чтение (C-Test, Reading) + Аудирование (Listen & Type, Dictations, Dialogues)\n• Conversation = Аудирование (Listening) + Говорение (Photo, Monologues, Samples)\n• Production = Письмо (Essays, Photo) + Говорение (Monologues, Photo, Samples)",
-    "proTips": [
-      "B2 vs C1 в психометрии CAT: Кандидат B2 дает грамматически верные, но лексически бедные ответы ('The weather was bad, so people stayed home'). Алгоритм присваивает такому предложению сложность B1-B2. Кандидат C1 пишет: 'Due to severe meteorological disturbances, the vast majority of residents were compelled to remain indoors', что немедленно поднимает оценку Theta в диапазон 130+.",
-      "В сабскоре Production объем текста критичен: 120 слов грамотного текста с редкими опечатками всегда получат более высокий балл, чем 45 стерильных слов без единой ошибки.",
-      "В сабскоре Conversation алгоритм оценивает акустическую беглость: отсутствие долгих пауз (hesitation markers like 'uhmm, ahhh'), непрерывность потока речи и естественную интонацию.",
-      "Если вам кажется, что задания становятся устрашающе сложными — длинные тексты с редкими научными терминами — это отличный знак: значит, CAT-движок считает вас кандидатом C1/C2!"
-    ],
-    "examples": [
-      {
-        "question": "Кандидат набрал Literacy: 140, Comprehension: 145, Conversation: 120, Production: 105. Каков общий балл?",
-        "modelAnswer": "Общий балл составит приблизительно 125–130. Проседание сабскора Production на 105 сдерживает общий результат кандидата от достижения диапазона 140+.",
-        "comment": "Университеты Лиги Плюща и ведущие вузы Великобритании часто требуют общий балл 125–135 и сабскор Production не ниже 115–120."
-      },
-      {
-        "question": "Как алгоритм реагирует на допущенную ошибку в середине теста?",
-        "modelAnswer": "Алгоритм CAT слегка снижает сложность следующего вопроса. Если вы уверенно и безошибочно отвечаете на него, система восстанавливает высокую траекторию сложности.",
-        "comment": "Никогда не паникуйте после сложного вопроса: алгоритм ищет вашу истинную верхнюю границу возможностей."
-      }
-    ],
-    "pitfalls": [
-      "Спешка в начале теста, приводящая к глупым опечаткам на простых словах.",
-      "Иллюзия, что 'раз убрали минимальный лимит слов, можно написать 2 предложения'. Это гарантирует падение Production ниже 90.",
-      "Игнорирование финальных Writing/Speaking Samples: напоминаем, они теперь напрямую входят в расчет всех сабскоров!"
-    ]
-  },
+
   {
     "slug": "read-and-select",
-    "number": 3,
+    "number": 1,
     "titleRu": "Read and Select: Распознавание академической лексики",
     "titleEn": "Read and select: academic vocabulary recognition",
     "category": "vocab",
@@ -266,62 +162,10 @@ export const lessonsData: LessonGuide[] = [
       "Попадание на слова с правдоподобными латинскими приставками (transductive, preclution)."
     ]
   },
-  {
-    "slug": "listen-and-select",
-    "number": 4,
-    "titleRu": "Listen and Select: Аудиальное распознавание слов",
-    "titleEn": "Listen and select: spoken word recognition",
-    "category": "vocab",
-    "categoryLabelRu": "Аудирование",
-    "categoryLabelEn": "Listening",
-    "format": "Озвучивается одно изолированное слово. Нажатие кнопки 'Yes' (настоящее английское слово) или 'No' (выдуманное слово). Ограничение по времени на каждый элемент.",
-    "formatEn": "One spoken word. Choose Yes for a real English word and No for a pseudoword.",
-    "scoring": "Влияет на Comprehension и Conversation. Работает негативная шкала штрафов за ложноположительные ответы (False Positives).",
-    "timeLimit": "5 секунд на слово",
-    "timeLimitEn": "5 sec per word",
-    "mentorIntro": "Задание Listen and Select оценивает вашу способность на слух отличать реальные английские лексемы от искусственных псевдослов, начитанных носителями языка с идеальным американским акцентом. Сложность заключается в том, что псевдослова произносятся с естественной интонацией и безупречной фонетикой. Вы должны опираться не на то, 'звучит ли это по-английски', а на то, закреплено ли за этим звучанием реальное значение.",
-    "rules": [
-      "Аудио воспроизводится автоматически: вслушивайтесь в первый же слог слова.",
-      "Штраф за ложные нажатия: Нажатие 'Yes' на фейковом слове наказывается строже, чем пропуск сомнительного реального слова.",
-      "Фонетические ловушки (Minimal Pairs): Псевдослова часто отличаются от реальных одним гласным звуком или согласным в слабой позиции.",
-      "Редуцированные гласные (Schwa): Обращайте внимание на безударные слоги — именно там дикторы прячут искусственные фонемы."
-    ],
-    "strategySteps": [
-      "Шаг 1: Акустическая фильтрация. При звуке слова мгновенно визуализируйте его написание в уме.",
-      "Шаг 2: Поиск семантического значения. Задайте контрольный вопрос: 'Что это значит?' Если в голове не возникает образа, перевода или контекста — слово выдумано.",
-      "Шаг 3: Проверка минимальных пар. Убедитесь, что вы слышите именно реальное слово, а не его искаженную копию (например, 'probalistic' вместо 'probabilistic').",
-      "Шаг 4: Быстрое нажатие. При полной уверенности жмите 'Yes'. При малейшем сомнении жмите 'No'."
-    ],
-    "formula": "Фильтр слухового распознавания:\nЗвуковой стимул -> Ментальный образ значения -> YES (если значение четкое).\nЗвуковой стимул -> 'Звучит красиво, но что это?' -> NO (штраф за ложный Yes недопустим).",
-    "proTips": [
-      "Обратите внимание на редукцию гласных в безударных позициях: дикторы могут произносить schwa /ə/, из-за чего слова вроде 'stance', 'cease' или 'specimen' требуют аккуратного вслушивания.",
-      "Слова из реальных тестов DET часто включают академическую лексику: 'attitude', 'maximize', 'pertain', 'specimen', 'quarrel', 'rigid'.",
-      "Игнорируйте харизматичность голоса диктора: актеры озвучивания читают несуществующие слова с такой же естественной интонацией, как и настоящие термины.",
-      "Прислушивайтесь к консонантным кластерам: сочетания звуков, нехарактерные для нормативного английского языка (например, 'swind', 'floop', 'sheck'), сразу указывают на дистрактор."
-    ],
-    "examples": [
-      {
-        "question": "Прослушайте слова и отметьте только реальные английские слова.",
-        "audioPrompt": "stance, terrify, agalition, correction, depact, specimen, denial",
-        "modelAnswer": "Реальные английские слова: stance (позиция), terrify (ужасать), correction (исправление), specimen (образец), denial (отрицание). Псевдослова: agalition, depact.",
-        "comment": "Слово agalition маскируется под абстрактное существительное на -tion, но корня agal- в английском языке нет. Запись depact имитирует структуру глагола с приставкой de-, но также является вымышленной."
-      },
-      {
-        "question": "Прослушайте слова и отметьте только реальные английские слова.",
-        "audioPrompt": "lecture, pertain, sidedown, maximize, floop, potent, satics",
-        "modelAnswer": "Реальные английские слова: lecture (лекция), pertain (относиться), maximize (максимизировать), potent (сильнодействующий). Псевдослова: sidedown, floop, satics.",
-        "comment": "Слова pertain и potent входят в академический корпус C1. Выдуманные элементы floop и satics отсеиваются отсутствием в словаре."
-      }
-    ],
-    "pitfalls": [
-      "Ориентация на общее приятное звучание: кандидаты часто кликают на псевдослова просто потому, что они 'звучат по-английски'.",
-      "Трата более 25 секунд на размышление над одной спорной кнопкой в ущерб анализу остальных вариантов.",
-      "Включение максимальной громкости: слишком высокая громкость в динамиках искажает сибилянты (свистящие и шипящие звуки) и мешает распознаванию тонких окончаний."
-    ]
-  },
+
   {
     "slug": "fill-in-the-blanks",
-    "number": 5,
+    "number": 2,
     "titleRu": "Fill in the Blanks: Заполнение пропусков в предложениях",
     "titleEn": "Fill in the blanks: sentence-level context",
     "category": "vocab",
@@ -370,9 +214,10 @@ export const lessonsData: LessonGuide[] = [
       "Потеря времени на перепечатывание уже предоставленного префикса слова."
     ]
   },
+
   {
     "slug": "read-and-complete",
-    "number": 6,
+    "number": 3,
     "titleRu": "Read and Complete: C-Test восстановление текста",
     "titleEn": "Read and complete: paragraph C-Test",
     "category": "vocab",
@@ -421,9 +266,10 @@ export const lessonsData: LessonGuide[] = [
       "Случайный пропуск незаполненных полей при переходе между ячейками клавишей Tab."
     ]
   },
+
   {
     "slug": "listen-and-type",
-    "number": 7,
+    "number": 4,
     "titleRu": "Listen and Type: Академический диктант",
     "titleEn": "Listen and type: academic audio transcription",
     "category": "listening",
@@ -475,60 +321,10 @@ export const lessonsData: LessonGuide[] = [
       "Замена услышанного слова контекстным синонимом (например, запись 'automobile' вместо 'car')."
     ]
   },
-  {
-    "slug": "read-aloud",
-    "number": 8,
-    "titleRu": "Read Aloud: Чтение текста вслух",
-    "titleEn": "Read aloud: oral reading fluency and pronunciation",
-    "category": "speaking",
-    "categoryLabelRu": "Говорение",
-    "categoryLabelEn": "Speaking",
-    "format": "На экране дано одно предложение (15–25 слов). Дается 20 секунд на подготовку и запись голоса. Автоматический старт и стоп записи.",
-    "formatEn": "One sentence of 15–25 words, 20 seconds to prepare and record.",
-    "scoring": "Влияет на Comprehension и Conversation. Оценивается фонетическая точность, интонационный контур, смысловое членение (chunking) и непрерывность речи без неестественных пауз.",
-    "timeLimit": "20 секунд на подготовку и запись",
-    "timeLimitEn": "20 sec preparation and recording",
-    "mentorIntro": "В задании Read Aloud алгоритм оценивает беглость вашей устной речи, правильность ударений и естественность фразовой интонации. Главная ошибка кандидатов — попытка тараторить без пауз или, наоборот, запинаться на сложных незнакомых словах. Профессиональный подход заключается в правильном смысловом членении (chunking): вы группируете слова в логические смысловые синтагмы и делаете микропаузы строго между ними.",
-    "rules": [
-      "Запись начнется автоматически: следите за индикатором микрофона.",
-      "Никаких исправлений 'на лету': если вы оговорились в слове, НЕ начинайте читать предложение заново с начала. Продолжайте уверенно двигаться вперед.",
-      "Четкая артикуляция окончаний: проговаривайте звуки /s/, /z/, /t/, /d/ в окончаниях множественного числа и прошедшего времени.",
-      "Естественная интонация: понижение тона в конце утвердительного предложения и повышение тона в вопросе."
-    ],
-    "strategySteps": [
-      "Шаг 1: Первые 5 секунд (Немой прогон): Пробегите предложение глазами, разделите его на 2–3 смысловые группы (chunks) и найдите незнакомые или длинные слова.",
-      "Шаг 2: Чтение с умеренным темпом: Говорите ровным, уверенным голосом прямо в микрофон на расстоянии 20–30 см от экрана.",
-      "Шаг 3: Сохраняйте непрерывность: Не делайте пауз внутри устойчивых словосочетаний; пауза допускается только перед союзами и предложными группами.",
-      "Шаг 4: Спокойный финиш: Закончите фразу с нисходящей интонацией и дождитесь завершения записи."
-    ],
-    "formula": "Формула смыслового членения (Chunking):\n[Смысловой блок 1] -> микропауза -> [Смысловой блок 2] -> микропауза -> [Завершающий блок с падением тона]\nПример: [Developments in modern technology] / [have significantly transformed] / [international commerce.]",
-    "proTips": [
-      "Соблюдайте изохронность английского ритма (stress-timed rhythm): интервалы между ударными слогами должны быть примерно одинаковыми по длительности, а безударные слоги компактно сжимаются.",
-      "Не делайте пауз посреди устойчивых словосочетаний или между артиклем и существительным: делайте микропаузы только на запятых и границах придаточных предложений.",
-      "Не повышайте темп искусственно: четкая дикция и естественное интонационное членение приносят больше баллов, чем торопливая скороговорка с проглатыванием согласных.",
-      "Если вы случайно оговорились, сразу же произнесите правильный вариант слова и продолжайте предложение без панических остановок."
-    ],
-    "examples": [
-      {
-        "question": "Текст на экране: 'Developments in technology and transportation infrastructure have made international tourism considerably more affordable.'",
-        "modelAnswer": "Интонационное членение: [Developments in technology ↗] [and transportation infrastructure ↗] [have made international tourism ↗] [considerably more affordable ↘].",
-        "comment": "Слово infrastructure произносится с ударением на первом слоге /ˈɪn.frəˌstrʌk.tʃər/, слово tourism — /ˈtʊə.rɪ.zəm/. Завершение предложения сопровождается естественным понижением тона."
-      },
-      {
-        "question": "Текст на экране: 'By the time of his death, it had damaged his lungs so severely that he could not sing.'",
-        "modelAnswer": "Интонационное членение: [By the time of his death ↗,] [it had damaged his lungs so severely ↗] [that he could not sing ↘].",
-        "comment": "Микропауза строго после вводной фразы на запятой. Связка 'could not sing' произносится с ударением на 'not' и 'sing'."
-      }
-    ],
-    "pitfalls": [
-      "Роботизированное чтение 'слово-за-словом' с одинаковым ударением на артиклях, предлогах и существительных.",
-      "Глотание окончаний множественного числа (-s/-es) и прошедшего времени (-ed).",
-      "Остановка записи до того, как звук последнего слова полностью затих в микрофоне."
-    ]
-  },
+
   {
     "slug": "interactive-reading",
-    "number": 9,
+    "number": 5,
     "titleRu": "Interactive Reading: Академический ридинг-блок",
     "titleEn": "Interactive reading: multi-stage academic passage",
     "category": "interactive",
@@ -578,9 +374,10 @@ export const lessonsData: LessonGuide[] = [
       "Выбор заголовка, содержащего эмоциональные клише вместо научной строгости."
     ]
   },
+
   {
     "slug": "interactive-listening",
-    "number": 10,
+    "number": 6,
     "titleRu": "Interactive Listening: Академический диалог и Summary",
     "titleEn": "Interactive listening: campus dialogue and summary",
     "category": "listening",
@@ -625,9 +422,10 @@ export const lessonsData: LessonGuide[] = [
       "Пересказ несуществующих фактов, которых не было в прослушанном диалоге."
     ]
   },
+
   {
     "slug": "write-about-photo",
-    "number": 11,
+    "number": 7,
     "titleRu": "Write About the Photo: Описание изображения",
     "titleEn": "Write about the photo: visual scene description",
     "category": "images",
@@ -670,9 +468,10 @@ export const lessonsData: LessonGuide[] = [
       "Оборванное предложение на последних секундах таймера."
     ]
   },
+
   {
     "slug": "interactive-writing",
-    "number": 12,
+    "number": 8,
     "titleRu": "Interactive Writing: Двухэтапное эссе",
     "titleEn": "Interactive writing: dual-phase academic essay",
     "category": "writing",
@@ -717,56 +516,10 @@ export const lessonsData: LessonGuide[] = [
       "Короткий текст (менее 70 слов в части 1) — алгоритм не сможет оценить сложный синтаксис."
     ]
   },
-  {
-    "slug": "writing-sample",
-    "number": 13,
-    "titleRu": "Writing Sample: Оцениваемое финальное эссе",
-    "titleEn": "Writing sample: graded admissions essay",
-    "category": "writing",
-    "categoryLabelRu": "Эссе вузам",
-    "categoryLabelEn": "Writing Sample",
-    "format": "Финальное развернутое академическое эссе. Дается ровно 5 минут на написание текста на дискуссионную тему. Таймер на экране.",
-    "formatEn": "The final academic essay, five minutes.",
-    "scoring": "Официально входит в расчет сабскоров Literacy и Production. Кроме того, текст эссе прикрепляется к вашему сертификату и напрямую отправляется в приемные комиссии университетов.",
-    "timeLimit": "5 минут",
-    "timeLimitEn": "5 min",
-    "mentorIntro": "Writing Sample завершает письменную часть экзамена. Раньше это задание было ознакомительным (ungraded), а с 2024 года его оценивает CAT-движок, и оно формирует баллы Literacy и Production. Текст эссе читают офицеры приёмных комиссий (admissions officers) ведущих университетов. Цель ответа: показать зрелость мышления, академический стиль и умение разобрать обе стороны сложной проблемы.",
-    "rules": [
-      "Официально оценивается: задание влияет на общий балл и сабскоры теста.",
-      "Отправка в университеты: текст увидят живые приемные комиссии вузов.",
-      "Лимит 5 минут: целевой объем 110–140 слов.",
-      "Баланс аргументов: обязательно рассмотрите обе точки зрения перед тем, как высказать свой финальный вердикт (Concession & Rebuttal)."
-    ],
-    "strategySteps": [
-      "Секунды 0–30: Анализ дилеммы. Определите две противоборствующие стороны вопроса и сформулируйте свой тезис.",
-      "Минуты 0.5–2.0: Аргумент стороны А (концессия): 'Proponents of [X] often contend that...'.",
-      "Минуты 2.0–3.5: Контраргумент и собственная позиция (опровержение): 'Nonetheless, empirical evidence suggests that [Y] exerts a far more profound impact...'.",
-      "Минуты 3.5–4.2: Конкретный жизненный пример или аналогия.",
-      "Минуты 4.2–5.0: Резюмирующий вывод и обязательная вычитка согласований и артиклей."
-    ],
-    "formula": "Архитектура эссе для приемных комиссий:\n1. Вводный крючок: The controversy surrounding [тема] has sparked considerable debate in modern society.\n2. Анализ стороны А: On the one hand, advocates maintain that [аргумент A].\n3. Опровержение стороны Б: Conversely, it is my firm conviction that [аргумент B], given that [причина].\n4. Пример: A compelling illustration of this can be observed in [пример].\n5. Итог: To recapitulate, despite legitimate counterarguments, [финальный вывод].",
-    "proTips": [
-      "Используйте вводные академические маркеры логики: 'First and foremost', 'In addition to this factor', 'Consequently', 'To substantiate this point'.",
-      "Используйте сложные синтаксические структуры: используйте инверсию ('Rarely do modern societies encounter...'), причастные обороты ('Having evaluated both perspectives...') и условные предложения ('Were universities to subsidize...').",
-      "Тайм-менеджмент: не тратьте более 40 секунд на планирование; пишите уверенно, сохраняя запас времени для финальной вычитки.",
-      "Помните о читателях в приемной комиссии: логичность изложения и ясность аргументов производят такое же сильное впечатление, как и богатый словарный запас."
-    ],
-    "examples": [
-      {
-        "question": "Topic: Some people believe that governments should prioritize funding for public libraries, while others argue that digital resources have made physical libraries obsolete. Discuss your perspective.",
-        "modelAnswer": "The debate regarding the relevance of municipal funding for physical libraries remains highly pertinent in our increasingly digitized era. Although electronic resources provide unparalleled convenience, I firmly advocate that public libraries continue to fulfill indispensable civic and educational functions. Primarily, physical libraries serve as egalitarian community hubs, providing free access to research archives, computer infrastructure, and quiet study environments for individuals who lack such resources at home. For instance, underprivileged students routinely rely on local libraries to complete academic projects and access scholarly databases. Furthermore, certified librarians possess professional information literacy skills, guiding patrons toward credible peer-reviewed literature rather than unverified online claims. In conclusion, rather than viewing physical libraries as obsolete relics, policymakers should regard them as essential public assets deserving of sustained financial commitment.",
-        "comment": "Объем 131 слово. Идеальное академическое построение: перифраз проблемы, два сильных контрастных аргумента (социальная инклюзивность и информационная грамотность) и взвешенный вывод. Богатый академический словарный запас (indispensable, egalitarian, unverified online claims, sustained commitment)."
-      }
-    ],
-    "pitfalls": [
-      "Использование формулировки вопроса 'слово в слово' без перифраза.",
-      "Отсутствие членения текста на логические абзацы (сплошная стена текста).",
-      "Опечатки в базовых словах, допущенные из-за отсутствия 45-секундной финальной вычитки."
-    ]
-  },
+
   {
     "slug": "speak-about-photo",
-    "number": 14,
+    "number": 9,
     "titleRu": "Speak About the Photo: Устное описание изображения",
     "titleEn": "Speak about the photo: oral visual narration",
     "category": "speaking",
@@ -811,56 +564,151 @@ export const lessonsData: LessonGuide[] = [
       "Использование элементарных шаблонов уровня A2: 'I see a girl. She is happy. The room is big.'"
     ]
   },
+
   {
-    "slug": "read-listen-speak",
-    "number": 15,
-    "titleRu": "Read / Listen, Then Speak: Развернутый монолог",
-    "titleEn": "Read or listen, then speak: extended response",
+    "slug": "read-then-speak",
+    "number": 10,
+    "titleRu": "Read, Then Speak: развернутый устный ответ",
+    "titleEn": "Read, Then Speak: Extended Spoken Response",
     "category": "speaking",
-    "categoryLabelRu": "Монолог",
+    "categoryLabelRu": "Говорение",
     "categoryLabelEn": "Speaking",
-    "format": "Текстовая карточка с темой и 3–4 наводящими вопросами (или аудио-вопрос). 20–30 секунд на подготовку и 90 секунд на развернутый устный ответ. Встречается 3 раза за экзамен.",
-    "formatEn": "A topic card with 3–4 prompts, 20–30 seconds to prepare and 90 seconds to speak.",
-    "scoring": "Прямо влияет на Conversation и Production. Оценивается полнота раскрытия всех подпунктов карточки, грамматическая согласованность времен и связность академического дискурса.",
-    "timeLimit": "20–30 сек подготовка / 90 сек говорение",
-    "timeLimitEn": "20–30 sec prep / 90 sec speaking",
-    "mentorIntro": "Read / Listen, Then Speak проверяет вашу способность спонтанно формулировать структурированный монолог по сложной теме. На экране перед вами всегда есть главная тема и 3–4 подпункта (prompts). Эти подпункты — ваш готовый пошаговый план ответа! Самая частая и фатальная ошибка кандидатов — игнорирование грамматических триггеров вопроса: если вопрос сформулирован в Past ('How did you...'), весь фрагмент ответа ОБЯЗАН быть в прошедшем времени; если в гипотетическом ('Would you recommend...'), ответ требует условных конструкций ('I would certainly recommend it because...').",
+    "format": "Письменный промпт на экране. 20 секунд на чтение и планирование, затем 90 секунд записи ответа. Вопрос остается видимым во время ответа.",
+    "formatEn": "One written prompt. 20 seconds to read and plan, then 90 seconds to record. The prompt stays visible while you speak.",
+    "scoring": "Speaking, Conversation, Production. Оценивается полнота ответа на все пункты промпта, связность, диапазон лексики и грамматики, беглость.",
+    "timeLimit": "20 секунд подготовка, 90 секунд ответ",
+    "timeLimitEn": "20 sec prep, 90 sec response",
+    "mentorIntro": "Read, Then Speak — это один письменный промпт с несколькими наводящими вопросами. У вас есть 20 секунд, чтобы прочитать вопрос и собрать план, и 90 секунд на связный ответ. В отличие от старого комбинированного формата, здесь нет аудиоверсии вопроса: вы всегда работаете с текстом на экране.",
     "rules": [
-      "Обязательно ответьте на ВСЕ подпункты на экране: пропуск даже одного вопроса снижает балл за Task Achievement.",
-      "Грамматические триггеры времен (Tense Triggers):\n• 'How did you...' -> Past Simple / Past Continuous.\n• 'Would you recommend...' -> Second Conditional ('I would recommend...').\n• 'How long have you...' -> Present Perfect Continuous ('I have been doing this for...').",
-      "Принцип 'Answer and Expand': ответив на конкретный вопрос, тут же расширьте его личным примером или эмоциональной деталью.",
-      "Дискурсивные связки: связывайте переходы между пунктами ('Moving on to the subsequent aspect...', 'As for the reason why...')."
+      "Промпт содержит основную тему и несколько наводящих вопросов. Ответьте на каждый пункт, а не только на первый.",
+      "Во время записи вопрос остается на экране: используйте его как план ответа.",
+      "Соблюдайте время вопроса: past tenses для личного опыта, would для гипотетических ситуаций, present perfect для опыта к настоящему моменту.",
+      "Не читайте заученный текст: оценивается спонтанная связная речь, а не скорость воспроизведения шаблона."
     ],
     "strategySteps": [
-      "Подготовка (20 сек): Быстро распределите 90 секунд на 3–4 части (по 20–25 секунд на каждый пункт вопроса). Зафиксируйте в уме глаголы нужного времени.",
-      "Секунды 0–25: Ответ на пункт 1 с развертыванием и личным контекстом.",
-      "Секунды 25–50: Ответ на пункт 2 с обоснованием и примером.",
-      "Секунды 50–75: Ответ на пункт 3 (гипотеза или рекомендация).",
-      "Секунды 75–85: Обобщающее заключение и вывод."
+      "0–20 секунд: выделите 2–3 подпункта и короткий тезис для каждого.",
+      "0–30 секунд ответа: дайте прямой ответ на первый пункт и назовите причину.",
+      "30–60 секунд: приведите конкретный пример или короткую историю.",
+      "60–90 секунд: раскройте второй пункт, ответьте на оставшийся вопрос и сформулируйте вывод."
     ],
-    "formula": "Формула раскрытия монолога (Prompt Navigation Protocol):\n• Вводная фраза: Regarding the prompt provided, I would like to discuss [тема].\n• Пункт 1: First and foremost, addressing the question of [пункт 1], [ответ + расширение].\n• Пункт 2: Moving forward to [пункт 2], it is worth emphasizing that [ответ + пример].\n• Пункт 3: Finally, when it comes to [пункт 3], I would argue that [ответ в правильном времени].\n• Финал: All in all, this experience has taught me [вывод].",
+    "formula": "Тезис → причина → пример → вывод. На каждый подпункт промпта: одно прямое предложение, одно пояснение, один пример.",
     "proTips": [
-      "Используйте наводящие вопросы карточки как естественные речевые сигналы перехода: 'Regarding the second aspect concerning...', 'Moving forward to how this influenced my outlook...', 'As for whether I would recommend this approach...'",
-      "Не бойтесь конструировать реалистичный вымышленный опыт: экзаменатор оценивает языковую компетенцию и логическую связность, а не фактическую автобиографичность истории.",
-      "Следите за согласованием времен в рассказе о прошлом: если вы начали повествование в Past Simple, не сбивайтесь на Present Simple в середине истории.",
-      "Обязательно завершайте ответ гармоничной смысловой точкой: монолог, оборванный таймером на середине фразы, оставляет негативное впечатление о контроле времени."
+      "Держите на экране перед глазами ключевые слова вопроса: они помогают не потерять второй и третий пункты.",
+      "Если времени остается мало, переходите к следующему пункту с коротким связующим предложением, а не обрывайте мысль.",
+      "Записывайте ответ естественным темпом: 90 секунд — это примерно 140–180 слов связной речи."
     ],
     "examples": [
       {
-        "question": "Card Prompt: Talk about a challenging project or assignment you recently completed. What was the project about? What obstacles did you encounter? How did you overcome them, and what did you learn?",
-        "modelAnswer": "A particularly challenging academic project that I recently completed was a collaborative statistical research assignment during my final semester. Our objective was to evaluate public transportation efficiency across several metropolitan districts. The principal obstacle our team encountered was significant discrepancies in municipal open-source data, which made quantitative modeling exceptionally difficult. To overcome this hurdle, we scheduled structured consultation sessions with our department lecturer and implemented advanced data-cleaning scripts to standardize our datasets. Through persistent collaboration, we completed the final report ahead of schedule. Ultimately, this demanding experience taught me the critical importance of analytical adaptability, rigorous cross-verification, and cohesive team communication under strict deadlines.",
-        "comment": "Длительность ответа — ровно 80 секунд в ровном академическом темпе. Охвачены все 4 вопроса карточки. Выдержана единая грамматическая ткань Past Simple (was, encountered, implemented, taught), применены сложные академические термины."
+        "question": "Describe a difficult decision you had to make in your studies. What was the situation? Why was the decision difficult? What was the outcome?",
+        "modelAnswer": "A challenging decision I faced during my studies involved choosing between an intensive chemistry course and an environmental science seminar. The choice was difficult because I enjoyed laboratory work, yet the environmental syllabus aligned more closely with my career goals in sustainability. After discussing the options with my academic advisor, I decided to register for the environmental seminar. In retrospect, that choice proved beneficial because it provided practical project experience that later helped me secure a research internship.",
+        "comment": "Ответ охватывает все три пункта промпта за 75 секунд и последовательно использует прошедшее время."
       }
     ],
     "pitfalls": [
-      "Ответ только на первый вопрос карточки с последующим топтанием на месте и нехваткой времени на остальные подпункты.",
-      "Использование настоящего времени при ответе на вопросы о событиях прошлого ('Yesterday I go to the store and see my friend').",
-      "Уход в сторону от темы промпта в абстрактные философские рассуждения."
+      "Подробный ответ только на первый вопрос и нехватка времени на остальные.",
+      "Переход на настоящее время при описании прошлых событий.",
+      "Повтор одного связующего слова вместо разнообразных союзов и вводных конструкций."
     ]
   },
+
+  {
+    "slug": "interactive-speaking",
+    "number": 11,
+    "titleRu": "Interactive Speaking: адаптивный диалог",
+    "titleEn": "Interactive Speaking: Adaptive Conversation",
+    "category": "speaking",
+    "categoryLabelRu": "Говорение",
+    "categoryLabelEn": "Speaking",
+    "format": "Симулированный диалог с анимированным персонажем. 6–8 вопросов по двум темам, 3–4 вопроса на тему. 35 секунд на ответ, без времени на подготовку. Вопрос звучит один раз, следующий зависит от предыдущего ответа.",
+    "formatEn": "A simulated conversation with an animated character. 6–8 questions across two topics, 3–4 per topic. 35 seconds per answer, no preparation time. Each question plays once and the next one adapts to your previous answer.",
+    "scoring": "Speaking и общий балл. Оценивается релевантность ответа, развитие темы, связность, беглость, произношение и способность поддерживать разговор.",
+    "timeLimit": "6–8 вопросов × 35 секунд; 3:30–4:40",
+    "timeLimitEn": "6–8 questions × 35 sec; 3:30–4:40",
+    "mentorIntro": "Interactive Speaking заменил прежний формат с аудио-промптом в июле 2025 года. Это единственное адаптивное задание на говорение: персонаж задает вопрос, вы отвечаете до 35 секунд, а следующий вопрос выбирается с учетом того, что вы сказали. Здесь важна не заученная структура, а умение слышать вопрос и развивать мысль в реальном времени.",
+    "rules": [
+      "Вопрос звучит только один раз; повтора нет.",
+      "На каждый ответ дается до 35 секунд. Говорите естественно и строго по теме вопроса.",
+      "Follow-up зависит от того, что вы сказали: развивайте мысль, а не повторяйте заученный шаблон.",
+      "В диалоге две темы. Следите за сменой темы и не смешивайте ответы из предыдущей части."
+    ],
+    "strategySteps": [
+      "O — Opinion: дайте прямой ответ в первом предложении.",
+      "R — Reason: назовите одну конкретную причину.",
+      "E — Example: добавьте короткий личный пример.",
+      "O — Outcome: сформулируйте вывод или мостик к следующему вопросу.",
+      "Если вопрос не расслышан, переспросите одной короткой фразой и ответьте по ключевым словам."
+    ],
+    "formula": "Opinion → Reason → Example → Outcome. В 35 секундах достаточно двух-трех предложений с одной ясной мыслью.",
+    "proTips": [
+      "Начинайте отвечать сразу: времени на подготовку нет, а пауза в начале съедает самый ценный ресурс.",
+      "Слушайте не только тему, но и форму вопроса: why, how, would you recommend требуют разных грамматических конструкций.",
+      "Если персонаж задает follow-up, используйте в ответе его ключевое слово — это показывает, что вы действительно слушали."
+    ],
+    "examples": [
+      {
+        "question": "Do you think technology makes it easier or harder to concentrate?",
+        "modelAnswer": "I think technology makes concentration harder for most students because every notification competes for attention. For example, when I study, I often check my phone after a message even if the task is not urgent. As a result, I now keep my phone in another room during deep work, which helps me stay focused for longer.",
+        "comment": "Ответ дает позицию, причину, личный пример и практический вывод в рамках 35 секунд."
+      }
+    ],
+    "pitfalls": [
+      "Ответ не по теме вопроса или уход в заученный монолог.",
+      "Слишком длинная пауза в начале ответа: времени на подготовку нет.",
+      "Попытка ответить на все возможные follow-up сразу вместо одного ясного ответа."
+    ]
+  },
+
+  {
+    "slug": "writing-sample",
+    "number": 12,
+    "titleRu": "Writing Sample: Оцениваемое финальное эссе",
+    "titleEn": "Writing sample: graded admissions essay",
+    "category": "writing",
+    "categoryLabelRu": "Эссе вузам",
+    "categoryLabelEn": "Writing Sample",
+    "format": "Финальное развернутое академическое эссе. Дается ровно 5 минут на написание текста на дискуссионную тему. Таймер на экране.",
+    "formatEn": "The final academic essay, five minutes.",
+    "scoring": "Официально входит в расчет сабскоров Literacy и Production. Кроме того, текст эссе прикрепляется к вашему сертификату и напрямую отправляется в приемные комиссии университетов.",
+    "timeLimit": "5 минут",
+    "timeLimitEn": "5 min",
+    "mentorIntro": "Writing Sample завершает письменную часть экзамена. Раньше это задание было ознакомительным (ungraded), а с 2024 года его оценивает CAT-движок, и оно формирует баллы Literacy и Production. Текст эссе читают офицеры приёмных комиссий (admissions officers) ведущих университетов. Цель ответа: показать зрелость мышления, академический стиль и умение разобрать обе стороны сложной проблемы.",
+    "rules": [
+      "Официально оценивается: задание влияет на общий балл и сабскоры теста.",
+      "Отправка в университеты: текст увидят живые приемные комиссии вузов.",
+      "Лимит 5 минут: целевой объем 110–140 слов.",
+      "Баланс аргументов: обязательно рассмотрите обе точки зрения перед тем, как высказать свой финальный вердикт (Concession & Rebuttal)."
+    ],
+    "strategySteps": [
+      "Секунды 0–30: Анализ дилеммы. Определите две противоборствующие стороны вопроса и сформулируйте свой тезис.",
+      "Минуты 0.5–2.0: Аргумент стороны А (концессия): 'Proponents of [X] often contend that...'.",
+      "Минуты 2.0–3.5: Контраргумент и собственная позиция (опровержение): 'Nonetheless, empirical evidence suggests that [Y] exerts a far more profound impact...'.",
+      "Минуты 3.5–4.2: Конкретный жизненный пример или аналогия.",
+      "Минуты 4.2–5.0: Резюмирующий вывод и обязательная вычитка согласований и артиклей."
+    ],
+    "formula": "Архитектура эссе для приемных комиссий:\n1. Вводный крючок: The controversy surrounding [тема] has sparked considerable debate in modern society.\n2. Анализ стороны А: On the one hand, advocates maintain that [аргумент A].\n3. Опровержение стороны Б: Conversely, it is my firm conviction that [аргумент B], given that [причина].\n4. Пример: A compelling illustration of this can be observed in [пример].\n5. Итог: To recapitulate, despite legitimate counterarguments, [финальный вывод].",
+    "proTips": [
+      "Используйте вводные академические маркеры логики: 'First and foremost', 'In addition to this factor', 'Consequently', 'To substantiate this point'.",
+      "Используйте сложные синтаксические структуры: используйте инверсию ('Rarely do modern societies encounter...'), причастные обороты ('Having evaluated both perspectives...') и условные предложения ('Were universities to subsidize...').",
+      "Тайм-менеджмент: не тратьте более 40 секунд на планирование; пишите уверенно, сохраняя запас времени для финальной вычитки.",
+      "Помните о читателях в приемной комиссии: логичность изложения и ясность аргументов производят такое же сильное впечатление, как и богатый словарный запас."
+    ],
+    "examples": [
+      {
+        "question": "Topic: Some people believe that governments should prioritize funding for public libraries, while others argue that digital resources have made physical libraries obsolete. Discuss your perspective.",
+        "modelAnswer": "The debate regarding the relevance of municipal funding for physical libraries remains highly pertinent in our increasingly digitized era. Although electronic resources provide unparalleled convenience, I firmly advocate that public libraries continue to fulfill indispensable civic and educational functions. Primarily, physical libraries serve as egalitarian community hubs, providing free access to research archives, computer infrastructure, and quiet study environments for individuals who lack such resources at home. For instance, underprivileged students routinely rely on local libraries to complete academic projects and access scholarly databases. Furthermore, certified librarians possess professional information literacy skills, guiding patrons toward credible peer-reviewed literature rather than unverified online claims. In conclusion, rather than viewing physical libraries as obsolete relics, policymakers should regard them as essential public assets deserving of sustained financial commitment.",
+        "comment": "Объем 131 слово. Идеальное академическое построение: перифраз проблемы, два сильных контрастных аргумента (социальная инклюзивность и информационная грамотность) и взвешенный вывод. Богатый академический словарный запас (indispensable, egalitarian, unverified online claims, sustained commitment)."
+      }
+    ],
+    "pitfalls": [
+      "Использование формулировки вопроса 'слово в слово' без перифраза.",
+      "Отсутствие членения текста на логические абзацы (сплошная стена текста).",
+      "Опечатки в базовых словах, допущенные из-за отсутствия 45-секундной финальной вычитки."
+    ]
+  },
+
   {
     "slug": "speaking-sample",
-    "number": 16,
+    "number": 13,
     "titleRu": "Speaking Sample: Финальное видеоинтервью",
     "titleEn": "Speaking sample: graded admissions video interview",
     "category": "speaking",
@@ -903,6 +751,119 @@ export const lessonsData: LessonGuide[] = [
       "Прерывание записи на первой минуте из-за волнения или страха перед камерой.",
       "Постоянный отвод глаз вверх или в сторону в попытке 'вспомнить заученный текст'.",
       "Резкий обрыв монолога на полуслове без завершающего синтезирующего вывода."
+    ]
+  },
+
+  {
+    "slug": "rules-and-technicalities",
+    "number": 14,
+    "isTrackable": false,
+    "titleRu": "Регламент тестирования и технические требования",
+    "titleEn": "Testing protocol and technical requirements",
+    "category": "rules",
+    "categoryLabelRu": "Регламент",
+    "categoryLabelEn": "Protocol",
+    "format": "Десктопное приложение Duolingo English Test с непрерывной видео-, аудио- и экранной записью сессии.",
+    "formatEn": "The DET desktop app with continuous video, audio and screen recording.",
+    "scoring": "Верификация сессии: статус Certified либо отказ в сертификации (Uncertified) при малейшем нарушении протокола.",
+    "timeLimit": "60 мин (45 мин адаптивный CAT-блок + 15 мин образцы речи и письма)",
+    "timeLimitEn": "60 min (45 min adaptive CAT block + 15 min samples)",
+    "mentorIntro": "Экзамен Duolingo English Test проводится дистанционно в специализированном защищенном приложении, однако процедура контроля регламентирована так же строго, как в очных центрах тестирования. Каждая видеозапись анализируется алгоритмами компьютерного зрения (Computer Vision) и затем проходит обязательную повторную проверку двумя независимыми живыми прокторами. Любое несоответствие техническим условиям — от взгляда мимо монитора до шевеления губами без звука — влечет мгновенное аннулирование результатов (Uncertified) без возврата оплаты за попытку.",
+    "rules": [
+      "Полный запрет на бумагу и ручки (No Note-Taking): Запрещено делать любые записи во время теста. Весь анализ, планирование эссе, удержание аргументов и структуры диалога должно происходить исключительно в уме.",
+      "Строгий трекинг взгляда (Gaze Tracking): Взгляд обязан постоянно оставаться в границах экрана. Взгляд вниз на клавиатуру дольше 3 секунд, взгляд в потолок при размышлении или поворот головы в сторону алгоритмически маркируются как считывание внешних подсказок.",
+      "Требования к помещению: В комнате категорически запрещено присутствие посторонних людей, домашних животных, а также любые фоновые звуки (разговоры за дверью, уведомления телефона, шум бытовой техники).",
+      "Полный запрет на наушники: Уши кандидата должны быть непрерывно открыты на камеру. Звук воспроизводится исключительно через внешние динамики компьютера, а микрофон записывает всё окружающее акустическое пространство.",
+      "Обязательный американский английский (US Spelling): В заданиях на восстановление слов (C-Test и Fill in the Blanks) количество пропущенных букв строго фиксировано под американскую орфографию (color, center, analyze, traveling).",
+      "Финальные семплы теперь оцениваются (Graded Samples): Секции Writing Sample и Speaking Sample с 2024 года официально входят в расчет сабскоров Production, Literacy и Conversation, а видеозапись и текст отправляются в приемные комиссии выбранных университетов.",
+      "Устранение минимальных лимитов слов: Хотя формальный порог в 50 слов убран, объем текста и речи напрямую определяет балл за беглость и лексическое разнообразие. Кандидаты на 125-135+ пишут 100-140+ слов."
+    ],
+    "strategySteps": [
+      "Шаг 1: Подготовка рабочего места за 24 часа. Освободите стол от бумаг, книг, стикеров и гаджетов. Обеспечьте яркое фронтальное освещение без контрового света из окна за спиной.",
+      "Шаг 2: Настройка операционной системы. Полностью закройте все фоновые приложения (Telegram, WhatsApp, Discord, Slack), облачные синхронизаторы (Dropbox, OneDrive), утилиты удаленного доступа (AnyDesk, TeamViewer) и плагины проверки правописания (Grammarly).",
+      "Шаг 3: Калибровка взгляда и слепой печати. Установите экран на уровне глаз на расстоянии вытянутой руки. Смотрите на текстовое поле ввода и таймер на экране, тренируйте печать вслепую, чтобы не опускать глаза на клавиатуру.",
+      "Шаг 4: Контроль мимики и дыхания. Приучите себя не читать тексты шепотом и не двигать губами на незвуковых заданиях — алгоритм расценивает шевеление губ как шепот сообщнику.",
+      "Шаг 5: Проверка документов и стабильности сети. Используйте оригинальный заграничный паспорт. Подключите интернет по кабелю Ethernet или сядьте в метре от Wi-Fi роутера со скоростью от 25 Мбит/с."
+    ],
+    "formula": "Чек-лист безупречного прокторинга DET:\n1. Физическая среда: Изолированная комната + пустой стол + уши открыты + фронтальный свет.\n2. Аппаратная часть: Динамики компьютера + встроенный микрофон + закрытые фоновые процессы.\n3. Поведенческий протокол: Взгляд строго на экран + отсутствие шевеления губами + запрет на записи.",
+    "proTips": [
+      "Разница между кандидатом B2 (100–115) и C1 (125–135+): кандидат B2 смотрит на клавиатуру, нервно оглядывается при размышлении, пишет минимальные 50 слов и использует шаблонные слова ('I think', 'important'). Кандидат C1 сохраняет железный фокус на экране, печатает вслепую 110–140 слов с богатым академическим вокабуляром ('It is my firm conviction that', 'of paramount significance') и методично вычитывает текст в последние 45 секунд.",
+      "Поместите наклейку или цветную точку рядом с веб-камерой или центром монитора — если вам трудно держать взгляд, фокусируйтесь на этой точке во время пауз на обдумывание устных ответов.",
+      "Перед запуском теста перезагрузите компьютер и отключите все всплывающие уведомления в системных настройках Windows/macOS, чтобы внезапное системное окно не вызвало сбой сессии.",
+      "Помните: если во время теста вам нужно подумать, смотрите на виртуальный таймер или заголовок вопроса, а не в окно или на пол."
+    ],
+    "examples": [
+      {
+        "question": "Кандидат во время обдумывания аргументов в Writing Sample посмотрел вверх в правый угол на 7 секунд.",
+        "modelAnswer": "Статус прокторинга: Нарушение зафиксировано алгоритмом (Gaze deviation detected). Сессия отклонена с вердиктом 'Looked away from screen for an extended period'. Попытка аннулирована.",
+        "comment": "Держите взгляд строго на текстовом окне или таймере на экране. Даже если вы просто думаете, отводить глаза запрещено."
+      },
+      {
+        "question": "Кандидат в задании Read and Complete вписал британский вариант 'colour' вместо 'color' или 'centre' вместо 'center'.",
+        "modelAnswer": "Оценка C-Test: 0 баллов за данное слово. Система выделила строго 2 символа для 'c_l_r' (color: o, o) и не принимает 6-буквенный 'colour'.",
+        "comment": "DET настроен исключительно на американскую орфографию. Запомните: color, honor, favor, center, theater, realize, analyze, traveler."
+      }
+    ],
+    "pitfalls": [
+      "Опускание глаз на клавиатуру при печати дольше 3 секунд — главная причина аннулирования у кандидатов со слабой слепой печатью.",
+      "Попытка держать рядом черновик или ручку — алгоритм детектирует опускание взгляда и движения рук под столом.",
+      "Шевеление губами при чтении заданий C-Test или Interactive Reading — маркируется как сторонний шепот.",
+      "Внезапный вход родственника в комнату или громкий лай собаки за дверью."
+    ]
+  },
+
+  {
+    "slug": "subscores-and-cat-engine",
+    "number": 15,
+    "isTrackable": false,
+    "titleRu": "Структура сабскоров и адаптивный алгоритм CAT",
+    "titleEn": "Subscores breakdown and the computer-adaptive engine",
+    "category": "rules",
+    "categoryLabelRu": "Алгоритм",
+    "categoryLabelEn": "Engine",
+    "format": "Адаптивное тестирование CAT (Computer Adaptive Testing) на основе психометрической модели IRT (Item Response Theory).",
+    "formatEn": "Computer-adaptive testing built on an IRT psychometric model.",
+    "scoring": "Общий балл 10–160 с шагом 5 баллов. Четыре интегрированных сабскора: Literacy, Comprehension, Conversation, Production.",
+    "timeLimit": "Динамический адаптивный подбор сложности",
+    "timeLimitEn": "Adaptive difficulty",
+    "mentorIntro": "В Duolingo English Test нет фиксированного набора вопросов одинаковой сложности. Алгоритм CAT непрерывно пересчитывает ваш скрытый уровень владения языком (параметр Theta в модели IRT) после каждого ответа. Правильный ответ повышает сложность последующих вопросов и потолок потенциального балла; серия ошибок снижает сложность заданий, и даже при идеальных последующих ответах система не сможет поднять итоговый балл выше определенного предела. Важно понимать, как устроены четыре интегрированных сабскора, чтобы стратегически распределять усилия.",
+    "rules": [
+      "Literacy (Грамотность): способность читать и писать. Формируется из Read and Select, Read and Complete, Interactive Reading, Write About the Photo, Interactive Writing и Writing Sample.",
+      "Comprehension (Понимание): способность читать и слушать. Формируется из Read and Select, Fill in the Blanks, Read and Complete, Listen and Type, Interactive Reading и Interactive Listening.",
+      "Conversation (Общение): способность слушать и говорить. Формируется из Listen and Type, Interactive Listening, Read Then Speak, Interactive Speaking, Speak About the Photo и Speaking Sample.",
+      "Production (Продуктивные навыки): способность самостоятельно формулировать мысли на письме и в речи. Включает Write About the Photo, Interactive Writing, Writing Sample, Speak About the Photo, Read Then Speak, Interactive Speaking и Speaking Sample.",
+      "Решающая роль первых заданий: Ошибки на начальных вопросах теста резко занижают расчетную траекторию Theta. Цена ошибки на простом вопросе в начале теста намного выше, чем на ультрасложном вопросе в конце.",
+      "Взаимопроникновение сабскоров: Каждое задание влияет сразу на два сабскора. Например, диктант (Listen and Type) идет одновременно в Comprehension и Conversation."
+    ],
+    "strategySteps": [
+      "Шаг 1: Максимальная концентрация на первых 5-7 вопросах. Не допускайте небрежных опечаток в начале сессии, чтобы алгоритм сразу вывел вас в категорию C1/C2.",
+      "Шаг 2: Фокус на Production — самом слабом сабскоре большинства кандидатов. Средний балл по миру за Production на 15–20 пунктов ниже остальных сабскоров. Чтобы получить 130+, вам нужно подтянуть именно открытое письмо и говорение.",
+      "Шаг 3: Стратегическое использование синтаксиса C1. Алгоритм оценивает лексическую плотность (Lexical Sophistication) и разнообразие грамматических структур (Grammatical Complexity), а не отсутствие ошибок.",
+      "Шаг 4: Управление временем на адаптивных экранах. Не спешите нажимать 'Next' мгновенно: используйте все отведенные секунды для проверки согласования времен и окончаний."
+    ],
+    "formula": "Матрица сабскоров DET:\n• Literacy = Чтение (Read & Select, C-Test, Interactive Reading) + Письмо (Photo, Essays)\n• Comprehension = Чтение (C-Test, Reading) + Аудирование (Listen & Type, Dictations, Dialogues)\n• Conversation = Аудирование (Listening) + Говорение (Photo, Monologues, Samples)\n• Production = Письмо (Essays, Photo) + Говорение (Monologues, Photo, Samples)",
+    "proTips": [
+      "B2 vs C1 в психометрии CAT: Кандидат B2 дает грамматически верные, но лексически бедные ответы ('The weather was bad, so people stayed home'). Алгоритм присваивает такому предложению сложность B1-B2. Кандидат C1 пишет: 'Due to severe meteorological disturbances, the vast majority of residents were compelled to remain indoors', что немедленно поднимает оценку Theta в диапазон 130+.",
+      "В сабскоре Production объем текста критичен: 120 слов грамотного текста с редкими опечатками всегда получат более высокий балл, чем 45 стерильных слов без единой ошибки.",
+      "В сабскоре Conversation алгоритм оценивает акустическую беглость: отсутствие долгих пауз (hesitation markers like 'uhmm, ahhh'), непрерывность потока речи и естественную интонацию.",
+      "Если вам кажется, что задания становятся устрашающе сложными — длинные тексты с редкими научными терминами — это отличный знак: значит, CAT-движок считает вас кандидатом C1/C2!"
+    ],
+    "examples": [
+      {
+        "question": "Кандидат набрал Literacy: 140, Comprehension: 145, Conversation: 120, Production: 105. Каков общий балл?",
+        "modelAnswer": "Общий балл составит приблизительно 125–130. Проседание сабскора Production на 105 сдерживает общий результат кандидата от достижения диапазона 140+.",
+        "comment": "Университеты Лиги Плюща и ведущие вузы Великобритании часто требуют общий балл 125–135 и сабскор Production не ниже 115–120."
+      },
+      {
+        "question": "Как алгоритм реагирует на допущенную ошибку в середине теста?",
+        "modelAnswer": "Алгоритм CAT слегка снижает сложность следующего вопроса. Если вы уверенно и безошибочно отвечаете на него, система восстанавливает высокую траекторию сложности.",
+        "comment": "Никогда не паникуйте после сложного вопроса: алгоритм ищет вашу истинную верхнюю границу возможностей."
+      }
+    ],
+    "pitfalls": [
+      "Спешка в начале теста, приводящая к глупым опечаткам на простых словах.",
+      "Иллюзия, что 'раз убрали минимальный лимит слов, можно написать 2 предложения'. Это гарантирует падение Production ниже 90.",
+      "Игнорирование финальных Writing/Speaking Samples: напоминаем, они теперь напрямую входят в расчет всех сабскоров!"
     ]
   }
 ];

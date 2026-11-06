@@ -54,7 +54,6 @@ const ARENA_ENABLED = process.env.NEXT_PUBLIC_ARENA_ENABLED === 'true';
 const CATEGORY_NAMES: Record<'ru' | 'en', Record<string, string>> = {
   ru: {
     all: 'Все разделы',
-    rules: 'Регламент',
     vocab: 'Словарь',
     listening: 'Аудирование',
     interactive: 'Чтение',
@@ -64,7 +63,6 @@ const CATEGORY_NAMES: Record<'ru' | 'en', Record<string, string>> = {
   },
   en: {
     all: 'All sections',
-    rules: 'Rules',
     vocab: 'Vocabulary',
     listening: 'Listening',
     interactive: 'Reading',
@@ -563,7 +561,7 @@ function DashboardContent() {
                     <div>
                       <p className="text-xs font-bold text-white">{d.theoryModules}</p>
                       <p className="text-[11px] text-neutral-400">
-                        {d.remainingLessons}: <strong className="text-[#D2F544]">{remainingLessonsCount}</strong> / 16
+                        {d.remainingLessons}: <strong className="text-[#D2F544]">{remainingLessonsCount}</strong> / {TOTAL_LESSONS}
                       </p>
                     </div>
                   </div>
@@ -619,7 +617,7 @@ function DashboardContent() {
 
               <div className="mt-3 flex items-center gap-2 text-[10px] text-neutral-500">
                 <div className="flex items-center gap-1">
-                  {completedLessons.length >= 16 ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
+                  {completedLessons.length >= TOTAL_LESSONS ? <Check className="w-3 h-3 text-emerald-400" /> : <Circle className="w-3 h-3" />}
                   <span>{d.lessons16}</span>
                 </div>
                 <span>•</span>
@@ -651,7 +649,7 @@ function DashboardContent() {
                   {locale === 'ru' ? nextLesson.titleRu : nextLesson.titleEn}
                 </h3>
                 <p className="text-xs text-neutral-400 mt-1 max-w-2xl line-clamp-1">
-                  {nextLesson.mentorIntro || (locale === 'ru' ? 'Освойте структуру задания, типичные ловушки прокторов и победную стратегию.' : 'Learn the task structure, the common traps and the winning strategy.')}
+                  {(locale === 'ru' ? 'Освойте структуру задания, типичные ловушки прокторов и победную стратегию.' : 'Learn the task structure, the common traps and the winning strategy.')}
                 </p>
               </div>
             </div>
@@ -1013,7 +1011,7 @@ function DashboardContent() {
           </Link>
         </div>
 
-        {/* 4. Complete 16-Lesson Roadmap & Checklist */}
+        {/* 4. Complete 13-Lesson Roadmap & Checklist */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -1022,7 +1020,7 @@ function DashboardContent() {
                 <span>{d.curriculum}</span>
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                {d.studiedOf}: <strong className="text-[#D2F544]">{completedLessons.length}</strong> / 16.
+                {d.studiedOf}: <strong className="text-[#D2F544]">{completedLessons.length}</strong> / {TOTAL_LESSONS}.
               </p>
             </div>
 

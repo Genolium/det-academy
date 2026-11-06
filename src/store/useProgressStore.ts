@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { api, BackendTestSession, StudyPlanResponse } from '@/lib/api';
 import { hasAuthSession } from '@/lib/auth-session';
+import {
+  THEORY_TASK_COUNT,
+  isTheoryTaskSlug,
+  normalizeTheoryCompletedLessons,
+} from '@/data/theoryTaxonomy';
 
 export interface TestResult {
   id: string;
@@ -72,7 +77,7 @@ interface ProgressState {
   getLeague: () => LeagueInfo;
 }
 
-export const TOTAL_LESSONS = 16;
+export const TOTAL_LESSONS = THEORY_TASK_COUNT;
 
 const getScopedKey = (key: string, userId?: string | null): string => {
   if (!userId) return `det_guest_${key}`;
@@ -119,7 +124,7 @@ const getInitialState = (userId?: string | null) => {
   let completedLessons: string[] = [];
   try {
     const raw = localStorage.getItem(lessonsKey);
-    if (raw) completedLessons = JSON.parse(raw);
+    if (raw) completedLessons = normalizeTheoryCompletedLessons(JSON.parse(raw));
   } catch {}
 
   let testResults: TestResult[] = [];
@@ -370,11 +375,12 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     try {
       const resp = await api.getTheoryProgress();
       if (get().userId === activeUserId && resp && resp.completedLessons) {
-        set({ completedLessons: resp.completedLessons });
+        const normalized = normalizeTheoryCompletedLessons(resp.completedLessons);
+        set({ completedLessons: normalized });
         if (typeof window !== 'undefined') {
           localStorage.setItem(
             getScopedKey('completed_lessons', activeUserId),
-            JSON.stringify(resp.completedLessons)
+            JSON.stringify(normalized)
           );
         }
       }
@@ -383,7 +389,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         const stored = localStorage.getItem(getScopedKey('completed_lessons', activeUserId));
         if (stored) {
           try {
-            set({ completedLessons: JSON.parse(stored) });
+            set({ completedLessons: normalizeTheoryCompletedLessons(JSON.parse(stored)) });
           } catch {}
         } else {
           set({ completedLessons: [] });
@@ -456,6 +462,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   toggleLessonCompleted: async (slug: string) => {
+    if (!isTheoryTaskSlug(slug)) return;
     const state = get();
     const uid = state.userId;
     const exists = state.completedLessons.includes(slug);
@@ -475,7 +482,10 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     try {
       const resp = await api.toggleTheoryLesson(slug);
       if (resp && resp.completedLessons) {
-        set({ completedLessons: resp.completedLessons, progressStatus: 'cache' });
+        set({
+          completedLessons: normalizeTheoryCompletedLessons(resp.completedLessons),
+          progressStatus: 'cache',
+        });
       }
     } catch {
       set({ progressStatus: 'offline' });
