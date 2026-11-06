@@ -5,14 +5,10 @@ import { GeneratedCTest, getRandomGeneratedCTest } from '@/lib/generators/cTestG
 import { generateReadSelectBatch, VocabularyItem, generateRandomFillInBlank, GeneratedFillInBlank } from '@/lib/generators/vocabularyGenerator';
 import { getRandomDictation, DictationItem, playSynthesizedDictation, evaluateDictationAccuracy } from '@/lib/generators/audioDictationGenerator';
 import { getRandomWritingPrompt, WritingPrompt, analyzeWritingVocabulary } from '@/lib/generators/writingPromptGenerator';
-import { 
-  interactiveReadingBank, 
-  interactiveListeningBank, 
-  writePhotoBank, 
-  interactiveWritingBank, 
-  writingSampleBank, 
-  listenTypeBank,
-  readSelectBank 
+import {
+  interactiveReadingBank,
+  interactiveListeningBank,
+  writePhotoBank,
 } from '@/data/questionBank';
 import { sound } from '@/lib/sound';
 import { BentoCard } from '@/components/ui/BentoCard';
@@ -31,13 +27,7 @@ import {
   Lightbulb, 
   AlertCircle, 
   Eye, 
-  Mic, 
-  Square, 
-  ArrowRight, 
-  Check, 
-  Clock, 
-  ShieldAlert,
-  Play
+  Mic,
 } from 'lucide-react';
 
 interface SpeechRecognitionResultItem {
@@ -81,47 +71,43 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   category,
   onDrillCompleted,
 }) => {
-  // Determine active task mechanics based on official 16 lessons
+  // Map the practice drill to the current 13 DET task types.
   const isReadSelect = lessonSlug === 'read-and-select';
-  const isListenSelect = lessonSlug === 'listen-and-select';
   const isFillBlanks = lessonSlug === 'fill-in-the-blanks';
   const isCTest = lessonSlug === 'read-and-complete';
   const isListenType = lessonSlug === 'listen-and-type';
-  const isReadAloud = lessonSlug === 'read-aloud';
   const isInteractiveReading = lessonSlug === 'interactive-reading';
   const isInteractiveListening = lessonSlug === 'interactive-listening';
-  // The practice hub links this drill as "write-about-the-photo"; accept both
-  // slugs so the writing task always renders its prompt and textarea.
+  // Accept the old query slug in bookmarks while using the canonical slug in
+  // new links.
   const isPhotoWriting = lessonSlug === 'write-about-photo' || lessonSlug === 'write-about-the-photo';
   const isInteractiveWriting = lessonSlug === 'interactive-writing';
   const isWritingSample = lessonSlug === 'writing-sample';
   const isPhotoSpeaking = lessonSlug === 'speak-about-photo';
-  const isReadListenSpeak = lessonSlug === 'read-listen-speak';
+  const isReadThenSpeak = lessonSlug === 'read-then-speak';
   const isSpeakingSample = lessonSlug === 'speaking-sample';
 
   // General State
   const [drillCompleted, setDrillCompleted] = useState(false);
   const practiceLimit = isReadSelect
     ? 75
-    : isListenSelect
-      ? 75
-      : isFillBlanks
-        ? 120
-        : isCTest
+    : isFillBlanks
+      ? 120
+      : isCTest
+        ? 180
+        : isListenType
           ? 180
-          : isListenType
-            ? 180
-            : isInteractiveReading
-              ? 420
-              : isInteractiveListening
-                ? 240
-                : isPhotoWriting
-                  ? 180
-                  : isInteractiveWriting
-                    ? 480
-                    : isWritingSample
-                      ? 300
-                      : 0;
+          : isInteractiveReading
+            ? 420
+            : isInteractiveListening
+              ? 240
+              : isPhotoWriting
+                ? 180
+                : isInteractiveWriting
+                  ? 480
+                  : isWritingSample
+                    ? 300
+                    : 0;
   const [practiceTimeLeft, setPracticeTimeLeft] = useState(practiceLimit);
   const [practiceExpired, setPracticeExpired] = useState(false);
   const [assignment, setAssignment] = useState<PracticeAssignment | null>(null);
@@ -177,15 +163,14 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       let qType = '';
       if (isCTest) qType = 'C_TEST';
       else if (isReadSelect) qType = 'READ_SELECT';
-      else if (isListenSelect) qType = 'LISTEN_SELECT';
       else if (isFillBlanks) qType = 'FILL_BLANKS';
       else if (isListenType) qType = 'LISTEN_TYPE';
-      else if (isReadAloud) qType = 'READ_ALOUD';
       else if (isInteractiveReading) qType = 'INTERACTIVE_READING';
       else if (isInteractiveListening) qType = 'INTERACTIVE_LISTENING';
       else if (isPhotoWriting) qType = 'WRITE_PHOTO';
       else if (isInteractiveWriting || isWritingSample) qType = 'WRITING_SAMPLE';
-      else if (isPhotoSpeaking || isReadListenSpeak || isSpeakingSample) qType = 'SPEAKING_SAMPLE';
+      else if (isReadThenSpeak) qType = 'READ_THEN_SPEAK';
+      else if (isPhotoSpeaking || isSpeakingSample) qType = 'SPEAKING_SAMPLE';
 
       if (!qType) return;
       try {
@@ -199,7 +184,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     };
     void fetchAssignment();
     return () => { active = false; };
-  }, [lessonSlug, isCTest, isReadSelect, isListenSelect, isFillBlanks, isListenType, isReadAloud, isInteractiveReading, isInteractiveListening, isPhotoWriting, isInteractiveWriting, isWritingSample, isPhotoSpeaking, isReadListenSpeak, isSpeakingSample]);
+  }, [lessonSlug, isCTest, isReadSelect, isFillBlanks, isListenType, isInteractiveReading, isInteractiveListening, isPhotoWriting, isInteractiveWriting, isWritingSample, isPhotoSpeaking, isReadThenSpeak, isSpeakingSample]);
 
   // 1. C-Test Drill State
   const [cTest, setCTest] = useState<GeneratedCTest>(() => getRandomGeneratedCTest());
@@ -213,14 +198,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [rsAnswers, setRsAnswers] = useState<boolean[]>([]);
   const [rsUserChoices, setRsUserChoices] = useState<boolean[]>([]);
   const [rsFinished, setRsFinished] = useState(false);
-
-  // 3. Listen & Select Drill State (Spoken Audio Words)
-  const [lsWords, setLsWords] = useState<VocabularyItem[]>(() => generateReadSelectBatch(6));
-  const [lsIndex, setLsIndex] = useState(0);
-  const [lsAnswers, setLsAnswers] = useState<boolean[]>([]);
-  const [lsUserChoices, setLsUserChoices] = useState<boolean[]>([]);
-  const [lsFinished, setLsFinished] = useState(false);
-  const [lsPlaying, setLsPlaying] = useState(false);
 
   // 4. Fill in the Blanks Drill State
   const [fib, setFib] = useState<GeneratedFillInBlank>(() => generateRandomFillInBlank());
@@ -236,25 +213,9 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [dictResult, setDictResult] = useState<ReturnType<typeof evaluateDictationAccuracy> | null>(null);
 
-  // 6. Read Aloud State
-  const [readAloudIndex, setReadAloudIndex] = useState(0);
-  const readAloudSentences = [
-    'Developments in technology and transportation infrastructure have made international tourism considerably more affordable.',
-    'By the time of his death, it had damaged his lungs so severely that he could not sing.',
-    'Educational methods include direct teaching, storytelling, collaborative discussions, and empirical research.',
-    'Many prominent university institutions are now starting to offer accessible online courses for international scholars.',
-    'Had I realized the severity of the situation, I would have informed the departmental authorities immediately.'
-  ];
-  const [isRecordingAloud, setIsRecordingAloud] = useState(false);
-  const [aloudTranscript, setAloudTranscript] = useState('');
-  const [aloudScore, setAloudScore] = useState<number | null>(null);
-  const [aloudEvaluated, setAloudEvaluated] = useState(false);
-  const aloudRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
-
   // 7. Interactive Reading State
   const [readingBlockIndex, setReadingBlockIndex] = useState(0);
   const currentReadingBlock = interactiveReadingBank[readingBlockIndex % interactiveReadingBank.length];
-  const [readingSubStep, setReadingSubStep] = useState<1 | 2 | 3>(1);
   const [readingGapChoice, setReadingGapChoice] = useState('');
   const [readingSentenceIdx, setReadingSentenceIdx] = useState<number | null>(null);
   const [readingHighlightDone, setReadingHighlightDone] = useState(false);
@@ -306,15 +267,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setRsUserChoices([]);
     setRsFinished(false);
 
-    // Reset Listen & Select
-    const newLs = generateReadSelectBatch(6);
-    setLsWords(newLs);
-    setLsIndex(0);
-    setLsAnswers([]);
-    setLsUserChoices([]);
-    setLsFinished(false);
-    setLsPlaying(false);
-
     // Reset FIB
     setFib(generateRandomFillInBlank());
     setFibInput('');
@@ -329,14 +281,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setIsPlayingAudio(false);
     setDictResult(null);
 
-    // Reset Read Aloud
-    setIsRecordingAloud(false);
-    setAloudTranscript('');
-    setAloudScore(null);
-    setAloudEvaluated(false);
-
     // Reset Interactive Reading
-    setReadingSubStep(1);
     setReadingGapChoice('');
     setReadingSentenceIdx(null);
     setReadingHighlightDone(false);
@@ -368,16 +313,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
       try { speakingRecognitionRef.current.stop(); } catch {}
     }
   }, [lessonSlug]);
-
-  // Autoplay audio word for Listen & Select when index advances
-  const playCurrentLsWord = () => {
-    if (lsWords[lsIndex]) {
-      setLsPlaying(true);
-      sound.speakEnglish(lsWords[lsIndex].word, () => {
-        setLsPlaying(false);
-      });
-    }
-  };
 
   // -------------------------------------------------------------
   // HANDLERS: C-Test
@@ -492,68 +427,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
   };
 
   // -------------------------------------------------------------
-  // HANDLERS: Listen & Select (Audio Words)
-  // -------------------------------------------------------------
-  const handleLsChoice = (userBelievesReal: boolean) => {
-    const currentWord = lsWords[lsIndex];
-    const isCorrect = userBelievesReal === currentWord.isReal;
-    const newAnswers = [...lsAnswers, isCorrect];
-    const newChoices = [...lsUserChoices, userBelievesReal];
-    setLsAnswers(newAnswers);
-    setLsUserChoices(newChoices);
-
-    if (lsIndex + 1 < lsWords.length) {
-      setLsIndex(lsIndex + 1);
-    } else {
-      setLsFinished(true);
-      const correctTotal = newAnswers.filter(Boolean).length;
-      const scoreRatio = lsWords.length > 0 ? correctTotal / lsWords.length : 0;
-      const clientPassed = correctTotal >= Math.floor(lsWords.length * 0.5);
-
-      setIsServerGrading(true);
-      setServerGradeError(null);
-      void (async () => {
-        try {
-          const res = await api.recordPracticeAttempt({
-            assignmentId: assignment?.assignmentId,
-            questionId: assignment?.questionId,
-            questionType: 'LISTEN_SELECT',
-            promptContext: 'Listen and Select audio vocabulary drill',
-            userResponse: { answers: newAnswers, choices: newChoices, total: lsWords.length },
-            isCorrect: correctTotal === lsWords.length,
-            score: scoreRatio,
-          });
-          setServerGradedBadge({ isCorrect: res.isCorrect, score: res.score });
-          if (res.isCorrect || res.score >= 0.5 || clientPassed) {
-            setDrillCompleted(true);
-            onDrillCompleted?.();
-          }
-        } catch {
-          // A failed server submission must not be presented as verified
-          // mastery. Local practice remains available only without an
-          // assignment (guest/offline mode).
-          if (!hasServerAssignment && clientPassed) {
-            setDrillCompleted(true);
-            onDrillCompleted?.();
-          }
-        } finally {
-          setIsServerGrading(false);
-        }
-      })();
-    }
-  };
-
-  const handleLsReset = () => {
-    setLsWords(generateReadSelectBatch(6));
-    setLsIndex(0);
-    setLsAnswers([]);
-    setLsUserChoices([]);
-    setLsFinished(false);
-    setServerGradedBadge(null);
-    setServerGradeError(null);
-  };
-
-  // -------------------------------------------------------------
   // HANDLERS: Fill in the Blanks
   // -------------------------------------------------------------
   const handleFibCheck = async () => {
@@ -660,84 +533,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     setDictResult(null);
     setServerGradedBadge(null);
     setServerGradeError(null);
-  };
-
-  // -------------------------------------------------------------
-  // HANDLERS: Read Aloud
-  // -------------------------------------------------------------
-  const targetAloudSentence = readAloudSentences[readAloudIndex % readAloudSentences.length];
-
-  const toggleReadAloudRecording = () => {
-    if (isRecordingAloud) {
-      // Stop recording
-      setIsRecordingAloud(false);
-      if (aloudRecognitionRef.current) {
-        try { aloudRecognitionRef.current.stop(); } catch {}
-      }
-      evaluateAloudFluency(aloudTranscript);
-    } else {
-      // Start recording
-      setAloudTranscript('');
-      setAloudEvaluated(false);
-      setAloudScore(null);
-
-      const win = typeof window !== 'undefined' ? (window as unknown as WindowWithSpeech) : null;
-      const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        try {
-          const rec = new SpeechRecognition();
-          rec.lang = 'en-US';
-          rec.continuous = true;
-          rec.interimResults = true;
-          rec.onresult = (evt: SpeechRecognitionEventLike) => {
-            let fullText = '';
-            for (let i = 0; i < evt.results.length; ++i) {
-              fullText += evt.results[i][0].transcript + ' ';
-            }
-            setAloudTranscript(fullText.trim());
-          };
-          rec.onerror = () => {
-            setIsRecordingAloud(false);
-          };
-          aloudRecognitionRef.current = rec;
-          rec.start();
-          setIsRecordingAloud(true);
-        } catch {
-          setIsRecordingAloud(false);
-          setAloudTranscript('Не удалось получить доступ к микрофону. Проверьте разрешения в браузере.');
-          setAloudScore(0);
-          setAloudEvaluated(true);
-        }
-      } else {
-        setIsRecordingAloud(false);
-        setAloudTranscript('Распознавание речи не поддерживается в вашем браузере.');
-        setAloudScore(0);
-        setAloudEvaluated(true);
-      }
-    }
-  };
-
-  const evaluateAloudFluency = (text: string) => {
-    if (!text || text.trim().length === 0) {
-      setAloudScore(0);
-      setAloudEvaluated(true);
-      return;
-    }
-    const cleanTarget = targetAloudSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-    const cleanUser = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-    let matched = 0;
-    cleanTarget.forEach((word) => {
-      if (cleanUser.includes(word)) matched++;
-    });
-    const ratio = matched / Math.max(1, cleanTarget.length);
-    const percent = Math.min(100, Math.round(ratio * 100));
-    setAloudScore(percent);
-    setAloudEvaluated(true);
-    void persistDrillAttempt('READ_ALOUD', { transcript: text, matchPercent: percent }, percent >= 60, percent / 100);
-    if (percent >= 60) {
-      setDrillCompleted(true);
-      onDrillCompleted?.();
-    }
   };
 
   // -------------------------------------------------------------
@@ -872,7 +667,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
     }
     const words = (speakingTranscriptRef.current || '').trim().split(/\s+/).filter(Boolean);
     if (words.length >= 5) {
-      const speakType = isReadAloud ? 'READ_ALOUD' : isReadListenSpeak ? 'READ_THEN_SPEAK' : 'SPEAKING_SAMPLE';
+      const speakType = isReadThenSpeak ? 'READ_THEN_SPEAK' : 'SPEAKING_SAMPLE';
       void persistDrillAttempt(speakType, {
         transcript: speakingTranscriptRef.current,
         durationSec: 60,
@@ -1045,106 +840,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 <div className="flex justify-center">
                   <Button size="md" onClick={handleRsReset}>
                     <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Тренировать еще 8 слов
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* LESSON 4: LISTEN AND SELECT (Spoken Audio Words Drill) */}
-        {/* ========================================================================= */}
-        {isListenSelect && (
-          <div>
-            {!lsFinished ? (
-              <div className="text-center py-6">
-                <div className="text-xs font-bold text-neutral-400 mb-2">
-                  Аудио-слово {lsIndex + 1} из {lsWords.length} · Сложность {lsWords[lsIndex].difficulty}
-                </div>
-                
-                {/* Audio Button with prompt */}
-                <div className="my-6">
-                  <button
-                    onClick={playCurrentLsWord}
-                    className="w-20 h-20 mx-auto rounded-3xl bg-[#D2F544] hover:bg-[#c4f22c] text-[#0C2418] flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
-                  >
-                    <Volume2 className={`w-10 h-10 ${lsPlaying ? 'animate-pulse' : ''}`} />
-                  </button>
-                  <p className="text-xs text-neutral-500 font-medium mt-3">
-                    Нажмите, чтобы прослушать произношение слова вслух
-                  </p>
-                </div>
-
-                <div className="flex justify-center gap-4 max-w-sm mx-auto">
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-neutral-300 hover:border-red-500 text-red-700 font-bold py-3 text-sm cursor-pointer"
-                    onClick={() => handleLsChoice(false)}
-                  >
-                    <XCircle className="w-4 h-4 mr-1.5" /> Ловушка / Фейк (No)
-                  </Button>
-                  <Button
-                    className="flex-1 bg-[#D2F544] text-neutral-900 font-bold hover:bg-[#c3e839] py-3 text-sm cursor-pointer"
-                    onClick={() => handleLsChoice(true)}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-1.5" /> Реальное английское (Yes)
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="text-center py-4 mb-4">
-                  <Trophy className="w-10 h-10 text-amber-500 mx-auto mb-2" />
-                  <h4 className="text-lg font-black text-neutral-900">Раунд аудирования завершен!</h4>
-                  <p className="text-xs text-neutral-600">
-                    Верно распознано на слух: <b>{lsAnswers.filter(Boolean).length} из {lsWords.length} слов</b>
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-5">
-                  <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200 font-bold text-xs uppercase tracking-wider text-neutral-600">
-                    Анализ аудио-слов и ловушек:
-                  </div>
-                  <div className="divide-y divide-neutral-200">
-                    {lsWords.map((item, idx) => {
-                      const isCorrect = lsAnswers[idx];
-                      const userChoice = lsUserChoices[idx];
-                      return (
-                        <div key={idx} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => sound.speakEnglish(item.word)}
-                                className="p-1.5 rounded-lg bg-neutral-100 hover:bg-[#D2F544] text-neutral-800 transition-colors"
-                              >
-                                <Volume2 className="w-4 h-4" />
-                              </button>
-                              <span className="text-base font-black text-neutral-900">{item.word}</span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                item.isReal ? 'bg-green-100 text-green-900' : 'bg-amber-100 text-amber-900'
-                              }`}>
-                                {item.isReal ? 'Настоящее слово (C1/C2)' : 'DET Trap (Фонетическая ловушка)'}
-                              </span>
-                            </div>
-                            <p className="text-neutral-600 mt-1 text-xs leading-relaxed">{item.definition}</p>
-                          </div>
-                          <div className="text-right whitespace-nowrap">
-                            <span className={`font-bold px-2.5 py-1 rounded-lg text-xs ${
-                              isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {isCorrect ? '✓ Верно' : `✕ Ошибка (Вы: ${userChoice ? 'Yes' : 'No'})`}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex justify-center">
-                  <Button size="md" onClick={handleLsReset}>
-                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Еще 6 аудио-слов
                   </Button>
                 </div>
               </div>
@@ -1419,90 +1114,6 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* LESSON 8: READ ALOUD (Speaking & Fluency) */}
-        {/* ========================================================================= */}
-        {isReadAloud && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
-                Read Aloud · Устная беглость и фонемный контроль
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setReadAloudIndex((prev) => prev + 1);
-                  setIsRecordingAloud(false);
-                  setAloudTranscript('');
-                  setAloudScore(null);
-                  setAloudEvaluated(false);
-                }}
-                className="text-xs"
-              >
-                <RotateCcw className="w-3 h-3 mr-1" /> Другое предложение
-              </Button>
-            </div>
-
-            {/* Sentence card */}
-            <div className="p-6 bg-white rounded-2xl border-2 border-neutral-200 mb-6 text-center">
-              <p className="text-xl sm:text-2xl font-bold text-neutral-900 leading-relaxed mb-4">
-                &ldquo;{targetAloudSentence}&rdquo;
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => sound.speakEnglish(targetAloudSentence)}
-                  className="text-xs"
-                >
-                  <Volume2 className="w-3.5 h-3.5 mr-1" /> Эталонное звучание
-                </Button>
-              </div>
-            </div>
-
-            {/* Microphone record action */}
-            <div className="flex flex-col items-center justify-center py-4 bg-neutral-50 rounded-2xl border border-neutral-200">
-              <button
-                onClick={toggleReadAloudRecording}
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
-                  isRecordingAloud
-                    ? 'bg-red-500 text-white animate-pulse shadow-lg scale-105'
-                    : 'bg-[#D2F544] text-[#0C2418] hover:bg-[#c3e839]'
-                }`}
-              >
-                {isRecordingAloud ? <Square className="w-6 h-6 fill-current" /> : <Mic className="w-7 h-7" />}
-              </button>
-              <span className="text-xs font-bold text-neutral-700 mt-3">
-                {isRecordingAloud ? 'Запись идет... Читайте предложение в микрофон' : 'Нажмите на микрофон и прочитайте вслух'}
-              </span>
-              <span className="text-[11px] text-neutral-400 mt-0.5">Лимит времени в реальном тесте: 20 секунд</span>
-            </div>
-
-            {/* Results breakdown */}
-            {aloudEvaluated && (
-              <div className="mt-4 p-5 bg-white rounded-2xl border border-neutral-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-base font-black text-neutral-900 flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber-500" />
-                    Совпадение речи: {aloudScore}%
-                  </div>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                    aloudScore! >= 70 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'
-                  }`}>
-                    {aloudScore! >= 70 ? 'Высокая беглость (C1)' : 'Требует четкости'}
-                  </span>
-                </div>
-
-                <div className="text-xs text-neutral-600 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-                  <span className="font-bold block text-neutral-800 mb-1">Распознанная речь (Speech-to-Text):</span>
-                  <i>{aloudTranscript || 'Произношение зафиксировано'}</i>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
         {/* LESSON 9: INTERACTIVE READING */}
         {/* ========================================================================= */}
         {isInteractiveReading && (
@@ -1521,8 +1132,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
                 variant="ghost"
                 onClick={() => {
                   setReadingBlockIndex((prev) => prev + 1);
-                  setReadingSubStep(1);
-                  setReadingGapChoice('');
+                                setReadingGapChoice('');
                   setReadingSentenceIdx(null);
                   setReadingHighlightDone(false);
                   setReadingChecked(false);
@@ -1901,16 +1511,16 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
         {/* ========================================================================= */}
         {/* LESSONS 14, 15, 16: SPOKEN MONOLOGUES & SAMPLES */}
         {/* ========================================================================= */}
-        {(isPhotoSpeaking || isReadListenSpeak || isSpeakingSample) && (
+        {(isPhotoSpeaking || isReadThenSpeak || isSpeakingSample) && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
                 {isPhotoSpeaking ? 'Speak About the Photo · 75–85 секунд монолога' :
-                 isReadListenSpeak ? 'Read / Listen, Then Speak · Развернутый ответ по карточке' :
+                 isReadThenSpeak ? 'Read, Then Speak · Развернутый ответ по карточке' :
                  'Speaking Sample · Итоговое академическое видеоинтервью'}
               </span>
               <span className="text-xs font-mono font-bold text-neutral-400">
-                Целевое время: {isPhotoSpeaking ? '80 сек' : isReadListenSpeak ? '90 сек' : '120–150 сек'}
+                Целевое время: {isPhotoSpeaking ? '80 сек' : isReadThenSpeak ? '90 сек' : '120–150 сек'}
               </span>
             </div>
 
@@ -1935,7 +1545,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
               </div>
             )}
 
-            {isReadListenSpeak && (
+            {isReadThenSpeak && (
               <div className="p-5 bg-white rounded-2xl border-2 border-neutral-200 mb-5">
                 <span className="text-xs font-bold text-[#0C2418] uppercase tracking-wider block mb-2">
                   Карточка вопроса (Card Prompt):
@@ -1970,7 +1580,7 @@ export const InteractiveLessonDrill: React.FC<InteractiveLessonDrillProps> = ({
               {!isSpeakingActive ? (
                 <div>
                   <button
-                    onClick={() => startSpeakingTimer(isPhotoSpeaking ? 80 : isReadListenSpeak ? 90 : 120)}
+                    onClick={() => startSpeakingTimer(isPhotoSpeaking ? 80 : isReadThenSpeak ? 90 : 120)}
                     className="w-16 h-16 mx-auto rounded-full bg-[#D2F544] hover:bg-[#c3e839] text-[#0C2418] flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer mb-3"
                   >
                     <Mic className="w-8 h-8" />

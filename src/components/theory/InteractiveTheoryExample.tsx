@@ -51,7 +51,6 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
 
   const word = useMemo(() => wordFromQuestion(example.question), [example.question]);
   const isReadSelect = lessonSlug === 'read-and-select';
-  const isListenSelect = lessonSlug === 'listen-and-select';
   const isFill = lessonSlug === 'fill-in-the-blanks';
   const isDictation = lessonSlug === 'listen-and-type';
 
@@ -74,9 +73,6 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
     if (isReadSelect) {
       const expectedYes = /\byes\b/i.test(example.modelAnswer);
       ok = (normalized === 'yes') === expectedYes;
-    } else if (isListenSelect) {
-      const expectedReal = !normalize(example.modelAnswer).includes('не выбирать');
-      ok = (normalized === 'real') === expectedReal;
     } else {
       ok = normalize(value) === normalize(expected);
     }
@@ -112,20 +108,6 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
           </span>
           </div>
         </div>
-      ) : isListenSelect ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void sound.speakEnglish(word || example.audioPrompt || expected)}
-            className="inline-flex items-center gap-2 rounded-full border border-[#D2F544]/40 bg-[#D2F544]/10 px-4 py-2 text-xs font-bold text-[#D2F544] hover:bg-[#D2F544]/20"
-          >
-            <Volume2 className="h-3.5 w-3.5" />
-            {ru ? 'Прослушать слово' : 'Play the word'}
-          </button>
-          <span className="text-[11px] text-neutral-500">
-            {ru ? 'Реальное слово или псевдослово?' : 'Real word or pseudo-word?'}
-          </span>
-        </div>
       ) : isReadSelect ? (
         <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-5 py-4 text-center">
           <span className="font-mono text-2xl font-bold text-white">{word || '—'}</span>
@@ -136,43 +118,22 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
         </div>
       )}
 
-      {isReadSelect || isListenSelect ? (
+      {isReadSelect ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {isReadSelect ? (
-            <>
-              <button
-                type="button"
-                onClick={() => submit('yes')}
-                className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white"
-              >
-                {ru ? 'Реальное слово' : 'Real word'}
-              </button>
-              <button
-                type="button"
-                onClick={() => submit('no')}
-                className="rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white"
-              >
-                {ru ? 'Псевдослово' : 'Pseudo-word'}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => submit('real')}
-                className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white"
-              >
-                {ru ? 'Выбрать' : 'Select'}
-              </button>
-              <button
-                type="button"
-                onClick={() => submit('fake')}
-                className="rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white"
-              >
-                {ru ? 'Не выбирать' : 'Do not select'}
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => submit('yes')}
+            className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white"
+          >
+            {ru ? 'Реальное слово' : 'Real word'}
+          </button>
+          <button
+            type="button"
+            onClick={() => submit('no')}
+            className="rounded-full bg-rose-600 px-4 py-2 text-xs font-bold text-white"
+          >
+            {ru ? 'Псевдослово' : 'Pseudo-word'}
+          </button>
         </div>
       ) : (
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -221,11 +182,7 @@ export function InteractiveTheoryExample({ lessonSlug, example }: InteractiveThe
                 ? /\byes\b/i.test(example.modelAnswer)
                   ? 'YES'
                   : 'NO'
-                : isListenSelect
-                  ? normalize(example.modelAnswer).includes('не выбирать')
-                    ? ru ? 'Не выбирать' : 'Do not select'
-                    : ru ? 'Выбрать' : 'Select'
-                  : expected}
+                : expected}
             </strong>
           </p>
           {example.comment ? <p className="mt-1 opacity-80">{example.comment}</p> : null}

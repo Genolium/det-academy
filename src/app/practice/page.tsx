@@ -74,7 +74,8 @@ export default function PracticeHubPage() {
     const drill = new URLSearchParams(window.location.search).get('drill');
     const valid = new Set([
       'read-and-complete', 'read-and-select', 'fill-in-the-blanks', 'listen-and-type',
-      'speak-about-photo', 'speaking-sample', 'writing-inspector', 'write-about-the-photo',
+      'speak-about-photo', 'speaking-sample', 'writing-inspector', 'write-about-photo',
+      'write-about-the-photo', 'read-then-speak',
     ]);
     if (drill && valid.has(drill)) setActiveDrillSlug(drill);
   }, []);
@@ -158,13 +159,13 @@ export default function PracticeHubPage() {
     {
       id: 'pronunciation',
       href: '/practice/pronunciation',
-      title: locale === 'ru' ? 'Фонемная практика' : 'Phoneme Practice',
+      title: locale === 'ru' ? 'Фонемная практика (дополнительно)' : 'Phoneme practice (supplementary)',
       description:
         locale === 'ru'
-          ? 'Прочитайте предложение вслух и сравните услышанные фонемы с эталоном.'
-          : 'Read a sentence aloud and compare the recognised phonemes with the reference.',
+          ? 'Дополнительная тренировка произношения: прочитайте предложение вслух и сравните фонемы с эталоном. Это не отдельный тип задания DET.'
+          : 'Supplementary pronunciation practice: read a sentence aloud and compare phonemes with the reference. This is not a DET task type.',
       icon: <Mic className="w-6 h-6 text-[#0C2418]" />,
-      badge: 'G2P + IPA',
+      badge: locale === 'ru' ? 'Вне 13 типов' : 'Outside the 13 tasks',
       actionText: locale === 'ru' ? 'Начать разбор' : 'Start analysis',
     },
     {
@@ -178,7 +179,7 @@ export default function PracticeHubPage() {
     },
     {
       id: 'photo-writing',
-      slug: 'write-about-the-photo',
+      slug: 'write-about-photo',
       title: 'Writing Lab & Photo Studio',
       description: copy.categories['photo-writing'].description,
       icon: <Camera className="w-6 h-6 text-[#0C2418]" />,

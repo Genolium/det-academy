@@ -129,7 +129,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path.endsWith('/theory/progress')) {
       return json(route, 200, {
         completedLessons: [],
-        totalLessons: 16,
+        totalLessons: 13,
         progressPercent: 0,
         isAllCompleted: false,
       });

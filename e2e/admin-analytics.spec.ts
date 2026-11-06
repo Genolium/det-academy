@@ -62,7 +62,7 @@ async function mockAdminAnalytics(page: Page) {
     }
     if (path.endsWith('/user/streak')) return json(route, 200, { streakDays: 0, lastActiveDate: '' });
     if (path.endsWith('/theory/progress')) {
-      return json(route, 200, { completedLessons: [], totalLessons: 16, progressPercent: 0, isAllCompleted: false });
+      return json(route, 200, { completedLessons: [], totalLessons: 13, progressPercent: 0, isAllCompleted: false });
     }
     if (path.endsWith('/test/sessions/me')) return json(route, 200, { sessions: [] });
     if (path.endsWith('/user/errors')) return json(route, 200, { errors: [] });
