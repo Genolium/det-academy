@@ -244,6 +244,11 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     if (path.endsWith('/banners') || path.includes('/banners?')) {
       return json(route, 200, []);
     }
+    if (path.endsWith('/user/dashboard') && method === 'GET') {
+      // Default tests use the legacy fallback; dashboard-aggregate.spec.ts
+      // overrides this route with a realistic payload.
+      return json(route, 404, { error: 'dashboard aggregate not mocked' });
+    }
     if (path.endsWith('/user/streak') && method === 'GET') {
       return json(route, 200, { streakDays: 0, lastActiveDate: '' });
     }

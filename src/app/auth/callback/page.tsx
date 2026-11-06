@@ -4,7 +4,6 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useProgressStore } from '@/store/useProgressStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { Loader2, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -13,7 +12,6 @@ function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { oauthLogin } = useAuthStore();
-  const { syncWithBackend } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = (ruText: string, enText: string) => (locale === 'ru' ? ruText : enText);
 
@@ -113,7 +111,6 @@ function CallbackContent() {
           }
 
           if (ok) {
-            syncWithBackend();
             setStatus('success');
             setMessage(t('Вы успешно авторизованы! Перенаправление...', 'Signed in successfully. Redirecting...'));
             setTimeout(() => {
@@ -131,7 +128,7 @@ function CallbackContent() {
     };
 
     processOAuth();
-  }, [router, searchParams, oauthLogin, syncWithBackend, locale]);
+  }, [router, searchParams, oauthLogin, locale]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">

@@ -150,6 +150,13 @@ func (s *StudyService) GetDashboard(ctx context.Context, userID string, utcOffse
 	if err != nil {
 		return nil, err
 	}
+	errorsList, err := s.GetErrors(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if errorsList == nil {
+		errorsList = []models.UserErrorItem{}
+	}
 
 	return &models.DashboardResponse{
 		Streak:          *streak,
@@ -158,6 +165,7 @@ func (s *StudyService) GetDashboard(ctx context.Context, userID string, utcOffse
 		StudyPlan:       plan,
 		GoalsConfigured: goalsConfigured,
 		BestWpm:         bestWpm,
+		Errors:          errorsList,
 	}, nil
 }
 

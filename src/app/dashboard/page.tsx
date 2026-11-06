@@ -227,6 +227,8 @@ function DashboardContent() {
                   : locale === 'ru' ? 'Локальный кэш' : 'Local cache'}
             </span>
 
+            {goalsConfigured && (
+              <>
             {/* Target Score */}
             <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-xl px-2.5 py-1">
               <Target className="w-3.5 h-3.5 text-[#D2F544] mr-1.5 shrink-0" />
@@ -273,6 +275,8 @@ function DashboardContent() {
                 <option value={90} className="bg-[#0E1012]">90 {d.minPerDay}</option>
               </select>
             </div>
+              </>
+            )}
           </div>
         </div>
       </div>

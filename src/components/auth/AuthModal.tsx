@@ -47,7 +47,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const { login, register, oauthLogin, isLoading, error, errorCode, clearError } = useAuthStore();
-  const { setCandidateName, syncWithBackend } = useProgressStore();
+  const { setCandidateName } = useProgressStore();
   const { locale } = useSettingsStore();
   const t = translations[locale].auth;
   const router = useRouter();
@@ -136,7 +136,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       const ok = await register(email, password, name);
       if (ok) {
         setCandidateName(name);
-        syncWithBackend();
         finishAuth();
       }
     } else {
@@ -144,7 +143,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (ok) {
         const u = useAuthStore.getState().user;
         if (u) setCandidateName(u.name);
-        syncWithBackend();
         finishAuth();
       }
     }

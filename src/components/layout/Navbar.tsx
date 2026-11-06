@@ -68,7 +68,6 @@ export const Navbar: React.FC = () => {
                 if (ok) {
                   const u = useAuthStore.getState().user;
                   if (u) useProgressStore.getState().setCandidateName(u.name);
-                  useProgressStore.getState().syncWithBackend();
                 }
               }
             })

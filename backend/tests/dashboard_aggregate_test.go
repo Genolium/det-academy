@@ -30,6 +30,16 @@ func TestDashboardAggregateReturnsOnePayload(t *testing.T) {
 	if _, err := store.Theory().ToggleProgress(ctx, user.ID, "read-and-select"); err != nil {
 		t.Fatalf("complete theory task: %v", err)
 	}
+	errorPayload, _ := json.Marshal(models.SaveErrorRequest{
+		QuestionType:  "READ_SELECT",
+		Prompt:        "Is this a real word?",
+		UserAnswer:    "no",
+		CorrectAnswer: "yes",
+		Explanation:   "The word is real.",
+	})
+	if resp := postJSONWithToken(t, r, "/api/v1/user/errors", token, errorPayload); resp.Code != http.StatusCreated && resp.Code != http.StatusOK {
+		t.Fatalf("seed error notebook: %d %s", resp.Code, resp.Body.String())
+	}
 
 	overall, reading, listening, writing, speaking := 120, 118, 116, 124, 122
 	literacy, comprehension, production, conversation := 117, 115, 123, 121
@@ -54,6 +64,33 @@ func TestDashboardAggregateReturnsOnePayload(t *testing.T) {
 	}
 	if err := store.Sessions().Create(ctx, session); err != nil {
 		t.Fatalf("seed completed session: %v", err)
+	}
+	zero := 0
+	for _, session := range []*models.TestSession{
+		{
+			ID:            fmt.Sprintf("dashboard-progress-%d", time.Now().UnixNano()),
+			UserID:        user.ID,
+			CandidateName: "Dashboard Candidate",
+			Status:        "IN_PROGRESS",
+			StageName:     "WRITE_PHOTO",
+			Mode:          "full",
+			CreatedAt:     time.Now().UTC(),
+		},
+		{
+			ID:            fmt.Sprintf("dashboard-zero-%d", time.Now().UnixNano()),
+			UserID:        user.ID,
+			CandidateName: "Dashboard Candidate",
+			Status:        "COMPLETED",
+			StageName:     "COMPLETED",
+			Mode:          "full",
+			OverallScore:  &zero,
+			CreatedAt:     time.Now().UTC(),
+			CompletedAt:   ptrTime(time.Now()),
+		},
+	} {
+		if err := store.Sessions().Create(ctx, session); err != nil {
+			t.Fatalf("seed excluded session: %v", err)
+		}
 	}
 	if err := store.Study().RecordTypingAttempt(ctx, &models.TypingAttempt{
 		ID:          "dashboard-typing-1",
@@ -101,6 +138,9 @@ func TestDashboardAggregateReturnsOnePayload(t *testing.T) {
 	}
 	if body.BestWpm != 42 {
 		t.Fatalf("bestWpm = %d, want 42", body.BestWpm)
+	}
+	if len(body.Errors) != 1 {
+		t.Fatalf("errors = %d, want 1", len(body.Errors))
 	}
 
 	sessionsJSON, err := json.Marshal(payload["sessions"])

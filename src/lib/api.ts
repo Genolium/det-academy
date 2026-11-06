@@ -1794,14 +1794,21 @@ class ApiClient {
   }
 
   async getDashboard(utcOffsetMinutes = 0): Promise<DashboardResponse> {
-    const res = await this.authFetch(
-      `${API_BASE_URL}/api/v1/user/dashboard?utc_offset_minutes=${utcOffsetMinutes}`
-    );
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new ApiError(data.error || 'Failed to load dashboard', res.status);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await this.authFetch(
+        `${API_BASE_URL}/api/v1/user/dashboard?utc_offset_minutes=${utcOffsetMinutes}`,
+        { signal: controller.signal }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new ApiError(data.error || 'Failed to load dashboard', res.status);
+      }
+      return res.json();
+    } finally {
+      clearTimeout(timeout);
     }
-    return res.json();
   }
 
   async getUserStreak(utcOffsetMinutes = 0): Promise<{ streakDays: number; lastActiveDate: string }> {

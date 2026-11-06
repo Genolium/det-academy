@@ -80,7 +80,9 @@ interface ProgressState {
 
 export const TOTAL_LESSONS = THEORY_TASK_COUNT;
 
-let syncInFlight = false;
+let syncInFlight: { userId: string | null; promise: Promise<void> } | null = null;
+let lastSyncUser: string | null | undefined;
+let lastSyncAt = 0;
 
 function mapBackendSessions(sessions: BackendTestSession[], candidateName: string): TestResult[] {
   return sessions.map((session) => ({
@@ -315,9 +317,15 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   syncWithBackend: async (explicitUserId) => {
-    if (syncInFlight) return;
-    syncInFlight = true;
-    try {
+    const targetUserId = explicitUserId !== undefined ? explicitUserId : get().userId;
+    if (syncInFlight) {
+      if (syncInFlight.userId === targetUserId) return syncInFlight.promise;
+      await syncInFlight.promise.catch(() => {});
+    }
+    if (targetUserId && lastSyncUser === targetUserId && Date.now() - lastSyncAt < 5000) {
+      return;
+    }
+    const promise = (async () => {
       set({ progressStatus: 'pending' });
       const activeUserId = explicitUserId !== undefined ? explicitUserId : get().userId;
 
@@ -387,14 +395,20 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
           lastActiveDate: dashboard.streak.lastActiveDate,
           completedLessons: normalized,
           testResults: mappedResults,
-          goalsConfigured: Boolean(configuredPlan),
+          goalsConfigured: dashboard.goalsConfigured ?? Boolean(configuredPlan),
           studyPlan: configuredPlan,
           targetScore: configuredPlan?.targetScore || get().targetScore,
           targetDate: configuredPlan?.targetDate || get().targetDate,
           dailyMinutes: configuredPlan?.dailyMinutes || get().dailyMinutes,
           bestTypingWpm: dashboard.bestWpm > 0 ? dashboard.bestWpm : get().bestTypingWpm,
         });
-        useErrorNotebookStore.getState().hydrateFromServer(activeUserId, dashboard.errors || []);
+        if (Array.isArray(dashboard.errors)) {
+          void useErrorNotebookStore.getState().hydrateFromServer(activeUserId, dashboard.errors);
+        } else {
+          // Rolling deploy: a dashboard endpoint without errors must not wipe
+          // the notebook cache; load it through the legacy endpoint instead.
+          void useErrorNotebookStore.getState().loadForUser(activeUserId);
+        }
         if (typeof window !== 'undefined') {
           localStorage.setItem(getScopedKey('streak_days', activeUserId), String(dashboard.streak.streakDays));
           localStorage.setItem(getScopedKey('last_active_date', activeUserId), dashboard.streak.lastActiveDate);
@@ -409,6 +423,8 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
             localStorage.setItem(getScopedKey('best_wpm', activeUserId), String(dashboard.bestWpm));
           }
         }
+        lastSyncUser = activeUserId;
+        lastSyncAt = Date.now();
         set({
           progressStatus:
             typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
@@ -417,11 +433,13 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       } catch {
         // Fallback for an old backend, a 404 or an offline aggregate request.
       }
+      if (get().userId !== activeUserId) return;
 
       // Server-owned streak is authoritative when the API is reachable.
       {
         try {
           const streak = await api.getUserStreak(-new Date().getTimezoneOffset());
+          if (get().userId !== activeUserId) return;
           set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });
           if (typeof window !== 'undefined') {
             localStorage.setItem(
@@ -488,6 +506,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       }
 
       // 4. Sync User Goals & Study Plan
+      if (get().userId !== activeUserId) return;
       try {
         await get().loadStudyPlan();
       } catch {}
@@ -496,6 +515,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       if (hasAuthSession()) {
         try {
           const typingData = await api.getTypingHistory();
+          if (get().userId !== activeUserId) return;
           if (typingData && typeof typingData.bestWpm === 'number' && typingData.bestWpm > 0) {
             set({ bestTypingWpm: typingData.bestWpm });
             if (typeof window !== 'undefined') {
@@ -510,14 +530,21 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
       // The aggregate carries the error notebook. In the legacy fallback the
       // notebook still needs its own request.
+      if (get().userId !== activeUserId) return;
       void useErrorNotebookStore.getState().loadForUser(activeUserId);
 
+      lastSyncUser = activeUserId;
+      lastSyncAt = Date.now();
       set({
         progressStatus:
           typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
       });
+    })();
+    syncInFlight = { userId: targetUserId, promise };
+    try {
+      await promise;
     } finally {
-      syncInFlight = false;
+      if (syncInFlight?.promise === promise) syncInFlight = null;
     }
   },
 

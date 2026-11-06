@@ -410,9 +410,10 @@ type DashboardResponse struct {
 	Streak          UserStreak             `json:"streak"`
 	Theory          TheoryProgressResponse `json:"theory"`
 	Sessions        []TestSession          `json:"sessions"`
-	StudyPlan       *StudyPlanResponse     `json:"studyPlan,omitempty"`
+	StudyPlan       *StudyPlanResponse     `json:"studyPlan"`
 	GoalsConfigured bool                   `json:"goalsConfigured"`
 	BestWpm         int                    `json:"bestWpm"`
+	Errors          []UserErrorItem        `json:"errors"`
 }
 
 type StartSessionRequest struct {

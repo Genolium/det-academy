@@ -50,7 +50,7 @@ interface ErrorNotebookState {
   isSyncing: boolean;
   syncError: string | null;
   loadForUser: (userId?: string | null) => Promise<void>;
-  hydrateFromServer: (userId: string | null | undefined, serverErrors: BackendErrorItem[]) => void;
+  hydrateFromServer: (userId: string | null | undefined, serverErrors: BackendErrorItem[]) => Promise<void>;
   addError: (error: SaveErrorInput) => Promise<void>;
   recallError: (id: string, answer: string) => Promise<RecallResult>;
   removeError: (id: string) => Promise<void>;
@@ -245,18 +245,46 @@ export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => ({
     set({ errors: [], activeUserId: null, isSyncing: false, syncError: null });
   },
 
-  hydrateFromServer: (userId, serverErrors) => {
+  hydrateFromServer: async (userId, serverErrors) => {
     const targetUserId = userId || null;
-    const serverItems = (serverErrors || []).map(mapServerItem);
-    // Keep browser-only errors created while offline; they are retried by the
-    // next explicit loadForUser call.
-    const stillPending = [
+    set({ activeUserId: targetUserId, isSyncing: true, syncError: null });
+
+    // Migrate the old local-only bank and retry browser-created errors before
+    // accepting the server snapshot. This keeps the aggregate path equivalent
+    // to loadForUser for pending writes without a second GET.
+    await migrateLegacyErrorBank();
+    const pending = [
       ...get().errors.filter((item) => item.pendingSync),
       ...readCache(targetUserId).filter((item) => item.pendingSync),
     ].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
+    for (const item of pending) {
+      try {
+        const saved = await api.saveUserError({
+          type: item.type,
+          prompt: item.prompt,
+          userAnswer: item.userAnswer,
+          correctAnswer: item.correctAnswer,
+          explanation: item.explanation,
+          errorCategory: item.errorCategory,
+          errorRule: item.errorRule,
+          contextVariants: item.contextVariants,
+        });
+        set((state) => ({
+          errors: state.errors.map((current) =>
+            current.id === item.id ? mapServerItem(saved) : current
+          ),
+        }));
+      } catch {
+        // Keep it pending; the next hydrate/load retries it.
+      }
+    }
+
+    if (get().activeUserId !== targetUserId) return;
+    const serverItems = (serverErrors || []).map(mapServerItem);
+    const stillPending = get().errors.filter((item) => item.pendingSync);
     const merged = [
       ...stillPending,
-      ...serverItems.filter((server) => !stillPending.some((pending) => pending.id === server.id)),
+      ...serverItems.filter((server) => !stillPending.some((pendingItem) => pendingItem.id === server.id)),
     ];
     set({ errors: merged, activeUserId: targetUserId, isSyncing: false, syncError: null });
     persist(merged, targetUserId);

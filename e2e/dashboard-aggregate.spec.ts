@@ -13,7 +13,24 @@ const dashboardPayload = {
   studyPlan: null,
   goalsConfigured: false,
   bestWpm: 44,
-  errors: [],
+  errors: [
+    {
+      id: 'err-1',
+      userId: 'user-a',
+      type: 'READ_SELECT',
+      prompt: 'Is "blorf" a real English word?',
+      userAnswer: 'yes',
+      correctAnswer: 'no',
+      explanation: 'blorf is a pseudoword',
+      errorCategory: 'vocabulary',
+      errorRule: '',
+      contextVariants: [],
+      consecutiveSuccesses: 0,
+      attemptsCount: 1,
+      mastered: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
 };
 
 test('the authenticated dashboard uses one aggregate request', async ({ page }) => {
@@ -55,6 +72,7 @@ test('the authenticated dashboard uses one aggregate request', async ({ page }) 
   expect(calls.legacy).toBe(0);
   await expect(page.getByText(/0 \/ 13/).first()).toBeVisible();
   await expect(page.getByText(/44 \/ 50 WPM/).first()).toBeVisible();
+  await expect(page.getByText(/Is "blorf" a real English word\?/).first()).toBeVisible();
 });
 
 test('the dashboard falls back to legacy endpoints when the aggregate is missing', async ({ page }) => {
@@ -65,18 +83,70 @@ test('the dashboard falls back to legacy endpoints when the aggregate is missing
   });
 
   let aggregateCalls = 0;
-  let legacyStreakCalls = 0;
+  const legacyCalls = new Set<string>();
   await page.route('**/api/v1/user/dashboard**', (route) => {
     aggregateCalls += 1;
     return route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"not found"}' });
   });
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname === '/api/v1/user/streak') legacyStreakCalls += 1;
+    legacyCalls.add(new URL(request.url()).pathname);
   });
 
   await page.goto('/dashboard');
   await expect(page.getByText('Дашборд подготовки').first()).toBeVisible();
   await expect.poll(() => aggregateCalls).toBeGreaterThan(0);
-  await expect.poll(() => legacyStreakCalls).toBeGreaterThan(0);
+  const required = [
+    '/api/v1/user/streak',
+    '/api/v1/theory/progress',
+    '/api/v1/test/sessions/me',
+    '/api/v1/user/plan',
+    '/api/v1/user/typing/history',
+    '/api/v1/user/errors',
+  ];
+  await expect.poll(() => required.every((path) => legacyCalls.has(path))).toBe(true);
+  for (const path of required) {
+    expect(legacyCalls.has(path), `missing fallback request ${path}`).toBe(true);
+  }
   await expect(page.getByText(/0 \/ 13/).first()).toBeVisible();
+});
+
+test('login followed by dashboard load reuses the aggregate result', async ({ page }) => {
+  await mockApi(page);
+  await page.route('**/api/v1/auth/login', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'token-user-a',
+        user: {
+          id: 'user-a',
+          email: 'a@example.com',
+          name: 'User A',
+          role: 'student',
+          locale: 'ru',
+          createdAt: new Date().toISOString(),
+        },
+      }),
+    })
+  );
+  let aggregateCalls = 0;
+  await page.route('**/api/v1/user/dashboard**', (route) => {
+    aggregateCalls += 1;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(dashboardPayload),
+    });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Войти' }).first().click();
+  await page.getByLabel('Email').fill('a@example.com');
+  await page.getByLabel('Пароль', { exact: true }).fill('password123');
+  await page.getByRole('button', { name: 'Войти в аккаунт' }).click();
+
+  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByText('Дашборд подготовки').first()).toBeVisible();
+  await page.waitForTimeout(700);
+  expect(aggregateCalls).toBe(1);
 });
