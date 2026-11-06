@@ -213,9 +213,10 @@ git commit -m "docs: record dashboard aggregate verification"
 ## Verification evidence
 
 - Backend `go vet` + `go test -race ./...` with PostgreSQL — green.
-- Playwright full suite — `221 passed / 2 skipped`.
+- Playwright full suite — `222 passed / 2 skipped`.
 - Fullstack real backend + PostgreSQL — `10 passed`.
-- Playwright request-count test: exactly one `/user/dashboard` call and zero legacy dashboard calls.
+- Error notebook hydration is covered with a real error item; incomplete and zero-score sessions are excluded by a backend test.
+- Playwright request-count test: exactly one `/user/dashboard` call and zero legacy dashboard calls, including login → dashboard.
 - Legacy fallback test: aggregate 404 falls back to `/user/streak`.
 - `npx tsc --noEmit` — clean.
 - `npm run build` — success.
