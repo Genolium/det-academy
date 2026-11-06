@@ -67,11 +67,19 @@
 - [ ] Add role checks, migration promoting the oldest admin when no superadmin exists, and frontend guard acceptance.
 - [ ] Run Go + frontend tests.
 
-### Task 5: CSP nonce (separate)
+### Task 5: CSP nonce (blocked by static rendering)
 
-Not executed in this pass because Next static pages need a rendering decision. Plan:
+Attempted in this pass: generated a nonce in `src/proxy.ts` and set a strict
+`script-src 'nonce-…' 'strict-dynamic'` policy for app routes. Next.js did not
+attach the nonce to the statically generated `/test` document; every Next chunk
+and the inline bootstrap were blocked, and `window.__next_f` was missing. The
+experiment was reverted.
 
+Next attempt must first force dynamic rendering for the covered routes (or
+adopt hash-based CSP), then verify the same policy. Keeping the current nginx
+`'unsafe-inline'` policy is safer than shipping a broken app:
 - [ ] Decide dynamic-render scope (app routes only vs all routes).
+- [ ] Add `export const dynamic = 'force-dynamic'` or equivalent per covered page.
 - [ ] Generate nonce in `src/proxy.ts`, set CSP header, let Next attach nonce.
-- [ ] Remove `script-src 'unsafe-inline'` from nginx for covered routes; keep a fallback only outside scope.
-- [ ] Verify no inline script violation on `/`, `/practice`, `/dashboard`, `/test`, `/admin`.
+- [ ] Remove `script-src 'unsafe-inline'` from nginx for covered routes.
+- [ ] Verify no CSP violation in browser console on `/dashboard`, `/test/session`, `/admin`.
