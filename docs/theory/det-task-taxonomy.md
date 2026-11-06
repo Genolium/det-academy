@@ -1,6 +1,6 @@
 # DET task taxonomy audit — November 2026
 
-**Status:** approved direction, ready for implementation.
+**Status:** implemented and locally verified; pending production deploy.
 
 ## Official baseline
 
