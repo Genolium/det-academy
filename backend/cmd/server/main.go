@@ -306,6 +306,8 @@ func main() {
 
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(handlers.CSRFMiddleware())
+
 		// Health check
 		r.Get("/health", handlers.HealthHandler(schemaErr))
 		r.Get("/ready", handlers.ReadinessHandler(store.Ping, schemaErr))
