@@ -604,3 +604,15 @@ verification evidence.
 git add docs/roadmap-2026-11-01.md docs/theory/det-task-taxonomy.md
 git commit -m "docs: record theory taxonomy migration"
 ```
+
+## Verification evidence
+
+- Go `go vet ./...` + `go test -race ./...` with `TEST_DATABASE_URL` — green.
+- Playwright full suite — `219 passed / 2 skipped`.
+- Fullstack real backend + PostgreSQL — `9 passed`.
+- `npx tsc --noEmit` — clean.
+- `npm run build` — success.
+- `npm run lint` — 0 errors, 114 pre-existing warnings.
+- Fresh-schema bootstrap test applies `init.sql` + `03-content-seed.sql` without migrations and sees 15 catalogue rows / 13 trackable.
+- Empty-catalogue migration test proves the migration itself creates all 15 rows and is idempotent.
+- Certificate test proves 12/13 is refused and 13/13 is issued.
