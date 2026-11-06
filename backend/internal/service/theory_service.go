@@ -10,30 +10,36 @@ import (
 	"github.com/google/uuid"
 )
 
-const TotalTheoryLessons = 16
+const TotalTheoryLessons = 13
 
 var ErrUnknownTheoryLesson = errors.New("unknown theory lesson")
 
+// LessonSlugs is the single backend list of trackable DET task lessons, in the
+// order the tasks appear on the test.
 var LessonSlugs = []string{
-	"rules-and-technicalities",
-	"subscores-and-cat-engine",
 	"read-and-select",
-	"listen-and-select",
 	"fill-in-the-blanks",
 	"read-and-complete",
 	"listen-and-type",
-	"read-aloud",
 	"interactive-reading",
 	"interactive-listening",
 	"write-about-photo",
 	"interactive-writing",
-	"writing-sample",
 	"speak-about-photo",
-	"read-listen-speak",
+	"read-then-speak",
+	"interactive-speaking",
+	"writing-sample",
 	"speaking-sample",
 }
 
-func IsValidLessonSlug(slug string) bool {
+// ReferenceLessonSlugs are useful orientation pages, not graded DET tasks.
+// They stay visible but never count toward progress or a certificate.
+var ReferenceLessonSlugs = []string{
+	"rules-and-technicalities",
+	"subscores-and-cat-engine",
+}
+
+func IsTrackableLessonSlug(slug string) bool {
 	for _, valid := range LessonSlugs {
 		if valid == slug {
 			return true
@@ -42,11 +48,24 @@ func IsValidLessonSlug(slug string) bool {
 	return false
 }
 
+func isReferenceLessonSlug(slug string) bool {
+	for _, valid := range ReferenceLessonSlugs {
+		if valid == slug {
+			return true
+		}
+	}
+	return false
+}
+
+func IsValidLessonSlug(slug string) bool {
+	return IsTrackableLessonSlug(slug) || isReferenceLessonSlug(slug)
+}
+
 func ValidCompletedLessons(completed []string) []string {
 	seen := make(map[string]struct{}, len(completed))
 	valid := make([]string, 0, len(completed))
 	for _, slug := range completed {
-		if !IsValidLessonSlug(slug) {
+		if !IsTrackableLessonSlug(slug) {
 			continue
 		}
 		if _, exists := seen[slug]; exists {
@@ -98,7 +117,7 @@ func (s *TheoryService) GetProgress(ctx context.Context, userID string) (*models
 }
 
 func (s *TheoryService) ToggleCompletion(ctx context.Context, userID, lessonSlug string) (*models.TheoryProgressResponse, error) {
-	if !IsValidLessonSlug(lessonSlug) {
+	if !IsTrackableLessonSlug(lessonSlug) {
 		return nil, ErrUnknownTheoryLesson
 	}
 	completed, err := s.theoryRepo.ToggleProgress(ctx, userID, lessonSlug)
@@ -141,7 +160,7 @@ func (s *TheoryService) GetCatalog(ctx context.Context) (*models.TheoryCatalogRe
 	if err != nil {
 		return nil, err
 	}
-	version := "2026.2"
+	version := "2026.3"
 	updatedAt := time.Time{}
 	for _, lesson := range lessons {
 		if lesson.Version != "" {

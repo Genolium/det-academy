@@ -136,7 +136,7 @@ func TestTheoryToggleAwardsXPOnce(t *testing.T) {
 	ctx := context.Background()
 
 	// Toggle lesson completion on
-	progress, err := theory.ToggleCompletion(ctx, userID, "rules-and-technicalities")
+	progress, err := theory.ToggleCompletion(ctx, userID, "read-and-select")
 	if err != nil {
 		t.Fatalf("toggle completion: %v", err)
 	}
@@ -153,8 +153,8 @@ func TestTheoryToggleAwardsXPOnce(t *testing.T) {
 	}
 
 	// Toggle off and on again: same idempotency key, must not award 20 XP again
-	_, _ = theory.ToggleCompletion(ctx, userID, "rules-and-technicalities")
-	_, _ = theory.ToggleCompletion(ctx, userID, "rules-and-technicalities")
+	_, _ = theory.ToggleCompletion(ctx, userID, "read-and-select")
+	_, _ = theory.ToggleCompletion(ctx, userID, "read-and-select")
 
 	totalXP, _ = store.Study().XPTotal(ctx, userID)
 	if totalXP != 20 {

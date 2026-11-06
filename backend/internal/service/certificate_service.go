@@ -63,7 +63,7 @@ func (s *CertificateService) IssueCertificate(ctx context.Context, sessionID, us
 
 	completedLessons, err := s.theoryRepo.GetUserProgress(ctx, session.UserID)
 	if err != nil || len(ValidCompletedLessons(completedLessons)) < TotalTheoryLessons {
-		return nil, errors.New("all 16 theory lessons must be completed to receive a certificate")
+		return nil, errors.New("all 13 theory lessons must be completed to receive a certificate")
 	}
 
 	// Check if already issued

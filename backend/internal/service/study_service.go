@@ -166,14 +166,8 @@ func (s *StudyService) GetStudyPlan(ctx context.Context, userID string) (*models
 		}
 	}
 
-	// Theory progress against the actual published lesson slugs.
-	allLessonSlugs := []string{
-		"rules-and-technicalities", "subscores-and-cat-engine", "read-and-select",
-		"listen-and-select", "fill-in-the-blanks", "read-and-complete",
-		"listen-and-type", "read-aloud", "interactive-reading",
-		"interactive-listening", "write-about-photo", "interactive-writing",
-		"writing-sample", "speak-about-photo", "read-listen-speak", "speaking-sample",
-	}
+	// Theory progress against the trackable DET task lessons.
+	allLessonSlugs := LessonSlugs
 	theoryProgress, _ := s.storage.Theory().GetUserProgress(ctx, userID)
 	validLessons := map[string]bool{}
 	for _, slug := range allLessonSlugs {

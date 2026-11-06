@@ -409,7 +409,7 @@ func TestTheoryAuthenticationProtection(t *testing.T) {
 	}
 
 	// Theory toggle requires authentication
-	togglePayload := models.ToggleTheoryRequest{LessonSlug: "rules-and-technicalities"}
+	togglePayload := models.ToggleTheoryRequest{LessonSlug: "read-and-select"}
 	toggleBody, _ := json.Marshal(togglePayload)
 	togReq := httptest.NewRequest("POST", "/api/v1/theory/toggle", bytes.NewReader(toggleBody))
 	togW := httptest.NewRecorder()
