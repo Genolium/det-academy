@@ -55,7 +55,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
@@ -79,7 +78,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
@@ -103,7 +101,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (resp.user?.name) {
         useProgressStore.getState().setCandidateName(resp.user.name);
       }
-      void useErrorNotebookStore.getState().loadForUser(resp.user.id);
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'OAuth authentication failed';
@@ -173,8 +170,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           useProgressStore.getState().setCandidateName(user.name);
         }
         useProgressStore.getState().syncWithBackend(user.id);
-        void useErrorNotebookStore.getState().loadForUser(user.id);
-      } catch (err) {
+        } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           // Access token expired: try the rotating HttpOnly refresh cookie once.
           try {
@@ -183,7 +179,6 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ user: refreshed.user, isAuthenticated: true, isLoading: false });
             cacheUser(refreshed.user);
             useProgressStore.getState().syncWithBackend(refreshed.user.id);
-            void useErrorNotebookStore.getState().loadForUser(refreshed.user.id);
             return;
           } catch {
             await api.logout().catch(() => {});

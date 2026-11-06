@@ -59,7 +59,7 @@ export default function PracticeHubPage() {
   const [isErrorBankOpen, setIsErrorBankOpen] = useState(false);
   const [inspectorText, setInspectorText] = useState('');
 
-  const { errors } = useErrorNotebookStore();
+  const { errors, loadForUser: loadErrorsForUser } = useErrorNotebookStore();
   const unmasteredErrors = errors.filter((error) => !error.mastered).length;
 
   useEffect(() => {
@@ -68,6 +68,12 @@ export default function PracticeHubPage() {
       if (stored === 'true') setStrictMode(true);
     } catch {}
   }, [setStrictMode]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      void loadErrorsForUser(user.id);
+    }
+  }, [isAuthenticated, user?.id, loadErrorsForUser]);
 
   // A recommendation elsewhere in the dashboard can open a specific drill.
   useEffect(() => {

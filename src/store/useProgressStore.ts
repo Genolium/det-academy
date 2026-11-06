@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api, BackendTestSession, StudyPlanResponse } from '@/lib/api';
 import { hasAuthSession } from '@/lib/auth-session';
+import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import {
   THEORY_TASK_COUNT,
   isTheoryTaskSlug,
@@ -78,6 +79,25 @@ interface ProgressState {
 }
 
 export const TOTAL_LESSONS = THEORY_TASK_COUNT;
+
+let syncInFlight = false;
+
+function mapBackendSessions(sessions: BackendTestSession[], candidateName: string): TestResult[] {
+  return sessions.map((session) => ({
+    id: session.id,
+    date: session.completedAt || new Date().toISOString(),
+    overallScore: session.overallScore || 0,
+    reading: session.readingScore || 0,
+    listening: session.listeningScore || 0,
+    writing: session.writingScore || 0,
+    speaking: session.speakingScore || 0,
+    literacy: session.literacyScore || session.overallScore || 0,
+    comprehension: session.comprehensionScore || session.overallScore || 0,
+    production: session.productionScore || session.overallScore || 0,
+    conversation: session.conversationScore || session.overallScore || 0,
+    candidateName: session.candidateName || candidateName || 'Студент',
+  }));
+}
 
 const getScopedKey = (key: string, userId?: string | null): string => {
   if (!userId) return `det_guest_${key}`;
@@ -295,170 +315,210 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   syncWithBackend: async (explicitUserId) => {
-    set({ progressStatus: 'pending' });
-    const activeUserId = explicitUserId !== undefined ? explicitUserId : get().userId;
+    if (syncInFlight) return;
+    syncInFlight = true;
+    try {
+      set({ progressStatus: 'pending' });
+      const activeUserId = explicitUserId !== undefined ? explicitUserId : get().userId;
 
-    if (explicitUserId !== undefined && explicitUserId !== get().userId) {
-      set({ userId: explicitUserId });
-    }
-
-    // 1. Sync local storage items for the active user
-    if (typeof window !== 'undefined') {
-      try {
-        const testsKey = getScopedKey('test_results', activeUserId);
-        const storedTests = localStorage.getItem(testsKey);
-        if (storedTests) {
-          set({ testResults: JSON.parse(storedTests) });
-        } else {
-          set({ testResults: [] });
-        }
-      } catch {}
-
-      const wpmKey = getScopedKey('best_wpm', activeUserId);
-      const storedWpm = localStorage.getItem(wpmKey);
-      set({ bestTypingWpm: storedWpm ? parseInt(storedWpm, 10) || 0 : 0 });
-
-      const targetKey = getScopedKey('target_score', activeUserId);
-      const storedTarget = localStorage.getItem(targetKey);
-      set({ targetScore: storedTarget ? parseInt(storedTarget, 10) || 125 : 125 });
-
-      const dateKey = getScopedKey('target_date', activeUserId);
-      const storedDate = localStorage.getItem(dateKey);
-      if (storedDate) set({ targetDate: storedDate });
-
-      const minutesKey = getScopedKey('daily_minutes', activeUserId);
-      const storedMinutes = localStorage.getItem(minutesKey);
-      if (storedMinutes) set({ dailyMinutes: parseInt(storedMinutes, 10) || 45 });
-
-      const streakKey = getScopedKey('streak_days', activeUserId);
-      const activeKey = getScopedKey('last_active_date', activeUserId);
-      const eloKey = getScopedKey('pvp_elo', activeUserId);
-      set({
-        streakDays: parseInt(localStorage.getItem(streakKey) || '0', 10) || 0,
-        lastActiveDate: localStorage.getItem(activeKey) || '',
-        pvpElo: parseInt(localStorage.getItem(eloKey) || '1200', 10) || 1200,
-      });
-
-      const nameKey = getScopedKey('candidate_name', activeUserId);
-      const storedName = localStorage.getItem(nameKey);
-      if (storedName) {
-        set({ candidateName: storedName });
+      if (explicitUserId !== undefined && explicitUserId !== get().userId) {
+        set({ userId: explicitUserId });
       }
-    }
 
-    // Anonymous visitors keep only the local cache; no server probe, no 401s.
-    if (!hasAuthSession()) {
-      return;
-    }
+      // 1. Sync local storage items for the active user
+      if (typeof window !== 'undefined') {
+        try {
+          const testsKey = getScopedKey('test_results', activeUserId);
+          const storedTests = localStorage.getItem(testsKey);
+          if (storedTests) {
+            set({ testResults: JSON.parse(storedTests) });
+          } else {
+            set({ testResults: [] });
+          }
+        } catch {}
 
-    // Server-owned streak is authoritative when the API is reachable.
-    {
+        const wpmKey = getScopedKey('best_wpm', activeUserId);
+        const storedWpm = localStorage.getItem(wpmKey);
+        set({ bestTypingWpm: storedWpm ? parseInt(storedWpm, 10) || 0 : 0 });
+
+        const targetKey = getScopedKey('target_score', activeUserId);
+        const storedTarget = localStorage.getItem(targetKey);
+        set({ targetScore: storedTarget ? parseInt(storedTarget, 10) || 125 : 125 });
+
+        const dateKey = getScopedKey('target_date', activeUserId);
+        const storedDate = localStorage.getItem(dateKey);
+        if (storedDate) set({ targetDate: storedDate });
+
+        const minutesKey = getScopedKey('daily_minutes', activeUserId);
+        const storedMinutes = localStorage.getItem(minutesKey);
+        if (storedMinutes) set({ dailyMinutes: parseInt(storedMinutes, 10) || 45 });
+
+        const streakKey = getScopedKey('streak_days', activeUserId);
+        const activeKey = getScopedKey('last_active_date', activeUserId);
+        const eloKey = getScopedKey('pvp_elo', activeUserId);
+        set({
+          streakDays: parseInt(localStorage.getItem(streakKey) || '0', 10) || 0,
+          lastActiveDate: localStorage.getItem(activeKey) || '',
+          pvpElo: parseInt(localStorage.getItem(eloKey) || '1200', 10) || 1200,
+        });
+
+        const nameKey = getScopedKey('candidate_name', activeUserId);
+        const storedName = localStorage.getItem(nameKey);
+        if (storedName) {
+          set({ candidateName: storedName });
+        }
+      }
+
+      // Anonymous visitors keep only the local cache; no server probe, no 401s.
+      if (!hasAuthSession()) {
+        return;
+      }
+
+      // One aggregate request behind the dashboard. Older backends without
+      // this endpoint fall through to the resource-by-resource path below.
       try {
-        const streak = await api.getUserStreak(-new Date().getTimezoneOffset());
-        set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });
+        const dashboard = await api.getDashboard(-new Date().getTimezoneOffset());
+        if (get().userId !== activeUserId) return;
+        const normalized = normalizeTheoryCompletedLessons(dashboard.theory.completedLessons);
+        const mappedResults = mapBackendSessions(dashboard.sessions || [], get().candidateName);
+        const configuredPlan = dashboard.studyPlan?.configured ? dashboard.studyPlan : null;
+        set({
+          streakDays: dashboard.streak.streakDays,
+          lastActiveDate: dashboard.streak.lastActiveDate,
+          completedLessons: normalized,
+          testResults: mappedResults,
+          goalsConfigured: Boolean(configuredPlan),
+          studyPlan: configuredPlan,
+          targetScore: configuredPlan?.targetScore || get().targetScore,
+          targetDate: configuredPlan?.targetDate || get().targetDate,
+          dailyMinutes: configuredPlan?.dailyMinutes || get().dailyMinutes,
+          bestTypingWpm: dashboard.bestWpm > 0 ? dashboard.bestWpm : get().bestTypingWpm,
+        });
+        useErrorNotebookStore.getState().hydrateFromServer(activeUserId, dashboard.errors || []);
         if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            getScopedKey('streak_days', activeUserId),
-            streak.streakDays.toString()
-          );
-          localStorage.setItem(
-            getScopedKey('last_active_date', activeUserId),
-            streak.lastActiveDate
-          );
+          localStorage.setItem(getScopedKey('streak_days', activeUserId), String(dashboard.streak.streakDays));
+          localStorage.setItem(getScopedKey('last_active_date', activeUserId), dashboard.streak.lastActiveDate);
+          localStorage.setItem(getScopedKey('completed_lessons', activeUserId), JSON.stringify(normalized));
+          localStorage.setItem(getScopedKey('test_results', activeUserId), JSON.stringify(mappedResults));
+          if (configuredPlan) {
+            localStorage.setItem(getScopedKey('target_score', activeUserId), String(configuredPlan.targetScore));
+            localStorage.setItem(getScopedKey('target_date', activeUserId), configuredPlan.targetDate);
+            localStorage.setItem(getScopedKey('daily_minutes', activeUserId), String(configuredPlan.dailyMinutes));
+          }
+          if (dashboard.bestWpm > 0) {
+            localStorage.setItem(getScopedKey('best_wpm', activeUserId), String(dashboard.bestWpm));
+          }
+        }
+        set({
+          progressStatus:
+            typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
+        });
+        return;
+      } catch {
+        // Fallback for an old backend, a 404 or an offline aggregate request.
+      }
+
+      // Server-owned streak is authoritative when the API is reachable.
+      {
+        try {
+          const streak = await api.getUserStreak(-new Date().getTimezoneOffset());
+          set({ streakDays: streak.streakDays, lastActiveDate: streak.lastActiveDate });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              getScopedKey('streak_days', activeUserId),
+              streak.streakDays.toString()
+            );
+            localStorage.setItem(
+              getScopedKey('last_active_date', activeUserId),
+              streak.lastActiveDate
+            );
+          }
+        } catch {
+          // Offline: keep the last local value.
+        }
+      }
+
+      // 2. Sync theory progress from backend (if logged in)
+      try {
+        const resp = await api.getTheoryProgress();
+        if (get().userId === activeUserId && resp && resp.completedLessons) {
+          const normalized = normalizeTheoryCompletedLessons(resp.completedLessons);
+          set({ completedLessons: normalized });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              getScopedKey('completed_lessons', activeUserId),
+              JSON.stringify(normalized)
+            );
+          }
         }
       } catch {
-        // Offline: keep the last local value.
-      }
-    }
-
-    // 2. Sync theory progress from backend (if logged in)
-    try {
-      const resp = await api.getTheoryProgress();
-      if (get().userId === activeUserId && resp && resp.completedLessons) {
-        const normalized = normalizeTheoryCompletedLessons(resp.completedLessons);
-        set({ completedLessons: normalized });
         if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            getScopedKey('completed_lessons', activeUserId),
-            JSON.stringify(normalized)
-          );
-        }
-      }
-    } catch {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(getScopedKey('completed_lessons', activeUserId));
-        if (stored) {
-          try {
-            set({ completedLessons: normalizeTheoryCompletedLessons(JSON.parse(stored)) });
-          } catch {}
-        } else {
-          set({ completedLessons: [] });
-        }
-      }
-    }
-
-    // 3. Sync real test sessions from backend for authenticated user
-    try {
-      const testResp = await api.getMyTestSessions();
-      if (get().userId === activeUserId && testResp && Array.isArray(testResp.sessions)) {
-        const completedSessions = testResp.sessions.filter(
-          (s: BackendTestSession) => s.status === 'COMPLETED' && s.overallScore && s.overallScore > 0
-        );
-
-        if (completedSessions.length > 0) {
-          const mappedResults: TestResult[] = completedSessions.map((s: BackendTestSession) => ({
-            id: s.id,
-            date: s.completedAt || new Date().toISOString(),
-            overallScore: s.overallScore || 0,
-            reading: s.readingScore || 0,
-            listening: s.listeningScore || 0,
-            writing: s.writingScore || 0,
-            speaking: s.speakingScore || 0,
-            literacy: s.literacyScore || s.overallScore || 0,
-            comprehension: s.comprehensionScore || s.overallScore || 0,
-            production: s.productionScore || s.overallScore || 0,
-            conversation: s.conversationScore || s.overallScore || 0,
-            candidateName: s.candidateName || get().candidateName || 'Студент',
-          }));
-
-          set({ testResults: mappedResults });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(
-              getScopedKey('test_results', activeUserId),
-              JSON.stringify(mappedResults)
-            );
+          const stored = localStorage.getItem(getScopedKey('completed_lessons', activeUserId));
+          if (stored) {
+            try {
+              set({ completedLessons: normalizeTheoryCompletedLessons(JSON.parse(stored)) });
+            } catch {}
+          } else {
+            set({ completedLessons: [] });
           }
         }
       }
-    } catch {
-      // offline or unauthenticated, keep local scoped state
-    }
 
-    // 4. Sync User Goals & Study Plan
-    try {
-      await get().loadStudyPlan();
-    } catch {}
-
-    // 5. Sync Typing history & best WPM from server
-    if (hasAuthSession()) {
+      // 3. Sync real test sessions from backend for authenticated user
       try {
-        const typingData = await api.getTypingHistory();
-        if (typingData && typeof typingData.bestWpm === 'number' && typingData.bestWpm > 0) {
-          set({ bestTypingWpm: typingData.bestWpm });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(
-              getScopedKey('best_wpm', activeUserId),
-              typingData.bestWpm.toString()
-            );
+        const testResp = await api.getMyTestSessions();
+        if (get().userId === activeUserId && testResp && Array.isArray(testResp.sessions)) {
+          const completedSessions = testResp.sessions.filter(
+            (s: BackendTestSession) => s.status === 'COMPLETED' && s.overallScore && s.overallScore > 0
+          );
+
+          if (completedSessions.length > 0) {
+            const mappedResults = mapBackendSessions(completedSessions, get().candidateName);
+            set({ testResults: mappedResults });
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(
+                getScopedKey('test_results', activeUserId),
+                JSON.stringify(mappedResults)
+              );
+            }
           }
         }
-      } catch {}
-    }
+      } catch {
+        // offline or unauthenticated, keep local scoped state
+      }
 
-    set({
-      progressStatus:
-        typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
-    });
+      // 4. Sync User Goals & Study Plan
+      try {
+        await get().loadStudyPlan();
+      } catch {}
+
+      // 5. Sync Typing history & best WPM from server
+      if (hasAuthSession()) {
+        try {
+          const typingData = await api.getTypingHistory();
+          if (typingData && typeof typingData.bestWpm === 'number' && typingData.bestWpm > 0) {
+            set({ bestTypingWpm: typingData.bestWpm });
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(
+                getScopedKey('best_wpm', activeUserId),
+                typingData.bestWpm.toString()
+              );
+            }
+          }
+        } catch {}
+      }
+
+      // The aggregate carries the error notebook. In the legacy fallback the
+      // notebook still needs its own request.
+      void useErrorNotebookStore.getState().loadForUser(activeUserId);
+
+      set({
+        progressStatus:
+          typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'cache',
+      });
+    } finally {
+      syncInFlight = false;
+    }
   },
 
   toggleLessonCompleted: async (slug: string) => {

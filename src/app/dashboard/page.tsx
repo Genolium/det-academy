@@ -45,7 +45,6 @@ import {
   Calendar,
 } from 'lucide-react';
 import { EditProfileNameModal } from '@/components/profile/EditProfileNameModal';
-import { useErrorNotebookStore } from '@/store/useErrorNotebookStore';
 import { AuthRequiredGuard } from '@/components/auth/AuthRequiredGuard';
 import { translations } from '@/lib/translations';
 
@@ -99,8 +98,6 @@ function DashboardContent() {
     progressStatus,
   } = useProgressStore();
 
-  const { loadForUser: loadErrorsForUser } = useErrorNotebookStore();
-
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -109,8 +106,7 @@ function DashboardContent() {
   useEffect(() => {
     if (!user?.id) return;
     syncWithBackend(user.id);
-    loadErrorsForUser(user.id);
-  }, [syncWithBackend, loadErrorsForUser, user?.id]);
+  }, [syncWithBackend, user?.id]);
 
   const bestScore = getBestMockScore();
   const readinessAvailable = Boolean(studyPlan?.readinessAvailable);

@@ -79,6 +79,16 @@ export interface TheoryProgressResponse {
   isAllCompleted: boolean;
 }
 
+export interface DashboardResponse {
+  streak: { streakDays: number; lastActiveDate: string };
+  theory: TheoryProgressResponse;
+  sessions: BackendTestSession[];
+  studyPlan: StudyPlanResponse | null;
+  goalsConfigured: boolean;
+  bestWpm: number;
+  errors: UserErrorItem[];
+}
+
 export interface BackendCertificate {
   id: string;
   userId: string;
@@ -1781,6 +1791,17 @@ class ApiClient {
     if (!res.ok) {
       throw new Error('Failed to delete error item');
     }
+  }
+
+  async getDashboard(utcOffsetMinutes = 0): Promise<DashboardResponse> {
+    const res = await this.authFetch(
+      `${API_BASE_URL}/api/v1/user/dashboard?utc_offset_minutes=${utcOffsetMinutes}`
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiError(data.error || 'Failed to load dashboard', res.status);
+    }
+    return res.json();
   }
 
   async getUserStreak(utcOffsetMinutes = 0): Promise<{ streakDays: number; lastActiveDate: string }> {

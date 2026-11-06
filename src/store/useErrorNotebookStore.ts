@@ -50,6 +50,7 @@ interface ErrorNotebookState {
   isSyncing: boolean;
   syncError: string | null;
   loadForUser: (userId?: string | null) => Promise<void>;
+  hydrateFromServer: (userId: string | null | undefined, serverErrors: BackendErrorItem[]) => void;
   addError: (error: SaveErrorInput) => Promise<void>;
   recallError: (id: string, answer: string) => Promise<RecallResult>;
   removeError: (id: string) => Promise<void>;
@@ -242,6 +243,23 @@ export const useErrorNotebookStore = create<ErrorNotebookState>((set, get) => ({
 
   resetForUser: () => {
     set({ errors: [], activeUserId: null, isSyncing: false, syncError: null });
+  },
+
+  hydrateFromServer: (userId, serverErrors) => {
+    const targetUserId = userId || null;
+    const serverItems = (serverErrors || []).map(mapServerItem);
+    // Keep browser-only errors created while offline; they are retried by the
+    // next explicit loadForUser call.
+    const stillPending = [
+      ...get().errors.filter((item) => item.pendingSync),
+      ...readCache(targetUserId).filter((item) => item.pendingSync),
+    ].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
+    const merged = [
+      ...stillPending,
+      ...serverItems.filter((server) => !stillPending.some((pending) => pending.id === server.id)),
+    ];
+    set({ errors: merged, activeUserId: targetUserId, isSyncing: false, syncError: null });
+    persist(merged, targetUserId);
   },
 
   loadForUser: async (userId) => {
