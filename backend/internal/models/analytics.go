@@ -36,11 +36,32 @@ type AnalyticsOverview struct {
 	Sessions       int `json:"sessions"`
 	CompletedMocks int `json:"completedMocks"`
 	Evaluations    int `json:"evaluations"`
-	SpeakingCount  int `json:"speakingEvaluations"`
-	WritingCount   int `json:"writingEvaluations"`
-	TTSCalls       int `json:"ttsCalls"`
-	XPAwarded      int `json:"xpAwarded"`
-	ErrorCount     int `json:"errorCount"`
+	// Evaluation status split. Evaluations is the attempted total.
+	CompletedEvaluations    int                     `json:"completedEvaluations"`
+	FailedEvaluations       int                     `json:"failedEvaluations"`
+	EmptyEvaluations        int                     `json:"emptyEvaluations"`
+	InsufficientEvaluations int                     `json:"insufficientEvaluations"`
+	SpeakingCount           int                     `json:"speakingEvaluations"`
+	WritingCount            int                     `json:"writingEvaluations"`
+	TTSCalls                int                     `json:"ttsCalls"`
+	XPAwarded               int                     `json:"xpAwarded"`
+	ErrorCount              int                     `json:"errorCount"`
+	ErrorBreakdown          AnalyticsErrorBreakdown `json:"errorBreakdown"`
+}
+
+// AnalyticsErrorBreakdown separates the pipeline-error KPI into actionable
+// causes. FailedEvaluations is the total; the cause buckets sum to it through
+// OtherFailed.
+type AnalyticsErrorBreakdown struct {
+	DeadlineRejections int `json:"deadlineRejections"`
+	StageTimeouts      int `json:"stageTimeouts"`
+	SecurityRejections int `json:"securityRejections"`
+	EmptyRecognition   int `json:"emptyRecognition"`
+	AudioTooLong       int `json:"audioTooLong"`
+	SpeechkitAuth      int `json:"speechkitAuth"`
+	AudioTooLarge      int `json:"audioTooLarge"`
+	CorruptAudio       int `json:"corruptAudio"`
+	OtherFailed        int `json:"otherFailed"`
 }
 
 // AnalyticsPoint is one time bucket. T is an RFC3339 hour for hourly buckets

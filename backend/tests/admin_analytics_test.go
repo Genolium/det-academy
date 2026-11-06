@@ -59,6 +59,10 @@ func seedAnalyticsActivity(t *testing.T, store *memory.MemoryStorage) {
 	if err := store.Study().RecordActivity(ctx, demoStudentID, today, "test"); err != nil {
 		t.Fatalf("record activity: %v", err)
 	}
+	// Staff activity must not inflate student KPIs.
+	if err := store.Study().RecordActivity(ctx, "00000000-0000-0000-0000-000000000000", today, "test"); err != nil {
+		t.Fatalf("record admin activity: %v", err)
+	}
 	if _, err := store.Study().AwardXP(ctx, &models.XPEvent{
 		ID:             uuid.NewString(),
 		UserID:         demoStudentID,
@@ -94,12 +98,25 @@ func seedAnalyticsActivity(t *testing.T, store *memory.MemoryStorage) {
 	}); err != nil {
 		t.Fatalf("record practice attempt: %v", err)
 	}
+	if err := store.Sessions().Create(ctx, &models.TestSession{
+		ID:            "analytics-session",
+		UserID:        demoStudentID,
+		CandidateName: "Demo Student",
+		Status:        "COMPLETED",
+		StageName:     "COMPLETED",
+		Mode:          "full",
+		CreatedAt:     now,
+		CompletedAt:   &now,
+	}); err != nil {
+		t.Fatalf("create analytics session: %v", err)
+	}
 	if err := store.Sessions().SaveEvaluation(ctx, &models.EvaluationResult{
 		ID:           uuid.NewString(),
 		SessionID:    "analytics-session",
 		QuestionID:   "q-sp-01",
 		QuestionType: "SPEAK_PHOTO",
 		Status:       "FAILED",
+		LastError:    "speechkit: empty recognition result",
 		CreatedAt:    now,
 	}); err != nil {
 		t.Fatalf("save evaluation: %v", err)
@@ -116,11 +133,11 @@ func TestAdminAnalyticsAggregates(t *testing.T) {
 	if code := getJSON(t, r, adminToken, "/api/v1/admin/analytics/overview?range=7d", &overview); code != http.StatusOK {
 		t.Fatalf("overview status = %d", code)
 	}
-	if overview.TotalUsers == 0 {
-		t.Fatal("expected total users > 0")
+	if overview.TotalUsers != 1 {
+		t.Fatalf("total students = %d, want 1 (admin excluded)", overview.TotalUsers)
 	}
-	if overview.Active.DAU < 1 {
-		t.Fatalf("expected DAU >= 1, got %d", overview.Active.DAU)
+	if overview.Active.DAU != 1 {
+		t.Fatalf("DAU = %d, want 1 (admin excluded)", overview.Active.DAU)
 	}
 	if overview.XPAwarded != 42 {
 		t.Fatalf("xp awarded = %d, want 42", overview.XPAwarded)
@@ -131,8 +148,15 @@ func TestAdminAnalyticsAggregates(t *testing.T) {
 	if overview.Evaluations != 1 || overview.SpeakingCount != 1 {
 		t.Fatalf("evaluations = %d speaking = %d, want 1/1", overview.Evaluations, overview.SpeakingCount)
 	}
+	if overview.CompletedEvaluations != 0 || overview.FailedEvaluations != 1 || overview.EmptyEvaluations != 0 {
+		t.Fatalf("evaluation statuses = completed %d / failed %d / empty %d, want 0/1/0",
+			overview.CompletedEvaluations, overview.FailedEvaluations, overview.EmptyEvaluations)
+	}
 	if overview.ErrorCount != 1 {
 		t.Fatalf("error count = %d, want 1 (failed evaluation)", overview.ErrorCount)
+	}
+	if overview.ErrorBreakdown.EmptyRecognition != 1 {
+		t.Fatalf("empty recognition = %d, want 1", overview.ErrorBreakdown.EmptyRecognition)
 	}
 	if overview.Range != "7d" {
 		t.Fatalf("range = %q, want 7d", overview.Range)

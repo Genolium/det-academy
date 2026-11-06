@@ -21,11 +21,19 @@ func (r *analyticsMemoryRepo) AnalyticsOverview(ctx context.Context, from, to, n
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
 
+	isStudent := func(userID string) bool {
+		user, ok := r.s.users[userID]
+		return ok && user.Role == "student"
+	}
 	out := &models.AnalyticsOverview{
-		From:       from.UTC(),
-		To:         to.UTC(),
-		Generated:  now.UTC(),
-		TotalUsers: len(r.s.users),
+		From:      from.UTC(),
+		To:        to.UTC(),
+		Generated: now.UTC(),
+	}
+	for _, user := range r.s.users {
+		if user.Role == "student" {
+			out.TotalUsers++
+		}
 	}
 
 	today := utcDate(now)
@@ -37,6 +45,9 @@ func (r *analyticsMemoryRepo) AnalyticsOverview(ctx context.Context, from, to, n
 	mau := map[string]struct{}{}
 
 	for userID, dates := range r.s.activity {
+		if !isStudent(userID) {
+			continue
+		}
 		for date := range dates {
 			switch {
 			case date >= today:
@@ -56,6 +67,9 @@ func (r *analyticsMemoryRepo) AnalyticsOverview(ctx context.Context, from, to, n
 	activeSince := func(t time.Time) bool { return !t.Before(from) && t.Before(to) }
 
 	for _, user := range r.s.users {
+		if user.Role != "student" {
+			continue
+		}
 		if !user.CreatedAt.Before(from) && user.CreatedAt.Before(to) {
 			out.NewUsers++
 		}
@@ -76,15 +90,39 @@ func (r *analyticsMemoryRepo) AnalyticsOverview(ctx context.Context, from, to, n
 				continue
 			}
 			out.Evaluations++
+			switch evaluation.Status {
+			case "COMPLETED":
+				out.CompletedEvaluations++
+			case "FAILED":
+				out.FailedEvaluations++
+			case "EMPTY":
+				out.EmptyEvaluations++
+			case "INSUFFICIENT":
+				out.InsufficientEvaluations++
+			}
+			if evaluation.Status == "FAILED" {
+				lower := strings.ToLower(evaluation.LastError)
+				switch {
+				case strings.Contains(lower, "empty recognition"):
+					out.ErrorBreakdown.EmptyRecognition++
+				case strings.Contains(lower, "less than 30s"):
+					out.ErrorBreakdown.AudioTooLong++
+				case strings.Contains(lower, "less than 1 mb"):
+					out.ErrorBreakdown.AudioTooLarge++
+				case strings.Contains(lower, "unauthorized"), strings.Contains(lower, "permissiondenied"):
+					out.ErrorBreakdown.SpeechkitAuth++
+				case strings.Contains(lower, "ffmpeg"), strings.Contains(lower, "ebml"), strings.Contains(lower, "invalid data"):
+					out.ErrorBreakdown.CorruptAudio++
+				default:
+					out.ErrorBreakdown.OtherFailed++
+				}
+			}
 			questionType := strings.ToUpper(evaluation.QuestionType)
 			switch {
 			case strings.Contains(questionType, "SPEAK"):
 				out.SpeakingCount++
 			case strings.Contains(questionType, "WRITE"):
 				out.WritingCount++
-			}
-			if evaluation.Status == "FAILED" {
-				out.ErrorCount++
 			}
 		}
 	}
@@ -109,12 +147,18 @@ func (r *analyticsMemoryRepo) AnalyticsOverview(ctx context.Context, from, to, n
 				continue
 			}
 			switch event.EventType {
-			case "ANSWER_REJECTED_DEADLINE", "STAGE_TIMEOUT", "SECURITY_REJECTED":
-				out.ErrorCount++
+			case "ANSWER_REJECTED_DEADLINE":
+				out.ErrorBreakdown.DeadlineRejections++
+			case "STAGE_TIMEOUT":
+				out.ErrorBreakdown.StageTimeouts++
+			case "SECURITY_REJECTED":
+				out.ErrorBreakdown.SecurityRejections++
 			}
 		}
 	}
 
+	out.ErrorCount = out.FailedEvaluations + out.ErrorBreakdown.DeadlineRejections +
+		out.ErrorBreakdown.StageTimeouts + out.ErrorBreakdown.SecurityRejections
 	return out, nil
 }
 
@@ -122,6 +166,10 @@ func (r *analyticsMemoryRepo) AnalyticsTimeseries(ctx context.Context, metric st
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
 
+	isStudent := func(userID string) bool {
+		user, ok := r.s.users[userID]
+		return ok && user.Role == "student"
+	}
 	counts := map[string]int{}
 	add := func(at time.Time) {
 		if at.Before(from) || !at.Before(to) {
@@ -133,13 +181,19 @@ func (r *analyticsMemoryRepo) AnalyticsTimeseries(ctx context.Context, metric st
 	switch metric {
 	case "signups":
 		for _, user := range r.s.users {
+			if user.Role != "student" {
+				continue
+			}
 			add(user.CreatedAt)
 		}
 	case "active":
 		if bucket == "day" {
 			fromDate := utcDate(from)
 			toDate := utcDate(to)
-			for _, dates := range r.s.activity {
+			for userID, dates := range r.s.activity {
+				if !isStudent(userID) {
+					continue
+				}
 				for date := range dates {
 					if date < fromDate || date > toDate {
 						continue
@@ -150,6 +204,9 @@ func (r *analyticsMemoryRepo) AnalyticsTimeseries(ctx context.Context, metric st
 		} else {
 			seen := map[string]map[string]struct{}{} // bucket -> userIDs
 			for userID, events := range r.s.learningEvents {
+				if !isStudent(userID) {
+					continue
+				}
 				for _, event := range events {
 					if event.CreatedAt.Before(from) || !event.CreatedAt.Before(to) {
 						continue
@@ -162,6 +219,9 @@ func (r *analyticsMemoryRepo) AnalyticsTimeseries(ctx context.Context, metric st
 				}
 			}
 			for _, session := range r.s.sessions {
+				if !isStudent(session.UserID) {
+					continue
+				}
 				if session.CreatedAt.Before(from) || !session.CreatedAt.Before(to) {
 					continue
 				}
@@ -210,6 +270,10 @@ func (r *analyticsMemoryRepo) AnalyticsFeatures(ctx context.Context, from, to ti
 	r.s.mu.RLock()
 	defer r.s.mu.RUnlock()
 
+	isStudent := func(userID string) bool {
+		user, ok := r.s.users[userID]
+		return ok && user.Role == "student"
+	}
 	type aggregate struct {
 		count int
 		users map[string]struct{}
@@ -232,6 +296,9 @@ func (r *analyticsMemoryRepo) AnalyticsFeatures(ctx context.Context, from, to ti
 	}
 
 	for userID, events := range r.s.learningEvents {
+		if !isStudent(userID) {
+			continue
+		}
 		for _, event := range events {
 			if event.CreatedAt.Before(from) || !event.CreatedAt.Before(to) {
 				continue
@@ -240,6 +307,9 @@ func (r *analyticsMemoryRepo) AnalyticsFeatures(ctx context.Context, from, to ti
 		}
 	}
 	for userID, attempts := range r.s.practiceAttempts {
+		if !isStudent(userID) {
+			continue
+		}
 		for _, attempt := range attempts {
 			if attempt.CreatedAt.Before(from) || !attempt.CreatedAt.Before(to) {
 				continue
@@ -251,6 +321,9 @@ func (r *analyticsMemoryRepo) AnalyticsFeatures(ctx context.Context, from, to ti
 		userID := ""
 		if session := r.s.sessions[sessionID]; session != nil {
 			userID = session.UserID
+		}
+		if !isStudent(userID) {
+			continue
 		}
 		for _, evaluation := range evals {
 			if evaluation.CreatedAt.Before(from) || !evaluation.CreatedAt.Before(to) {
@@ -299,6 +372,9 @@ func (r *analyticsMemoryRepo) AnalyticsRetention(ctx context.Context, from, to, 
 	today := utcDate(now)
 
 	for _, user := range r.s.users {
+		if user.Role != "student" {
+			continue
+		}
 		if user.CreatedAt.Before(from) || !user.CreatedAt.Before(to) {
 			continue
 		}

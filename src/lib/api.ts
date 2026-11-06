@@ -629,11 +629,26 @@ export interface AnalyticsOverview {
   sessions: number;
   completedMocks: number;
   evaluations: number;
+  completedEvaluations: number;
+  failedEvaluations: number;
+  emptyEvaluations: number;
+  insufficientEvaluations: number;
   speakingEvaluations: number;
   writingEvaluations: number;
   ttsCalls: number;
   xpAwarded: number;
   errorCount: number;
+  errorBreakdown: {
+    deadlineRejections: number;
+    stageTimeouts: number;
+    securityRejections: number;
+    emptyRecognition: number;
+    audioTooLong: number;
+    speechkitAuth: number;
+    audioTooLarge: number;
+    corruptAudio: number;
+    otherFailed: number;
+  };
 }
 
 export interface AnalyticsPoint {

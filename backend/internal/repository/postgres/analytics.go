@@ -23,10 +23,10 @@ func (r *AnalyticsRepo) AnalyticsOverview(ctx context.Context, from, to, now tim
 		Generated: now.UTC(),
 	}
 
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&out.TotalUsers); err != nil {
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE role = 'student'`).Scan(&out.TotalUsers); err != nil {
 		return nil, err
 	}
-	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE created_at >= $1 AND created_at < $2`, from, to).Scan(&out.NewUsers); err != nil {
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users WHERE role = 'student' AND created_at >= $1 AND created_at < $2`, from, to).Scan(&out.NewUsers); err != nil {
 		return nil, err
 	}
 
@@ -35,11 +35,12 @@ func (r *AnalyticsRepo) AnalyticsOverview(ctx context.Context, from, to, now tim
 	month := now.UTC().AddDate(0, 0, -29).Format("2006-01-02")
 	if err := r.db.QueryRowContext(ctx, `
 		SELECT
-			COUNT(DISTINCT user_id) FILTER (WHERE activity_date >= $1::date)::int,
-			COUNT(DISTINCT user_id) FILTER (WHERE activity_date >= $2::date)::int,
-			COUNT(DISTINCT user_id) FILTER (WHERE activity_date >= $3::date)::int
-		FROM user_activity
-		WHERE activity_date >= $3::date
+			COUNT(DISTINCT ua.user_id) FILTER (WHERE ua.activity_date >= $1::date)::int,
+			COUNT(DISTINCT ua.user_id) FILTER (WHERE ua.activity_date >= $2::date)::int,
+			COUNT(DISTINCT ua.user_id) FILTER (WHERE ua.activity_date >= $3::date)::int
+		FROM user_activity ua
+		JOIN users u ON u.id = ua.user_id AND u.role = 'student'
+		WHERE ua.activity_date >= $3::date
 	`, today, week, month).Scan(&out.Active.DAU, &out.Active.WAU, &out.Active.MAU); err != nil {
 		return nil, err
 	}
@@ -58,11 +59,23 @@ func (r *AnalyticsRepo) AnalyticsOverview(ctx context.Context, from, to, now tim
 	if err := r.db.QueryRowContext(ctx, `
 		SELECT
 			COUNT(*)::int,
+			COUNT(*) FILTER (WHERE status = 'COMPLETED')::int,
+			COUNT(*) FILTER (WHERE status = 'FAILED')::int,
+			COUNT(*) FILTER (WHERE status = 'EMPTY')::int,
+			COUNT(*) FILTER (WHERE status = 'INSUFFICIENT')::int,
 			COUNT(*) FILTER (WHERE UPPER(question_type) LIKE '%SPEAK%')::int,
 			COUNT(*) FILTER (WHERE UPPER(question_type) LIKE '%WRITE%')::int
 		FROM evaluations
 		WHERE created_at >= $1 AND created_at < $2
-	`, from, to).Scan(&out.Evaluations, &out.SpeakingCount, &out.WritingCount); err != nil {
+	`, from, to).Scan(
+		&out.Evaluations,
+		&out.CompletedEvaluations,
+		&out.FailedEvaluations,
+		&out.EmptyEvaluations,
+		&out.InsufficientEvaluations,
+		&out.SpeakingCount,
+		&out.WritingCount,
+	); err != nil {
 		return nil, err
 	}
 
@@ -80,21 +93,51 @@ func (r *AnalyticsRepo) AnalyticsOverview(ctx context.Context, from, to, now tim
 		return nil, err
 	}
 
-	var failedEvaluations, rejectedEvents int
 	if err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM evaluations
+		SELECT
+			COUNT(*) FILTER (WHERE COALESCE(last_error, '') ILIKE '%empty recognition%')::int,
+			COUNT(*) FILTER (WHERE COALESCE(last_error, '') ILIKE '%less than 30s%')::int,
+			COUNT(*) FILTER (WHERE COALESCE(last_error, '') ILIKE '%unauthorized%'
+				OR COALESCE(last_error, '') ILIKE '%permissiondenied%')::int,
+			COUNT(*) FILTER (WHERE COALESCE(last_error, '') ILIKE '%less than 1 mb%')::int,
+			COUNT(*) FILTER (WHERE COALESCE(last_error, '') ILIKE '%ffmpeg%'
+				OR COALESCE(last_error, '') ILIKE '%ebml%'
+				OR COALESCE(last_error, '') ILIKE '%invalid data%')::int
+		FROM evaluations
 		WHERE status = 'FAILED' AND created_at >= $1 AND created_at < $2
-	`, from, to).Scan(&failedEvaluations); err != nil {
+	`, from, to).Scan(
+		&out.ErrorBreakdown.EmptyRecognition,
+		&out.ErrorBreakdown.AudioTooLong,
+		&out.ErrorBreakdown.SpeechkitAuth,
+		&out.ErrorBreakdown.AudioTooLarge,
+		&out.ErrorBreakdown.CorruptAudio,
+	); err != nil {
 		return nil, err
 	}
+	out.ErrorBreakdown.OtherFailed = out.FailedEvaluations -
+		(out.ErrorBreakdown.EmptyRecognition + out.ErrorBreakdown.AudioTooLong +
+			out.ErrorBreakdown.SpeechkitAuth + out.ErrorBreakdown.AudioTooLarge +
+			out.ErrorBreakdown.CorruptAudio)
+	if out.ErrorBreakdown.OtherFailed < 0 {
+		out.ErrorBreakdown.OtherFailed = 0
+	}
 	if err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM session_events
+		SELECT
+			COUNT(*) FILTER (WHERE event_type = 'ANSWER_REJECTED_DEADLINE')::int,
+			COUNT(*) FILTER (WHERE event_type = 'STAGE_TIMEOUT')::int,
+			COUNT(*) FILTER (WHERE event_type = 'SECURITY_REJECTED')::int
+		FROM session_events
 		WHERE event_type IN ('ANSWER_REJECTED_DEADLINE', 'STAGE_TIMEOUT', 'SECURITY_REJECTED')
 		  AND created_at >= $1 AND created_at < $2
-	`, from, to).Scan(&rejectedEvents); err != nil {
+	`, from, to).Scan(
+		&out.ErrorBreakdown.DeadlineRejections,
+		&out.ErrorBreakdown.StageTimeouts,
+		&out.ErrorBreakdown.SecurityRejections,
+	); err != nil {
 		return nil, err
 	}
-	out.ErrorCount = failedEvaluations + rejectedEvents
+	out.ErrorCount = out.FailedEvaluations + out.ErrorBreakdown.DeadlineRejections +
+		out.ErrorBreakdown.StageTimeouts + out.ErrorBreakdown.SecurityRejections
 
 	return out, nil
 }
@@ -111,11 +154,13 @@ func (r *AnalyticsRepo) AnalyticsTimeseries(ctx context.Context, metric string, 
 	switch metric {
 	case "signups":
 		query = `SELECT to_char(` + fmt.Sprintf(bucketExpr, "created_at") + `, $3), COUNT(*)::int
-			FROM users WHERE created_at >= $1 AND created_at < $2 GROUP BY 1 ORDER BY 1`
+			FROM users WHERE role = 'student' AND created_at >= $1 AND created_at < $2 GROUP BY 1 ORDER BY 1`
 	case "active":
 		if bucket == "day" {
-			query = `SELECT to_char(activity_date, $3), COUNT(DISTINCT user_id)::int
-				FROM user_activity WHERE activity_date >= $1::date AND activity_date <= $2::date
+			query = `SELECT to_char(ua.activity_date, $3), COUNT(DISTINCT ua.user_id)::int
+				FROM user_activity ua
+				JOIN users u ON u.id = ua.user_id AND u.role = 'student'
+				WHERE ua.activity_date >= $1::date AND ua.activity_date <= $2::date
 				GROUP BY 1 ORDER BY 1`
 		} else {
 			query = `SELECT to_char(bucket, $3), COUNT(DISTINCT user_id)::int FROM (
@@ -124,7 +169,9 @@ func (r *AnalyticsRepo) AnalyticsTimeseries(ctx context.Context, metric string, 
 				UNION ALL
 				SELECT ` + fmt.Sprintf(bucketExpr, "created_at") + ` AS bucket, user_id FROM test_sessions
 					WHERE created_at >= $1 AND created_at < $2
-			) activity GROUP BY 1 ORDER BY 1`
+			) activity
+			JOIN users u ON u.id = activity.user_id AND u.role = 'student'
+			GROUP BY 1 ORDER BY 1`
 		}
 	case "mocks":
 		query = `SELECT to_char(` + fmt.Sprintf(bucketExpr, "completed_at") + `, $3), COUNT(*)::int
@@ -166,17 +213,23 @@ func (r *AnalyticsRepo) AnalyticsFeatures(ctx context.Context, from, to time.Tim
 	}
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT source, key, count, users FROM (
-			SELECT 'learning_events' AS source, event_type AS key,
-			       COUNT(*)::int AS count, COUNT(DISTINCT user_id)::int AS users
-			FROM learning_events WHERE created_at >= $1 AND created_at < $2
-			GROUP BY event_type
+			SELECT 'learning_events' AS source, le.event_type AS key,
+			       COUNT(*)::int AS count, COUNT(DISTINCT le.user_id)::int AS users
+			FROM learning_events le
+			JOIN users u ON u.id = le.user_id AND u.role = 'student'
+			WHERE le.created_at >= $1 AND le.created_at < $2
+			GROUP BY le.event_type
 			UNION ALL
-			SELECT 'practice_attempts', question_type, COUNT(*)::int, COUNT(DISTINCT user_id)::int
-			FROM practice_attempts WHERE created_at >= $1 AND created_at < $2
-			GROUP BY question_type
+			SELECT 'practice_attempts', pa.question_type, COUNT(*)::int, COUNT(DISTINCT pa.user_id)::int
+			FROM practice_attempts pa
+			JOIN users u ON u.id = pa.user_id AND u.role = 'student'
+			WHERE pa.created_at >= $1 AND pa.created_at < $2
+			GROUP BY pa.question_type
 			UNION ALL
 			SELECT 'evaluations', e.question_type, COUNT(*)::int, COUNT(DISTINCT s.user_id)::int
-			FROM evaluations e JOIN test_sessions s ON s.id = e.session_id
+			FROM evaluations e
+			JOIN test_sessions s ON s.id = e.session_id
+			JOIN users u ON u.id = s.user_id AND u.role = 'student'
 			WHERE e.created_at >= $1 AND e.created_at < $2
 			GROUP BY e.question_type
 		) features
@@ -216,7 +269,7 @@ func (r *AnalyticsRepo) AnalyticsRetention(ctx context.Context, from, to, now ti
 		           WHERE a.user_id = u.id AND a.activity_date >= (u.created_at AT TIME ZONE 'UTC')::date + 30
 		       ))::int AS d30
 		FROM users u
-		WHERE u.created_at >= $1 AND u.created_at < $2
+		WHERE u.role = 'student' AND u.created_at >= $1 AND u.created_at < $2
 		GROUP BY 1 ORDER BY 1
 	`, from, to)
 	if err != nil {

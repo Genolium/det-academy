@@ -106,6 +106,20 @@ function copyFor(locale: Locale) {
     xpHint: ru ? 'За период' : 'In range',
     errors: ru ? 'Ошибки пайплайна' : 'Pipeline errors',
     errorsHint: ru ? 'Неудачные оценки и таймауты' : 'Failed evaluations and timeouts',
+    completedEvaluations: ru ? 'Завершено' : 'Completed',
+    attempts: ru ? 'попыток' : 'attempts',
+    failedLabel: ru ? 'failed' : 'failed',
+    emptyLabel: ru ? 'empty' : 'empty',
+    errorBreakdown: ru ? 'Причины ошибок' : 'Error breakdown',
+    deadlineRejections: ru ? 'дедлайн' : 'deadline',
+    stageTimeouts: ru ? 'таймаут этапа' : 'stage timeout',
+    securityRejections: ru ? 'security' : 'security',
+    emptyRecognition: ru ? 'пустое распознавание' : 'empty recognition',
+    audioTooLong: ru ? 'аудио >30с' : 'audio >30s',
+    speechkitAuth: ru ? 'SpeechKit auth' : 'SpeechKit auth',
+    audioTooLarge: ru ? 'аудио >1MB' : 'audio >1MB',
+    corruptAudio: ru ? 'повреждённое аудио' : 'corrupt audio',
+    otherFailed: ru ? 'другое' : 'other',
     usersChart: ru ? 'Рост базы' : 'User growth',
     usersChartHint: ru ? 'Накопительно, включая аккаунты до периода' : 'Cumulative, including accounts from before the range',
     activeChart: ru ? 'Активные студенты' : 'Active students',
@@ -659,7 +673,25 @@ export const AdminAnalyticsDashboard: React.FC = () => {
     ])
       .then(([overview, users, active, mocks, evaluations, features, retention]) => {
         if (cancelled) return;
-        setData({ overview, users, active, mocks, evaluations, features, retention });
+        const safeOverview: AnalyticsOverview = {
+          ...overview,
+          completedEvaluations: overview.completedEvaluations ?? 0,
+          failedEvaluations: overview.failedEvaluations ?? 0,
+          emptyEvaluations: overview.emptyEvaluations ?? 0,
+          insufficientEvaluations: overview.insufficientEvaluations ?? 0,
+          errorBreakdown: {
+            deadlineRejections: overview.errorBreakdown?.deadlineRejections ?? 0,
+            stageTimeouts: overview.errorBreakdown?.stageTimeouts ?? 0,
+            securityRejections: overview.errorBreakdown?.securityRejections ?? 0,
+            emptyRecognition: overview.errorBreakdown?.emptyRecognition ?? 0,
+            audioTooLong: overview.errorBreakdown?.audioTooLong ?? 0,
+            speechkitAuth: overview.errorBreakdown?.speechkitAuth ?? 0,
+            audioTooLarge: overview.errorBreakdown?.audioTooLarge ?? 0,
+            corruptAudio: overview.errorBreakdown?.corruptAudio ?? 0,
+            otherFailed: overview.errorBreakdown?.otherFailed ?? 0,
+          },
+        };
+        setData({ overview: safeOverview, users, active, mocks, evaluations, features, retention });
       })
       .catch((err: unknown) => {
         if (cancelled || (err instanceof DOMException && err.name === 'AbortError')) return;
@@ -933,11 +965,11 @@ export const AdminAnalyticsDashboard: React.FC = () => {
                 />
                 <KpiCard
                   label={labels.evaluations}
-                  value={num(data.overview.evaluations, locale)}
-                  hint={`${num(data.overview.speakingEvaluations, locale)} ${labels.speaking} · ${num(
-                    data.overview.writingEvaluations,
+                  value={num(data.overview.completedEvaluations, locale)}
+                  hint={`${num(data.overview.evaluations, locale)} ${labels.attempts} · ${num(
+                    data.overview.failedEvaluations,
                     locale
-                  )} ${labels.writing}`}
+                  )} ${labels.failedLabel} · ${num(data.overview.emptyEvaluations, locale)} ${labels.emptyLabel}`}
                   icon={<Sparkles className="h-4 w-4" aria-hidden />}
                 />
                 <KpiCard
@@ -955,7 +987,13 @@ export const AdminAnalyticsDashboard: React.FC = () => {
                 <KpiCard
                   label={labels.errors}
                   value={num(data.overview.errorCount, locale)}
-                  hint={labels.errorsHint}
+                  hint={`${num(data.overview.failedEvaluations, locale)} ${labels.failedLabel} · ${num(
+                    data.overview.errorBreakdown.deadlineRejections,
+                    locale
+                  )} ${labels.deadlineRejections} · ${num(
+                    data.overview.errorBreakdown.stageTimeouts,
+                    locale
+                  )} ${labels.stageTimeouts}`}
                   accent={data.overview.errorCount > 0 ? 'error' : undefined}
                   icon={<AlertTriangle className="h-4 w-4" aria-hidden />}
                 />
@@ -1043,10 +1081,23 @@ export const AdminAnalyticsDashboard: React.FC = () => {
 
           <div className="flex items-start gap-2 rounded-2xl border border-neutral-200 bg-white/70 p-4 text-[11px] leading-relaxed text-neutral-500">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            <p>
-              <span className="font-bold text-neutral-700">{labels.note}: </span>
-              {labels.limitations}
-            </p>
+            <div>
+              <p>
+                <span className="font-bold text-neutral-700">{labels.note}: </span>
+                {labels.limitations}
+              </p>
+              {data.overview.errorCount > 0 && (
+                <p className="mt-2">
+                  <span className="font-bold text-neutral-700">{labels.errorBreakdown}: </span>
+                  {labels.emptyRecognition} {num(data.overview.errorBreakdown.emptyRecognition, locale)} ·{' '}
+                  {labels.audioTooLong} {num(data.overview.errorBreakdown.audioTooLong, locale)} ·{' '}
+                  {labels.speechkitAuth} {num(data.overview.errorBreakdown.speechkitAuth, locale)} ·{' '}
+                  {labels.audioTooLarge} {num(data.overview.errorBreakdown.audioTooLarge, locale)} ·{' '}
+                  {labels.corruptAudio} {num(data.overview.errorBreakdown.corruptAudio, locale)} ·{' '}
+                  {labels.otherFailed} {num(data.overview.errorBreakdown.otherFailed, locale)}
+                </p>
+              )}
+            </div>
           </div>
         </>
       )}

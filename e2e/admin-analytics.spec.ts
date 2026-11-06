@@ -98,11 +98,26 @@ async function mockAdminAnalytics(page: Page) {
         sessions: 260,
         completedMocks: 94,
         evaluations: 512,
+        completedEvaluations: 430,
+        failedEvaluations: 42,
+        emptyEvaluations: 38,
+        insufficientEvaluations: 2,
         speakingEvaluations: 318,
         writingEvaluations: 194,
         ttsCalls: 76,
         xpAwarded: 18420,
-        errorCount: 7,
+        errorCount: 61,
+        errorBreakdown: {
+          deadlineRejections: 10,
+          stageTimeouts: 9,
+          securityRejections: 0,
+          emptyRecognition: 16,
+          audioTooLong: 11,
+          speechkitAuth: 8,
+          audioTooLarge: 2,
+          corruptAudio: 4,
+          otherFailed: 1,
+        },
       });
     }
 
@@ -176,7 +191,9 @@ test.describe('admin analytics', () => {
     await expect(page.getByText(/1\s*284/).first()).toBeVisible();
     await expect(page.getByText('120', { exact: true })).toBeVisible();
     await expect(page.getByText('94', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(/318\s*говорение/)).toBeVisible();
+    await expect(page.getByText('430', { exact: true })).toBeVisible();
+    await expect(page.getByText(/512 попыток · 42 failed · 38 empty/)).toBeVisible();
+    await expect(page.getByText(/пустое распознавание 16/)).toBeVisible();
 
     await expect(page.locator('figure')).toHaveCount(4);
     await expect(page.getByRole('img', { name: /Рост базы. всего: 1\s*284/ })).toBeVisible();
