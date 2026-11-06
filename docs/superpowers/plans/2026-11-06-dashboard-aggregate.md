@@ -208,3 +208,15 @@ Record the request-count result and dashboard payload contract in `docs/roadmap-
 git add e2e-fullstack/dashboard-aggregate.spec.ts docs/roadmap-2026-11-01.md
 git commit -m "docs: record dashboard aggregate verification"
 ```
+
+
+## Verification evidence
+
+- Backend `go vet` + `go test -race ./...` with PostgreSQL — green.
+- Playwright full suite — `221 passed / 2 skipped`.
+- Fullstack real backend + PostgreSQL — `10 passed`.
+- Playwright request-count test: exactly one `/user/dashboard` call and zero legacy dashboard calls.
+- Legacy fallback test: aggregate 404 falls back to `/user/streak`.
+- `npx tsc --noEmit` — clean.
+- `npm run build` — success.
+- `npm run lint` — 0 errors, 114 pre-existing warnings.
