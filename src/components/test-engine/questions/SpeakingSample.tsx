@@ -63,13 +63,14 @@ export const SpeakingSample: React.FC<SpeakingSampleProps> = ({ onComplete, isSt
 
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
   // One countdown covers preparation and speaking: 3:30 in total.
+  const activeStageDeadline = isStandaloneDrill ? null : stageDeadlineAt;
   const [taskDeadline] = useState(() => {
     const fixed = Date.now() + TOTAL_SECONDS * 1000;
-    return stageDeadlineAt ? Math.min(fixed, stageDeadlineAt - 15_000) : fixed;
+    return activeStageDeadline ? Math.min(fixed, activeStageDeadline - 15_000) : fixed;
   });
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
   const stageLimited =
-    stageDeadlineAt !== null && stageDeadlineAt - 15_000 < Date.now() + TOTAL_SECONDS * 1000;
+    activeStageDeadline !== null && activeStageDeadline - 15_000 < Date.now() + TOTAL_SECONDS * 1000;
   const [speakSeconds, setSpeakSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [showTranscript, setShowTranscript] = useState(false);

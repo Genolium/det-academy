@@ -69,13 +69,14 @@ export const SpeakAboutPhoto: React.FC<SpeakAboutPhotoProps> = ({ onComplete, is
   const [phase, setPhase] = useState<'prep' | 'speaking'>('prep');
   // One countdown for the whole task: preparation and speaking share the same
   // deadline instead of restarting the clock when recording begins.
+  const activeStageDeadline = isStandaloneDrill ? null : stageDeadlineAt;
   const [taskDeadline] = useState(() => {
     const fixed = Date.now() + TOTAL_SECONDS * 1000;
-    return stageDeadlineAt ? Math.min(fixed, stageDeadlineAt - 15_000) : fixed;
+    return activeStageDeadline ? Math.min(fixed, activeStageDeadline - 15_000) : fixed;
   });
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
   const stageLimited =
-    stageDeadlineAt !== null && stageDeadlineAt - 15_000 < Date.now() + TOTAL_SECONDS * 1000;
+    activeStageDeadline !== null && activeStageDeadline - 15_000 < Date.now() + TOTAL_SECONDS * 1000;
   const [speakSeconds, setSpeakSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [showTranscript, setShowTranscript] = useState(false);
