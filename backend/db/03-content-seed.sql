@@ -30,7 +30,7 @@ END $$;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'rules-and-technicalities',
-  1,
+  14,
   'rules-and-technicalities',
   'Регламент тестирования и технические требования',
   'Testing Protocol & Technical Requirements',
@@ -60,7 +60,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'subscores-and-cat-engine',
-  2,
+  15,
   'subscores-and-cat-engine',
   'Структура сабскоров и адаптивный алгоритм',
   'Subscores Structure & Adaptive Engine',
@@ -73,10 +73,10 @@ VALUES (
   '["Каждое задание оценивает два суббалла одновременно.","Сложность заданий калибруется динамически: ранние ответы формируют рабочий диапазон сложности.","Сабскор Production оценивает продуктивные навыки (письмо и говорение) и часто является решающим для приемных комиссий.","Шкала 10–160 соотносится с уровнями CEFR: от A1 (до 55) до C2 (140–160)."]'::jsonb,
   '["Сохраняйте предельную концентрацию в первые 10 минут: они определяют базовый уровень сложности сессии.","Ориентируйтесь на разнообразие лексики и грамматики: простые короткие ответы ограничивают балл за Production.","Пишите и говорите в полном объеме: неполные ответы снижают оценку за беглость и словарный запас."]'::jsonb,
   'Распределение навыков по сабскорам:
-• Literacy (чтение и письмо): C-Test, Read and Select, эссе, Interactive Reading.
-• Comprehension (чтение и аудирование): диктант, Interactive Reading, Listen and Select.
-• Conversation (аудирование и говорение): диалог, устные ответы, Read Aloud.
-• Production (письмо и говорение): описание изображений, эссе, устные монологи.',
+• Literacy (чтение и письмо): Read and Select, Read and Complete, Interactive Reading, Write About the Photo, Interactive Writing, Writing Sample.
+• Comprehension (чтение и аудирование): Read and Select, Fill in the Blanks, Read and Complete, Listen and Type, Interactive Reading, Interactive Listening.
+• Conversation (аудирование и говорение): Listen and Type, Interactive Listening, Read Then Speak, Interactive Speaking, Speak About the Photo, Speaking Sample.
+• Production (письмо и говорение): Write About the Photo, Interactive Writing, Writing Sample, Speak About the Photo, Read Then Speak, Interactive Speaking, Speaking Sample.',
   '[{"question":"Кандидат написал грамматически корректные, но предельно короткие предложения в эссе (по 4–5 слов).","modelAnswer":"Оценка за Production окажется низкой из-за ограниченного лексического разнообразия.","comment":"Для высокого балла требуются сложные синтаксические конструкции и развитый академический словарь."}]'::jsonb,
   '["Невнимательность на простых заданиях в начале теста.","Использование однотипных конструкций на протяжении всего ответа."]'::jsonb
 ) ON CONFLICT (slug) DO UPDATE SET 
@@ -89,7 +89,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'read-and-select',
-  3,
+  1,
   'read-and-select',
   'Read and Select: определение реальных слов',
   'Read and Select: Real Word Recognition',
@@ -116,34 +116,8 @@ VALUES (
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
-  'listen-and-select',
-  4,
-  'listen-and-select',
-  'Listen and Select: восприятие слов на слух',
-  'Listen and Select: Spoken Word Recognition',
-  'vocab',
-  'Аудирование',
-  'Audio Vocabulary',
-  'Сетка из 9 аудиокнопок. Допускается повторное воспроизведение каждой дорожки в пределах общего времени.',
-  'Баллы за правильный выбор реальных слов со штрафом за выбор псевдослов. Влияет на Comprehension и Conversation.',
-  '90 секунд на блок',
-  '["Прослушивать аудиодорожки можно несколько раз, пока не истечет общее время.","Выбирайте только те слова, в существовании которых не сомневаетесь.","За ошибочно выбранные несуществующие слова начисляется штраф."]'::jsonb,
-  '["В первые 30 секунд прослушайте все 9 записей и отметьте слова, знакомые вам по учебе или чтению.","Во второй половине времени перепроверьте сомнительные варианты, мысленно вспоминая их написание.","Перед отправкой убедитесь, что не нажали лишние варианты: лучше подтвердить 4 точных слова, чем добавить псевдослово."]'::jsonb,
-  'Критерий выбора на слух:
-Если вы не можете воспроизвести орфографию слова или составить с ним фразу, оставьте его неотмеченным.',
-  '[{"question":"Аудиозапись слова: pertain","modelAnswer":"Выбрать","comment":"Академический глагол с предлогом to, означающий ''относиться к чему-либо''."},{"question":"Аудиозапись слова: flinged","modelAnswer":"Не выбирать","comment":"Глагол fling неправильный (формы flung, flung), форма flinged не существует."}]'::jsonb,
-  '["Выбор слов исключительно из-за четкой и уверенной интонации диктора.","Задержка на одном слове до истечения всего времени таймера."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
-  title_ru = EXCLUDED.title_ru,
-  title_en = EXCLUDED.title_en,
-  rules = EXCLUDED.rules,
-  strategy_steps = EXCLUDED.strategy_steps,
-  examples = EXCLUDED.examples,
-  pitfalls = EXCLUDED.pitfalls;
-INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
-VALUES (
   'fill-in-the-blanks',
-  5,
+  2,
   'fill-in-the-blanks',
   'Fill in the Blanks: заполнение пропусков в предложениях',
   'Fill in the Blanks: Single-Sentence Completion',
@@ -172,7 +146,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'read-and-complete',
-  6,
+  3,
   'read-and-complete',
   'Read and Complete: восстановление текста',
   'Read and Complete: C-Test Text Reconstruction',
@@ -201,7 +175,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'listen-and-type',
-  7,
+  4,
   'listen-and-type',
   'Listen and Type: запись предложений под диктовку',
   'Listen and Type: Audio Dictation',
@@ -228,34 +202,8 @@ VALUES (
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
-  'read-aloud',
-  8,
-  'read-aloud',
-  'Read Aloud: чтение предложения вслух',
-  'Read Aloud: Oral Reading',
-  'speaking',
-  'Говорение',
-  'Speaking',
-  'Текстовое предложение на экране. Лимит 20 секунд на чтение в микрофон.',
-  'Точность произношения фонем, связность речи, фразовое ударение и деление на смысловые группы.',
-  '20 секунд',
-  '["Нельзя пропускать слова, добавлять новые или заменять их синонимами.","Запись начинается сразу после нажатия кнопки или по истечении 20 секунд.","Перезаписать ответ нельзя.","Если допущена оговорка, продолжайте чтение без повторения слова с начала."]'::jsonb,
-  '["В первые секунды просмотрите предложение и определите сложные многосложные слова.","Мысленно разделите фразу на 2–3 смысловые группы по союзам или знакам препинания.","Прочитайте текст с естественной интонацией, понижая голос к точке в конце предложения."]'::jsonb,
-  'Интонационный рисунок предложения:
-[Вводная часть ↗] -> [Смысловое ядро ↗] -> [Завершение мысли с понижением тона ↘].',
-  '[{"question":"The scientific expedition collected geological samples across the northern ridge.","modelAnswer":"Плавное прочтение с ударением на словах scientific, expedition, collected, geological, northern, ridge.","comment":"Слово expedition произносится с ударением на третий слог, geological — на третий слог."}]'::jsonb,
-  '["Чтение отдельными словами с длительными паузами между ними.","Пропуск окончания -ed у правильных глаголов."]'::jsonb
-) ON CONFLICT (slug) DO UPDATE SET 
-  title_ru = EXCLUDED.title_ru,
-  title_en = EXCLUDED.title_en,
-  rules = EXCLUDED.rules,
-  strategy_steps = EXCLUDED.strategy_steps,
-  examples = EXCLUDED.examples,
-  pitfalls = EXCLUDED.pitfalls;
-INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
-VALUES (
   'interactive-reading',
-  9,
+  5,
   'interactive-reading',
   'Interactive Reading: комплексный анализ текста',
   'Interactive Reading: Multi-Stage Analysis',
@@ -283,24 +231,24 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'interactive-listening',
-  10,
+  6,
   'interactive-listening',
-  'Interactive Listening: диалог и письменное резюме',
+  'Interactive Listening: диалог, ответы и резюме',
   'Interactive Listening: Conversation & Summary',
   'interactive',
   'Интерактивный блок',
   'Interactive Listening',
-  'Академический диалог из 4–6 реплик, за которым следует 75-секундный блок написания краткого резюме.',
-  'Оценивается адекватность реплик в контексте беседы и качество изложения резюме (полнота фактов, грамматика).',
-  'Диалог (~3-4 мин), 15 сек на просмотр транскрипта, 75 сек на резюме',
-  '["Каждая реплика собеседника звучит один раз.","Выбирайте ответы, соответствующие академическому этикету и цели обращения.","После окончания диалога предоставляется 15 секунд на чтение полного текста беседы без возможности ввода текста.","На написание резюме отводится 75 секунд; оптимальный объем составляет 3 связных предложения (40–60 слов)."]'::jsonb,
-  '["Во время диалога удерживайте позицию студента: задавайте предметные вопросы и соглашайтесь с конструктивными указаниями.","В течение 15-секундной паузы сформулируйте про себя три пункта: повод обращения, ответ преподавателя и согласованное решение.","В блоке резюме используйте прошедшее время и косвенную речь: изложите повод, предложенное решение и следующий практический шаг."]'::jsonb,
+  'Два академических диалога. В каждом: аудиосценарий, 3–4 задания Listen and Complete, 5–6 заданий Listen and Respond и 75-секундное резюме. На первую часть отводится 6:30; сценарий можно переслушивать.',
+  'Listening, Comprehension, Conversation. Резюме дополнительно оценивается как письменная продукция: полнота фактов, связность и грамматика.',
+  '6:30 на диалог + 75 секунд на резюме; 2 диалога',
+  '["Аудиосценарий можно переслушивать; реплики Listen and Respond звучат только один раз.","Listen and Complete: 3–4 пропуска. Можно перефразировать ответ, если смысл сохранен.","Listen and Respond: выберите лучший ответ. После ответа показывается правильный вариант, поэтому следующий вопрос можно исправить.","Резюме: 75 секунд, 3 связных предложения. Укажите повод разговора, решение и следующий шаг."]'::jsonb,
+  '["Сначала прослушайте сценарий целиком: зафиксируйте участников, проблему и цель разговора.","В Listen and Complete отвечайте по смыслу, не копируйте услышанное дословно.","В Listen and Respond следите за отношениями говорящих и целью беседы.","Перед резюме мысленно соберите три пункта и используйте past tense с косвенной речью."]'::jsonb,
   'Трехчастная схема резюме диалога:
 1. Причина обращения: I met with my instructor to discuss...
 2. Разъяснение преподавателя: The professor explained that... and advised me to...
 3. Итоговая договоренность: In response, I agreed to submit the revised draft by...',
   '[{"question":"Тема беседы: перенос дедлайна эссе из-за технического сбоя в лаборатории.","modelAnswer":"I spoke with my biology professor regarding a brief extension for my laboratory assignment due to equipment maintenance. The instructor agreed to grant an additional forty-eight hours to finalize the data interpretation. Consequently, I committed to submitting the complete report before Friday afternoon.","comment":"Объем 45 слов, логично отражены цель встречи, решение преподавателя и срок сдачи."}]'::jsonb,
-  '["Написание одного короткого предложения вместо связного текста.","Использование прямой речи в кавычках вместо косвенной речи.","Пропуск финального соглашения о сроках или следующих шагах."]'::jsonb
+  '["Ответ одним коротким предложением вместо связного резюме.","Использование прямой речи в кавычках вместо косвенной речи.","Пропуск финального соглашения о сроке или следующем шаге."]'::jsonb
 ) ON CONFLICT (slug) DO UPDATE SET 
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
@@ -311,7 +259,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'write-about-photo',
-  11,
+  7,
   'write-about-photo',
   'Write About the Photo: письменное описание изображения',
   'Write About the Photo: Visual Description',
@@ -339,7 +287,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'interactive-writing',
-  12,
+  8,
   'interactive-writing',
   'Interactive Writing: двухчастное аргументированное эссе',
   'Interactive Writing: Two-Stage Essay',
@@ -366,7 +314,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'writing-sample',
-  13,
+  12,
   'writing-sample',
   'Writing Sample: итоговое академическое эссе',
   'Writing Sample: Final Argumentative Essay',
@@ -395,7 +343,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'speak-about-photo',
-  14,
+  9,
   'speak-about-photo',
   'Speak About the Photo: устное описание изображения',
   'Speak About the Photo: Oral Visual Description',
@@ -424,26 +372,47 @@ VALUES (
   pitfalls = EXCLUDED.pitfalls;
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
-  'read-listen-speak',
-  15,
-  'read-listen-speak',
-  'Read / Listen, Then Speak: развернутый устный монолог',
-  'Read / Listen, Then Speak: Extended Spoken Response',
+  'read-then-speak',
+  10,
+  'read-then-speak',
+  'Read, Then Speak: развернутый устный ответ',
+  'Read, Then Speak: Extended Spoken Response',
   'speaking',
   'Говорение',
   'Speaking',
-  'Текстовая карточка с многосоставным вопросом или аудиозапись вопроса. 20 секунд на подготовку, до 90 секунд ответа.',
-  'Оценивается полнота ответа на все подпункты задания, грамматический диапазон (прошедшие, настоящие и условные формы), беглость.',
-  '20 секунд подготовка, до 90 секунд ответ',
-  '["Необходимо ответить на все подпункты, перечисленные в карточке задания.","Сохраняйте грамматическое время вопроса: рассказ о событиях прошлого строится преимущественно в формах Past Simple и Past Continuous.","Если вопрос содержит гипотетическую часть (''What would you do differently?''), используйте условные конструкции.","Избегайте продолжительных пауз молчания."]'::jsonb,
-  '["За 20 секунд подготовки разделите ответ на три блока: контекст ситуации, основная сложность и выводы.","Секунды 0–30: ответьте на первый вопрос, описав исходную ситуацию и участников.","Секунды 30–60: раскройте причины возникших трудностей и предпринятые действия.","Секунды 60–85: подведите итог, ответив на вопрос о полученном опыте или возможных изменениях."]'::jsonb,
-  'План ответа на многосоставный вопрос:
-1. Описание случая: An experience that directly relates to this topic took place when...
-2. Характер трудности: The primary challenge in that situation stemmed from...
-3. Принятые меры: To address the issue, I decided to...
-4. Вывод и оценка: Looking back, that experience showed me the importance of...',
-  '[{"question":"Describe a difficult decision you had to make in your studies. What was the situation? Why was the decision difficult? What was the outcome?","modelAnswer":"A challenging decision I faced during my studies involved choosing between continuing an intensive chemistry course or switching to an environmental science seminar. The choice was difficult because I enjoyed laboratory work, yet the environmental syllabus aligned more closely with my career goals in sustainability. After discussing the options with my academic advisor, I decided to register for the environmental seminar. In retrospect, that choice proved beneficial because it provided practical project experience that later helped me secure a research internship.","comment":"Ответ охватывает все три пункта промпта за 75 секунд, выдержаны формы прошедшего времени."}]'::jsonb,
-  '["Подробный ответ только на первый вопрос с нехваткой времени на остальные.","Непроизвольный переход на настоящее время при описании прошлых событий.","Повторение связующего слова ''and then'' вместо разнообразных союзов."]'::jsonb
+  'Письменный промпт на экране. 20 секунд на чтение и планирование, затем 90 секунд записи ответа. Вопрос остается видимым во время ответа.',
+  'Speaking, Conversation, Production. Оценивается полнота ответа на все пункты промпта, связность, диапазон лексики и грамматики, беглость.',
+  '20 секунд подготовка, 90 секунд ответ',
+  '["Промпт содержит основную тему и несколько наводящих вопросов. Ответьте на каждый пункт, а не только на первый.","Во время записи вопрос остается на экране: используйте его как план ответа.","Соблюдайте время вопроса: past tenses для личного опыта, would для гипотетических ситуаций, present perfect для опыта к настоящему моменту.","Не читайте заученный текст: оценивается спонтанная связная речь, а не скорость воспроизведения шаблона."]'::jsonb,
+  '["0–20 секунд: выделите 2–3 подпункта и короткий тезис для каждого.","0–30 секунд ответа: дайте прямой ответ на первый пункт и назовите причину.","30–60 секунд: приведите конкретный пример или короткую историю.","60–90 секунд: раскройте второй пункт, ответьте на оставшийся вопрос и сформулируйте вывод."]'::jsonb,
+  'Тезис → причина → пример → вывод. На каждый подпункт промпта: одно прямое предложение, одно пояснение, один пример.',
+  '[{"question":"Describe a difficult decision you had to make in your studies. What was the situation? Why was the decision difficult? What was the outcome?","modelAnswer":"A challenging decision I faced during my studies involved choosing between an intensive chemistry course and an environmental science seminar. The choice was difficult because I enjoyed laboratory work, yet the environmental syllabus aligned more closely with my career goals in sustainability. After discussing the options with my academic advisor, I decided to register for the environmental seminar. In retrospect, that choice proved beneficial because it provided practical project experience that later helped me secure a research internship.","comment":"Ответ охватывает все три пункта промпта за 75 секунд и последовательно использует прошедшее время."}]'::jsonb,
+  '["Подробный ответ только на первый вопрос и нехватка времени на остальные.","Переход на настоящее время при описании прошлых событий.","Повтор одного связующего слова вместо разнообразных союзов и вводных конструкций."]'::jsonb
+) ON CONFLICT (slug) DO UPDATE SET 
+  title_ru = EXCLUDED.title_ru,
+  title_en = EXCLUDED.title_en,
+  rules = EXCLUDED.rules,
+  strategy_steps = EXCLUDED.strategy_steps,
+  examples = EXCLUDED.examples,
+  pitfalls = EXCLUDED.pitfalls;
+INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
+VALUES (
+  'interactive-speaking',
+  11,
+  'interactive-speaking',
+  'Interactive Speaking: адаптивный диалог',
+  'Interactive Speaking: Adaptive Conversation',
+  'speaking',
+  'Говорение',
+  'Speaking',
+  'Симулированный диалог с анимированным персонажем. 6–8 вопросов по двум темам, 3–4 вопроса на тему. 35 секунд на ответ, без времени на подготовку. Вопрос звучит один раз, следующий зависит от предыдущего ответа.',
+  'Speaking и общий балл. Оценивается релевантность ответа, развитие темы, связность, беглость, произношение и способность поддерживать разговор.',
+  '6–8 вопросов × 35 секунд; 3:30–4:40',
+  '["Вопрос звучит только один раз; повтора нет.","На каждый ответ дается до 35 секунд. Говорите естественно и строго по теме вопроса.","Follow-up зависит от того, что вы сказали: развивайте мысль, а не повторяйте заученный шаблон.","В диалоге две темы. Следите за сменой темы и не смешивайте ответы из предыдущей части."]'::jsonb,
+  '["O — Opinion: дайте прямой ответ в первом предложении.","R — Reason: назовите одну конкретную причину.","E — Example: добавьте короткий личный пример.","O — Outcome: сформулируйте вывод или мостик к следующему вопросу.","Если вопрос не расслышан, переспросите одной короткой фразой и ответьте по ключевым словам."]'::jsonb,
+  'Opinion → Reason → Example → Outcome. В 35 секундах достаточно двух-трех предложений с одной ясной мыслью.',
+  '[{"question":"Do you think technology makes it easier or harder to concentrate?","modelAnswer":"I think technology makes concentration harder for most students because every notification competes for attention. For example, when I study, I often check my phone after a message even if the task is not urgent. As a result, I now keep my phone in another room during deep work, which helps me stay focused for longer.","comment":"Ответ дает позицию, причину, личный пример и практический вывод в рамках 35 секунд."}]'::jsonb,
+  '["Ответ не по теме вопроса или уход в заученный монолог.","Слишком длинная пауза в начале ответа: времени на подготовку нет.","Попытка ответить на все возможные follow-up сразу вместо одного ясного ответа."]'::jsonb
 ) ON CONFLICT (slug) DO UPDATE SET 
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
@@ -454,7 +423,7 @@ VALUES (
 INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
 VALUES (
   'speaking-sample',
-  16,
+  13,
   'speaking-sample',
   'Speaking Sample: итоговое видеоинтервью',
   'Speaking Sample: Admissions Video Interview',
@@ -3883,3 +3852,17 @@ VALUES (
   difficulty_band = EXCLUDED.difficulty_band,
   time_limit_sec = EXCLUDED.time_limit_sec,
   is_active = TRUE;
+
+-- Mark the two orientation guides as reference pages. Only the 13 DET task
+-- lessons count toward theory progress and certificates.
+UPDATE theory_lessons SET is_trackable = FALSE
+WHERE slug IN ('rules-and-technicalities', 'subscores-and-cat-engine');
+UPDATE theory_lessons SET is_trackable = TRUE
+WHERE slug IN (
+  'read-and-select', 'fill-in-the-blanks', 'read-and-complete',
+  'listen-and-type', 'interactive-reading', 'interactive-listening',
+  'write-about-photo', 'interactive-writing', 'speak-about-photo',
+  'read-then-speak', 'interactive-speaking', 'writing-sample',
+  'speaking-sample'
+);
+UPDATE theory_lessons SET version = '2026.3';

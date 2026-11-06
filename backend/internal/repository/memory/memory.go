@@ -218,18 +218,18 @@ func (s *MemoryStorage) seedDefaultData() {
 
 	// Seed 12 completed lessons for Alex
 	alexLessons := map[string]bool{
-		"rules-and-technicalities": true,
-		"read-and-select":          true,
-		"fill-in-the-blanks":       true,
-		"read-and-complete":        true,
-		"listen-and-type":          true,
-		"interactive-reading":      true,
-		"interactive-listening":    true,
-		"write-about-the-photo":    true,
-		"speak-about-the-photo":    true,
-		"interactive-writing":      true,
-		"read-listen-speak":        true,
-		"interactive-speaking":     true,
+		"read-and-select":       true,
+		"fill-in-the-blanks":    true,
+		"read-and-complete":     true,
+		"listen-and-type":       true,
+		"interactive-reading":   true,
+		"interactive-listening": true,
+		"write-about-photo":     true,
+		"speak-about-photo":     true,
+		"interactive-writing":   true,
+		"read-then-speak":       true,
+		"interactive-speaking":  true,
+		"writing-sample":        true,
 	}
 	s.theory[alex.ID] = alexLessons
 

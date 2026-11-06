@@ -10,21 +10,21 @@ VALUES
     ('00000000-0000-0000-0000-000000000002', 'student@det-academy.com', '$2a$10$7QeHn3Xut56.7yiAR1yN6uBQuT5VbG0HZ8cK7ld.kxZPLlV31r6Q6', 'Demo Student', 'student', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', 'ru')
 ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;
 
--- Completed Theory for Alex Rivera (all 12 lessons completed)
+-- Completed Theory for Alex Rivera (12 of the 13 current DET task lessons)
 INSERT INTO theory_progress (user_id, lesson_slug, is_completed)
 VALUES
-    ('00000000-0000-0000-0000-000000000001', 'rules-and-technicalities', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'read-and-select', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'fill-in-the-blanks', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'read-and-complete', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'listen-and-type', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'interactive-reading', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'interactive-listening', TRUE),
-    ('00000000-0000-0000-0000-000000000001', 'write-about-the-photo', TRUE),
-    ('00000000-0000-0000-0000-000000000001', 'speak-about-the-photo', TRUE),
+    ('00000000-0000-0000-0000-000000000001', 'write-about-photo', TRUE),
     ('00000000-0000-0000-0000-000000000001', 'interactive-writing', TRUE),
-    ('00000000-0000-0000-0000-000000000001', 'read-listen-speak', TRUE),
-    ('00000000-0000-0000-0000-000000000001', 'interactive-speaking', TRUE)
+    ('00000000-0000-0000-0000-000000000001', 'speak-about-photo', TRUE),
+    ('00000000-0000-0000-0000-000000000001', 'read-then-speak', TRUE),
+    ('00000000-0000-0000-0000-000000000001', 'interactive-speaking', TRUE),
+    ('00000000-0000-0000-0000-000000000001', 'writing-sample', TRUE)
 ON CONFLICT (user_id, lesson_slug) DO UPDATE SET is_completed = TRUE;
 
 -- Ad Banners

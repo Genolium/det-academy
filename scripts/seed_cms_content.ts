@@ -41,7 +41,9 @@ ON CONFLICT DO NOTHING;
 `;
 
 for (const lesson of lessonsData) {
-  sql += `INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls)
+  // start-here is a local orientation page, not a server catalogue row.
+  if (lesson.slug === 'start-here') continue;
+  sql += `INSERT INTO theory_lessons (id, number, slug, title_ru, title_en, category, category_label_ru, category_label_en, format, scoring, time_limit, rules, strategy_steps, formula, examples, pitfalls, is_trackable, version)
 VALUES (
   ${escapeSql(lesson.slug)},
   ${lesson.number},
@@ -58,14 +60,26 @@ VALUES (
   ${jsonSql(lesson.strategySteps)}::jsonb,
   ${escapeSql(lesson.formula || '')},
   ${jsonSql(lesson.examples)}::jsonb,
-  ${jsonSql(lesson.pitfalls)}::jsonb
+  ${jsonSql(lesson.pitfalls)}::jsonb,
+  ${lesson.isTrackable === false ? 'FALSE' : 'TRUE'},
+  '2026.3'
 ) ON CONFLICT (slug) DO UPDATE SET 
+  number = EXCLUDED.number,
   title_ru = EXCLUDED.title_ru,
   title_en = EXCLUDED.title_en,
+  category = EXCLUDED.category,
+  category_label_ru = EXCLUDED.category_label_ru,
+  category_label_en = EXCLUDED.category_label_en,
+  format = EXCLUDED.format,
+  scoring = EXCLUDED.scoring,
+  time_limit = EXCLUDED.time_limit,
   rules = EXCLUDED.rules,
   strategy_steps = EXCLUDED.strategy_steps,
+  formula = EXCLUDED.formula,
   examples = EXCLUDED.examples,
-  pitfalls = EXCLUDED.pitfalls;
+  pitfalls = EXCLUDED.pitfalls,
+  is_trackable = EXCLUDED.is_trackable,
+  version = EXCLUDED.version;
 `;
 }
 

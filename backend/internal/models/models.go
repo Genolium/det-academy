@@ -62,6 +62,7 @@ type TheoryCatalogLesson struct {
 	Formula         string          `json:"formula"`
 	Examples        json.RawMessage `json:"examples"`
 	Pitfalls        json.RawMessage `json:"pitfalls"`
+	IsTrackable     bool            `json:"is_trackable"`
 	PublishStatus   string          `json:"publish_status"`
 	Version         string          `json:"version"`
 	UpdatedAt       time.Time       `json:"updated_at"`
