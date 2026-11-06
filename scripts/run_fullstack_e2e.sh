@@ -6,10 +6,13 @@ DATABASE_URL="${FULLSTACK_DATABASE_URL:-postgres://postgres:postgres@localhost:1
 API_PORT="${FULLSTACK_API_PORT:-18081}"
 FRONTEND_PORT="${FULLSTACK_FRONTEND_PORT:-3102}"
 
+BACKEND_BIN="/tmp/det-fullstack-server"
 cleanup() {
   if [[ -n "${BACKEND_PID:-}" ]]; then
     kill "$BACKEND_PID" 2>/dev/null || true
+    wait "$BACKEND_PID" 2>/dev/null || true
   fi
+  rm -f "$BACKEND_BIN"
 }
 trap cleanup EXIT
 
@@ -23,14 +26,20 @@ if command -v psql >/dev/null 2>&1 && [[ "${FULLSTACK_PREPARE_DB:-false}" == "tr
   psql "$DATABASE_URL" -f "$ROOT/backend/db/04-vocabulary-seed.sql" >/dev/null
 fi
 
+if lsof -ti tcp:"$API_PORT" >/dev/null 2>&1; then
+  echo "Port $API_PORT is already in use; stop the stale backend before running this script." >&2
+  exit 1
+fi
+
 cd "$ROOT/backend"
+go build -o "$BACKEND_BIN" ./cmd/server
 PORT="$API_PORT" ENV=development DATABASE_URL="$DATABASE_URL" \
   JWT_SECRET="fullstack-e2e-secret" \
   ALLOWED_ORIGIN="http://localhost:$FRONTEND_PORT" \
   PUBLIC_APP_URL="http://localhost:$FRONTEND_PORT" \
   REQUIRE_EMAIL_VERIFICATION=false ALLOW_CLIENT_TRANSCRIPT=true \
   MEDIA_UPLOAD_DIR="/tmp/det-fullstack-media" \
-  go run ./cmd/server >/tmp/det-fullstack-backend.log 2>&1 &
+  "$BACKEND_BIN" >/tmp/det-fullstack-backend.log 2>&1 &
 BACKEND_PID=$!
 
 for _ in $(seq 1 60); do
